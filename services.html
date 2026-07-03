@@ -14,86 +14,87 @@
 <header class="site">
   <div class="wrap nav">
     <a href="index.html" class="brand">
-      <span class="mark">I</span>
+      <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
       <span class="word"><b>INA</b><span>International Network Advisors</span></span>
     </a>
     <nav class="links">
-      <a href="why-ina.html">Why INA</a><a href="framework.html">Framework</a><a href="services.html" class="current">Services</a><a href="industries.html">Industries</a><a href="knowledge.html">Knowledge</a><a href="platform.html">Platform</a>
+      <a href="why-ina.html"><span data-i18n="nav.about">About</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html" class="current"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span class="nl2" data-i18n="navbar.multilateralFinance">Multilateral Finance</span></a><a href="knowledge.html"><span class="nl2" data-i18n="navbar.knowledgeCenter">Knowledge Center</span></a><a href="knowledge.html#insights"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span class="nl2" data-i18n="navbar.platform">INA Platform</span> <span class="soon-badge" data-i18n="nav.comingSoon">Coming Soon</span></a>
     </nav>
-    <a href="contact.html" class="btn amber">Request Advisory</a>
+    <div class="lang-toggle" role="group" aria-label="Language"><button type="button" data-lang="en" class="active" aria-pressed="true">EN</button><button type="button" data-lang="es" aria-pressed="false">ES</button></div>
+    <a href="contact.html" class="btn amber"><span data-i18n="nav.contact">Contact Us</span></a>
     <button class="navToggle" aria-label="Toggle menu" id="navToggle">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
   </div>
   <div id="mobileMenu" style="display:none; border-top:1px solid var(--paper-line); background:var(--paper);">
     <div class="wrap" style="display:flex; flex-direction:column; padding:18px 32px; gap:16px;">
-      <a href="why-ina.html">Why INA</a><a href="framework.html">Framework</a><a href="services.html">Services</a><a href="industries.html">Industries</a><a href="knowledge.html">Knowledge</a><a href="platform.html">Platform</a><a href="contact.html">Contact</a>
+      <a href="why-ina.html"><span data-i18n="nav.about">About</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html" class="current"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span class="nl2" data-i18n="navbar.multilateralFinance">Multilateral Finance</span></a><a href="knowledge.html"><span class="nl2" data-i18n="navbar.knowledgeCenter">Knowledge Center</span></a><a href="knowledge.html#insights"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span class="nl2" data-i18n="navbar.platform">INA Platform</span> <span class="soon-badge" data-i18n="nav.comingSoon">Coming Soon</span></a><a href="contact.html"><span data-i18n="nav.contact">Contact Us</span></a>
+      
+      <div class="lang-toggle" role="group" aria-label="Language"><button type="button" data-lang="en" class="active" aria-pressed="true">EN</button><button type="button" data-lang="es" aria-pressed="false">ES</button></div>
     </div>
   </div>
 </header>
 <section class="page-hero">
-  <span class="corner-tag tl">INA / MASTER BLUEPRINT</span>
-  <span class="corner-tag tr">VOL. II &mdash; SERVICES</span>
   <div class="wrap">
-    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span>Services</span></div>
-    <span class="eyebrow on-dark">Services</span>
-    <h1 class="h-page">Eight services. One project lifecycle.</h1>
-    <p class="lede">From first opportunity screen to post-implementation monitoring — INA advises across the full arc of a project.</p>
+    <div class="breadcrumb"><a href="index.html" data-i18n="bc.home">Home</a><span>/</span><span data-i18n="nav.services">Services</span></div>
+    <span class="eyebrow on-dark" data-i18n="nav.services">Services</span>
+    <h1 class="h-page" data-i18n="svc.hero.title">Eight services. One project lifecycle.</h1>
+    <p class="lede" data-i18n="svc.hero.lede">From first opportunity screen to post-implementation monitoring — INA advises across the full arc of a project.</p>
   </div>
 </section>
 <div class="service-detail">
   <div class="wrap service-detail-grid">
-    <div><span class="si-big">01</span><div class="eyebrow" style="margin-top:10px;">Screening &amp; Prioritization</div></div>
-    <div><h3>Opportunity Identification</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;">Screening and prioritizing digital infrastructure opportunities against strategic, market and policy criteria — before significant resources are committed.</p><ul class="checks"><li>Market &amp; demand scanning</li><li>Strategic fit assessment</li><li>Early-stage opportunity scoring</li><li>Go / no-go recommendation</li></ul></div>
+    <div><span class="si-big">01</span><div class="eyebrow" style="margin-top:10px;" data-i18n="svc1.eyebrow">Screening &amp; Prioritization</div></div>
+    <div><h3 data-i18n="svc1.title">Opportunity Identification</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;" data-i18n="svc1.desc">Screening and prioritizing digital infrastructure opportunities against strategic, market and policy criteria — before significant resources are committed.</p><ul class="checks"><li data-i18n="svc1.l1">Market &amp; demand scanning</li><li data-i18n="svc1.l2">Strategic fit assessment</li><li data-i18n="svc1.l3">Early-stage opportunity scoring</li><li data-i18n="svc1.l4">Go / no-go recommendation</li></ul></div>
   </div>
 </div>
 <div class="service-detail">
   <div class="wrap service-detail-grid">
-    <div><span class="si-big">02</span><div class="eyebrow" style="margin-top:10px;">INA Project Structuring Framework&trade;</div></div>
-    <div><h3>Project Structuring</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;">Applying INA's flagship methodology to move an opportunity from concept toward bankability, across technical, regulatory and financial dimensions.</p><ul class="checks"><li>Stage-gated structuring process</li><li>Technical feasibility review</li><li>Regulatory &amp; institutional fit</li><li>Structuring memo &amp; gap list</li></ul></div>
+    <div><span class="si-big">02</span><div class="eyebrow" style="margin-top:10px;" data-i18n="svc2.eyebrow">INA Project Structuring Framework&trade;</div></div>
+    <div><h3 data-i18n="svc2.title">Project Structuring</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;" data-i18n="svc2.desc">Applying INA's flagship methodology to move an opportunity from concept toward bankability, across technical, regulatory and financial dimensions.</p><ul class="checks"><li data-i18n="svc2.l1">Stage-gated structuring process</li><li data-i18n="svc2.l2">Technical feasibility review</li><li data-i18n="svc2.l3">Regulatory &amp; institutional fit</li><li data-i18n="svc2.l4">Structuring memo &amp; gap list</li></ul></div>
   </div>
 </div>
 <div class="service-detail">
   <div class="wrap service-detail-grid">
-    <div><span class="si-big">03</span><div class="eyebrow" style="margin-top:10px;">Capital Stack Design</div></div>
-    <div><h3>Financial Structuring</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;">Designing capital stacks that balance public policy objectives with private investment logic, across concessional, blended and commercial capital.</p><ul class="checks"><li>Capital stack design</li><li>Cash flow &amp; return modeling</li><li>Public / private risk allocation</li><li>Financing term sheet support</li></ul></div>
+    <div><span class="si-big">03</span><div class="eyebrow" style="margin-top:10px;" data-i18n="svc3.eyebrow">Capital Stack Design</div></div>
+    <div><h3 data-i18n="svc3.title">Financial Structuring</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;" data-i18n="svc3.desc">Designing capital stacks that balance public policy objectives with private investment logic, across concessional, blended and commercial capital.</p><ul class="checks"><li data-i18n="svc3.l1">Capital stack design</li><li data-i18n="svc3.l2">Cash flow &amp; return modeling</li><li data-i18n="svc3.l3">Public / private risk allocation</li><li data-i18n="svc3.l4">Financing term sheet support</li></ul></div>
   </div>
 </div>
 <div class="service-detail">
   <div class="wrap service-detail-grid">
-    <div><span class="si-big">04</span><div class="eyebrow" style="margin-top:10px;">INA Investment Readiness Index&trade;</div></div>
-    <div><h3>Investment Readiness</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;">Benchmarking projects against INA's composite readiness index and closing the highest-priority gaps before approaching capital.</p><ul class="checks"><li>Eight-dimension scoring</li><li>Peer benchmarking</li><li>Prioritized improvement roadmap</li><li>Re-assessment as project matures</li></ul></div>
+    <div><span class="si-big">04</span><div class="eyebrow" style="margin-top:10px;" data-i18n="svc4.eyebrow">INA Investment Readiness Index&trade;</div></div>
+    <div><h3 data-i18n="svc4.title">Investment Readiness</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;" data-i18n="svc4.desc">Benchmarking projects against INA's composite readiness index and closing the highest-priority gaps before approaching capital.</p><ul class="checks"><li data-i18n="svc4.l1">Eight-dimension scoring</li><li data-i18n="svc4.l2">Peer benchmarking</li><li data-i18n="svc4.l3">Prioritized improvement roadmap</li><li data-i18n="svc4.l4">Re-assessment as project matures</li></ul></div>
   </div>
 </div>
 <div class="service-detail">
   <div class="wrap service-detail-grid">
-    <div><span class="si-big">05</span><div class="eyebrow" style="margin-top:10px;">PPP Structuring</div></div>
-    <div><h3>Public-Private Partnerships</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;">Structuring PPP arrangements aligned with regulatory frameworks and international risk-allocation best practice.</p><ul class="checks"><li>Risk allocation design</li><li>Contract &amp; concession structuring</li><li>Regulatory alignment review</li><li>Bidder engagement support</li></ul></div>
+    <div><span class="si-big">05</span><div class="eyebrow" style="margin-top:10px;" data-i18n="svc5.eyebrow">PPP Structuring</div></div>
+    <div><h3 data-i18n="svc5.title">Public-Private Partnerships</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;" data-i18n="svc5.desc">Structuring PPP arrangements aligned with regulatory frameworks and international risk-allocation best practice.</p><ul class="checks"><li data-i18n="svc5.l1">Risk allocation design</li><li data-i18n="svc5.l2">Contract &amp; concession structuring</li><li data-i18n="svc5.l3">Regulatory alignment review</li><li data-i18n="svc5.l4">Bidder engagement support</li></ul></div>
   </div>
 </div>
 <div class="service-detail">
   <div class="wrap service-detail-grid">
-    <div><span class="si-big">06</span><div class="eyebrow" style="margin-top:10px;">INA AI Advisory Methodology&trade;</div></div>
-    <div><h3>AI Advisory</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;">Helping organizations adopt AI responsibly and strategically — from use-case prioritization to governed, monitored deployment.</p><ul class="checks"><li>Use-case prioritization</li><li>Data &amp; infrastructure readiness</li><li>Governance &amp; ethics charter</li><li>Adoption roadmap</li></ul></div>
+    <div><span class="si-big">06</span><div class="eyebrow" style="margin-top:10px;" data-i18n="svc6.eyebrow">INA AI Advisory Methodology&trade;</div></div>
+    <div><h3 data-i18n="svc6.title">AI Advisory</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;" data-i18n="svc6.desc">Helping organizations adopt AI responsibly and strategically — from use-case prioritization to governed, monitored deployment.</p><ul class="checks"><li data-i18n="svc6.l1">Use-case prioritization</li><li data-i18n="svc6.l2">Data &amp; infrastructure readiness</li><li data-i18n="svc6.l3">Governance &amp; ethics charter</li><li data-i18n="svc6.l4">Adoption roadmap</li></ul></div>
   </div>
 </div>
 <div class="service-detail">
   <div class="wrap service-detail-grid">
-    <div><span class="si-big">07</span><div class="eyebrow" style="margin-top:10px;">Implementation Governance</div></div>
-    <div><h3>Project Monitoring</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;">Tracking implementation against plan with structured dashboards, milestone governance and continuous risk monitoring.</p><ul class="checks"><li>Milestone &amp; KPI dashboards</li><li>Risk register monitoring</li><li>Stage-gate governance</li><li>Lender / DFI reporting support</li></ul></div>
+    <div><span class="si-big">07</span><div class="eyebrow" style="margin-top:10px;" data-i18n="svc7.eyebrow">Implementation Governance</div></div>
+    <div><h3 data-i18n="svc7.title">Project Monitoring</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;" data-i18n="svc7.desc">Tracking implementation against plan with structured dashboards, milestone governance and continuous risk monitoring.</p><ul class="checks"><li data-i18n="svc7.l1">Milestone &amp; KPI dashboards</li><li data-i18n="svc7.l2">Risk register monitoring</li><li data-i18n="svc7.l3">Stage-gate governance</li><li data-i18n="svc7.l4">Lender / DFI reporting support</li></ul></div>
   </div>
 </div>
 <div class="service-detail">
   <div class="wrap service-detail-grid">
-    <div><span class="si-big">08</span><div class="eyebrow" style="margin-top:10px;">Environmental, Social &amp; Governance</div></div>
-    <div><h3>ESG Integration</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;">Embedding environmental, social and governance criteria across the project lifecycle, from screening through post-implementation review.</p><ul class="checks"><li>ESG screening &amp; due diligence</li><li>Social &amp; environmental safeguards</li><li>Governance &amp; reporting structures</li><li>Impact monitoring</li></ul></div>
+    <div><span class="si-big">08</span><div class="eyebrow" style="margin-top:10px;" data-i18n="svc8.eyebrow">Environmental, Social &amp; Governance</div></div>
+    <div><h3 data-i18n="svc8.title">ESG Integration</h3><p style="color:var(--muted); font-size:15px; max-width:640px; margin-top:10px;" data-i18n="svc8.desc">Embedding environmental, social and governance criteria across the project lifecycle, from screening through post-implementation review.</p><ul class="checks"><li data-i18n="svc8.l1">ESG screening &amp; due diligence</li><li data-i18n="svc8.l2">Social &amp; environmental safeguards</li><li data-i18n="svc8.l3">Governance &amp; reporting structures</li><li data-i18n="svc8.l4">Impact monitoring</li></ul></div>
   </div>
 </div>
 <section class="on-dark" style="text-align:center; padding:100px 0;">
   <div class="wrap reveal" style="max-width:640px; margin:0 auto;">
-    <span class="eyebrow on-dark" style="justify-content:center;">Ready to Start</span>
-    <h2 class="h-section" style="color:var(--text-on-dark); margin-top:14px;">Which stage is your project at?</h2>
-    <div style="margin-top:30px;"><a href="contact.html" class="btn amber">Request Advisory</a></div>
+    <span class="eyebrow on-dark" style="justify-content:center;" data-i18n="svc.cta.eyebrow">Ready to Start</span>
+    <h2 class="h-section" style="color:var(--text-on-dark); margin-top:14px;" data-i18n="svc.cta.title">Which stage is your project at?</h2>
+    <div style="margin-top:30px;"><a href="contact.html" class="btn amber" data-i18n="footer.requestAdvisory">Request Advisory</a></div>
   </div>
 </section>
 <footer>
@@ -101,30 +102,31 @@
     <div class="foot-grid">
       <div>
         <span class="brand" style="color:var(--text-on-dark);">
-          <span class="mark" style="border-color:var(--text-on-dark); color:var(--text-on-dark);">I</span>
+          <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
           <span class="word" style="color:var(--text-on-dark);"><b>INA</b><span style="color:var(--muted-on-dark);">International Network Advisors</span></span>
         </span>
-        <p style="margin-top:18px; font-size:13.5px; max-width:280px;">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</p>
+        <p style="margin-top:18px; font-size:13.5px; max-width:280px;" data-i18n="footer.tagline">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</p>
       </div>
       <div>
-        <h5>Platform</h5>
-        <ul><li><a href="why-ina.html">Why INA</a></li><li><a href="framework.html">Frameworks™</a></li><li><a href="services.html">Services</a></li><li><a href="industries.html">Industries</a></li></ul>
+        <h5 data-i18n="footer.headingPlatform">Platform</h5>
+        <ul><li><a href="why-ina.html" data-i18n="nav.about">About</a></li><li><a href="framework.html" data-i18n="nav.framework">Framework</a></li><li><a href="services.html" data-i18n="nav.services">Services</a></li><li><a href="industries.html" data-i18n="nav.industries">Industries</a></li></ul>
       </div>
       <div>
-        <h5>Resources</h5>
-        <ul><li><a href="knowledge.html">Knowledge Center</a></li><li><a href="framework.html#finance">Multilateral Finance</a></li><li><a href="platform.html">Platform Roadmap</a></li></ul>
+        <h5 data-i18n="footer.headingResources">Resources</h5>
+        <ul><li><a href="knowledge.html" data-i18n="nav.knowledgeCenter">Knowledge Center</a></li><li><a href="knowledge.html#insights" data-i18n="nav.insights">Insights</a></li><li><a href="finance.html" data-i18n="nav.multilateralFinance">Multilateral Finance</a></li><li><a href="platform.html" data-i18n="nav.platform">INA Platform</a></li></ul>
       </div>
       <div>
-        <h5>Connect</h5>
-        <ul><li><a href="contact.html">Contact</a></li><li><a href="contact.html">Request Advisory</a></li><li><a href="contact.html">Company Profile</a></li></ul>
+        <h5 data-i18n="footer.headingConnect">Connect</h5>
+        <ul><li><a href="contact.html" data-i18n="footer.contact">Contact</a></li><li><a href="contact.html" data-i18n="footer.requestAdvisory">Request Advisory</a></li><li><a href="contact.html" data-i18n="footer.companyProfile">Company Profile</a></li></ul>
       </div>
     </div>
     <div class="foot-bottom">
-      <span>&copy; 2026 International Network Advisors (INA). All rights reserved.</span>
-      <span>Master Blueprint v1.0 &mdash; Digital Platform</span>
+      <span data-i18n="footer.copyright">&copy; 2026 International Network Advisors (INA). All rights reserved.</span>
     </div>
   </div>
 </footer>
+<script src="assets/translations.js"></script>
+<script src="assets/i18n.js"></script>
 <script src="assets/script.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 # INA — International Network Advisors
-### Sitio web institucional — Master Blueprint v1.0
+### Sitio web institucional
 
 Sitio estático (HTML + CSS + JS puro, sin frameworks ni build) generado a partir del documento
 `INA_Digital_Platform_.pdf` del proyecto.
@@ -61,7 +61,13 @@ npx serve
 - Los botones de descarga en `knowledge.html` y el "Company Profile (PDF)" son placeholders
   ("Coming soon") — faltan los documentos reales para linkear.
 - La sección *Platform* describe el roadmap hacia agentes de IA y dashboards interactivos
-  (Etapas 3–5) — todavía no implementados, tal como lo marca el blueprint.
+  (Etapas 3–5) — todavía no implementados.
+- Home rediseñado (jul. 2026) para alinearse al mockup del proyecto: hero con dos CTAs,
+  4 tarjetas de audiencia (Governments / Multilateral Organizations / Investors & Funds /
+  Operators & Technology Leaders), tira de industrias, proceso de 7 pasos de "The INA Project
+  Structuring Framework™", Featured Cases + Latest Insights, banner de CTA final y tira de
+  "Trusted by". Nav actualizado: About · Framework · Services · Industries · Multilateral
+  Finance · Knowledge Center · Insights · INA Platform (Coming Soon) · Contact Us.
 - Diseño: tema "chart náutico" (tinta marina + papel gris-azulado + acento ámbar), tipografías
   Fraunces / IBM Plex Sans / IBM Plex Mono cargadas desde Google Fonts vía CDN.
 

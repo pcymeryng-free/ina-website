@@ -14,28 +14,30 @@
 <header class="site">
   <div class="wrap nav">
     <a href="index.html" class="brand">
-      <span class="mark">I</span>
+      <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
       <span class="word"><b>INA</b><span>International Network Advisors</span></span>
     </a>
     <nav class="links">
-      <a href="why-ina.html">Why INA</a><a href="framework.html">Framework</a><a href="services.html">Services</a><a href="industries.html">Industries</a><a href="knowledge.html">Knowledge</a><a href="platform.html">Platform</a>
+      <a href="why-ina.html"><span data-i18n="nav.about">About</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span class="nl2" data-i18n="navbar.multilateralFinance">Multilateral Finance</span></a><a href="knowledge.html"><span class="nl2" data-i18n="navbar.knowledgeCenter">Knowledge Center</span></a><a href="knowledge.html#insights"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span class="nl2" data-i18n="navbar.platform">INA Platform</span> <span class="soon-badge" data-i18n="nav.comingSoon">Coming Soon</span></a>
     </nav>
-    <a href="contact.html" class="btn amber">Request Advisory</a>
+    <div class="lang-toggle" role="group" aria-label="Language"><button type="button" data-lang="en" class="active" aria-pressed="true">EN</button><button type="button" data-lang="es" aria-pressed="false">ES</button></div>
+    <a href="contact.html" class="btn amber"><span data-i18n="nav.contact">Contact Us</span></a>
     <button class="navToggle" aria-label="Toggle menu" id="navToggle">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
   </div>
   <div id="mobileMenu" style="display:none; border-top:1px solid var(--paper-line); background:var(--paper);">
     <div class="wrap" style="display:flex; flex-direction:column; padding:18px 32px; gap:16px;">
-      <a href="why-ina.html">Why INA</a><a href="framework.html">Framework</a><a href="services.html">Services</a><a href="industries.html">Industries</a><a href="knowledge.html">Knowledge</a><a href="platform.html">Platform</a><a href="contact.html">Contact</a>
+      <a href="why-ina.html"><span data-i18n="nav.about">About</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span class="nl2" data-i18n="navbar.multilateralFinance">Multilateral Finance</span></a><a href="knowledge.html"><span class="nl2" data-i18n="navbar.knowledgeCenter">Knowledge Center</span></a><a href="knowledge.html#insights"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span class="nl2" data-i18n="navbar.platform">INA Platform</span> <span class="soon-badge" data-i18n="nav.comingSoon">Coming Soon</span></a><a href="contact.html"><span data-i18n="nav.contact">Contact Us</span></a>
+      
+      <div class="lang-toggle" role="group" aria-label="Language"><button type="button" data-lang="en" class="active" aria-pressed="true">EN</button><button type="button" data-lang="es" aria-pressed="false">ES</button></div>
     </div>
   </div>
 </header>
-<section class="hero" id="home" style="position:relative; background: var(--ink); color: var(--text-on-dark); overflow:hidden; padding: 88px 0 100px;">
-  <span class="corner-tag tl">INA / MASTER BLUEPRINT</span>
-  <span class="corner-tag tr">VOL. I &mdash; VISION &amp; STRATEGY</span>
-  <span class="corner-tag bl">LAT 00.000&deg; &nbsp; LON 00.000&deg;</span>
-  <span class="corner-tag br">EST. LATAM &rarr; GLOBAL</span>
+<!-- Hero background: illustrated skyline (SVG, self-contained). To use a real photo instead,
+     add an image file to assets/ (e.g. assets/hero-bg.jpg) and set on the section below:
+     background: linear-gradient(180deg, rgba(11,21,38,.55), rgba(11,21,38,.85)), url('assets/hero-bg.jpg') center/cover; -->
+<section class="hero" id="home">
 
   <svg style="position:absolute; inset:0; z-index:1; opacity:.9;" viewBox="0 0 1440 760" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
     <defs>
@@ -59,23 +61,39 @@
       <circle cx="1300" cy="560" r="2.6" opacity="0.6"><animate attributeName="opacity" values="0.2;0.7;0.2" dur="3.6s" repeatCount="indefinite" begin=".7s"/></circle>
       <circle cx="780" cy="360" r="2.2" opacity="0.4"/>
     </g>
+    <!-- mobile device silhouette with signal bars, reinforcing connectivity/mobile theme -->
+    <g transform="translate(1180,420)" opacity="0.5">
+      <rect x="0" y="0" width="34" height="60" rx="6" fill="none" stroke="#D9922E" stroke-width="1.3"/>
+      <line x1="12" y1="6" x2="22" y2="6" stroke="#D9922E" stroke-width="1.3"/>
+      <rect x="6" y="16" width="4" height="8" fill="#D9922E"/>
+      <rect x="13" y="12" width="4" height="12" fill="#D9922E"/>
+      <rect x="20" y="8" width="4" height="16" fill="#D9922E"/>
+      <circle cx="17" cy="52" r="2.2" fill="none" stroke="#D9922E" stroke-width="1.1"/>
+    </g>
+    <!-- wifi glyph -->
+    <g transform="translate(280,480)" opacity="0.45" fill="none" stroke="#D9922E" stroke-width="1.3">
+      <path d="M -18,0 A 25,25 0 0 1 18,0"/>
+      <path d="M -11,7 A 15,15 0 0 1 11,7"/>
+      <path d="M -4,14 A 6,6 0 0 1 4,14"/>
+      <circle cx="0" cy="20" r="1.8" fill="#D9922E" stroke="none"/>
+    </g>
   </svg>
 
   <div class="wrap" style="position:relative; z-index:2;">
-    <div class="hero-head" style="max-width:880px; margin-top:40px;">
-      <span class="eyebrow on-dark">Digital Infrastructure Intelligence</span>
-      <h1 class="h-display" style="margin:18px 0 26px;">The advisory platform for digital infrastructure, project structuring &amp; <em>AI-enabled</em> investment intelligence.</h1>
-      <p class="lede">INA transforms complex digital infrastructure opportunities &mdash; fiber backbones, submarine cables, data centers, satellite constellations, AI compute &mdash; into bankable, investable and sustainable projects, for governments, development banks, investors and technology companies.</p>
-      <div class="hero-cta" style="display:flex; gap:16px; margin-top:34px; flex-wrap:wrap;">
-        <a href="framework.html" class="btn amber">Explore the Frameworks&trade;</a>
-        <a href="contact.html" class="btn on-dark ghost">Start an Engagement</a>
+    <div class="hero-head" style="max-width:820px;">
+      <span class="eyebrow on-dark" data-i18n="home.hero.eyebrow">Digital Infrastructure Intelligence</span>
+      <h1 class="h-display" style="margin:14px 0 16px;" data-i18n="home.hero.title">The advisory platform for digital infrastructure, project structuring &amp; <em>AI-enabled</em> investment intelligence.</h1>
+      <p class="lede" style="font-size:15.5px;" data-i18n="home.hero.lede">INA transforms complex digital infrastructure opportunities &mdash; fiber backbones, submarine cables, data centers, satellite constellations, AI compute &mdash; into bankable, investable and sustainable projects, for governments, development banks, investors and technology companies.</p>
+      <div class="hero-cta" style="display:flex; gap:16px; margin-top:22px; flex-wrap:wrap;">
+        <a href="framework.html" class="btn amber" data-i18n="home.hero.cta1">Explore Our Framework</a>
+        <a href="contact.html" class="btn on-dark ghost" data-i18n="home.hero.cta2">Talk to Our Advisors</a>
       </div>
     </div>
-    <div class="stat-strip" style="margin-top:76px; display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--ink-line);">
-      <div style="padding:22px 24px 0;"><div style="font-family:var(--serif); font-size:30px; color:var(--amber);">06</div><div style="font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--muted-on-dark); margin-top:6px; text-transform:uppercase;">Proprietary Frameworks&trade;</div></div>
-      <div style="padding:22px 24px 0; border-left:1px solid var(--ink-line);"><div style="font-family:var(--serif); font-size:30px; color:var(--amber);">04</div><div style="font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--muted-on-dark); margin-top:6px; text-transform:uppercase;">Client Constituencies</div></div>
-      <div style="padding:22px 24px 0; border-left:1px solid var(--ink-line);"><div style="font-family:var(--serif); font-size:30px; color:var(--amber);">10</div><div style="font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--muted-on-dark); margin-top:6px; text-transform:uppercase;">Infrastructure Sectors</div></div>
-      <div style="padding:22px 24px 0; border-left:1px solid var(--ink-line);"><div style="font-family:var(--serif); font-size:30px; color:var(--amber);">LatAm&rarr;Global</div><div style="font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--muted-on-dark); margin-top:6px; text-transform:uppercase;">Long-Term Reach</div></div>
+    <div class="stat-strip" style="display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--ink-line);">
+      <div style="padding:16px 24px 0;"><div style="font-family:var(--serif); font-size:24px; color:var(--amber);">06</div><div style="font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:var(--muted-on-dark); margin-top:4px; text-transform:uppercase;" data-i18n="home.stat1">Proprietary Frameworks&trade;</div></div>
+      <div style="padding:16px 24px 0; border-left:1px solid var(--ink-line);"><div style="font-family:var(--serif); font-size:24px; color:var(--amber);">04</div><div style="font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:var(--muted-on-dark); margin-top:4px; text-transform:uppercase;" data-i18n="home.stat2">Client Constituencies</div></div>
+      <div style="padding:16px 24px 0; border-left:1px solid var(--ink-line);"><div style="font-family:var(--serif); font-size:24px; color:var(--amber);">10</div><div style="font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:var(--muted-on-dark); margin-top:4px; text-transform:uppercase;" data-i18n="home.stat3">Infrastructure Sectors</div></div>
+      <div style="padding:16px 24px 0; border-left:1px solid var(--ink-line);"><div style="font-family:var(--serif); font-size:24px; color:var(--amber);">LatAm&rarr;Global</div><div style="font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:var(--muted-on-dark); margin-top:4px; text-transform:uppercase;" data-i18n="home.stat4">Long-Term Reach</div></div>
     </div>
   </div>
 </section>
@@ -83,119 +101,198 @@
   <div class="wrap">
     <div class="section-head reveal">
       <div>
-        <span class="eyebrow">Who We Serve</span>
-        <h2 class="h-section">Navigation follows the decision-making journey of four audiences &mdash; not our org chart.</h2>
+        <span class="eyebrow" data-i18n="home.serve.eyebrow">Who We Serve</span>
+        <h2 class="h-section" data-i18n="home.serve.title">We partner with governments, investors, multilaterals and technology leaders.</h2>
       </div>
-      <p class="lede side">Each constituency arrives with a different question. INA is built to answer all of them from the same body of intellectual capital.</p>
+      <p class="lede side" data-i18n="home.serve.lede">Each constituency arrives with a different question. INA is built to answer all of them from the same body of intellectual capital.</p>
     </div>
   </div>
   <div class="wrap">
-    <div class="audience-grid reveal">
-      <div class="audience-card">
-        <span class="idx">01 / GOVERNMENTS</span>
-        <h3>Ministries &amp; Regulators</h3>
-        <ul>
-          <li>How can we improve national connectivity?</li>
-          <li>How do we structure digital infrastructure projects?</li>
-          <li>Which financing mechanisms are available?</li>
-          <li>How can AI improve public services?</li>
-        </ul>
-      </div>
-      <div class="audience-card">
-        <span class="idx">02 / DFIs</span>
-        <h3>Development Finance Institutions</h3>
-        <ul>
-          <li>Frameworks &amp; evaluation models</li>
-          <li>Implementation methodologies</li>
-          <li>Technical documentation</li>
-          <li>Downloadable resources</li>
-        </ul>
-      </div>
-      <div class="audience-card">
-        <span class="idx">03 / INVESTORS</span>
-        <h3>Infrastructure Funds</h3>
-        <ul>
-          <li>Investment opportunities</li>
-          <li>Regulatory conditions</li>
-          <li>Project maturity</li>
-          <li>Implementation risk</li>
-        </ul>
-      </div>
-      <div class="audience-card">
-        <span class="idx">04 / OPERATORS</span>
-        <h3>Technology Companies</h3>
-        <ul>
-          <li>Infrastructure planning</li>
-          <li>Regulatory frameworks</li>
-          <li>Hyperscale &amp; satellite deployment</li>
-          <li>Project development support</li>
-        </ul>
-      </div>
+    <div class="audience-v2 reveal">
+      <a class="av-card c1" href="why-ina.html">
+        <span class="avi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21h16M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg></span>
+        <h3 data-i18n="home.card1.title">Governments</h3>
+        <p data-i18n="home.card1.desc">Design bankable projects, attract investment and deliver public value.</p>
+        <span class="avarrow">&rarr;</span>
+      </a>
+      <a class="av-card c2" href="finance.html">
+        <span class="avi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 2.4 4.2 5.6 4.2 9s-1.4 6.6-4.2 9c-2.8-2.4-4.2-5.6-4.2-9S9.2 5.4 12 3Z"/></svg></span>
+        <h3 data-i18n="home.card2.title">Multilateral Organizations</h3>
+        <p data-i18n="home.card2.desc">We support impactful investments with robust structures and risk mitigation.</p>
+        <span class="avarrow">&rarr;</span>
+      </a>
+      <a class="av-card c3" href="industries.html">
+        <span class="avi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V11M10 20V6M16 20V13M4 11l6-5 6 7 4-6"/></svg></span>
+        <h3 data-i18n="home.card3.title">Investors &amp; Funds</h3>
+        <p data-i18n="home.card3.desc">Access high-quality, de-risked infrastructure opportunities ready for investment.</p>
+        <span class="avarrow">&rarr;</span>
+      </a>
+      <a class="av-card c4" href="services.html">
+        <span class="avi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="9" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M2.5 20c.6-3.4 3-5.4 5.5-5.4s4.9 2 5.5 5.4M14.8 14.9c2.2.2 4 2 4.5 5.1"/></svg></span>
+        <h3 data-i18n="home.card4.title">Operators &amp; Technology Leaders</h3>
+        <p data-i18n="home.card4.desc">Expand your footprint and accelerate growth with the right partners.</p>
+        <span class="avarrow">&rarr;</span>
+      </a>
     </div>
   </div>
 </section>
-<section class="on-dark" id="frameworks-teaser">
+<section class="industries-strip" id="industries-teaser" style="background:var(--paper-2);">
   <div class="wrap">
     <div class="section-head reveal">
       <div>
-        <span class="eyebrow on-dark">The Flagship &mdash; INA Frameworks&trade; Suite</span>
-        <h2 class="h-section" style="color:var(--text-on-dark);">Six proprietary methodologies. One integrated project lifecycle.</h2>
+        <span class="eyebrow" data-i18n="home.industries.eyebrow">Industries We Drive Forward</span>
       </div>
-      <p class="lede side">Inspired by PMI, the World Bank, IDB, CAF and ITU &mdash; with an identity entirely INA's own. <a href="framework.html" style="color:var(--amber); border-bottom:1px solid var(--amber);">Read the full methodology &rarr;</a></p>
     </div>
-    <div class="fw-grid reveal">
-      <a class="fw-card linkable" href="framework.html#f1"><span class="fnum">F1</span><h3>Project Structuring Framework&trade;</h3><p class="purpose">Transforms opportunities into investment-ready, bankable, implementable projects.</p><span class="goto">Read framework &rarr;</span></a>
-      <a class="fw-card linkable" href="framework.html#f2"><span class="fnum">F2</span><h3>Investment Readiness Index&trade;</h3><p class="purpose">Scores 8 dimensions from 0&ndash;100, from Concept Stage to Investment Ready.</p><span class="goto">Read framework &rarr;</span></a>
-      <a class="fw-card linkable" href="framework.html#f3"><span class="fnum">F3</span><h3>Digital Infrastructure Maturity Model&trade;</h3><p class="purpose">Evaluates 10 domains, from Initial to Leading maturity.</p><span class="goto">Read framework &rarr;</span></a>
-      <a class="fw-card linkable" href="framework.html#f4"><span class="fnum">F4</span><h3>AI Advisory Methodology&trade;</h3><p class="purpose">Guides responsible AI adoption across five pillars.</p><span class="goto">Read framework &rarr;</span></a>
-      <a class="fw-card linkable" href="framework.html#f5"><span class="fnum">F5</span><h3>Project Risk Assessment Framework&trade;</h3><p class="purpose">Identifies, quantifies and mitigates risk across 10 categories.</p><span class="goto">Read framework &rarr;</span></a>
-      <a class="fw-card linkable" href="framework.html#f6"><span class="fnum">F6</span><h3>Multilateral Finance Navigator&trade;</h3><p class="purpose">Recommends financing mechanisms across MDBs, DFIs and blended finance.</p><span class="goto">Read framework &rarr;</span></a>
+    <div class="strip-row reveal">
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 20v-7M12 13a4 4 0 0 0 4-4M12 13a4 4 0 0 1-4-4M6 9a6 6 0 0 1 12 0"/></svg><span data-i18n="ind.connectivity">Connectivity</span></div>
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="6" rx="1"/><rect x="4" y="14" width="16" height="6" rx="1"/><circle cx="7.5" cy="7" r=".6" fill="currentColor" stroke="none"/><circle cx="7.5" cy="17" r=".6" fill="currentColor" stroke="none"/></svg><span data-i18n="ind.dataCenters">Data Centers</span></div>
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="6" height="6" rx="1" transform="rotate(20 12 12)"/><path d="M4 6l2 2M20 6l-2 2M4 18l2-2M20 18l-2-2"/></svg><span data-i18n="ind.satellite">Satellite</span></div>
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="2.4"/><circle cx="5" cy="6" r="1.6"/><circle cx="19" cy="6" r="1.6"/><circle cx="5" cy="18" r="1.6"/><circle cx="19" cy="18" r="1.6"/><path d="M10.2 10.6 6.3 7M13.8 10.6 17.7 7M10.2 13.4 6.3 17M13.8 13.4 17.7 17"/></svg><span data-i18n="ind.ai">AI Infrastructure</span></div>
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12c4-6 14-6 18 0M7 15c2.5-3 7.5-3 10 0M11 18c1-1 2-1 2 0"/></svg><span data-i18n="ind.cables">Submarine Cables</span></div>
+      <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg><span data-i18n="ind.energy">Energy</span></div>
     </div>
+    <div class="strip-more reveal"><a href="industries.html" style="color:var(--text); font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid var(--paper-line);" data-i18n="home.industries.explore">Explore all industries &rarr;</a></div>
   </div>
 </section>
-<section id="industries-teaser">
+<section id="frameworks-teaser">
   <div class="wrap">
     <div class="section-head reveal">
       <div>
-        <span class="eyebrow">Where We Work</span>
-        <h2 class="h-section">Ten sectors, one common language of bankability.</h2>
+        <span class="eyebrow" data-i18n="home.method.eyebrow">Our Methodology</span>
+        <h2 class="h-section" data-i18n="home.method.title">The INA Project Structuring Framework&trade;</h2>
       </div>
-      <p class="lede side"><a href="industries.html" style="color:var(--text); border-bottom:1px solid var(--paper-line);">See all industries &rarr;</a></p>
+      <p class="lede side" data-i18n="home.method.lede">A proven end-to-end methodology that transforms infrastructure opportunities into bankable, investable and sustainable projects. <a href="framework.html" style="color:var(--text); border-bottom:1px solid var(--paper-line);">Discover the framework &rarr;</a></p>
     </div>
-    <div class="industry-grid reveal">
-      <div class="industry-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 20V13M12 20V8M18 20V4"/></svg><span>Telecommunications</span></div>
-      <div class="industry-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12c4-6 14-6 18 0M7 15c2.5-3 7.5-3 10 0M11 18c1-1 2-1 2 0"/></svg><span>Fiber Networks</span></div>
-      <div class="industry-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="6" rx="1"/><rect x="4" y="14" width="16" height="6" rx="1"/><circle cx="7.5" cy="7" r=".6" fill="currentColor" stroke="none"/><circle cx="7.5" cy="17" r=".6" fill="currentColor" stroke="none"/></svg><span>Data Centers</span></div>
-      <div class="industry-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="6" height="6" rx="1" transform="rotate(20 12 12)"/><path d="M4 6l2 2M20 6l-2 2M4 18l2-2M20 18l-2-2"/></svg><span>Satellite Systems</span></div>
-      <div class="industry-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="2.4"/><circle cx="5" cy="6" r="1.6"/><circle cx="19" cy="6" r="1.6"/><circle cx="5" cy="18" r="1.6"/><circle cx="19" cy="18" r="1.6"/><path d="M10.2 10.6 6.3 7M13.8 10.6 17.7 7M10.2 13.4 6.3 17M13.8 13.4 17.7 17"/></svg><span>AI Infrastructure</span></div>
+    <div class="process-steps reveal">
+      <div class="p-step">
+        <span class="pnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.3-4.3"/></svg></span>
+        <h4 data-i18n="home.step1.title">01 &middot; Identify</h4>
+        <p data-i18n="home.step1.desc">Detect opportunities with the highest potential.</p>
+      </div>
+      <div class="p-step">
+        <span class="pnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 11.5 11 13.5 15.5 9"/><circle cx="12" cy="12" r="9"/></svg></span>
+        <h4 data-i18n="home.step2.title">02 &middot; Assess</h4>
+        <p data-i18n="home.step2.desc">Evaluate feasibility, demand and viability.</p>
+      </div>
+      <div class="p-step">
+        <span class="pnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></span>
+        <h4 data-i18n="home.step3.title">03 &middot; Structure</h4>
+        <p data-i18n="home.step3.desc">Design optimal technical, legal and financial structures.</p>
+      </div>
+      <div class="p-step">
+        <span class="pnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 4 6.5v5c0 5 3.4 8.6 8 9.5 4.6-.9 8-4.5 8-9.5v-5L12 3Z"/></svg></span>
+        <h4 data-i18n="home.step4.title">04 &middot; Validate</h4>
+        <p data-i18n="home.step4.desc">Mitigate risks and validate with key stakeholders.</p>
+      </div>
+      <div class="p-step">
+        <span class="pnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.3c0-1.3 1.1-2.3 2.5-2.3s2.5.8 2.5 2c0 2.3-5 1.6-5 4 0 1.2 1.1 2 2.5 2s2.5-1 2.5-2.3"/></svg></span>
+        <h4 data-i18n="home.step5.title">05 &middot; Finance</h4>
+        <p data-i18n="home.step5.desc">Secure funding through the right capital stack.</p>
+      </div>
+      <div class="p-step">
+        <span class="pnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18M6 21V10l6-6 6 6v11M10 21v-6h4v6"/></svg></span>
+        <h4 data-i18n="home.step6.title">06 &middot; Deliver</h4>
+        <p data-i18n="home.step6.desc">Oversee execution and ensure project implementation.</p>
+      </div>
+      <div class="p-step">
+        <span class="pnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V11M10 20V6M16 20V13M20 20V9"/></svg></span>
+        <h4 data-i18n="home.step7.title">07 &middot; Measure</h4>
+        <p data-i18n="home.step7.desc">Monitor performance and maximize impact.</p>
+      </div>
     </div>
   </div>
 </section>
-<section id="knowledge-teaser" style="background:var(--paper-2);">
+<section id="cases-insights" style="background:var(--paper-2);">
   <div class="wrap">
-    <div class="section-head reveal">
+    <div class="split-section">
       <div>
-        <span class="eyebrow">Knowledge Center</span>
-        <h2 class="h-section">A central repository, not a blog.</h2>
+        <div class="section-head reveal" style="margin-bottom:34px;">
+          <div><span class="eyebrow" data-i18n="home.cases.eyebrow">Featured Cases</span></div>
+          <p class="lede side"><a href="industries.html" style="color:var(--text); border-bottom:1px solid var(--paper-line);" data-i18n="home.cases.viewall">View all cases &rarr;</a></p>
+        </div>
+        <div class="cases-grid reveal">
+          <div class="case-card">
+            <div class="case-image"><svg viewBox="0 0 200 130"><path d="M0,100 C40,70 80,110 120,80 C150,58 170,70 200,50" stroke="#D9922E" stroke-width="1.5" fill="none" opacity=".8"/></svg></div>
+            <div class="case-body">
+              <span class="region" data-i18n="home.case1.region">Brazil</span>
+              <h4 data-i18n="home.case1.title">National Fiber Backbone Project</h4>
+              <span class="viewcase" data-i18n="home.viewcase">View case &rarr;</span>
+            </div>
+          </div>
+          <div class="case-card">
+            <div class="case-image"><svg viewBox="0 0 200 130"><rect x="30" y="30" width="30" height="70" fill="none" stroke="#D9922E" stroke-width="1.5" opacity=".8"/><rect x="70" y="50" width="30" height="50" fill="none" stroke="#D9922E" stroke-width="1.5" opacity=".6"/><rect x="110" y="20" width="30" height="80" fill="none" stroke="#D9922E" stroke-width="1.5" opacity=".8"/></svg></div>
+            <div class="case-body">
+              <span class="region" data-i18n="home.case2.region">Argentina</span>
+              <h4 data-i18n="home.case2.title">Data Center Campus Initiative</h4>
+              <span class="viewcase" data-i18n="home.viewcase">View case &rarr;</span>
+            </div>
+          </div>
+          <div class="case-card">
+            <div class="case-image"><svg viewBox="0 0 200 130"><path d="M0,40 C50,60 90,20 140,50 C160,62 180,55 200,70" stroke="#D9922E" stroke-width="1.5" fill="none" opacity=".8"/></svg></div>
+            <div class="case-body">
+              <span class="region" data-i18n="home.case3.region">LatAm</span>
+              <h4 data-i18n="home.case3.title">Regional Submarine Cable System</h4>
+              <span class="viewcase" data-i18n="home.viewcase">View case &rarr;</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <p class="lede side"><a href="knowledge.html" style="color:var(--text); border-bottom:1px solid var(--paper-line);">Browse the Knowledge Center &rarr;</a></p>
-    </div>
-    <div class="knowledge-grid reveal">
-      <div class="k-card"><span class="kicon">White Paper</span><h4>Structuring digital infrastructure for bankability</h4><span class="kfoot">Download PDF</span></div>
-      <div class="k-card"><span class="kicon">Technical Report</span><h4>Submarine cable route economics</h4><span class="kfoot">Download PDF</span></div>
-      <div class="k-card"><span class="kicon">Investment Guide</span><h4>Reading the Investment Readiness Index&trade;</h4><span class="kfoot">Download PDF</span></div>
-      <div class="k-card"><span class="kicon">Toolkit</span><h4>Project Structuring Framework&trade; checklist</h4><span class="kfoot">Download PDF</span></div>
+      <div>
+        <div class="section-head reveal" style="margin-bottom:34px;">
+          <div><span class="eyebrow" data-i18n="home.insights.eyebrow">Latest Insights</span></div>
+          <p class="lede side"><a href="knowledge.html" style="color:var(--text); border-bottom:1px solid var(--paper-line);" data-i18n="home.insights.exploreall">Explore all insights &rarr;</a></p>
+        </div>
+        <div class="insights-list reveal">
+          <div class="insight-row">
+            <div class="i-thumb"></div>
+            <div class="i-body">
+              <span class="itag" data-i18n="home.insight1.tag">White Paper</span>
+              <h4 data-i18n="home.insight1.title">Blended Finance in Digital Infrastructure: Unlocking Sustainable Investment</h4>
+              <span class="readmore" data-i18n="home.readmore">Read more &rarr;</span>
+            </div>
+          </div>
+          <div class="insight-row">
+            <div class="i-thumb"></div>
+            <div class="i-body">
+              <span class="itag" data-i18n="home.insight2.tag">Research</span>
+              <h4 data-i18n="home.insight2.title">AI Infrastructure in LatAm: Trends and Opportunities</h4>
+              <span class="readmore" data-i18n="home.readmore">Read more &rarr;</span>
+            </div>
+          </div>
+          <div class="insight-row">
+            <div class="i-thumb"></div>
+            <div class="i-body">
+              <span class="itag" data-i18n="home.insight3.tag">Guide</span>
+              <h4 data-i18n="home.insight3.title">Project Readiness Checklist for Infrastructure Investors</h4>
+              <span class="readmore" data-i18n="home.readmore">Read more &rarr;</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
-<section class="on-dark" id="cta" style="text-align:center; padding:120px 0;">
-  <div class="wrap reveal" style="max-width:720px; margin:0 auto;">
-    <span class="eyebrow on-dark" style="justify-content:center;">How Can We Help You</span>
-    <h2 class="h-section" style="color:var(--text-on-dark); margin-top:18px;">Bring us the opportunity. We'll bring the structure.</h2>
-    <p class="lede" style="margin:20px auto 0; text-align:center;">Whether you're screening a first opportunity or closing financing on a live project, INA's frameworks meet you where you are.</p>
-    <div style="display:flex; gap:16px; justify-content:center; margin-top:36px; flex-wrap:wrap;">
-      <a href="contact.html" class="btn amber">Request Advisory</a>
-      <a href="framework.html" class="btn on-dark ghost">Explore the Frameworks&trade;</a>
+<section class="cta-banner" id="cta">
+  <svg class="ridge" viewBox="0 0 1440 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <path d="M0,300 L0,180 L160,90 L320,200 L480,60 L640,170 L820,40 L1000,190 L1180,100 L1320,210 L1440,150 L1440,300 Z" fill="var(--ink-2)"/>
+    <path d="M0,300 L0,230 L200,150 L400,240 L620,120 L860,220 L1080,140 L1260,230 L1440,190 L1440,300 Z" fill="var(--ink-3)" opacity=".8"/>
+  </svg>
+  <div class="wrap">
+    <div class="cta-left reveal">
+      <span class="cta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="9" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M2.5 20c.6-3.4 3-5.4 5.5-5.4s4.9 2 5.5 5.4M14.8 14.9c2.2.2 4 2 4.5 5.1"/></svg></span>
+      <div>
+        <h2 data-i18n="home.cta.title">Let&rsquo;s build your next digital infrastructure project.</h2>
+        <p data-i18n="home.cta.lede">Our advisors are ready to help you turn vision into impact.</p>
+      </div>
+    </div>
+    <a href="contact.html" class="btn amber reveal" data-i18n="home.cta.button">Start a Conversation &rarr;</a>
+  </div>
+</section>
+<section class="trusted-strip">
+  <div class="wrap">
+    <div class="tlabel reveal" data-i18n="home.trusted.label">Trusted by Leading Organizations</div>
+    <div class="trusted-row reveal">
+      <span>IDB</span><span>CAF</span><span>World Bank</span><span>IFC</span><span>DFC</span><span>AIIB</span><span>KfW</span>
     </div>
   </div>
 </section>
@@ -204,30 +301,31 @@
     <div class="foot-grid">
       <div>
         <span class="brand" style="color:var(--text-on-dark);">
-          <span class="mark" style="border-color:var(--text-on-dark); color:var(--text-on-dark);">I</span>
+          <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
           <span class="word" style="color:var(--text-on-dark);"><b>INA</b><span style="color:var(--muted-on-dark);">International Network Advisors</span></span>
         </span>
-        <p style="margin-top:18px; font-size:13.5px; max-width:280px;">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</p>
+        <p style="margin-top:18px; font-size:13.5px; max-width:280px;" data-i18n="footer.tagline">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</p>
       </div>
       <div>
-        <h5>Platform</h5>
-        <ul><li><a href="why-ina.html">Why INA</a></li><li><a href="framework.html">Frameworks™</a></li><li><a href="services.html">Services</a></li><li><a href="industries.html">Industries</a></li></ul>
+        <h5 data-i18n="footer.headingPlatform">Platform</h5>
+        <ul><li><a href="why-ina.html" data-i18n="nav.about">About</a></li><li><a href="framework.html" data-i18n="nav.framework">Framework</a></li><li><a href="services.html" data-i18n="nav.services">Services</a></li><li><a href="industries.html" data-i18n="nav.industries">Industries</a></li></ul>
       </div>
       <div>
-        <h5>Resources</h5>
-        <ul><li><a href="knowledge.html">Knowledge Center</a></li><li><a href="framework.html#finance">Multilateral Finance</a></li><li><a href="platform.html">Platform Roadmap</a></li></ul>
+        <h5 data-i18n="footer.headingResources">Resources</h5>
+        <ul><li><a href="knowledge.html" data-i18n="nav.knowledgeCenter">Knowledge Center</a></li><li><a href="knowledge.html#insights" data-i18n="nav.insights">Insights</a></li><li><a href="finance.html" data-i18n="nav.multilateralFinance">Multilateral Finance</a></li><li><a href="platform.html" data-i18n="nav.platform">INA Platform</a></li></ul>
       </div>
       <div>
-        <h5>Connect</h5>
-        <ul><li><a href="contact.html">Contact</a></li><li><a href="contact.html">Request Advisory</a></li><li><a href="contact.html">Company Profile</a></li></ul>
+        <h5 data-i18n="footer.headingConnect">Connect</h5>
+        <ul><li><a href="contact.html" data-i18n="footer.contact">Contact</a></li><li><a href="contact.html" data-i18n="footer.requestAdvisory">Request Advisory</a></li><li><a href="contact.html" data-i18n="footer.companyProfile">Company Profile</a></li></ul>
       </div>
     </div>
     <div class="foot-bottom">
-      <span>&copy; 2026 International Network Advisors (INA). All rights reserved.</span>
-      <span>Master Blueprint v1.0 &mdash; Digital Platform</span>
+      <span data-i18n="footer.copyright">&copy; 2026 International Network Advisors (INA). All rights reserved.</span>
     </div>
   </div>
 </footer>
+<script src="assets/translations.js"></script>
+<script src="assets/i18n.js"></script>
 <script src="assets/script.js"></script>
 </body>
 </html>
