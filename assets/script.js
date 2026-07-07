@@ -48,13 +48,44 @@ if (tocLinks.length && fwSections.length) {
   fwSections.forEach((s) => spy.observe(s));
 }
 
-// ============ Contact form (static demo — no backend wired up) ============
+// ============ Contact form (mailto — no backend, static site) ============
+const CONTACT_EMAIL = 'info@inaai.co';
 const form = document.getElementById('advisoryForm');
 if (form) {
   const note = document.getElementById('formNote');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (note) note.textContent = 'Request received — thank you. An advisor will follow up shortly.';
+
+    const name = (document.getElementById('name') || {}).value || '';
+    const org = (document.getElementById('org') || {}).value || '';
+    const typeSelect = document.getElementById('type');
+    const type = typeSelect ? typeSelect.options[typeSelect.selectedIndex].text : '';
+    const email = (document.getElementById('email') || {}).value || '';
+    const msg = (document.getElementById('msg') || {}).value || '';
+
+    const subject = `Advisory Request — ${org || name}`;
+    const body =
+      `Name: ${name}\n` +
+      `Organization: ${org}\n` +
+      `Type: ${type}\n` +
+      `Email: ${email}\n\n` +
+      `Message:\n${msg}`;
+
+    const mailtoLink =
+      `mailto:${CONTACT_EMAIL}` +
+      `?subject=${encodeURIComponent(subject)}` +
+      `&body=${encodeURIComponent(body)}`;
+
+    window.location.href = mailtoLink;
+
+    const lang = document.documentElement.getAttribute('lang') === 'es' ? 'es' : 'en';
+    const dict = (typeof I18N !== 'undefined') ? I18N : {};
+    const entry = dict['contact.note.sent'];
+    if (note) {
+      note.textContent = entry && entry[lang]
+        ? entry[lang]
+        : `Your email app should open with the message ready to send to ${CONTACT_EMAIL}.`;
+    }
     form.reset();
   });
 }

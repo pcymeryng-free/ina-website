@@ -93,8 +93,8 @@ const I18N = {
     "es": "Inteligencia en Infraestructura Digital"
   },
   "home.hero.title": {
-    "en": "The advisory platform for digital infrastructure, project structuring &amp; <em>AI-enabled</em> investment intelligence.",
-    "es": "La plataforma de asesoría para infraestructura digital, estructuración de proyectos e inteligencia de inversión <em>habilitada por IA</em>."
+    "en": "The <em>AI-native</em> advisory platform for digital infrastructure, project structuring &amp; investment intelligence.",
+    "es": "La plataforma de asesoría <em>nativa en IA</em> para infraestructura digital, estructuración de proyectos e inteligencia de inversión."
   },
   "home.hero.lede": {
     "en": "INA transforms complex digital infrastructure opportunities &mdash; fiber backbones, submarine cables, data centers, satellite constellations, AI compute &mdash; into bankable, investable and sustainable projects, for governments, development banks, investors and technology companies.",
@@ -392,6 +392,62 @@ const I18N = {
     "en": "Whether you're screening a first opportunity or closing financing on a live project, INA's frameworks meet you where you are.",
     "es": "Ya sea que estés evaluando una primera oportunidad o cerrando el financiamiento de un proyecto en curso, las metodologías de INA se adaptan a tu etapa."
   },
+  "home.ainative.eyebrow": {
+    "en": "The INA Difference",
+    "es": "La Diferencia INA"
+  },
+  "home.ainative.title": {
+    "en": "Built AI-first. Not AI-added.",
+    "es": "Construida IA-primero. No con IA agregada."
+  },
+  "home.ainative.lede": {
+    "en": "Traditional consulting firms have been around for decades and added AI as a feature. INA was conceived the opposite way: artificial intelligence is the operating core, not a layer on top.",
+    "es": "Las consultoras tradicionales llevan décadas operando y le agregaron IA como una función más. INA fue concebida al revés: la inteligencia artificial es el núcleo operativo, no una capa agregada encima."
+  },
+  "home.ainative.trad.label": {
+    "en": "Traditional Consultancies",
+    "es": "Consultoras Tradicionales"
+  },
+  "home.ainative.trad.1": {
+    "en": "Decades-old practice, AI added as a feature",
+    "es": "Práctica de décadas, con IA agregada como función"
+  },
+  "home.ainative.trad.2": {
+    "en": "Analysts manually draft, model and monitor",
+    "es": "Los analistas redactan, modelan y monitorean manualmente"
+  },
+  "home.ainative.trad.3": {
+    "en": "Senior judgment diluted across large teams",
+    "es": "El criterio senior se diluye en equipos grandes"
+  },
+  "home.ainative.trad.4": {
+    "en": "AI tools bolted onto legacy processes",
+    "es": "Herramientas de IA acopladas a procesos ya existentes"
+  },
+  "home.ainative.ina.label": {
+    "en": "INA",
+    "es": "INA"
+  },
+  "home.ainative.ina.1": {
+    "en": "Conceived 100% around AI from day one",
+    "es": "Concebida 100% alrededor de la IA desde el día uno"
+  },
+  "home.ainative.ina.2": {
+    "en": "AI agents run the diagnosis, drafting &amp; monitoring",
+    "es": "Los agentes de IA ejecutan el diagnóstico, la redacción y el monitoreo"
+  },
+  "home.ainative.ina.3": {
+    "en": "Consultants spend 100% of their time deciding",
+    "es": "Los consultores dedican el 100% de su tiempo a decidir"
+  },
+  "home.ainative.ina.4": {
+    "en": "Every framework phase has an embedded, supervised AI agent",
+    "es": "Cada fase de cada metodología tiene un agente de IA embebido y supervisado"
+  },
+  "home.ainative.cta": {
+    "en": "See how it works in the Frameworks&trade; &rarr;",
+    "es": "Ver cómo funciona en las Metodologías&trade; &rarr;"
+  },
   "home.ins.eyebrow": {
     "en": "Insights",
     "es": "Insights"
@@ -437,16 +493,16 @@ const I18N = {
     "es": "INA — International Network Advisors | Inteligencia en Infraestructura Digital"
   },
   "meta.home.desc": {
-    "en": "INA is the advisory platform for digital infrastructure, project structuring and AI-enabled investment intelligence.",
-    "es": "INA es la plataforma de asesoría para infraestructura digital, estructuración de proyectos e inteligencia de inversión habilitada por IA."
+    "en": "INA is the advisory platform for digital infrastructure, project structuring and AI-native investment intelligence.",
+    "es": "INA es la plataforma de asesoría para infraestructura digital, estructuración de proyectos e inteligencia de inversión nativa en IA."
   },
   "crumb.why": {
     "en": "Why INA",
     "es": "Por Qué INA"
   },
   "why.hero.title": {
-    "en": "Digital Infrastructure Intelligence &mdash; not a category. A convergence.",
-    "es": "Inteligencia en Infraestructura Digital &mdash; no una categoría. Una convergencia."
+    "en": "Digital Infrastructure Intelligence &mdash; where advisory, finance, engineering and AI converge.",
+    "es": "Inteligencia en Infraestructura Digital &mdash; donde convergen la asesoría, las finanzas, la ingeniería y la IA."
   },
   "why.hero.lede": {
     "en": "Mission, vision, strategic positioning and the long-term ambition behind International Network Advisors.",
@@ -457,8 +513,8 @@ const I18N = {
     "es": "Visión"
   },
   "why.vision.title": {
-    "en": "To become the leading international advisory platform for digital infrastructure, project structuring and AI-enabled investment intelligence.",
-    "es": "Convertirse en la plataforma internacional de asesoría líder en infraestructura digital, estructuración de proyectos e inteligencia de inversión habilitada por IA."
+    "en": "To become the leading international advisory platform for digital infrastructure, project structuring and investment intelligence.",
+    "es": "Convertirse en la plataforma internacional de asesoría líder en infraestructura digital, estructuración de proyectos e inteligencia de inversión."
   },
   "why.vision.p1": {
     "en": "International Network Advisors (INA) was conceived with a clear ambition: to redefine how governments, development banks, investors and technology companies identify, structure, finance and implement digital infrastructure projects.",
@@ -579,6 +635,30 @@ const I18N = {
   "why.pos.center": {
     "en": "Digital Infrastructure Intelligence",
     "es": "Inteligencia en Infraestructura Digital"
+  },
+  "why.ai.eyebrow": {
+    "en": "Conceived AI-First",
+    "es": "Concebida IA-Primero"
+  },
+  "why.ai.title": {
+    "en": "At INA, consultants decide. AI does the work.",
+    "es": "En INA, los consultores deciden. La IA hace el trabajo."
+  },
+  "why.ai.lede1": {
+    "en": "Every consulting firm today talks about AI. Almost none of them were actually built around it.",
+    "es": "Hoy todas las consultoras hablan de IA. Casi ninguna fue construida realmente alrededor de ella."
+  },
+  "why.ai.lede2": {
+    "en": "INA is the exception: a startup conceived from its first day with artificial intelligence as its operating core, not a feature bolted onto decades-old ways of working. That single design choice changes what a consultant's day looks like &mdash; and what a client actually pays for.",
+    "es": "INA es la excepción: una startup concebida desde el primer día con la inteligencia artificial como núcleo operativo, no como una función agregada a formas de trabajo de décadas. Esa única decisión de diseño cambia cómo es el día a día de un consultor &mdash; y qué es lo que un cliente realmente paga."
+  },
+  "why.ai.hitl.label": {
+    "en": "Human-in-the-Loop, Always",
+    "es": "Supervisión Humana, Siempre"
+  },
+  "why.ai.hitl.text": {
+    "en": "AI agents never hold decision-making authority at INA. They draft, analyze and monitor at scale and speed no team of analysts could match &mdash; every output is reviewed, corrected and approved by an accountable consultant before it reaches a client or a gate.",
+    "es": "En INA, los agentes de IA nunca tienen autoridad de decisión. Redactan, analizan y monitorean a una escala y velocidad que ningún equipo de analistas podría igualar &mdash; cada resultado es revisado, corregido y aprobado por un consultor responsable antes de llegar a un cliente o a un gate."
   },
   "why.opp.eyebrow": {
     "en": "The Opportunity",
@@ -2947,6 +3027,58 @@ const I18N = {
   "meta.contact.desc": {
     "en": "Start a professional engagement with INA.",
     "es": "Iniciá una consulta profesional con INA."
+  },
+  "nav.finance": {
+    "en": "Multilateral Finance",
+    "es": "Financiamiento Multilateral"
+  },
+  "crumb.finance": {
+    "en": "Multilateral Finance",
+    "es": "Financiamiento Multilateral"
+  },
+  "fw.f6.financePointer": {
+    "en": "See the full Multilateral Finance landscape &rarr;",
+    "es": "Ver el panorama completo de Financiamiento Multilateral &rarr;"
+  },
+  "fin.how.eyebrow": {
+    "en": "How INA Helps",
+    "es": "Cómo Ayuda INA"
+  },
+  "fin.how.lede": {
+    "en": "Part of the INA Frameworks&trade; Suite &mdash; read the full methodology on the Framework page.",
+    "es": "Parte de la Suite de Frameworks&trade; de INA &mdash; leé la metodología completa en la página de Framework."
+  },
+  "fin.how.h2": {
+    "en": "Who It's For",
+    "es": "Para Quién Es"
+  },
+  "fin.how.for1": {
+    "en": "Multilateral Development Banks structuring co-financing",
+    "es": "Bancos Multilaterales de Desarrollo que estructuran cofinanciamiento"
+  },
+  "fin.how.for2": {
+    "en": "DFIs screening pipeline against mandate",
+    "es": "IFDs evaluando su pipeline contra su mandato"
+  },
+  "fin.how.for3": {
+    "en": "Governments sequencing concessional and commercial capital",
+    "es": "Gobiernos secuenciando capital concesional y comercial"
+  },
+  "fin.how.for4": {
+    "en": "Investors assessing blended-finance structures",
+    "es": "Inversores evaluando estructuras de financiamiento combinado"
+  },
+  "fin.how.cta": {
+    "en": "Read the full Framework &rarr;",
+    "es": "Leé el Framework completo &rarr;"
+  },
+  "fin.cta.eyebrow": {
+    "en": "Ready to Talk Financing",
+    "es": "Listos para Hablar de Financiamiento"
+  },
+  "fin.cta.title": {
+    "en": "Bring us the project. We'll map the capital stack.",
+    "es": "Traenos el proyecto. Nosotros mapeamos la estructura de capital."
   }
 };
 const SELECT_OPTIONS = {"type": {"en": ["Government / Regulator", "Development Finance Institution", "Investor / Infrastructure Fund", "Technology Company", "Other"], "es": ["Gobierno / Regulador", "Institución de Financiamiento para el Desarrollo", "Inversor / Fondo de Infraestructura", "Empresa Tecnológica", "Otro"]}};
