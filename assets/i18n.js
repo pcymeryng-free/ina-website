@@ -3029,8 +3029,8 @@ const I18N = {
     "es": "Iniciá una consulta profesional con INA."
   },
   "nav.finance": {
-    "en": "Multilateral Finance",
-    "es": "Financiamiento Multilateral"
+    "en": "Financing",
+    "es": "Financiamiento"
   },
   "crumb.finance": {
     "en": "Multilateral Finance",
@@ -3081,6 +3081,10 @@ const I18N = {
     "es": "Traenos el proyecto. Nosotros mapeamos la estructura de capital."
   },
   "nav.board": {
+    "en": "Board",
+    "es": "Consejo"
+  },
+  "footer.board": {
     "en": "Advisory Board",
     "es": "Consejo Asesor"
   },
