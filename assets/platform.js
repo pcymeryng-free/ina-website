@@ -11,8 +11,8 @@
    client-side code — Row Level Security policies (see supabase/schema.sql)
    are what actually protect the data, not secrecy of this key. */
 const INA_PLATFORM_CONFIG = {
-  SUPABASE_URL: 'YOUR_SUPABASE_URL', // e.g. https://abcdefgh.supabase.co
-  SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
+  SUPABASE_URL: 'https://supabase.com/dashboard/project/lyyuxoltyyckfppfjbyn/settings/general', // e.g. https://abcdefgh.supabase.co
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5eXV4b2x0eXlja2ZwcGZqYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1MDYyNzIsImV4cCI6MjA5OTA4MjI3Mn0.2Ggj03wA2GILf-26PhDT4ZQx2g9ePI8u1WBLwMN774s',
 };
 
 const supabaseClient = (INA_PLATFORM_CONFIG.SUPABASE_URL !== 'YOUR_SUPABASE_URL' && window.supabase)
