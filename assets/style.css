@@ -119,7 +119,8 @@ nav.links a.current{ color: var(--amber-deep); }
 .nav > .btn.amber{ flex:0 0 auto; }
 .navToggle{ display:none; background:none; border:none; cursor:pointer; flex:0 0 auto; padding:8px; margin:-8px; }
 @media (max-width: 1350px){ header.site .brand .word span{ display:none; } }
-@media (max-width: 1220px){
+/* Raised from 1220px to fit the 9th nav item (Advisory Board) without clipping. */
+@media (max-width: 1300px){
   nav.links{ display:none; }
   .navToggle{ display:block; }
 }
@@ -186,7 +187,7 @@ nav.links a.current{ color: var(--amber-deep); }
 .on-dark .lang-switch, section.hero .lang-switch{ border-color: var(--ink-line); background: rgba(238,241,237,0.06); box-shadow: inset 0 1px 2px rgba(0,0,0,0.25); }
 .on-dark .lang-btn, section.hero .lang-btn{ color: var(--muted-on-dark); }
 .on-dark .lang-btn.active, section.hero .lang-btn.active{ background: var(--amber); color:#141008; box-shadow:0 1px 3px rgba(0,0,0,0.35); }
-@media (max-width:1220px){ header.site > .wrap.nav > .lang-switch{ display:none; } }
+@media (max-width:1300px){ header.site > .wrap.nav > .lang-switch{ display:none; } }
 
 /* ---------- Section shells ---------- */
 section{ padding: 108px 0; }
@@ -348,6 +349,22 @@ form.advisory .full{ grid-column: 1 / -1; }
 .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-bottom-color: var(--amber); }
 .contact-note{ font-size:12.5px; color:var(--muted); margin-top:6px; }
 @media (max-width:900px){ .contact-wrap{ grid-template-columns:1fr; } form.advisory{ grid-template-columns:1fr; } }
+
+/* ---------- Advisory Board ---------- */
+.board-grid{ display:grid; grid-template-columns: repeat(3,1fr); gap:1px; background: var(--paper-line); border:1px solid var(--paper-line); margin-top:30px; }
+.board-card{ background: var(--paper); padding: 30px 26px; display:flex; flex-direction:column; gap:14px; min-height:270px; border:1px dashed transparent; }
+.board-card.placeholder{ border-color: var(--paper-line); }
+.board-avatar{
+  width:60px; height:60px; border-radius:50%; flex:0 0 auto;
+  background: var(--paper-2); border:1px dashed var(--muted);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:10px; letter-spacing:.04em; color:var(--muted); text-transform:uppercase;
+}
+.board-card h3{ font-size:18px; color:var(--text); }
+.board-card .role{ font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--amber-deep); margin-top:-8px; }
+.board-card .bio{ font-size:13.5px; color:var(--muted); margin-top:auto; line-height:1.5; }
+@media (max-width:920px){ .board-grid{ grid-template-columns: repeat(2,1fr); } }
+@media (max-width:600px){ .board-grid{ grid-template-columns: 1fr; } }
 
 /* ---------- Framework detail page ---------- */
 .fw-layout{ display:grid; grid-template-columns: 240px 1fr; gap:64px; align-items:start; }

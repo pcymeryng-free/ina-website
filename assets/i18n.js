@@ -3079,6 +3079,54 @@ const I18N = {
   "fin.cta.title": {
     "en": "Bring us the project. We'll map the capital stack.",
     "es": "Traenos el proyecto. Nosotros mapeamos la estructura de capital."
+  },
+  "nav.board": {
+    "en": "Advisory Board",
+    "es": "Consejo Asesor"
+  },
+  "crumb.board": {
+    "en": "Advisory Board",
+    "es": "Consejo Asesor"
+  },
+  "ab.kicker": {
+    "en": "Our People",
+    "es": "Nuestro Equipo"
+  },
+  "ab.title": {
+    "en": "The advisors behind the advisory.",
+    "es": "Los asesores detrás de la asesoría."
+  },
+  "ab.lede": {
+    "en": "Senior partners and specialists who bring deep, hands-on experience across digital infrastructure, finance, engineering and policy.",
+    "es": "Socios senior y especialistas con experiencia profunda y práctica en infraestructura digital, finanzas, ingeniería y política pública."
+  },
+  "ab.intro.title": {
+    "en": "Advisory Board",
+    "es": "Consejo Asesor"
+  },
+  "ab.intro.lede": {
+    "en": "Profiles are being finalized and will appear here shortly.",
+    "es": "Los perfiles se están finalizando y aparecerán aquí en breve."
+  },
+  "ab.card.name": {
+    "en": "Full Name",
+    "es": "Nombre Completo"
+  },
+  "ab.card.role": {
+    "en": "Title / Specialization",
+    "es": "Cargo / Especialización"
+  },
+  "ab.card.bio": {
+    "en": "Biography coming soon.",
+    "es": "Biografía próximamente."
+  },
+  "ab.cta.eyebrow": {
+    "en": "Join the Conversation",
+    "es": "Sumate a la Conversación"
+  },
+  "ab.cta.title": {
+    "en": "Want to work with our advisors directly?",
+    "es": "¿Querés trabajar directamente con nuestros asesores?"
   }
 };
 const SELECT_OPTIONS = {"type": {"en": ["Government / Regulator", "Development Finance Institution", "Investor / Infrastructure Fund", "Technology Company", "Other"], "es": ["Gobierno / Regulador", "Institución de Financiamiento para el Desarrollo", "Inversor / Fondo de Infraestructura", "Empresa Tecnológica", "Otro"]}};
