@@ -11,13 +11,17 @@
    client-side code — Row Level Security policies (see supabase/schema.sql)
    are what actually protect the data, not secrecy of this key. */
 const INA_PLATFORM_CONFIG = {
-  SUPABASE_URL: 'https://lyyuxoltyyckfppfjbyn.supabase.co', // e.g. https://abcdefgh.supabase.co
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5eXV4b2x0eXlja2ZwcGZqYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1MDYyNzIsImV4cCI6MjA5OTA4MjI3Mn0.2Ggj03wA2GILf-26PhDT4ZQx2g9ePI8u1WBLwMN774s
-',
+  SUPABASE_URL: 'https://lyyuxoltyyckfppfjbyn.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5eXV4b2x0eXlja2ZwcGZqYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1MDYyNzIsImV4cCI6MjA5OTA4MjI3Mn0.2Ggj03wA2GILf-26PhDT4ZQx2g9ePI8u1WBLwMN774s',
 };
 
-const supabaseClient = (INA_PLATFORM_CONFIG.SUPABASE_URL !== 'YOUR_SUPABASE_URL' && window.supabase)
-  ? window.supabase.createClient(INA_PLATFORM_CONFIG.SUPABASE_URL, INA_PLATFORM_CONFIG.SUPABASE_ANON_KEY)
+// .trim() guards against accidental stray whitespace/newlines inside the
+// quotes above (an easy paste mistake with long keys) breaking the client.
+const SUPABASE_URL_CLEAN = (INA_PLATFORM_CONFIG.SUPABASE_URL || '').trim();
+const SUPABASE_ANON_KEY_CLEAN = (INA_PLATFORM_CONFIG.SUPABASE_ANON_KEY || '').trim();
+
+const supabaseClient = (SUPABASE_URL_CLEAN !== 'YOUR_SUPABASE_URL' && SUPABASE_URL_CLEAN && window.supabase)
+  ? window.supabase.createClient(SUPABASE_URL_CLEAN, SUPABASE_ANON_KEY_CLEAN)
   : null;
 
 /* ---------- Reference data (bilingual) ---------- */
