@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Project Analysis — International Network Advisors" data-i18n-es="Análisis de Proyecto — International Network Advisors">Project Analysis — International Network Advisors</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Framework analysis results for your project." data-i18n-es="Resultados del análisis del framework para tu proyecto." content="Framework analysis results for your project.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="word"><b>INA</b><span><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+    </a>
+    <nav class="links">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html" class="current"><span data-i18n="nav.platform">Platform</span></a>
+    </nav>
+    <div class="lang-switch" aria-label="Language">
+      <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+    </div>
+    <a href="dashboard.html" class="btn ghost"><span data-i18n="dash.title">Your Projects</span></a>
+    <button class="navToggle" aria-label="Toggle menu" id="navToggle">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" style="display:none; border-top:1px solid var(--paper-line); background:var(--paper);">
+    <div class="wrap" style="display:flex; flex-direction:column; padding:18px 32px; gap:16px;">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a><a href="contact.html"><span data-i18n="nav.contact">Contact</span></a>
+      <div class="lang-switch" style="margin-top:6px;"><button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button></div>
+    </div>
+  </div>
+</header>
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span id="crumbName">…</span></div>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="pd.loading">Loading project…</span></div>
+
+    <div id="projectContent" style="display:none;">
+      <div class="platform-header">
+        <div>
+          <span class="eyebrow" id="ptypeLabel"></span>
+          <h1 class="h-section" style="margin-top:14px;" id="pname"></h1>
+          <p class="who" id="pmeta"></p>
+        </div>
+        <span class="status-pill" id="statusPill" style="font-size:12px; padding:8px 16px;"></span>
+      </div>
+
+      <div class="info-block" style="margin-top:0;">
+        <h4><span data-i18n="pd.description">Project Description</span></h4>
+        <p id="pdesc" style="font-size:14px; color:var(--muted); white-space:pre-wrap;"></p>
+      </div>
+
+      <div id="docsBlock" style="margin-top:24px; display:none;">
+        <h4 style="font-size:14px;"><span data-i18n="pd.documents">Supporting Documents</span></h4>
+        <ul id="docsList" style="margin-top:10px; display:flex; flex-direction:column; gap:6px; font-size:13.5px; color:var(--muted);"></ul>
+      </div>
+
+      <div id="pendingBlock" style="margin-top:40px; display:none;">
+        <div class="analysis-pending">
+          <div class="spinner"></div>
+          <p style="font-size:14.5px;"><span data-i18n="pd.analyzing">Applying the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade;…</span></p>
+          <p style="margin-top:8px; font-size:12.5px; color:var(--muted);"><span data-i18n="pd.analyzing.wait">This usually takes under a minute. This page will update automatically.</span></p>
+          <button class="btn ghost small" id="retryBtn" style="margin-top:20px; display:none;"><span data-i18n="pd.retry">Retry Analysis</span></button>
+        </div>
+      </div>
+
+      <div id="resultsBlock" style="margin-top:48px; display:none;">
+        <hr class="rule">
+        <div style="margin-top:44px;">
+          <span class="eyebrow"><span data-i18n="pd.results.eyebrow">Investment Readiness Index&trade;</span></span>
+          <h2 class="h-section" style="margin-top:14px;"><span data-i18n="pd.results.title">Framework Analysis Results</span></h2>
+
+          <div class="readiness-score" style="margin-top:30px;">
+            <div class="score-circle">
+              <span class="num" id="scoreNum">–</span>
+              <span class="max">/ 100</span>
+            </div>
+            <div>
+              <div class="eyebrow" id="stageLabel" style="color:var(--amber-deep);"></div>
+              <p id="summaryText" style="margin-top:10px; max-width:560px; font-size:14.5px; color:var(--muted);"></p>
+            </div>
+          </div>
+
+          <div class="dim-grid" id="dimGrid"></div>
+        </div>
+
+        <div style="margin-top:56px;">
+          <span class="eyebrow"><span data-i18n="pd.roadmap.eyebrow">Gap Roadmap</span></span>
+          <h3 class="h-card" style="margin-top:12px;"><span data-i18n="pd.roadmap.title">Prioritized Next Steps</span></h3>
+          <div class="roadmap-list" id="roadmapList"></div>
+        </div>
+
+        <div style="margin-top:56px;">
+          <span class="eyebrow"><span data-i18n="fw.f6.kicker">Decision Engine</span></span>
+          <h3 class="h-card" style="margin-top:12px;"><span data-i18n="pd.finance.title">Multilateral Finance Navigator&trade; Recommendations</span></h3>
+          <div class="finance-rec-grid" id="financeGrid"></div>
+        </div>
+      </div>
+
+      <div id="errorBlock" style="margin-top:40px; display:none;">
+        <div class="analysis-pending" style="border-color:#d99;">
+          <p style="font-size:14.5px; color:#a13a3a;"><span data-i18n="pd.error">The analysis couldn't be completed.</span></p>
+          <button class="btn ghost small" id="retryBtnError" style="margin-top:16px;"><span data-i18n="pd.retry">Retry Analysis</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="brand" style="color:var(--text-on-dark);">
+          <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+          <span class="word" style="color:var(--text-on-dark);"><b>INA</b><span style="color:var(--muted-on-dark);"><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+        </span>
+        <p style="margin-top:18px; font-size:13.5px; max-width:280px;"><span data-i18n="footer.tagline">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</span></p>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.platform">Platform</span></h5>
+        <ul><li><a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a></li><li><a href="framework.html"><span data-i18n="footer.frameworks">Frameworks&trade;</span></a></li><li><a href="services.html"><span data-i18n="nav.services">Services</span></a></li><li><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a></li><li><a href="advisory-board.html"><span data-i18n="footer.board">Advisory Board</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.resources">Resources</span></h5>
+        <ul><li><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a></li><li><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a></li><li><a href="finance.html"><span data-i18n="footer.finance">Multilateral Finance</span></a></li><li><a href="platform.html"><span data-i18n="footer.roadmap">Platform Roadmap</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.connect">Connect</span></h5>
+        <ul><li><a href="contact.html"><span data-i18n="footer.contact">Contact</span></a></li><li><a href="contact.html"><span data-i18n="footer.request">Request Advisory</span></a></li><li><a href="contact.html"><span data-i18n="footer.profile">Company Profile</span></a></li></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span><span data-i18n="footer.rights">&copy; 2026 International Network Advisors (INA). All rights reserved.</span></span>
+      <span><span data-i18n="footer.tag2">Digital Infrastructure Intelligence</span></span>
+    </div>
+  </div>
+</footer>
+<script src="assets/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/platform.js"></script>
+<script src="assets/script.js"></script>
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const projectId = params.get('id');
+  let pollTimer = null;
+
+  function renderProject(p) {
+    document.getElementById('crumbName').textContent = p.name;
+    document.getElementById('ptypeLabel').textContent = INAPlatform.projectTypeLabel(p.project_type);
+    document.getElementById('pname').textContent = p.name;
+    document.getElementById('pmeta').textContent = p.country;
+    document.getElementById('pdesc').textContent = p.description;
+    const pill = document.getElementById('statusPill');
+    pill.textContent = INAPlatform.statusLabel(p.status);
+    pill.className = `status-pill ${p.status}`;
+  }
+
+  function renderDocs(docs) {
+    if (!docs.length) return;
+    document.getElementById('docsBlock').style.display = 'block';
+    const list = document.getElementById('docsList');
+    docs.forEach((d) => {
+      const li = document.createElement('li');
+      li.textContent = `📄 ${d.file_name}`;
+      list.appendChild(li);
+    });
+  }
+
+  function renderAnalysis(a) {
+    document.getElementById('pendingBlock').style.display = 'none';
+    document.getElementById('errorBlock').style.display = 'none';
+    document.getElementById('resultsBlock').style.display = 'block';
+
+    document.getElementById('scoreNum').textContent = a.overall_score != null ? a.overall_score : '–';
+    document.getElementById('stageLabel').textContent = INAPlatform.stageLabel(a.stage);
+    document.getElementById('summaryText').textContent = a.summary || '';
+
+    const dimGrid = document.getElementById('dimGrid');
+    dimGrid.innerHTML = '';
+    const dims = a.dimensions || {};
+    INAPlatform.DIMENSION_ORDER.forEach((key) => {
+      const entry = dims[key];
+      const score = entry && typeof entry.score === 'number' ? entry.score : 0;
+      const row = document.createElement('div');
+      row.className = 'dim-row';
+      row.innerHTML = `
+        <div class="dname">${INAPlatform.dimensionLabel(key)}</div>
+        <div class="dtrack"><div class="dfill" style="width:${score}%;"></div></div>
+        <div class="dval">${score}</div>
+      `;
+      dimGrid.appendChild(row);
+    });
+
+    const roadmapList = document.getElementById('roadmapList');
+    roadmapList.innerHTML = '';
+    (a.gap_roadmap || []).forEach((item) => {
+      const row = document.createElement('div');
+      row.className = 'roadmap-item';
+      row.innerHTML = `<span class="pr">${INAPlatform.priorityLabel(item.priority)}</span><span>${item.action}</span>`;
+      roadmapList.appendChild(row);
+    });
+
+    const financeGrid = document.getElementById('financeGrid');
+    financeGrid.innerHTML = '';
+    (a.financing_recommendations || []).forEach((item) => {
+      const card = document.createElement('div');
+      card.className = 'finance-rec-card';
+      card.innerHTML = `<h4>${item.mechanism || ''}</h4><p>${item.rationale || ''}</p>`;
+      financeGrid.appendChild(card);
+    });
+  }
+
+  function showPending() {
+    document.getElementById('resultsBlock').style.display = 'none';
+    document.getElementById('errorBlock').style.display = 'none';
+    document.getElementById('pendingBlock').style.display = 'block';
+  }
+
+  function showError() {
+    document.getElementById('pendingBlock').style.display = 'none';
+    document.getElementById('resultsBlock').style.display = 'none';
+    document.getElementById('errorBlock').style.display = 'block';
+  }
+
+  async function runAnalysisAndPoll() {
+    showPending();
+    try {
+      await INAPlatform.requestAnalysis(projectId);
+    } catch (e) { /* fall through to polling / error state below */ }
+    poll();
+  }
+
+  async function poll() {
+    if (pollTimer) clearTimeout(pollTimer);
+    try {
+      const project = await INAPlatform.getProject(projectId);
+      renderProject(project);
+
+      if (project.status === 'completed') {
+        const analysis = await INAPlatform.getAnalysis(projectId);
+        if (analysis) { renderAnalysis(analysis); return; }
+      }
+      if (project.status === 'error') { showError(); return; }
+
+      showPending();
+      pollTimer = setTimeout(poll, 4000);
+    } catch (e) {
+      pollTimer = setTimeout(poll, 6000);
+    }
+  }
+
+  async function init() {
+    if (!projectId) { location.href = 'dashboard.html'; return; }
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    const project = await INAPlatform.getProject(projectId);
+    const docs = await INAPlatform.listDocuments(projectId);
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('projectContent').style.display = 'block';
+
+    renderProject(project);
+    renderDocs(docs);
+
+    document.getElementById('retryBtn').addEventListener('click', runAnalysisAndPoll);
+    document.getElementById('retryBtnError').addEventListener('click', runAnalysisAndPoll);
+
+    if (project.status === 'completed') {
+      const analysis = await INAPlatform.getAnalysis(projectId);
+      if (analysis) { renderAnalysis(analysis); return; }
+    }
+    if (project.status === 'error') {
+      showError();
+      document.getElementById('retryBtnError').style.display = 'inline-flex';
+      return;
+    }
+    showPending();
+    document.getElementById('retryBtn').style.display = 'inline-flex';
+    poll();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

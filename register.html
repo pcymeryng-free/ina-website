@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Create Account — International Network Advisors" data-i18n-es="Crear Cuenta — International Network Advisors">Create Account — International Network Advisors</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Create your INA Platform account to submit projects for framework analysis." data-i18n-es="Creá tu cuenta de la Plataforma INA para enviar proyectos a análisis del framework." content="Create your INA Platform account to submit projects for framework analysis.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="word"><b>INA</b><span><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+    </a>
+    <nav class="links">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a>
+    </nav>
+    <div class="lang-switch" aria-label="Language">
+      <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+    </div>
+    <a href="contact.html" class="btn amber"><span data-i18n="nav.cta">Request Advisory</span></a>
+    <button class="navToggle" aria-label="Toggle menu" id="navToggle">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" style="display:none; border-top:1px solid var(--paper-line); background:var(--paper);">
+    <div class="wrap" style="display:flex; flex-direction:column; padding:18px 32px; gap:16px;">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a><a href="contact.html"><span data-i18n="nav.contact">Contact</span></a>
+      <div class="lang-switch" style="margin-top:6px;"><button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button></div>
+    </div>
+  </div>
+</header>
+<section class="tight">
+  <div class="wrap">
+    <div class="auth-wrap reveal">
+      <div class="auth-card">
+        <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+        <h1 class="h-section" style="margin-top:14px; font-size:28px;"><span data-i18n="auth.register.title">Create your account</span></h1>
+        <p class="lede" style="margin-top:10px; font-size:14.5px;"><span data-i18n="auth.register.lede">Submit projects for Investment Readiness Index&trade; scoring and Multilateral Finance Navigator&trade; recommendations.</span></p>
+
+        <form id="registerForm" style="margin-top:28px;">
+          <div class="field"><label for="fullName"><span data-i18n="auth.f.name">Full name</span></label><input id="fullName" type="text" required></div>
+          <div class="field" style="margin-top:18px;"><label for="organization"><span data-i18n="contact.f.org">Organization</span></label><input id="organization" type="text" required></div>
+          <div class="field" style="margin-top:18px;"><label for="roleType"><span data-i18n="contact.f.type">You are a</span></label>
+            <select id="roleType"></select>
+          </div>
+          <div class="field" style="margin-top:18px;"><label for="email"><span data-i18n="contact.f.email">Email</span></label><input id="email" type="email" required></div>
+          <div class="field" style="margin-top:18px;"><label for="password"><span data-i18n="auth.f.password">Password</span></label><input id="password" type="password" minlength="8" required></div>
+
+          <button type="submit" class="btn amber" style="margin-top:26px; width:100%; justify-content:center;"><span data-i18n="auth.register.submit">Create Account</span></button>
+          <p class="contact-note" id="registerNote" style="margin-top:14px; min-height:18px;"></p>
+        </form>
+
+        <p style="margin-top:24px; font-size:13.5px; color:var(--muted);">
+          <span data-i18n="auth.haveAccount">Already have an account?</span>
+          <a href="login.html" style="color:var(--amber-deep);"><span data-i18n="auth.signIn">Sign in</span></a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="brand" style="color:var(--text-on-dark);">
+          <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+          <span class="word" style="color:var(--text-on-dark);"><b>INA</b><span style="color:var(--muted-on-dark);"><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+        </span>
+        <p style="margin-top:18px; font-size:13.5px; max-width:280px;"><span data-i18n="footer.tagline">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</span></p>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.platform">Platform</span></h5>
+        <ul><li><a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a></li><li><a href="framework.html"><span data-i18n="footer.frameworks">Frameworks&trade;</span></a></li><li><a href="services.html"><span data-i18n="nav.services">Services</span></a></li><li><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a></li><li><a href="advisory-board.html"><span data-i18n="footer.board">Advisory Board</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.resources">Resources</span></h5>
+        <ul><li><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a></li><li><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a></li><li><a href="finance.html"><span data-i18n="footer.finance">Multilateral Finance</span></a></li><li><a href="platform.html"><span data-i18n="footer.roadmap">Platform Roadmap</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.connect">Connect</span></h5>
+        <ul><li><a href="contact.html"><span data-i18n="footer.contact">Contact</span></a></li><li><a href="contact.html"><span data-i18n="footer.request">Request Advisory</span></a></li><li><a href="contact.html"><span data-i18n="footer.profile">Company Profile</span></a></li></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span><span data-i18n="footer.rights">&copy; 2026 International Network Advisors (INA). All rights reserved.</span></span>
+      <span><span data-i18n="footer.tag2">Digital Infrastructure Intelligence</span></span>
+    </div>
+  </div>
+</footer>
+<script src="assets/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/platform.js"></script>
+<script src="assets/script.js"></script>
+<script>
+(function () {
+  if (INAPlatform.isConfigured()) {
+    INAPlatform.getSession().then((session) => {
+      if (session) location.href = 'dashboard.html';
+    });
+  }
+
+  const roleSelect = document.getElementById('roleType');
+  const lang = INAPlatform.currentLang();
+  INAPlatform.ROLE_TYPES.forEach((r) => {
+    const opt = document.createElement('option');
+    opt.value = r.value;
+    opt.textContent = r[lang] || r.en;
+    roleSelect.appendChild(opt);
+  });
+
+  const form = document.getElementById('registerForm');
+  const note = document.getElementById('registerNote');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    note.textContent = '';
+    if (!INAPlatform.isConfigured()) {
+      note.textContent = 'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    try {
+      await INAPlatform.signUp({
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        fullName: document.getElementById('fullName').value,
+        organization: document.getElementById('organization').value,
+        roleType: document.getElementById('roleType').value,
+      });
+      location.href = 'dashboard.html';
+    } catch (err) {
+      note.textContent = err.message || 'Something went wrong.';
+      submitBtn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>

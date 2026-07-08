@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Submit New Project — International Network Advisors" data-i18n-es="Enviar Nuevo Proyecto — International Network Advisors">Submit New Project — International Network Advisors</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Submit a project for INA Framework analysis." data-i18n-es="Enviá un proyecto para análisis del Framework INA." content="Submit a project for INA Framework analysis.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="word"><b>INA</b><span><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+    </a>
+    <nav class="links">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html" class="current"><span data-i18n="nav.platform">Platform</span></a>
+    </nav>
+    <div class="lang-switch" aria-label="Language">
+      <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+    </div>
+    <a href="dashboard.html" class="btn ghost"><span data-i18n="dash.title">Your Projects</span></a>
+    <button class="navToggle" aria-label="Toggle menu" id="navToggle">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" style="display:none; border-top:1px solid var(--paper-line); background:var(--paper);">
+    <div class="wrap" style="display:flex; flex-direction:column; padding:18px 32px; gap:16px;">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a><a href="contact.html"><span data-i18n="nav.contact">Contact</span></a>
+      <div class="lang-switch" style="margin-top:6px;"><button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button></div>
+    </div>
+  </div>
+</header>
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span><span data-i18n="np.title">Submit New Project</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="np.title">Submit New Project</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="np.lede">Tell us about the project. Once submitted, INA applies the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade; to generate a scored analysis with financing recommendations.</span></p>
+
+    <form id="projectForm" style="max-width:640px; margin-top:36px;">
+      <div class="field"><label for="pname"><span data-i18n="np.f.name">Project name</span></label><input id="pname" type="text" required></div>
+
+      <div class="field" style="margin-top:18px;"><label for="ptype"><span data-i18n="np.f.type">Project type</span></label>
+        <select id="ptype" required></select>
+      </div>
+
+      <div class="field" style="margin-top:18px;"><label for="pcountry"><span data-i18n="np.f.country">Country</span></label><input id="pcountry" type="text" required></div>
+
+      <div class="field" style="margin-top:18px;"><label for="pdesc"><span data-i18n="np.f.desc">Project description</span></label>
+        <textarea id="pdesc" required style="min-height:160px;" placeholder=""></textarea>
+      </div>
+      <p style="font-size:12.5px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.desc.help">Include what you know: sector, size/scale, sponsor type, current stage, financing sources considered, key risks. The more detail, the more accurate the analysis.</span></p>
+
+      <div class="field" style="margin-top:26px;">
+        <label><span data-i18n="np.f.docs">Supporting documents (optional)</span></label>
+        <div class="upload-drop" id="dropZone">
+          <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+          <input type="file" id="fileInput" multiple style="display:none;">
+        </div>
+        <div class="upload-list" id="uploadList"></div>
+      </div>
+
+      <button type="submit" class="btn amber" style="margin-top:30px;" id="submitBtn"><span data-i18n="np.submit">Submit for Analysis</span></button>
+      <p class="contact-note" id="formNote" style="margin-top:14px; min-height:18px;"></p>
+    </form>
+  </div>
+</section>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="brand" style="color:var(--text-on-dark);">
+          <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+          <span class="word" style="color:var(--text-on-dark);"><b>INA</b><span style="color:var(--muted-on-dark);"><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+        </span>
+        <p style="margin-top:18px; font-size:13.5px; max-width:280px;"><span data-i18n="footer.tagline">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</span></p>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.platform">Platform</span></h5>
+        <ul><li><a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a></li><li><a href="framework.html"><span data-i18n="footer.frameworks">Frameworks&trade;</span></a></li><li><a href="services.html"><span data-i18n="nav.services">Services</span></a></li><li><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a></li><li><a href="advisory-board.html"><span data-i18n="footer.board">Advisory Board</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.resources">Resources</span></h5>
+        <ul><li><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a></li><li><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a></li><li><a href="finance.html"><span data-i18n="footer.finance">Multilateral Finance</span></a></li><li><a href="platform.html"><span data-i18n="footer.roadmap">Platform Roadmap</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.connect">Connect</span></h5>
+        <ul><li><a href="contact.html"><span data-i18n="footer.contact">Contact</span></a></li><li><a href="contact.html"><span data-i18n="footer.request">Request Advisory</span></a></li><li><a href="contact.html"><span data-i18n="footer.profile">Company Profile</span></a></li></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span><span data-i18n="footer.rights">&copy; 2026 International Network Advisors (INA). All rights reserved.</span></span>
+      <span><span data-i18n="footer.tag2">Digital Infrastructure Intelligence</span></span>
+    </div>
+  </div>
+</footer>
+<script src="assets/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/platform.js"></script>
+<script src="assets/script.js"></script>
+<script>
+(function () {
+  const typeSelect = document.getElementById('ptype');
+  const lang = INAPlatform.currentLang();
+  INAPlatform.PROJECT_TYPES.forEach((t) => {
+    const opt = document.createElement('option');
+    opt.value = t.value;
+    opt.textContent = t[lang] || t.en;
+    typeSelect.appendChild(opt);
+  });
+
+  let pendingFiles = [];
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const uploadList = document.getElementById('uploadList');
+
+  function renderFiles() {
+    uploadList.innerHTML = '';
+    pendingFiles.forEach((f, i) => {
+      const row = document.createElement('div');
+      row.className = 'uf';
+      row.innerHTML = `<span>${f.name}</span>`;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = '×';
+      btn.addEventListener('click', () => {
+        pendingFiles.splice(i, 1);
+        renderFiles();
+      });
+      row.appendChild(btn);
+      uploadList.appendChild(row);
+    });
+  }
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    pendingFiles = pendingFiles.concat(Array.from(fileInput.files));
+    fileInput.value = '';
+    renderFiles();
+  });
+  ['dragover', 'dragenter'].forEach((evt) =>
+    dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); })
+  );
+  ['dragleave', 'drop'].forEach((evt) =>
+    dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); })
+  );
+  dropZone.addEventListener('drop', (e) => {
+    pendingFiles = pendingFiles.concat(Array.from(e.dataTransfer.files));
+    renderFiles();
+  });
+
+  async function checkAuth() {
+    if (!INAPlatform.isConfigured()) return;
+    await INAPlatform.requireAuth();
+  }
+  checkAuth();
+
+  const form = document.getElementById('projectForm');
+  const note = document.getElementById('formNote');
+  const submitBtn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    note.textContent = '';
+    if (!INAPlatform.isConfigured()) {
+      note.textContent = 'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    submitBtn.disabled = true;
+    const lang2 = INAPlatform.currentLang();
+    note.textContent = lang2 === 'es' ? 'Enviando…' : 'Submitting…';
+
+    try {
+      const project = await INAPlatform.createProject({
+        name: document.getElementById('pname').value,
+        projectType: document.getElementById('ptype').value,
+        country: document.getElementById('pcountry').value,
+        description: document.getElementById('pdesc').value,
+      });
+
+      for (const file of pendingFiles) {
+        await INAPlatform.uploadDocument(project.id, file);
+      }
+
+      note.textContent = lang2 === 'es'
+        ? 'Proyecto enviado. Iniciando análisis…'
+        : 'Project submitted. Starting analysis…';
+
+      INAPlatform.requestAnalysis(project.id).catch(() => { /* surfaced on project page */ });
+
+      location.href = `project.html?id=${project.id}`;
+    } catch (err) {
+      note.textContent = err.message || 'Something went wrong.';
+      submitBtn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
