@@ -74,6 +74,7 @@ header.site{
   border-bottom: 1px solid var(--paper-line);
 }
 .nav{ display:flex; align-items:center; justify-content:space-between; height:72px; gap:14px; flex-wrap:nowrap; }
+header.site .wrap.nav{ padding: 0 18px; }
 .brand{ display:flex; align-items:center; gap:10px; font-family:var(--mono); flex:0 0 auto; }
 .brand .mark{
   width:30px;height:30px; border:1px solid var(--text); border-radius:2px;
@@ -87,16 +88,16 @@ footer .brand .logo-mark{ color: var(--text-on-dark); }
 .brand .word span{ display:block; font-size:9.5px; color:var(--muted); letter-spacing:.1em; }
 
 nav.links{
-  display:flex; align-items:center; gap:8px; min-width:0; flex:1 1 auto;
+  display:flex; align-items:center; gap:7px; min-width:0; flex:1 1 auto;
   overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;
 }
 nav.links::-webkit-scrollbar{ display:none; }
 nav.links a{
-  font-family: var(--sans); font-weight:500; font-size:13.5px; letter-spacing:0;
+  font-family: var(--sans); font-weight:500; font-size:12.5px; letter-spacing:0;
   color: var(--text); position:relative; padding: 6px 0; white-space:nowrap; flex:0 0 auto;
   display:flex; align-items:center; justify-content:center;
 }
-nav.links a .nl2{ display:block; text-align:center; line-height:1.2; white-space:normal; max-width:72px; }
+nav.links a .nl2{ display:block; text-align:center; line-height:1.2; white-space:normal; max-width:66px; }
 nav.links a::after{ content:""; position:absolute; left:0; bottom:0; height:1px; width:0%; background: var(--amber); transition: width .25s ease; }
 nav.links a:hover::after, nav.links a.current::after{ width:100%; }
 nav.links a.current{ color: var(--amber-deep); }
@@ -119,9 +120,10 @@ nav.links a.current{ color: var(--amber-deep); }
 .nav > .btn.amber{ flex:0 0 auto; }
 .navToggle{ display:none; background:none; border:none; cursor:pointer; flex:0 0 auto; padding:8px; margin:-8px; }
 @media (max-width: 1350px){ header.site .brand .word span{ display:none; } }
-/* Tuned for 9 nav items (added Advisory Board): tighter gap + narrower two-line
-   labels reclaim width so the breakpoint only needs a modest bump from 1220px. */
-@media (max-width: 1280px){
+/* Tuned for 9 nav items (added Advisory Board): tighter header padding, smaller
+   nav font and narrower two-line labels reclaim enough width to keep the
+   breakpoint close to its original, known-good value. */
+@media (max-width: 1200px){
   nav.links{ display:none; }
   .navToggle{ display:block; }
 }
@@ -188,7 +190,7 @@ nav.links a.current{ color: var(--amber-deep); }
 .on-dark .lang-switch, section.hero .lang-switch{ border-color: var(--ink-line); background: rgba(238,241,237,0.06); box-shadow: inset 0 1px 2px rgba(0,0,0,0.25); }
 .on-dark .lang-btn, section.hero .lang-btn{ color: var(--muted-on-dark); }
 .on-dark .lang-btn.active, section.hero .lang-btn.active{ background: var(--amber); color:#141008; box-shadow:0 1px 3px rgba(0,0,0,0.35); }
-@media (max-width:1280px){ header.site > .wrap.nav > .lang-switch{ display:none; } }
+@media (max-width:1200px){ header.site > .wrap.nav > .lang-switch{ display:none; } }
 
 /* ---------- Section shells ---------- */
 section{ padding: 108px 0; }
