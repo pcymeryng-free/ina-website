@@ -53,6 +53,8 @@
     <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading projects…</span></div>
 
     <div id="dashBody" style="display:none;">
+      <div class="dash-stats reveal" id="dashStats"></div>
+
       <div class="filter-bar">
         <div class="ffield">
           <label for="fStatus"><span data-i18n="dash.filter.status">Status</span></label>
@@ -81,12 +83,14 @@
 
       <div id="projectList" class="project-list"></div>
       <div id="noMatchState" class="empty-state" style="display:none;">
+        <div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/></svg></div>
         <p style="font-size:14.5px; color:var(--text);"><span data-i18n="dash.filter.none">No projects match the current filters.</span></p>
         <button type="button" class="btn ghost" style="margin-top:18px;" id="fClear2"><span data-i18n="dash.filter.clear">Clear filters</span></button>
       </div>
     </div>
 
     <div id="emptyState" class="empty-state" style="display:none;">
+      <div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h6l2 2h8v10H4z"/><path d="M12 12v5M9.5 14.5h5"/></svg></div>
       <p style="font-size:15px; color:var(--text);"><span data-i18n="dash.empty.title">No projects yet.</span></p>
       <p style="margin-top:8px;"><span data-i18n="dash.empty.lede">Submit your first project to get an Investment Readiness Index&trade; score and financing recommendations.</span></p>
       <a href="new-project.html" class="btn amber" style="margin-top:20px;"><span data-i18n="dash.newProject">Submit New Project</span></a>
@@ -125,6 +129,55 @@
 
   function initials(name) {
     return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  // Small stroke icons per project type — reuses the same visual language
+  // as the Industries page icon set for consistency across the site.
+  const TYPE_ICONS = {
+    submarine_cable: '<path d="M2 15c3-4 6 4 9 0s6-4 9 0"/><circle cx="4" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="20" cy="19" r="1" fill="currentColor" stroke="none"/>',
+    fiber_backbone_last_mile: '<path d="M3 12c4-6 14-6 18 0M7 15c2.5-3 7.5-3 10 0M11 18c1-1 2-1 2 0"/>',
+    fixed_wireless_access: '<path d="M4 10a12 12 0 0 1 16 0M7 13.5a8 8 0 0 1 10 0M10 17a4 4 0 0 1 4 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/>',
+    ai_datacenter: '<rect x="4" y="4" width="16" height="6" rx="1"/><rect x="4" y="14" width="16" height="6" rx="1"/><circle cx="7.5" cy="7" r=".6" fill="currentColor" stroke="none"/><circle cx="7.5" cy="17" r=".6" fill="currentColor" stroke="none"/>',
+    satellite_constellation: '<rect x="9" y="9" width="6" height="6" rx="1" transform="rotate(20 12 12)"/><path d="M4 6l2 2M20 6l-2 2M4 18l2-2M20 18l-2-2"/>',
+    other: '<path d="M4 7h6l2 2h8v10H4z"/>',
+  };
+  function typeIcon(type) {
+    return TYPE_ICONS[type] || TYPE_ICONS.other;
+  }
+
+  // Which color accent a project's left border / status gets, derived from
+  // its framework-based effective status rather than the raw pipeline state.
+  function accentFor(p) {
+    if (p.status === 'error') return 'attention';
+    if (p.status === 'completed' && p.readiness_stage === 'Investment Ready') return 'ready';
+    if (p.status === 'completed' || p.status === 'analyzing') return 'progress';
+    return 'neutral';
+  }
+
+  function renderStats() {
+    const total = allProjects.length;
+    const inProgress = allProjects.filter((p) => p.status === 'submitted' || p.status === 'analyzing').length;
+    const ready = allProjects.filter((p) => p.status === 'completed' && p.readiness_stage === 'Investment Ready').length;
+    const attention = allProjects.filter((p) => p.status === 'error').length;
+
+    const labels = {
+      'dash.stats.total': { en: 'Total Projects', es: 'Proyectos Totales' },
+      'dash.stats.inProgress': { en: 'In Progress', es: 'En Curso' },
+      'dash.stats.ready': { en: 'Investment Ready', es: 'Listos para Inversión' },
+      'dash.stats.attention': { en: 'Needs Attention', es: 'Requieren Atención' },
+    };
+    const el = document.getElementById('dashStats');
+    el.innerHTML = [
+      { n: total, key: 'dash.stats.total', cls: '' },
+      { n: inProgress, key: 'dash.stats.inProgress', cls: '' },
+      { n: ready, key: 'dash.stats.ready', cls: '' },
+      { n: attention, key: 'dash.stats.attention', cls: attention ? ' is-attention' : '' },
+    ].map((s) => `
+      <div class="dash-stat${s.cls}">
+        <div class="dsn">${s.n}</div>
+        <div class="dsl" data-i18n="${s.key}">${labels[s.key][lang()]}</div>
+      </div>
+    `).join('');
   }
 
   function populateFilterOptions() {
@@ -204,6 +257,7 @@
     filtered.forEach((p) => {
       const row = document.createElement('div');
       row.className = 'project-row';
+      row.setAttribute('data-accent', accentFor(p));
 
       const date = new Date(p.created_at).toLocaleDateString(lang() === 'es' ? 'es-AR' : 'en-US');
       const ownerName = (p.profiles && p.profiles.full_name) || '—';
@@ -214,11 +268,15 @@
 
       const main = document.createElement('a');
       main.href = `project.html?id=${p.id}`;
+      main.className = 'main';
       main.style.color = 'inherit';
       main.style.textDecoration = 'none';
       main.innerHTML = `
-        <div class="pname">${p.name}</div>
-        <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${p.country}</div>
+        <span class="ptype-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${typeIcon(p.project_type)}</svg></span>
+        <span class="maintext">
+          <div class="pname">${p.name}</div>
+          <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${p.country}</div>
+        </span>
       `;
 
       const dateLink = document.createElement('a');
@@ -237,7 +295,7 @@
       ownerEl.style.color = 'inherit';
       ownerEl.style.textDecoration = 'none';
       ownerEl.className = 'powner';
-      ownerEl.innerHTML = `${ownerName}${ownerOrg ? `<span class="oorg">${ownerOrg}</span>` : ''}`;
+      ownerEl.innerHTML = `<span class="mini-avatar">${initials(ownerName === '—' ? '' : ownerName)}</span><span class="otext">${ownerName}${ownerOrg ? `<span class="oorg">${ownerOrg}</span>` : ''}</span>`;
 
       const editEl = document.createElement('a');
       if (isOwner) {
@@ -305,6 +363,7 @@
       return;
     }
 
+    renderStats();
     populateFilterOptions();
     document.getElementById('dashBody').style.display = 'block';
     renderList();
