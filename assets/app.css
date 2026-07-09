@@ -1,0 +1,100 @@
+/* ==========================================================================
+   INA Platform — App shell
+   Loaded ON TOP OF style.css (same design tokens: ink / paper / amber) by
+   the five pages in /app/. Gives the Platform its own "product" header,
+   footer and auth layout so it reads as a standalone application, distinct
+   from the institutional marketing site, while staying visually on-brand.
+   ========================================================================== */
+
+.app-body{ display:flex; flex-direction:column; min-height:100vh; min-height:100dvh; }
+.app-main{ flex:1 1 auto; background:var(--paper); }
+
+/* ---------- App header ---------- */
+.app-header{
+  position:sticky; top:0; z-index:50;
+  background:var(--ink); color:var(--text-on-dark);
+  border-bottom:1px solid var(--ink-line);
+}
+.app-header-inner{
+  max-width:var(--maxw); margin:0 auto; padding:0 32px;
+  min-height:64px; display:flex; align-items:center; gap:28px;
+}
+.app-logo{ display:flex; align-items:center; gap:10px; flex:0 0 auto; }
+.app-logo .logo-mark{ color:var(--text-on-dark); }
+.app-logo-word{ font-family:var(--serif); font-size:16px; display:flex; align-items:baseline; gap:7px; }
+.app-logo-word b{ font-weight:600; color:var(--text-on-dark); }
+.app-logo-word i{
+  font-style:normal; font-family:var(--mono); font-size:10px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--amber);
+}
+
+.app-nav{ display:flex; align-items:center; gap:24px; flex:1 1 auto; min-width:0; }
+.app-nav a{
+  font-family:var(--sans); font-size:13px; color:var(--muted-on-dark);
+  padding:22px 0; border-bottom:2px solid transparent; transition:color .15s ease, border-color .15s ease;
+  white-space:nowrap;
+}
+.app-nav a:hover{ color:var(--text-on-dark); }
+.app-nav a.active{ color:var(--text-on-dark); border-bottom-color:var(--amber); }
+
+.app-header-actions{ display:flex; align-items:center; gap:16px; margin-left:auto; flex:0 0 auto; }
+.app-header--auth .app-header-inner{ justify-content:space-between; }
+.app-back-link{ font-family:var(--mono); font-size:11.5px; color:var(--muted-on-dark); letter-spacing:.03em; white-space:nowrap; }
+.app-back-link:hover{ color:var(--amber); }
+
+.app-user{ display:flex; align-items:center; gap:9px; }
+.app-user-avatar{
+  width:29px; height:29px; border-radius:50%; background:var(--amber); color:var(--ink);
+  font-family:var(--serif); font-weight:600; font-size:12.5px;
+  display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+}
+.app-user-name{ font-size:12.5px; color:var(--muted-on-dark); display:none; white-space:nowrap; }
+@media (min-width:900px){ .app-user-name{ display:block; } }
+
+@media (max-width:760px){
+  .app-nav{ display:none; }
+  .app-header-inner{ gap:14px; padding:0 20px; min-height:58px; }
+  .app-logo-word i{ display:none; }
+}
+
+/* ---------- App footer ---------- */
+.app-footer{ background:var(--ink); border-top:1px solid var(--ink-line); padding:20px 0; }
+.app-footer-inner{
+  max-width:var(--maxw); margin:0 auto; padding:0 32px;
+  display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;
+  font-family:var(--mono); font-size:11px; color:var(--muted-on-dark); letter-spacing:.03em;
+}
+.app-footer-link{ color:var(--muted-on-dark); }
+.app-footer-link:hover{ color:var(--amber); }
+@media (max-width:640px){ .app-footer-inner{ padding:0 20px; } }
+
+/* ---------- Auth split screen (login / register) ---------- */
+.auth-screen{ display:grid; grid-template-columns: 1fr 1fr; }
+.auth-screen-brand{
+  background:var(--ink); color:var(--text-on-dark); position:relative; overflow:hidden;
+  display:flex; align-items:center; padding:64px 56px;
+}
+.auth-screen-brand::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(560px 380px at 18% 12%, rgba(217,146,46,0.18), transparent 60%),
+    radial-gradient(480px 360px at 92% 92%, rgba(217,146,46,0.10), transparent 60%);
+}
+.auth-brand-inner{ position:relative; max-width:420px; min-width:0; }
+.auth-brand-points{ margin-top:28px; display:flex; flex-direction:column; gap:15px; }
+.auth-brand-points li{ font-size:13.5px; color:var(--muted-on-dark); padding-left:22px; position:relative; line-height:1.5; }
+.auth-brand-points li::before{ content:"\2192"; position:absolute; left:0; color:var(--amber); }
+
+.auth-screen-form{ display:flex; align-items:center; justify-content:center; padding:64px 32px; background:var(--paper); }
+.auth-screen-form .auth-card{ width:100%; max-width:420px; border:none; padding:0; background:transparent; }
+
+@media (max-width:920px){
+  .auth-screen{ grid-template-columns:1fr; }
+  .auth-screen-brand{ padding:40px 32px 34px; }
+  .auth-brand-inner{ max-width:100%; }
+  .auth-brand-points{ display:none; }
+  .auth-screen-form{ padding:40px 24px 56px; }
+}
+
+/* ---------- Small app-page polish (dashboard / new-project / project) ---------- */
+.app-main > section.tight:first-of-type{ padding-top:48px; }
