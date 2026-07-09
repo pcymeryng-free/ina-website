@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INA Platform</title>
+<meta name="description" content="INA Platform — Investment Readiness Index and Multilateral Finance Navigator.">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/app.css">
+<style>
+  body{ background:var(--ink); }
+  .app-splash{
+    min-height:100vh; min-height:100dvh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:16px; color:var(--muted-on-dark);
+  }
+  .app-splash .logo-mark{ color:var(--text-on-dark); }
+</style>
+</head>
+<body>
+<div class="app-splash">
+  <svg class="logo-mark" viewBox="0 0 32 32" width="34" height="34" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+  <div class="spinner"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js"></script>
+<script>
+(function () {
+  // This is the standalone entry point for the Platform — reachable directly
+  // (e.g. yourdomain.com/app/) without going through the INA marketing site.
+  // It just routes to the right screen based on auth state.
+  if (!INAPlatform.isConfigured()) {
+    document.querySelector('.app-splash').innerHTML =
+      '<p style="color:var(--muted-on-dark); font-size:13px; max-width:320px; text-align:center;">Platform not configured yet.</p>';
+    return;
+  }
+  INAPlatform.getSession().then((session) => {
+    location.replace(session ? 'dashboard.html' : 'login.html');
+  }).catch(() => {
+    location.replace('login.html');
+  });
+})();
+</script>
+</body>
+</html>

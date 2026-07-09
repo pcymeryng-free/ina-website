@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Submit New Project — INA Platform" data-i18n-es="Enviar Nuevo Proyecto — Plataforma INA">Submit New Project — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Submit a project for INA Framework analysis." data-i18n-es="Enviá un proyecto para análisis del Framework INA." content="Submit a project for INA Framework analysis.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="new-project.html" class="active"><span data-i18n="dash.newProject">Submit New Project</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <div class="app-user" id="appUser" style="display:none;">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </div>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span id="crumbLabel"><span data-i18n="np.title">Submit New Project</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;" id="pageTitle"><span data-i18n="np.title">Submit New Project</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;" id="pageLede"><span data-i18n="np.lede">Tell us about the project. Once submitted, INA applies the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade; to generate a scored analysis with financing recommendations.</span></p>
+
+    <form id="projectForm" style="max-width:640px; margin-top:36px;">
+      <div class="field"><label for="pname"><span data-i18n="np.f.name">Project name</span></label><input id="pname" type="text" required></div>
+
+      <div class="field" style="margin-top:18px;"><label for="ptype"><span data-i18n="np.f.type">Project type</span></label>
+        <select id="ptype" required></select>
+      </div>
+
+      <div class="field" style="margin-top:18px;"><label for="pcountry"><span data-i18n="np.f.country">Country</span></label><input id="pcountry" type="text" required></div>
+
+      <div class="field" style="margin-top:18px;"><label for="pdesc"><span data-i18n="np.f.desc">Project description</span></label>
+        <textarea id="pdesc" required style="min-height:160px;" placeholder=""></textarea>
+      </div>
+      <p style="font-size:12.5px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.desc.help">Include what you know: sector, size/scale, sponsor type, current stage, financing sources considered, key risks. The more detail, the more accurate the analysis.</span></p>
+
+      <div id="existingDocsBlock" style="margin-top:26px; display:none;">
+        <label><span data-i18n="np.f.docs.existing">Already uploaded</span></label>
+        <ul id="existingDocsList" style="margin-top:10px; display:flex; flex-direction:column; gap:6px; font-size:13.5px; color:var(--muted);"></ul>
+      </div>
+
+      <div class="field" style="margin-top:26px;">
+        <label><span data-i18n="np.f.docs">Supporting documents (optional)</span></label>
+        <div class="upload-drop" id="dropZone">
+          <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+          <input type="file" id="fileInput" multiple style="display:none;">
+        </div>
+        <div class="upload-list" id="uploadList"></div>
+      </div>
+
+      <p id="editNote" style="font-size:12.5px; color:var(--amber-deep); margin-top:18px; display:none;"><span data-i18n="np.edit.reanalyze">Saving changes will re-run the Investment Readiness Index&trade; analysis against the updated description.</span></p>
+
+      <button type="submit" class="btn amber" style="margin-top:30px;" id="submitBtn"><span data-i18n="np.submit">Submit for Analysis</span></button>
+      <p class="contact-note" id="formNote" style="margin-top:14px; min-height:18px;"></p>
+    </form>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js"></script>
+<script src="/assets/script.js"></script>
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const editId = params.get('id');
+  const isEdit = !!editId;
+
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  const typeSelect = document.getElementById('ptype');
+  const lang = INAPlatform.currentLang();
+  INAPlatform.PROJECT_TYPES.forEach((t) => {
+    const opt = document.createElement('option');
+    opt.value = t.value;
+    opt.textContent = t[lang] || t.en;
+    typeSelect.appendChild(opt);
+  });
+
+  if (isEdit) {
+    document.getElementById('pageTitle').innerHTML = '<span data-i18n="np.edit.title">Edit Project</span>';
+    document.getElementById('pageLede').innerHTML = '<span data-i18n="np.edit.lede">Update the project details below. INA will re-run the Investment Readiness Index&trade; analysis against your changes.</span>';
+    document.getElementById('crumbLabel').innerHTML = '<span data-i18n="np.edit.title">Edit Project</span>';
+    document.getElementById('submitBtn').innerHTML = '<span data-i18n="np.edit.submit">Save Changes</span>';
+    document.getElementById('editNote').style.display = 'block';
+  }
+
+  let pendingFiles = [];
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const uploadList = document.getElementById('uploadList');
+
+  function renderFiles() {
+    uploadList.innerHTML = '';
+    pendingFiles.forEach((f, i) => {
+      const row = document.createElement('div');
+      row.className = 'uf';
+      row.innerHTML = `<span>${f.name}</span>`;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = '×';
+      btn.addEventListener('click', () => {
+        pendingFiles.splice(i, 1);
+        renderFiles();
+      });
+      row.appendChild(btn);
+      uploadList.appendChild(row);
+    });
+  }
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    pendingFiles = pendingFiles.concat(Array.from(fileInput.files));
+    fileInput.value = '';
+    renderFiles();
+  });
+  ['dragover', 'dragenter'].forEach((evt) =>
+    dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); })
+  );
+  ['dragleave', 'drop'].forEach((evt) =>
+    dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); })
+  );
+  dropZone.addEventListener('drop', (e) => {
+    pendingFiles = pendingFiles.concat(Array.from(e.dataTransfer.files));
+    renderFiles();
+  });
+
+  const form = document.getElementById('projectForm');
+  const note = document.getElementById('formNote');
+  const submitBtn = document.getElementById('submitBtn');
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) return;
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+    } catch (e) { /* non-critical */ }
+
+    if (isEdit) {
+      let project;
+      try {
+        project = await INAPlatform.getProject(editId);
+      } catch (e) {
+        location.href = 'dashboard.html';
+        return;
+      }
+      // Editing is owner-only. An advisor (or anyone else) landing on this
+      // URL for a project they don't own gets sent to the read-only view
+      // instead — the update would be rejected by RLS anyway.
+      if (project.user_id !== session.user.id) {
+        location.href = `project.html?id=${editId}`;
+        return;
+      }
+      document.getElementById('pname').value = project.name || '';
+      document.getElementById('ptype').value = project.project_type || '';
+      document.getElementById('pcountry').value = project.country || '';
+      document.getElementById('pdesc').value = project.description || '';
+
+      try {
+        const docs = await INAPlatform.listDocuments(editId);
+        if (docs && docs.length) {
+          const block = document.getElementById('existingDocsBlock');
+          const list = document.getElementById('existingDocsList');
+          docs.forEach((d) => {
+            const li = document.createElement('li');
+            li.textContent = `📄 ${d.file_name}`;
+            list.appendChild(li);
+          });
+          block.style.display = 'block';
+        }
+      } catch (e) { /* non-critical */ }
+    }
+  }
+  init();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    note.textContent = '';
+    if (!INAPlatform.isConfigured()) {
+      note.textContent = 'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    submitBtn.disabled = true;
+    const lang2 = INAPlatform.currentLang();
+    note.textContent = lang2 === 'es' ? 'Enviando…' : 'Submitting…';
+
+    try {
+      const payload = {
+        name: document.getElementById('pname').value,
+        projectType: document.getElementById('ptype').value,
+        country: document.getElementById('pcountry').value,
+        description: document.getElementById('pdesc').value,
+      };
+
+      const project = isEdit
+        ? await INAPlatform.updateProject(editId, payload)
+        : await INAPlatform.createProject(payload);
+
+      for (const file of pendingFiles) {
+        await INAPlatform.uploadDocument(project.id, file);
+      }
+
+      note.textContent = lang2 === 'es'
+        ? 'Proyecto enviado. Iniciando análisis…'
+        : 'Project submitted. Starting analysis…';
+
+      INAPlatform.requestAnalysis(project.id).catch(() => { /* surfaced on project page */ });
+
+      location.href = `project.html?id=${project.id}`;
+    } catch (err) {
+      note.textContent = err.message || 'Something went wrong.';
+      submitBtn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>

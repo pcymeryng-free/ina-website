@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Projects — INA Platform" data-i18n-es="Proyectos — Plataforma INA">Projects — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Your INA Platform projects and framework analysis results." data-i18n-es="Tus proyectos y resultados de análisis del framework en la Plataforma INA." content="Your INA Platform projects and framework analysis results.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <div class="app-user" id="appUser" style="display:none;">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </div>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="platform-header reveal">
+      <div>
+        <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+        <h1 class="h-section" style="margin-top:14px;"><span data-i18n="dash.h1">Projects</span></h1>
+        <p class="who" id="whoami"></p>
+      </div>
+      <a href="new-project.html" class="btn amber"><span data-i18n="dash.newProject">Submit New Project</span></a>
+    </div>
+
+    <div id="advisorBanner" class="advisor-banner" style="display:none;">
+      <span data-i18n="dash.advisor.banner">Advisor view: showing every project submitted to the platform, not only your own.</span>
+    </div>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading projects…</span></div>
+
+    <div id="dashBody" style="display:none;">
+      <div class="filter-bar">
+        <div class="ffield">
+          <label for="fStatus"><span data-i18n="dash.filter.status">Status</span></label>
+          <select id="fStatus"></select>
+        </div>
+        <div class="ffield">
+          <label for="fType"><span data-i18n="dash.filter.type">Project type</span></label>
+          <select id="fType"></select>
+        </div>
+        <div class="ffield">
+          <label for="fFrom"><span data-i18n="dash.filter.from">From</span></label>
+          <input type="date" id="fFrom">
+        </div>
+        <div class="ffield">
+          <label for="fTo"><span data-i18n="dash.filter.to">To</span></label>
+          <input type="date" id="fTo">
+        </div>
+        <div class="ffield" style="flex:1 1 200px;">
+          <label for="fSearch"><span data-i18n="dash.filter.search">Search</span></label>
+          <input type="search" id="fSearch" placeholder="">
+        </div>
+        <button type="button" class="fclear" id="fClear"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+      </div>
+
+      <p class="filter-count" id="filterCount"></p>
+
+      <div id="projectList" class="project-list"></div>
+      <div id="noMatchState" class="empty-state" style="display:none;">
+        <p style="font-size:14.5px; color:var(--text);"><span data-i18n="dash.filter.none">No projects match the current filters.</span></p>
+        <button type="button" class="btn ghost" style="margin-top:18px;" id="fClear2"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+      </div>
+    </div>
+
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <p style="font-size:15px; color:var(--text);"><span data-i18n="dash.empty.title">No projects yet.</span></p>
+      <p style="margin-top:8px;"><span data-i18n="dash.empty.lede">Submit your first project to get an Investment Readiness Index&trade; score and financing recommendations.</span></p>
+      <a href="new-project.html" class="btn amber" style="margin-top:20px;"><span data-i18n="dash.newProject">Submit New Project</span></a>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js"></script>
+<script src="/assets/script.js"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  let allProjects = [];
+  let currentUserId = null;
+  const lang = () => INAPlatform.currentLang();
+
+  const fStatus = document.getElementById('fStatus');
+  const fType = document.getElementById('fType');
+  const fFrom = document.getElementById('fFrom');
+  const fTo = document.getElementById('fTo');
+  const fSearch = document.getElementById('fSearch');
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  function populateFilterOptions() {
+    const allLabel = lang() === 'es' ? 'Todos' : 'All';
+
+    fStatus.innerHTML = '';
+    const optAllStatus = document.createElement('option');
+    optAllStatus.value = '';
+    optAllStatus.textContent = allLabel;
+    fStatus.appendChild(optAllStatus);
+    INAPlatform.STATUS_FILTER_VALUES.forEach((v) => {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = INAPlatform.statusFilterLabel(v);
+      fStatus.appendChild(opt);
+    });
+
+    fType.innerHTML = '';
+    const optAllType = document.createElement('option');
+    optAllType.value = '';
+    optAllType.textContent = allLabel;
+    fType.appendChild(optAllType);
+    INAPlatform.PROJECT_TYPES.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t[lang()] || t.en;
+      fType.appendChild(opt);
+    });
+
+    fSearch.placeholder = lang() === 'es' ? 'Nombre del proyecto o usuario…' : 'Project name or user…';
+  }
+
+  function applyFilters(list) {
+    const status = fStatus.value;
+    const type = fType.value;
+    const from = fFrom.value ? new Date(fFrom.value + 'T00:00:00') : null;
+    const to = fTo.value ? new Date(fTo.value + 'T23:59:59') : null;
+    const q = fSearch.value.trim().toLowerCase();
+
+    return list.filter((p) => {
+      if (status && INAPlatform.effectiveStatusValue(p) !== status) return false;
+      if (type && p.project_type !== type) return false;
+      const created = new Date(p.created_at);
+      if (from && created < from) return false;
+      if (to && created > to) return false;
+      if (q) {
+        const ownerName = (p.profiles && p.profiles.full_name) || '';
+        const ownerOrg = (p.profiles && p.profiles.organization) || '';
+        const haystack = `${p.name} ${ownerName} ${ownerOrg}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderList() {
+    const filtered = applyFilters(allProjects);
+    const list = document.getElementById('projectList');
+    const noMatch = document.getElementById('noMatchState');
+    const count = document.getElementById('filterCount');
+
+    list.innerHTML = '';
+
+    const countLabel = lang() === 'es'
+      ? `${filtered.length} de ${allProjects.length} proyecto${allProjects.length === 1 ? '' : 's'}`
+      : `${filtered.length} of ${allProjects.length} project${allProjects.length === 1 ? '' : 's'}`;
+    count.textContent = countLabel;
+
+    if (!filtered.length) {
+      list.style.display = 'none';
+      noMatch.style.display = 'block';
+      return;
+    }
+    noMatch.style.display = 'none';
+    list.style.display = 'flex';
+
+    filtered.forEach((p) => {
+      const row = document.createElement('div');
+      row.className = 'project-row';
+
+      const date = new Date(p.created_at).toLocaleDateString(lang() === 'es' ? 'es-AR' : 'en-US');
+      const ownerName = (p.profiles && p.profiles.full_name) || '—';
+      const ownerOrg = (p.profiles && p.profiles.organization) || '';
+      const isOwner = p.user_id === currentUserId;
+      const statusClass = INAPlatform.effectiveStatusClass(p);
+      const statusLabel = INAPlatform.effectiveStatusLabel(p);
+
+      const main = document.createElement('a');
+      main.href = `project.html?id=${p.id}`;
+      main.style.color = 'inherit';
+      main.style.textDecoration = 'none';
+      main.innerHTML = `
+        <div class="pname">${p.name}</div>
+        <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${p.country}</div>
+      `;
+
+      const dateLink = document.createElement('a');
+      dateLink.href = `project.html?id=${p.id}`;
+      dateLink.style.color = 'inherit';
+      dateLink.style.textDecoration = 'none';
+      dateLink.className = 'pmeta';
+      dateLink.textContent = date;
+
+      const statusLink = document.createElement('a');
+      statusLink.href = `project.html?id=${p.id}`;
+      statusLink.innerHTML = `<span class="status-pill ${statusClass}">${statusLabel}</span>`;
+
+      const ownerEl = document.createElement('a');
+      ownerEl.href = `project.html?id=${p.id}`;
+      ownerEl.style.color = 'inherit';
+      ownerEl.style.textDecoration = 'none';
+      ownerEl.className = 'powner';
+      ownerEl.innerHTML = `${ownerName}${ownerOrg ? `<span class="oorg">${ownerOrg}</span>` : ''}`;
+
+      const editEl = document.createElement('a');
+      if (isOwner) {
+        editEl.href = `new-project.html?id=${p.id}`;
+        editEl.className = 'pedit';
+        editEl.title = lang() === 'es' ? 'Editar proyecto' : 'Edit project';
+        editEl.textContent = '✎';
+      } else {
+        editEl.href = `project.html?id=${p.id}`;
+        editEl.className = 'pedit';
+        editEl.style.opacity = '0.35';
+        editEl.textContent = '→';
+      }
+
+      row.appendChild(main);
+      row.appendChild(dateLink);
+      row.appendChild(statusLink);
+      row.appendChild(ownerEl);
+      row.appendChild(editEl);
+      list.appendChild(row);
+    });
+  }
+
+  [fStatus, fType, fFrom, fTo].forEach((el) => el.addEventListener('change', renderList));
+  fSearch.addEventListener('input', renderList);
+
+  function clearFilters() {
+    fStatus.value = '';
+    fType.value = '';
+    fFrom.value = '';
+    fTo.value = '';
+    fSearch.value = '';
+    renderList();
+  }
+  document.getElementById('fClear').addEventListener('click', clearFilters);
+  document.getElementById('fClear2').addEventListener('click', clearFilters);
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+    currentUserId = session.user.id;
+
+    let advisor = false;
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('whoami').textContent =
+        `${profile.full_name} · ${profile.organization}`;
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      advisor = INAPlatform.isAdvisor(profile);
+      if (advisor) document.getElementById('advisorBanner').style.display = 'flex';
+    } catch (e) { /* profile not critical to show projects */ }
+
+    allProjects = await INAPlatform.listProjects();
+    document.getElementById('loadingState').style.display = 'none';
+
+    if (!allProjects.length) {
+      document.getElementById('emptyState').style.display = 'block';
+      return;
+    }
+
+    populateFilterOptions();
+    document.getElementById('dashBody').style.display = 'block';
+    renderList();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
