@@ -392,16 +392,45 @@ form.advisory .full{ grid-column: 1 / -1; }
 .auth-card .field select:focus{ outline:none; border-bottom-color:var(--amber); }
 .auth-card button[disabled]{ opacity:.5; cursor:not-allowed; }
 
-.platform-header{ display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:40px; }
+.platform-header{ display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:32px; }
 .platform-header .who{ font-size:13.5px; color:var(--muted); margin-top:6px; }
+
+.advisor-banner{
+  display:flex; align-items:center; gap:10px; padding:12px 18px; margin-bottom:24px;
+  background:var(--amber-soft); border:1px solid var(--amber); color:var(--amber-deep);
+  font-size:12.5px; flex-wrap:wrap;
+}
+
+.filter-bar{
+  display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;
+  padding:20px 22px; background:var(--paper-2); border:1px solid var(--paper-line);
+  margin-bottom:20px;
+}
+.filter-bar .ffield{ display:flex; flex-direction:column; gap:6px; }
+.filter-bar label{ font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+.filter-bar select, .filter-bar input{
+  border:1px solid var(--paper-line); background:var(--paper); font-family:var(--sans);
+  font-size:13px; padding:8px 10px; color:var(--text); min-width:150px;
+}
+.filter-bar input[type="search"]{ min-width:200px; }
+.filter-bar select:focus, .filter-bar input:focus{ outline:none; border-color:var(--amber); }
+.filter-bar .fclear{
+  background:none; border:none; color:var(--muted); font-size:12.5px; cursor:pointer;
+  text-decoration:underline; padding-bottom:9px; white-space:nowrap;
+}
+.filter-count{ font-size:12.5px; color:var(--muted); margin-bottom:14px; }
 
 .project-list{ display:flex; flex-direction:column; gap:1px; background:var(--paper-line); border:1px solid var(--paper-line); }
 .project-row{
-  background:var(--paper); padding:22px 24px; display:grid;
-  grid-template-columns: 1fr auto auto auto; gap:20px; align-items:center;
+  background:var(--paper); padding:20px 24px; display:grid;
+  grid-template-columns: 1fr 100px auto 170px 28px; gap:18px; align-items:center;
 }
 .project-row .pname{ font-size:15.5px; font-weight:500; }
 .project-row .pmeta{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+.project-row .powner{ font-size:12.5px; color:var(--text); text-align:right; }
+.project-row .powner .oorg{ display:block; font-size:11px; color:var(--muted); margin-top:2px; }
+.project-row .pedit{ justify-self:end; color:var(--muted); font-size:15px; line-height:1; padding:4px; }
+.project-row .pedit:hover{ color:var(--amber-deep); }
 .status-pill{
   font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
   padding:5px 12px; border-radius:100px; white-space:nowrap; text-align:center;
@@ -410,8 +439,15 @@ form.advisory .full{ grid-column: 1 / -1; }
 .status-pill.analyzing{ background:var(--amber-soft); color:var(--amber-deep); border:1px solid var(--amber); }
 .status-pill.completed{ background:var(--ink); color:var(--amber); border:1px solid var(--ink); }
 .status-pill.error{ background:#f4d9d9; color:#a13a3a; border:1px solid #d99; }
+/* Framework-derived stage pills — replace the generic "Completed" pill once
+   an analysis finishes, so status reflects Investment Readiness Index™. */
+.status-pill.stage-concept{ background:var(--paper-2); color:var(--muted); border:1px solid var(--paper-line); }
+.status-pill.stage-early{ background:var(--amber-soft); color:var(--amber-deep); border:1px solid var(--amber); }
+.status-pill.stage-advanced{ background:var(--amber); color:var(--ink); border:1px solid var(--amber-deep); }
+.status-pill.stage-ready{ background:var(--ink); color:var(--amber); border:1px solid var(--ink); }
 .empty-state{ padding:60px 30px; text-align:center; border:1px dashed var(--paper-line); color:var(--muted); }
-@media (max-width:700px){ .project-row{ grid-template-columns:1fr; gap:10px; } }
+@media (max-width:900px){ .project-row{ grid-template-columns:1fr 100px auto 28px; } .project-row .powner{ display:none; } }
+@media (max-width:700px){ .project-row{ grid-template-columns:1fr; gap:10px; } .project-row .pedit{ justify-self:start; } }
 
 .upload-drop{
   border:1px dashed var(--paper-line); padding:28px; text-align:center; cursor:pointer;

@@ -87,6 +87,52 @@ function labelFor(list, value, lang) {
   return item[lang] || item.en;
 }
 
+/* ---------- Framework-derived status (dashboard grid + filters) ----------
+   While a project is still in the analysis pipeline, the "status" shown is
+   the pipeline state (Submitted / Analyzing / Error). Once the analysis
+   completes, the grid shows the actual Investment Readiness Index™ stage
+   (Concept Stage / Early Structuring / Advanced Structuring / Investment
+   Ready) instead of a generic "Completed" label — that's what makes the
+   dashboard's status column and filter "framework-based." */
+
+function effectiveStatusValue(project) {
+  if (project.status === 'completed') {
+    return project.readiness_stage || 'completed';
+  }
+  return project.status;
+}
+
+function effectiveStatusLabel(project) {
+  const value = effectiveStatusValue(project);
+  if (READINESS_STAGE_LABELS[value]) return READINESS_STAGE_LABELS[value][currentLang()];
+  if (PROJECT_STATUS_LABELS[value]) return PROJECT_STATUS_LABELS[value][currentLang()];
+  return value;
+}
+
+function effectiveStatusClass(project) {
+  if (project.status !== 'completed') return project.status;
+  const stage = project.readiness_stage;
+  if (stage === 'Investment Ready') return 'stage-ready';
+  if (stage === 'Advanced Structuring') return 'stage-advanced';
+  if (stage === 'Early Structuring') return 'stage-early';
+  if (stage === 'Concept Stage') return 'stage-concept';
+  return 'completed';
+}
+
+/* Full set of values the status filter dropdown offers — pipeline states
+   plus the four framework stages, in the order they should be listed. */
+const STATUS_FILTER_VALUES = [
+  'submitted', 'analyzing',
+  'Concept Stage', 'Early Structuring', 'Advanced Structuring', 'Investment Ready',
+  'error',
+];
+
+function statusFilterLabel(value) {
+  if (READINESS_STAGE_LABELS[value]) return READINESS_STAGE_LABELS[value][currentLang()];
+  if (PROJECT_STATUS_LABELS[value]) return PROJECT_STATUS_LABELS[value][currentLang()];
+  return value;
+}
+
 /* ---------- Auth helpers ---------- */
 
 const INAPlatform = {
@@ -97,6 +143,7 @@ const INAPlatform = {
   DIMENSION_LABELS,
   DIMENSION_ORDER,
   PRIORITY_LABELS,
+  STATUS_FILTER_VALUES,
   currentLang,
 
   dimensionLabel(key) {
@@ -112,6 +159,13 @@ const INAPlatform = {
     return !!supabaseClient;
   },
 
+  /* Platform access role — 'advisor' can view every project on the
+     platform; 'user' (default) only sees/edits their own. Assigned
+     manually by an admin via the Supabase Table Editor, never at signup. */
+  isAdvisor(profile) {
+    return !!profile && profile.role === 'advisor';
+  },
+
   roleTypeLabel(value) { return labelFor(ROLE_TYPES, value, currentLang()); },
   projectTypeLabel(value) { return labelFor(PROJECT_TYPES, value, currentLang()); },
   statusLabel(value) {
@@ -122,6 +176,10 @@ const INAPlatform = {
     const entry = READINESS_STAGE_LABELS[value];
     return entry ? entry[currentLang()] : value;
   },
+  effectiveStatusValue,
+  effectiveStatusLabel,
+  effectiveStatusClass,
+  statusFilterLabel,
 
   async signUp({ email, password, fullName, organization, roleType }) {
     if (!supabaseClient) throw new Error('Platform not configured yet.');
@@ -179,10 +237,16 @@ const INAPlatform = {
 
   /* ---------- Projects ---------- */
 
+  /* Lists projects visible to the current user. Row Level Security does
+     the actual scoping server-side: a regular user's policy only returns
+     their own rows, an advisor's policy returns every row — this query is
+     identical for both, no client-side role branching needed. The embedded
+     `profiles(full_name, organization)` is what lets the advisor grid show
+     who submitted each project. */
   async listProjects() {
     const { data, error } = await supabaseClient
       .from('projects')
-      .select('*')
+      .select('*, profiles(full_name, organization)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
@@ -191,7 +255,7 @@ const INAPlatform = {
   async getProject(id) {
     const { data, error } = await supabaseClient
       .from('projects')
-      .select('*')
+      .select('*, profiles(full_name, organization)')
       .eq('id', id)
       .single();
     if (error) throw error;
@@ -210,6 +274,29 @@ const INAPlatform = {
         country,
         description,
       })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Edits an existing project (owner only — enforced by the
+     projects_update_own RLS policy, so this silently fails for anyone
+     else even if called). Resets status/readiness_stage so the caller can
+     re-trigger analysis against the updated description. */
+  async updateProject(id, { name, projectType, country, description }) {
+    const { data, error } = await supabaseClient
+      .from('projects')
+      .update({
+        name,
+        project_type: projectType,
+        country,
+        description,
+        status: 'submitted',
+        readiness_stage: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
       .select()
       .single();
     if (error) throw error;
