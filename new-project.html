@@ -37,10 +37,10 @@
 </header>
 <section class="tight">
   <div class="wrap">
-    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span><span data-i18n="np.title">Submit New Project</span></span></div>
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span id="crumbLabel"><span data-i18n="np.title">Submit New Project</span></span></div>
     <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
-    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="np.title">Submit New Project</span></h1>
-    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="np.lede">Tell us about the project. Once submitted, INA applies the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade; to generate a scored analysis with financing recommendations.</span></p>
+    <h1 class="h-section" style="margin-top:14px;" id="pageTitle"><span data-i18n="np.title">Submit New Project</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;" id="pageLede"><span data-i18n="np.lede">Tell us about the project. Once submitted, INA applies the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade; to generate a scored analysis with financing recommendations.</span></p>
 
     <form id="projectForm" style="max-width:640px; margin-top:36px;">
       <div class="field"><label for="pname"><span data-i18n="np.f.name">Project name</span></label><input id="pname" type="text" required></div>
@@ -56,6 +56,11 @@
       </div>
       <p style="font-size:12.5px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.desc.help">Include what you know: sector, size/scale, sponsor type, current stage, financing sources considered, key risks. The more detail, the more accurate the analysis.</span></p>
 
+      <div id="existingDocsBlock" style="margin-top:26px; display:none;">
+        <label><span data-i18n="np.f.docs.existing">Already uploaded</span></label>
+        <ul id="existingDocsList" style="margin-top:10px; display:flex; flex-direction:column; gap:6px; font-size:13.5px; color:var(--muted);"></ul>
+      </div>
+
       <div class="field" style="margin-top:26px;">
         <label><span data-i18n="np.f.docs">Supporting documents (optional)</span></label>
         <div class="upload-drop" id="dropZone">
@@ -64,6 +69,8 @@
         </div>
         <div class="upload-list" id="uploadList"></div>
       </div>
+
+      <p id="editNote" style="font-size:12.5px; color:var(--amber-deep); margin-top:18px; display:none;"><span data-i18n="np.edit.reanalyze">Saving changes will re-run the Investment Readiness Index&trade; analysis against the updated description.</span></p>
 
       <button type="submit" class="btn amber" style="margin-top:30px;" id="submitBtn"><span data-i18n="np.submit">Submit for Analysis</span></button>
       <p class="contact-note" id="formNote" style="margin-top:14px; min-height:18px;"></p>
@@ -105,6 +112,10 @@
 <script src="assets/script.js"></script>
 <script>
 (function () {
+  const params = new URLSearchParams(location.search);
+  const editId = params.get('id');
+  const isEdit = !!editId;
+
   const typeSelect = document.getElementById('ptype');
   const lang = INAPlatform.currentLang();
   INAPlatform.PROJECT_TYPES.forEach((t) => {
@@ -113,6 +124,14 @@
     opt.textContent = t[lang] || t.en;
     typeSelect.appendChild(opt);
   });
+
+  if (isEdit) {
+    document.getElementById('pageTitle').innerHTML = '<span data-i18n="np.edit.title">Edit Project</span>';
+    document.getElementById('pageLede').innerHTML = '<span data-i18n="np.edit.lede">Update the project details below. INA will re-run the Investment Readiness Index&trade; analysis against your changes.</span>';
+    document.getElementById('crumbLabel').innerHTML = '<span data-i18n="np.edit.title">Edit Project</span>';
+    document.getElementById('submitBtn').innerHTML = '<span data-i18n="np.edit.submit">Save Changes</span>';
+    document.getElementById('editNote').style.display = 'block';
+  }
 
   let pendingFiles = [];
   const dropZone = document.getElementById('dropZone');
@@ -154,15 +173,51 @@
     renderFiles();
   });
 
-  async function checkAuth() {
-    if (!INAPlatform.isConfigured()) return;
-    await INAPlatform.requireAuth();
-  }
-  checkAuth();
-
   const form = document.getElementById('projectForm');
   const note = document.getElementById('formNote');
   const submitBtn = document.getElementById('submitBtn');
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) return;
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    if (isEdit) {
+      let project;
+      try {
+        project = await INAPlatform.getProject(editId);
+      } catch (e) {
+        location.href = 'dashboard.html';
+        return;
+      }
+      // Editing is owner-only. An advisor (or anyone else) landing on this
+      // URL for a project they don't own gets sent to the read-only view
+      // instead — the update would be rejected by RLS anyway.
+      if (project.user_id !== session.user.id) {
+        location.href = `project.html?id=${editId}`;
+        return;
+      }
+      document.getElementById('pname').value = project.name || '';
+      document.getElementById('ptype').value = project.project_type || '';
+      document.getElementById('pcountry').value = project.country || '';
+      document.getElementById('pdesc').value = project.description || '';
+
+      try {
+        const docs = await INAPlatform.listDocuments(editId);
+        if (docs && docs.length) {
+          const block = document.getElementById('existingDocsBlock');
+          const list = document.getElementById('existingDocsList');
+          docs.forEach((d) => {
+            const li = document.createElement('li');
+            li.textContent = `📄 ${d.file_name}`;
+            list.appendChild(li);
+          });
+          block.style.display = 'block';
+        }
+      } catch (e) { /* non-critical */ }
+    }
+  }
+  init();
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -176,12 +231,16 @@
     note.textContent = lang2 === 'es' ? 'Enviando…' : 'Submitting…';
 
     try {
-      const project = await INAPlatform.createProject({
+      const payload = {
         name: document.getElementById('pname').value,
         projectType: document.getElementById('ptype').value,
         country: document.getElementById('pcountry').value,
         description: document.getElementById('pdesc').value,
-      });
+      };
+
+      const project = isEdit
+        ? await INAPlatform.updateProject(editId, payload)
+        : await INAPlatform.createProject(payload);
 
       for (const file of pendingFiles) {
         await INAPlatform.uploadDocument(project.id, file);

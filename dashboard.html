@@ -40,14 +40,52 @@
     <div class="platform-header reveal">
       <div>
         <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
-        <h1 class="h-section" style="margin-top:14px;"><span data-i18n="dash.title">Your Projects</span></h1>
+        <h1 class="h-section" style="margin-top:14px;"><span data-i18n="dash.h1">Projects</span></h1>
         <p class="who" id="whoami"></p>
       </div>
       <a href="new-project.html" class="btn amber"><span data-i18n="dash.newProject">Submit New Project</span></a>
     </div>
 
-    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading your projects…</span></div>
-    <div id="projectList" class="project-list" style="display:none;"></div>
+    <div id="advisorBanner" class="advisor-banner" style="display:none;">
+      <span data-i18n="dash.advisor.banner">Advisor view: showing every project submitted to the platform, not only your own.</span>
+    </div>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading projects…</span></div>
+
+    <div id="dashBody" style="display:none;">
+      <div class="filter-bar">
+        <div class="ffield">
+          <label for="fStatus"><span data-i18n="dash.filter.status">Status</span></label>
+          <select id="fStatus"></select>
+        </div>
+        <div class="ffield">
+          <label for="fType"><span data-i18n="dash.filter.type">Project type</span></label>
+          <select id="fType"></select>
+        </div>
+        <div class="ffield">
+          <label for="fFrom"><span data-i18n="dash.filter.from">From</span></label>
+          <input type="date" id="fFrom">
+        </div>
+        <div class="ffield">
+          <label for="fTo"><span data-i18n="dash.filter.to">To</span></label>
+          <input type="date" id="fTo">
+        </div>
+        <div class="ffield" style="flex:1 1 200px;">
+          <label for="fSearch"><span data-i18n="dash.filter.search">Search</span></label>
+          <input type="search" id="fSearch" placeholder="">
+        </div>
+        <button type="button" class="fclear" id="fClear"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+      </div>
+
+      <p class="filter-count" id="filterCount"></p>
+
+      <div id="projectList" class="project-list"></div>
+      <div id="noMatchState" class="empty-state" style="display:none;">
+        <p style="font-size:14.5px; color:var(--text);"><span data-i18n="dash.filter.none">No projects match the current filters.</span></p>
+        <button type="button" class="btn ghost" style="margin-top:18px;" id="fClear2"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+      </div>
+    </div>
+
     <div id="emptyState" class="empty-state" style="display:none;">
       <p style="font-size:15px; color:var(--text);"><span data-i18n="dash.empty.title">No projects yet.</span></p>
       <p style="margin-top:8px;"><span data-i18n="dash.empty.lede">Submit your first project to get an Investment Readiness Index&trade; score and financing recommendations.</span></p>
@@ -97,6 +135,164 @@
     location.href = 'login.html';
   });
 
+  let allProjects = [];
+  let currentUserId = null;
+  const lang = () => INAPlatform.currentLang();
+
+  const fStatus = document.getElementById('fStatus');
+  const fType = document.getElementById('fType');
+  const fFrom = document.getElementById('fFrom');
+  const fTo = document.getElementById('fTo');
+  const fSearch = document.getElementById('fSearch');
+
+  function populateFilterOptions() {
+    const allLabel = lang() === 'es' ? 'Todos' : 'All';
+
+    fStatus.innerHTML = '';
+    const optAllStatus = document.createElement('option');
+    optAllStatus.value = '';
+    optAllStatus.textContent = allLabel;
+    fStatus.appendChild(optAllStatus);
+    INAPlatform.STATUS_FILTER_VALUES.forEach((v) => {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = INAPlatform.statusFilterLabel(v);
+      fStatus.appendChild(opt);
+    });
+
+    fType.innerHTML = '';
+    const optAllType = document.createElement('option');
+    optAllType.value = '';
+    optAllType.textContent = allLabel;
+    fType.appendChild(optAllType);
+    INAPlatform.PROJECT_TYPES.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t[lang()] || t.en;
+      fType.appendChild(opt);
+    });
+
+    fSearch.placeholder = lang() === 'es' ? 'Nombre del proyecto o usuario…' : 'Project name or user…';
+  }
+
+  function applyFilters(list) {
+    const status = fStatus.value;
+    const type = fType.value;
+    const from = fFrom.value ? new Date(fFrom.value + 'T00:00:00') : null;
+    const to = fTo.value ? new Date(fTo.value + 'T23:59:59') : null;
+    const q = fSearch.value.trim().toLowerCase();
+
+    return list.filter((p) => {
+      if (status && INAPlatform.effectiveStatusValue(p) !== status) return false;
+      if (type && p.project_type !== type) return false;
+      const created = new Date(p.created_at);
+      if (from && created < from) return false;
+      if (to && created > to) return false;
+      if (q) {
+        const ownerName = (p.profiles && p.profiles.full_name) || '';
+        const ownerOrg = (p.profiles && p.profiles.organization) || '';
+        const haystack = `${p.name} ${ownerName} ${ownerOrg}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderList() {
+    const filtered = applyFilters(allProjects);
+    const list = document.getElementById('projectList');
+    const noMatch = document.getElementById('noMatchState');
+    const count = document.getElementById('filterCount');
+
+    list.innerHTML = '';
+
+    const countLabel = lang() === 'es'
+      ? `${filtered.length} de ${allProjects.length} proyecto${allProjects.length === 1 ? '' : 's'}`
+      : `${filtered.length} of ${allProjects.length} project${allProjects.length === 1 ? '' : 's'}`;
+    count.textContent = countLabel;
+
+    if (!filtered.length) {
+      list.style.display = 'none';
+      noMatch.style.display = 'block';
+      return;
+    }
+    noMatch.style.display = 'none';
+    list.style.display = 'flex';
+
+    filtered.forEach((p) => {
+      const row = document.createElement('div');
+      row.className = 'project-row';
+
+      const date = new Date(p.created_at).toLocaleDateString(lang() === 'es' ? 'es-AR' : 'en-US');
+      const ownerName = (p.profiles && p.profiles.full_name) || '—';
+      const ownerOrg = (p.profiles && p.profiles.organization) || '';
+      const isOwner = p.user_id === currentUserId;
+      const statusClass = INAPlatform.effectiveStatusClass(p);
+      const statusLabel = INAPlatform.effectiveStatusLabel(p);
+
+      const main = document.createElement('a');
+      main.href = `project.html?id=${p.id}`;
+      main.style.color = 'inherit';
+      main.style.textDecoration = 'none';
+      main.innerHTML = `
+        <div class="pname">${p.name}</div>
+        <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${p.country}</div>
+      `;
+
+      const dateLink = document.createElement('a');
+      dateLink.href = `project.html?id=${p.id}`;
+      dateLink.style.color = 'inherit';
+      dateLink.style.textDecoration = 'none';
+      dateLink.className = 'pmeta';
+      dateLink.textContent = date;
+
+      const statusLink = document.createElement('a');
+      statusLink.href = `project.html?id=${p.id}`;
+      statusLink.innerHTML = `<span class="status-pill ${statusClass}">${statusLabel}</span>`;
+
+      const ownerEl = document.createElement('a');
+      ownerEl.href = `project.html?id=${p.id}`;
+      ownerEl.style.color = 'inherit';
+      ownerEl.style.textDecoration = 'none';
+      ownerEl.className = 'powner';
+      ownerEl.innerHTML = `${ownerName}${ownerOrg ? `<span class="oorg">${ownerOrg}</span>` : ''}`;
+
+      const editEl = document.createElement('a');
+      if (isOwner) {
+        editEl.href = `new-project.html?id=${p.id}`;
+        editEl.className = 'pedit';
+        editEl.title = lang() === 'es' ? 'Editar proyecto' : 'Edit project';
+        editEl.textContent = '✎';
+      } else {
+        editEl.href = `project.html?id=${p.id}`;
+        editEl.className = 'pedit';
+        editEl.style.opacity = '0.35';
+        editEl.textContent = '→';
+      }
+
+      row.appendChild(main);
+      row.appendChild(dateLink);
+      row.appendChild(statusLink);
+      row.appendChild(ownerEl);
+      row.appendChild(editEl);
+      list.appendChild(row);
+    });
+  }
+
+  [fStatus, fType, fFrom, fTo].forEach((el) => el.addEventListener('change', renderList));
+  fSearch.addEventListener('input', renderList);
+
+  function clearFilters() {
+    fStatus.value = '';
+    fType.value = '';
+    fFrom.value = '';
+    fTo.value = '';
+    fSearch.value = '';
+    renderList();
+  }
+  document.getElementById('fClear').addEventListener('click', clearFilters);
+  document.getElementById('fClear2').addEventListener('click', clearFilters);
+
   async function init() {
     if (!INAPlatform.isConfigured()) {
       document.getElementById('loadingState').textContent =
@@ -105,41 +301,28 @@
     }
     const session = await INAPlatform.requireAuth();
     if (!session) return;
+    currentUserId = session.user.id;
 
+    let advisor = false;
     try {
       const profile = await INAPlatform.getProfile(session.user.id);
       document.getElementById('whoami').textContent =
         `${profile.full_name} · ${profile.organization}`;
+      advisor = INAPlatform.isAdvisor(profile);
+      if (advisor) document.getElementById('advisorBanner').style.display = 'flex';
     } catch (e) { /* profile not critical to show projects */ }
 
-    const projects = await INAPlatform.listProjects();
+    allProjects = await INAPlatform.listProjects();
     document.getElementById('loadingState').style.display = 'none';
 
-    if (!projects.length) {
+    if (!allProjects.length) {
       document.getElementById('emptyState').style.display = 'block';
       return;
     }
 
-    const list = document.getElementById('projectList');
-    list.style.display = 'flex';
-    projects.forEach((p) => {
-      const row = document.createElement('a');
-      row.className = 'project-row';
-      row.href = `project.html?id=${p.id}`;
-      row.style.textDecoration = 'none';
-      row.style.color = 'inherit';
-      const date = new Date(p.created_at).toLocaleDateString(INAPlatform.currentLang() === 'es' ? 'es-AR' : 'en-US');
-      row.innerHTML = `
-        <div>
-          <div class="pname">${p.name}</div>
-          <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${p.country}</div>
-        </div>
-        <div class="pmeta">${date}</div>
-        <div><span class="status-pill ${p.status}">${INAPlatform.statusLabel(p.status)}</span></div>
-        <div class="pmeta">&rarr;</div>
-      `;
-      list.appendChild(row);
-    });
+    populateFilterOptions();
+    document.getElementById('dashBody').style.display = 'block';
+    renderList();
   }
 
   init();
