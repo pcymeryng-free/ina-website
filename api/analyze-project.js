@@ -332,7 +332,10 @@ module.exports = async (req, res) => {
 
     await supabaseRest(`/projects?id=eq.${projectId}`, {
       method: 'PATCH',
-      body: { status: 'completed', updated_at: new Date().toISOString() },
+      // readiness_stage is denormalized onto projects (not just
+      // framework_analysis) so the dashboard grid's status column/filter
+      // can show the framework-derived stage without an extra join.
+      body: { status: 'completed', readiness_stage: stage, updated_at: new Date().toISOString() },
       serviceKey: SUPABASE_SERVICE_ROLE_KEY,
       supabaseUrl: SUPABASE_URL,
     });
