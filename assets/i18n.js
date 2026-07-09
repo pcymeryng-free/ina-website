@@ -2572,6 +2572,102 @@ const I18N = {
     "en": "Power availability strategy for digital infrastructure, and structuring of energy-digital co-investment.",
     "es": "Estrategia de disponibilidad energética para infraestructura digital, y estructuración de coinversión energía-digital."
   },
+  "ind.cases.eyebrow": {
+    "en": "Representative Engagements",
+    "es": "Proyectos Representativos"
+  },
+  "ind.cases.title": {
+    "en": "The kind of programs INA is built to structure.",
+    "es": "El tipo de programas que INA está diseñada para estructurar."
+  },
+  "ind.cases.lede": {
+    "en": "A representative cross-section of the digital infrastructure programs INA advises governments and regulators on — spanning financing design, network deployment and regulatory modernization.",
+    "es": "Una muestra representativa de los programas de infraestructura digital sobre los que INA asesora a gobiernos y reguladores — desde el diseño del financiamiento hasta el despliegue de redes y la modernización regulatoria."
+  },
+  "ind.cases.financing": {
+    "en": "Program design typically includes the financing strategy itself — whether drawing on a universal service fund or structuring external financing through multilateral development finance institutions.",
+    "es": "El diseño del programa suele incluir la propia estrategia de financiamiento — ya sea mediante un fondo de servicio universal o estructurando financiamiento externo a través de organismos multilaterales de financiación para el desarrollo."
+  },
+  "ind.case.a": {
+    "en": "Universal Service Fund Strengthening",
+    "es": "Fortalecimiento del Fondo de Servicio Universal"
+  },
+  "ind.case.a.d": {
+    "en": "Expanding, restructuring or leveraging national universal service funds to close connectivity gaps in underserved areas.",
+    "es": "Expansión, reestructuración o apalancamiento de fondos nacionales de servicio universal para cerrar brechas de conectividad en zonas desatendidas."
+  },
+  "ind.case.b": {
+    "en": "Digital Infrastructure Fund Design",
+    "es": "Diseño de Fondos de Infraestructura Digital"
+  },
+  "ind.case.b.d": {
+    "en": "Designing and structuring dedicated funds to channel investment into digital and technology infrastructure.",
+    "es": "Diseño y estructuración de fondos dedicados a canalizar inversión hacia infraestructura digital y tecnológica."
+  },
+  "ind.case.c": {
+    "en": "Regional Data &amp; AI Center Networks",
+    "es": "Redes Regionales de Centros de Datos e IA"
+  },
+  "ind.case.c.d": {
+    "en": "National networks of regional data centers and AI compute infrastructure, sited and financed across federal territory.",
+    "es": "Redes federales de centros regionales de datos e infraestructura de cómputo para inteligencia artificial."
+  },
+  "ind.case.d": {
+    "en": "Fixed Wireless Access Deployment",
+    "es": "Despliegue de Sitios de Acceso Inalámbrico Fijo"
+  },
+  "ind.case.d.d": {
+    "en": "National programs for FWA site rollout, extending broadband coverage where fiber isn&#8217;t yet viable.",
+    "es": "Programas nacionales de despliegue de sitios FWA para extender la cobertura de banda ancha donde la fibra aún no es viable."
+  },
+  "ind.case.e": {
+    "en": "4G/5G Coverage Expansion",
+    "es": "Expansión de Cobertura 4G/5G"
+  },
+  "ind.case.e.d": {
+    "en": "Mobile site deployment programs targeting areas with no coverage or persistently poor service.",
+    "es": "Programas de despliegue de sitios móviles en zonas sin cobertura o con servicio deficiente."
+  },
+  "ind.case.f": {
+    "en": "Public Interest Connectivity",
+    "es": "Conectividad de Interés Público"
+  },
+  "ind.case.f.d": {
+    "en": "Connectivity for border posts, health centers and other sites where coverage serves a clear public interest.",
+    "es": "Conectividad para puestos fronterizos, centros de salud y otros sitios donde la cobertura responde a un claro interés público."
+  },
+  "ind.case.g": {
+    "en": "Critical Digital Infrastructure",
+    "es": "Infraestructura Digital Crítica"
+  },
+  "ind.case.g.d": {
+    "en": "Data centers, fiber networks and submarine cable redundancy strategy for national digital resilience.",
+    "es": "Centros de datos, redes de fibra y estrategia de redundancia de cables submarinos para la resiliencia digital nacional."
+  },
+  "ind.case.h": {
+    "en": "Digital Rail Corridors",
+    "es": "Corredores Digitales Ferroviarios"
+  },
+  "ind.case.h.d": {
+    "en": "National programs deploying fiber optic backbone along existing rail rights-of-way.",
+    "es": "Programas nacionales de despliegue de fibra óptica troncal a través de las vías férreas existentes."
+  },
+  "ind.case.i": {
+    "en": "Shared &amp; Open-Access Infrastructure",
+    "es": "Infraestructura Compartida y de Acceso Abierto"
+  },
+  "ind.case.i.d": {
+    "en": "National passive infrastructure-sharing and open-access programs to lower deployment costs and speed rollout.",
+    "es": "Programas nacionales de infraestructura pasiva compartida y acceso abierto para reducir costos de despliegue y acelerar la expansión."
+  },
+  "ind.case.j": {
+    "en": "Regulatory Modernization",
+    "es": "Modernización Regulatoria"
+  },
+  "ind.case.j.d": {
+    "en": "Technology adoption and process simplification inside telecom regulators, improving service to operators and the public.",
+    "es": "Incorporación de tecnología y simplificación de procesos dentro de los reguladores de telecomunicaciones, mejorando la atención a prestadores y al público."
+  },
   "meta.ind.title": {
     "en": "Industries — International Network Advisors",
     "es": "Industrias — International Network Advisors"
