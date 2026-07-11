@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Verification Code — INA Platform" data-i18n-es="Código de Verificación — Plataforma INA">Verification Code — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Enter your two-factor authentication code." data-i18n-es="Ingresá tu código de verificación en dos pasos." content="Enter your two-factor authentication code.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="app-body">
+<header class="app-header app-header--auth">
+  <div class="app-header-inner">
+    <a href="/index.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+  <section class="auth-screen">
+    <div class="auth-screen-brand">
+      <div class="auth-brand-inner reveal">
+        <span class="eyebrow on-dark"><span data-i18n="mfa.brand.eyebrow">Two-Factor Authentication</span></span>
+        <h1 class="h-page" style="margin-top:16px; font-size:clamp(26px,3vw,34px);"><span data-i18n="mfa.brand.title">Confirming it's really you.</span></h1>
+        <p class="lede" style="margin-top:14px; font-size:14.5px;"><span data-i18n="mfa.brand.lede">Your account is protected with an extra verification step, in addition to your password.</span></p>
+      </div>
+    </div>
+    <div class="auth-screen-form">
+      <div class="auth-card reveal">
+        <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+        <h1 class="h-section" style="margin-top:14px; font-size:26px;"><span data-i18n="mfa.title">Enter verification code</span></h1>
+        <p class="lede" style="margin-top:10px; font-size:14.5px;"><span data-i18n="mfa.lede">Open your authenticator app and enter the 6-digit code for INA Platform.</span></p>
+
+        <form id="mfaForm" style="margin-top:28px;">
+          <div class="field">
+            <label for="code"><span data-i18n="mfa.f.code">Verification code</span></label>
+            <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required style="letter-spacing:.3em; font-family:var(--mono); font-size:20px; text-align:center;">
+          </div>
+
+          <button type="submit" class="btn amber" style="margin-top:26px; width:100%; justify-content:center;" id="submitBtn"><span data-i18n="mfa.submit">Verify</span></button>
+          <p class="contact-note" id="formNote" style="margin-top:14px; min-height:18px;"></p>
+        </form>
+
+        <p style="margin-top:24px; font-size:13.5px; color:var(--muted);">
+          <a href="#" id="signOutLink" style="color:var(--amber-deep);"><span data-i18n="mfa.signOutInstead">Not able to verify? Sign out</span></a>
+        </p>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js"></script>
+<script src="/assets/script.js"></script>
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const next = params.get('next') || 'dashboard.html';
+  let factorId = null;
+
+  document.getElementById('signOutLink').addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) return;
+    const session = await INAPlatform.getSession();
+    if (!session) {
+      location.href = 'login.html';
+      return;
+    }
+    const stepUpNeeded = await INAPlatform.needsMfaStepUp();
+    if (!stepUpNeeded) {
+      location.href = next;
+      return;
+    }
+    const factors = await INAPlatform.mfaListFactors();
+    const verified = (factors.totp || []).find((f) => f.status === 'verified');
+    if (!verified) {
+      // Shouldn't normally happen (needsMfaStepUp implies a verified
+      // factor exists), but fail safe rather than trap the user here.
+      location.href = next;
+      return;
+    }
+    factorId = verified.id;
+    document.getElementById('code').focus();
+  }
+  init();
+
+  const form = document.getElementById('mfaForm');
+  const note = document.getElementById('formNote');
+  const submitBtn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    note.textContent = '';
+    if (!factorId) return;
+    submitBtn.disabled = true;
+    try {
+      await INAPlatform.mfaVerifyCode(factorId, document.getElementById('code').value.trim());
+      location.href = next;
+    } catch (err) {
+      note.textContent = err.message || 'Invalid code. Try again.';
+      submitBtn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
