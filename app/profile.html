@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Profile — INA Platform" data-i18n-es="Perfil — Plataforma INA">Profile — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="View and update your INA Platform profile." data-i18n-es="Consultá y actualizá tu perfil de la Plataforma INA." content="View and update your INA Platform profile.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="security.html" class="app-back-link"><span data-i18n="sec.title">Security</span></a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span><span data-i18n="prof.title">Profile</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="prof.title">Profile</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="prof.lede">View and update your personal information.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="profBody" style="display:none; margin-top:36px; max-width:640px;">
+      <div class="info-block">
+        <h4><span data-i18n="prof.personal.title">Personal Information</span></h4>
+        <form id="profForm" style="margin-top:18px;">
+          <div class="field"><label for="fullName"><span data-i18n="auth.f.name">Full name</span></label><input id="fullName" type="text" required></div>
+          <div class="field" style="margin-top:18px;"><label for="organization"><span data-i18n="contact.f.org">Organization</span></label><input id="organization" type="text" required></div>
+          <div class="field" style="margin-top:18px;"><label for="roleType"><span data-i18n="contact.f.type">You are a</span></label>
+            <select id="roleType"></select>
+          </div>
+          <button type="submit" class="btn amber" style="margin-top:22px;"><span data-i18n="prof.submit">Save Changes</span></button>
+          <p id="profNote" class="contact-note" style="margin-top:12px;"></p>
+        </form>
+      </div>
+
+      <div class="info-block" style="margin-top:28px;">
+        <h4><span data-i18n="prof.account.title">Account</span></h4>
+        <div style="margin-top:16px; display:flex; flex-direction:column; gap:14px;">
+          <div>
+            <div style="font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);"><span data-i18n="prof.account.email">Email</span></div>
+            <div id="acctEmail" style="font-size:14px; margin-top:4px;"></div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);"><span data-i18n="prof.account.role">Platform Role</span></div>
+            <div style="margin-top:6px;"><span class="status-pill" id="acctRolePill" style="background:var(--paper-2); color:var(--text); border:1px solid var(--paper-line);"></span></div>
+            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prof.account.role.note">Assigned by an INA administrator — you can't change this yourself.</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js"></script>
+<script src="/assets/script.js"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  const roleSelect = document.getElementById('roleType');
+  const lang = INAPlatform.currentLang();
+  INAPlatform.ROLE_TYPES.forEach((r) => {
+    const opt = document.createElement('option');
+    opt.value = r.value;
+    opt.textContent = r[lang] || r.en;
+    roleSelect.appendChild(opt);
+  });
+
+  const form = document.getElementById('profForm');
+  const note = document.getElementById('profNote');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    note.textContent = '';
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    try {
+      await INAPlatform.updateProfile({
+        fullName: document.getElementById('fullName').value,
+        organization: document.getElementById('organization').value,
+        roleType: document.getElementById('roleType').value,
+      });
+      const l = INAPlatform.currentLang();
+      note.textContent = l === 'es' ? 'Perfil actualizado.' : 'Profile updated.';
+      const nameEl = document.getElementById('appUserName');
+      const avatarEl = document.getElementById('appUserAvatar');
+      if (nameEl) nameEl.textContent = document.getElementById('fullName').value;
+      if (avatarEl) avatarEl.textContent = initials(document.getElementById('fullName').value);
+    } catch (err) {
+      note.textContent = err.message || 'Something went wrong.';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    const profile = await INAPlatform.getProfile(session.user.id);
+
+    document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+    document.getElementById('appUserName').textContent = profile.full_name || '';
+    document.getElementById('appUser').style.display = 'flex';
+
+    document.getElementById('fullName').value = profile.full_name || '';
+    document.getElementById('organization').value = profile.organization || '';
+    document.getElementById('roleType').value = profile.role_type || '';
+
+    document.getElementById('acctEmail').textContent = session.user.email || '';
+    const rolePill = document.getElementById('acctRolePill');
+    const isAdvisor = INAPlatform.isAdvisor(profile);
+    rolePill.textContent = isAdvisor
+      ? (lang === 'es' ? 'Asesor' : 'Advisor')
+      : (lang === 'es' ? 'Usuario' : 'User');
+    if (isAdvisor) {
+      rolePill.style.background = 'var(--ink)';
+      rolePill.style.color = 'var(--amber)';
+      rolePill.style.borderColor = 'var(--ink)';
+    }
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('profBody').style.display = 'block';
+  }
+  init();
+})();
+</script>
+</body>
+</html>
