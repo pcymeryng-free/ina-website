@@ -213,7 +213,10 @@ const INAPlatform = {
   },
 
   /* Call at the top of any authenticated page. Redirects to login.html
-     (preserving a ?next= return path) if there's no active session. */
+     (preserving a ?next= return path) if there's no active session, and to
+     mfa-challenge.html if the session exists but hasn't completed a pending
+     two-factor step-up yet (e.g. a token refresh restored an aal1 session
+     for a user who has 2FA enabled). */
   async requireAuth() {
     const session = await this.getSession();
     if (!session) {
@@ -221,7 +224,101 @@ const INAPlatform = {
       location.href = `login.html?next=${next}`;
       return null;
     }
+    if (await this.needsMfaStepUp()) {
+      const next = encodeURIComponent(location.pathname + location.search);
+      location.href = `mfa-challenge.html?next=${next}`;
+      return null;
+    }
     return session;
+  },
+
+  /* ---------- Password reset ---------- */
+
+  /* Sends a password-reset email. The link inside it lands the user on
+     reset-password.html with a temporary recovery session already
+     established by the Supabase client. Requires reset-password.html's
+     full URL to be added to Supabase's Redirect URLs allowlist
+     (Authentication → URL Configuration) — see PLATFORM_SETUP.md. */
+  async requestPasswordReset(email) {
+    if (!supabaseClient) throw new Error('Platform not configured yet.');
+    const redirectTo = `${location.origin}/app/reset-password.html`;
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw error;
+  },
+
+  /* Sets a new password for the current session — used both by
+     reset-password.html (recovery session from an emailed link) and
+     security.html's "Change password" form (a normal logged-in session). */
+  async updatePassword(newPassword) {
+    if (!supabaseClient) throw new Error('Platform not configured yet.');
+    const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  },
+
+  /* ---------- Two-factor authentication (TOTP) ----------
+     Uses Supabase Auth's built-in MFA API — no extra backend or QR-code
+     library needed, Supabase returns a ready-to-render QR code SVG.
+     Must be enabled once in Supabase: Authentication → Providers →
+     Multi-Factor Authentication → Authenticator App (TOTP). */
+
+  async mfaListFactors() {
+    if (!supabaseClient) return { totp: [] };
+    const { data, error } = await supabaseClient.auth.mfa.listFactors();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Starts enrollment of a new authenticator-app factor. Returns
+     { id: factorId, totp: { qr_code, secret, uri } } — qr_code is already
+     a data: URI SVG image, usable directly as an <img src>. The factor is
+     "unverified" until verifyMfaEnrollment() succeeds. */
+  async mfaEnroll() {
+    if (!supabaseClient) throw new Error('Platform not configured yet.');
+    const { data, error } = await supabaseClient.auth.mfa.enroll({ factorType: 'totp' });
+    if (error) throw error;
+    return data;
+  },
+
+  /* Completes enrollment (or a login step-up) by checking a 6-digit code
+     against a factor. challenge() then verify() is the required 2-step
+     Supabase flow — this helper does both in one call. */
+  async mfaVerifyCode(factorId, code) {
+    if (!supabaseClient) throw new Error('Platform not configured yet.');
+    const { data: challenge, error: challengeError } = await supabaseClient.auth.mfa.challenge({ factorId });
+    if (challengeError) throw challengeError;
+    const { data, error } = await supabaseClient.auth.mfa.verify({
+      factorId,
+      challengeId: challenge.id,
+      code,
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  async mfaUnenroll(factorId) {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.auth.mfa.unenroll({ factorId });
+    if (error) throw error;
+  },
+
+  /* { currentLevel, nextLevel, currentAuthenticationMethods } — nextLevel
+     is 'aal2' when the account has a verified 2FA factor. If it doesn't
+     match currentLevel, this session still needs the 2FA challenge. */
+  async mfaAssurance() {
+    if (!supabaseClient) return { currentLevel: 'aal1', nextLevel: 'aal1' };
+    const { data, error } = await supabaseClient.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (error) throw error;
+    return data;
+  },
+
+  async needsMfaStepUp() {
+    if (!supabaseClient) return false;
+    try {
+      const { currentLevel, nextLevel } = await this.mfaAssurance();
+      return nextLevel === 'aal2' && currentLevel !== nextLevel;
+    } catch (e) {
+      return false;
+    }
   },
 
   async getProfile(userId) {
