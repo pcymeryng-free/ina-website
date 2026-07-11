@@ -332,6 +332,28 @@ const INAPlatform = {
     return data;
   },
 
+  /* Updates the current user's own personal info. Deliberately never
+     accepts a `role` field — the platform access role (user/advisor) is
+     admin-assigned only, and a database trigger (see
+     supabase/migration_v3_profile_self_update_guard.sql) rejects any
+     attempt to change it via a self-update even if this were bypassed. */
+  async updateProfile({ fullName, organization, roleType }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .update({
+        full_name: fullName,
+        organization,
+        role_type: roleType,
+      })
+      .eq('id', session.user.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   /* ---------- Projects ---------- */
 
   /* Lists projects visible to the current user. Row Level Security does
