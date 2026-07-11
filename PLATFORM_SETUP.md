@@ -7,9 +7,58 @@ back an **Investment Readiness Index™** score (0–100 across 8 dimensions) pl
 against INA's own documented framework methodology (see `framework.html`,
 sections F2 and F6).
 
-New pages: `register.html`, `login.html`, `dashboard.html`, `new-project.html`,
-`project.html`. Entry point: the **Platform** page now has a "Get Started" /
-"Sign in" section.
+There are three account roles. A regular **user** can only see and edit their
+own projects. An **advisor** can view every project submitted to the platform
+(read-only — editing and re-running analysis stay owner-only) in a filterable
+grid on the dashboard. An **admin** has the same view-everything access as an
+advisor, plus a **User Management** panel (`app/admin.html`) to change any
+user's role — including promoting other users to advisor or admin. Nobody can
+self-select any of these roles at signup — see "Promoting a user to advisor
+or admin" below.
+
+Two account-security features are also included: a **self-service password
+reset** (a "Forgot password?" link, no admin involvement needed) and
+**optional two-factor authentication** using an authenticator app (Google
+Authenticator, Authy, 1Password, etc. — TOTP, the free/standard method, no
+SMS provider needed). Each user turns 2FA on for themselves from the
+**Security &amp; Password** section of their own **Profile** page in the
+Platform; it isn't required to use the platform. Both need one extra
+Supabase setting each — see step 8 below.
+
+The Platform lives in its own `/app/` folder (`app/login.html`, `app/register.html`,
+`app/dashboard.html`, `app/new-project.html`, `app/project.html`, plus
+`app/index.html` as a standalone entry point) with its own header/footer —
+a lighter "product" shell instead of the full marketing navigation — so it
+works as an app in its own right, not just a page inside the website.
+
+You can reach it two ways:
+- **From the website**: the **Platform** page has a "Get Started" / "Sign in"
+  section that links into `/app/`, same as before.
+- **Directly**: `yourdomain.com/app/` on its own opens straight into the
+  Platform (redirecting to sign-in or the dashboard depending on whether
+  you're logged in) — no need to go through the marketing site first. This
+  is the link to bookmark or share if someone only needs the Platform.
+
+The old flat URLs (`/login.html`, `/register.html`, `/dashboard.html`,
+`/new-project.html`, `/project.html`) still work — `vercel.json` permanently
+redirects them to their `/app/` equivalents, so nothing that already linked
+to the old addresses breaks.
+
+> **Already set this up before?** If you already ran the original
+> `supabase/schema.sql` and have real signups, do NOT re-run that file.
+> Instead, run these migrations once each, in order, for whichever ones you
+> haven't run yet (SQL Editor → New query → paste → Run):
+> 1. `supabase/migration_v2_roles_and_grid.sql` — advisor role, dashboard
+>    grid's denormalized status field, updated access policies.
+> 2. `supabase/migration_v3_profile_self_update_guard.sql` — blocks users
+>    from changing their own `role` via the profile-edit form.
+> 3. `supabase/migration_v4_admin_role.sql` — adds the admin role, a synced
+>    `email` column on `profiles` for the admin panel, and lets
+>    advisors/admins read every profile row (needed for both the advisor
+>    grid's "submitted by" column and the admin user list).
+>
+> Skip straight to "Promoting a user to advisor or admin" below once
+> they're run.
 
 This needs two pieces of infrastructure you don't have yet: a **Supabase**
 project (database + authentication + file storage) and some **environment
@@ -104,7 +153,62 @@ function, no extra configuration needed.
 4. Within under a minute you should see a scored Investment Readiness Index™
    with 8 dimension bars, a gap roadmap, and financing recommendations.
 
+## 8. Enable password reset + two-factor authentication
+
+Two small one-time settings in Supabase, both under **Authentication**:
+
+1. **Redirect URL (required for "Forgot password?" to work)**
+   Go to **Authentication → URL Configuration → Redirect URLs** and add:
+   ```
+   https://yourdomain.com/app/reset-password.html
+   ```
+   (use your real domain). Supabase rejects password-reset links that
+   redirect anywhere not on this list, as a security measure — without this,
+   users clicking the emailed link will land on an "invalid link" screen.
+   If you're still testing locally or on a Vercel preview URL, add that
+   URL too (you can list more than one).
+
+2. **Authenticator app (TOTP) provider (required for the Security page's
+   "Enable Two-Factor Authentication" to work)**
+   Go to **Authentication → Providers**, scroll to **Multi-Factor
+   Authentication**, and make sure **Authenticator App (TOTP)** is turned
+   on. (Recent Supabase projects usually have this on by default — if the
+   toggle is already green, there's nothing to do.)
+
+Nothing else is needed — both features are self-service per user, with no
+admin step per account. Test them the same way as step 7: create a test
+account, then from **Security** in the Platform enable 2FA (scan the QR
+code with an authenticator app), sign out, and sign back in to confirm it
+asks for a code; separately, try "Forgot password?" on the sign-in page.
+
 ---
+
+## Promoting a user to advisor or admin
+
+**The very first admin** has to be promoted through Supabase directly —
+there's no in-app way to grant yourself the role (by design: it's what
+`prevent_role_self_change_trigger` from migration v3 enforces at the
+database level, not just in the UI):
+
+1. Sign up for a normal account through `app/register.html` if you haven't
+   already (any `role_type` is fine — it doesn't affect platform role).
+2. In Supabase, go to **SQL Editor** and run:
+   ```sql
+   update public.profiles set role = 'admin' where email = 'you@example.com';
+   ```
+   (Or, equivalently: **Table Editor → profiles** → find your row → click
+   into the `role` cell → change it to `admin` → Save.)
+3. Sign out and back in. You'll now see an **Admin** link in the Platform's
+   header nav, leading to `app/admin.html`.
+
+**Every admin after the first** can be promoted from inside the app —
+sign in as an admin, go to **Admin** in the header, find the user in the
+list, and change their role from the dropdown (`user` / `advisor` /
+`admin`). The same panel demotes someone back to `user`, or promotes
+someone straight to `advisor` without going through Supabase at all. The
+one thing it can't do — again, enforced by the database trigger, not just
+hidden in the UI — is let an admin change their *own* role; that always
+requires another admin, or the Supabase steps above.
 
 ## How it works (for reference)
 
@@ -123,6 +227,21 @@ function, no extra configuration needed.
 - **No build step**: everything is still plain HTML/CSS/JS, consistent with
   the rest of the site. The only new thing is the `api/` folder, which Vercel
   runs as serverless functions automatically.
+- **Password reset & 2FA**: both use Supabase Auth's built-in APIs directly
+  from the browser (`resetPasswordForEmail`, `updateUser`, and the
+  `auth.mfa.*` TOTP methods) — no custom backend code, no third-party SMS
+  provider. `app/profile.html` is where a user manages their personal info,
+  their own 2FA factor, and their password, all on one page;
+  `app/forgot-password.html` / `app/reset-password.html` handle the
+  "I forgot my password" flow; `app/mfa-challenge.html` is the extra code
+  screen shown after a password sign-in when 2FA is on for that account.
+  (The old standalone `app/security.html` page was folded into
+  `app/profile.html` — `vercel.json` redirects the old URL there.)
+- **Admin role**: `app/admin.html` lists every user (`INAPlatform.listAllProfiles()`)
+  and changes roles (`INAPlatform.updateUserRole()`), both plain Supabase-js
+  calls — the actual protection is server-side RLS
+  (`profiles_select_own_or_privileged` / `profiles_update_admin` in
+  `supabase/migration_v4_admin_role.sql`), not the page hiding the button.
 
 ## Known limitations (v1)
 
@@ -131,6 +250,17 @@ function, no extra configuration needed.
   the analysis prompt but their content isn't extracted yet.
 - Email confirmation on signup is on by default in Supabase — decide whether
   you want that friction or not (see step 7 above).
-- There's no password-reset flow yet, no admin view across all users'
-  projects, and no email notification when an analysis finishes (the results
-  page polls automatically while you have it open).
+- There's no email notification when an analysis finishes (the results page
+  polls automatically while you have it open).
+- 2FA recovery codes aren't implemented — if a user loses access to their
+  authenticator app, an admin needs to remove their TOTP factor manually in
+  Supabase (**Authentication → Users → select the user → MFA** tab) so they
+  can sign back in and re-enroll.
+- Editing a project (via the pencil icon on the dashboard grid, or "Edit
+  Project" on the results page) is owner-only, including for advisors —
+  advisors can view any project but not modify it or re-trigger its
+  analysis.
+- The dashboard's status column/filter shows the framework-derived stage
+  (Concept Stage / Early Structuring / Advanced Structuring / Investment
+  Ready) once an analysis completes, and the pipeline state (Submitted /
+  Analyzing / Error) before that.
