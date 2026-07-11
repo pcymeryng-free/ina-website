@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title data-i18n-en="Profile — INA Platform" data-i18n-es="Perfil — Plataforma INA">Profile — INA Platform</title>
-<meta name="description" data-i18n-attr="content" data-i18n-en="View and update your INA Platform profile." data-i18n-es="Consultá y actualizá tu perfil de la Plataforma INA." content="View and update your INA Platform profile.">
+<meta name="description" data-i18n-attr="content" data-i18n-en="View and update your INA Platform profile, security and password." data-i18n-es="Consultá y actualizá tu perfil, seguridad y contraseña de la Plataforma INA." content="View and update your INA Platform profile, security and password.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -21,6 +21,7 @@
     <nav class="app-nav">
       <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
       <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
+      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
     </nav>
     <div class="app-header-actions">
       <div class="lang-switch" aria-label="Language">
@@ -30,7 +31,6 @@
         <span class="app-user-avatar" id="appUserAvatar">–</span>
         <span class="app-user-name" id="appUserName"></span>
       </a>
-      <a href="security.html" class="app-back-link"><span data-i18n="sec.title">Security</span></a>
       <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
     </div>
   </div>
@@ -72,6 +72,55 @@
             <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prof.account.role.note">Assigned by an INA administrator — you can't change this yourself.</span></p>
           </div>
         </div>
+      </div>
+
+      <div class="info-block" style="margin-top:28px;">
+        <h4><span data-i18n="sec.mfa.title">Two-Factor Authentication</span></h4>
+        <p style="font-size:13.5px; color:var(--muted); margin-top:8px;"><span data-i18n="sec.mfa.lede">Add a 6-digit code from an authenticator app as a second step when signing in, on top of your password.</span></p>
+
+        <div id="mfaDisabledView" style="margin-top:18px;">
+          <button type="button" class="btn amber" id="mfaEnableBtn"><span data-i18n="sec.mfa.enable">Enable Two-Factor Authentication</span></button>
+          <p id="mfaEnableNote" class="contact-note" style="margin-top:12px;"></p>
+        </div>
+
+        <div id="mfaEnrollView" style="display:none; margin-top:20px;">
+          <div style="display:flex; gap:28px; flex-wrap:wrap;">
+            <div>
+              <img id="mfaQr" src="" alt="" style="width:170px; height:170px; border:1px solid var(--paper-line); background:#fff; padding:8px; display:block;">
+            </div>
+            <div style="flex:1 1 240px; min-width:0;">
+              <p style="font-size:13px; color:var(--muted);"><span data-i18n="sec.mfa.scan">Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.), or enter this code manually:</span></p>
+              <p id="mfaSecret" style="font-family:var(--mono); font-size:12.5px; margin-top:10px; padding:10px 14px; background:var(--paper-2); word-break:break-all;"></p>
+              <div class="field" style="margin-top:18px;">
+                <label for="mfaCode"><span data-i18n="mfa.f.code">Verification code</span></label>
+                <input id="mfaCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" style="font-family:var(--mono); letter-spacing:.2em;">
+              </div>
+              <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;">
+                <button type="button" class="btn amber" id="mfaConfirmBtn"><span data-i18n="sec.mfa.confirm">Verify &amp; Enable</span></button>
+                <button type="button" class="btn ghost" id="mfaCancelBtn"><span data-i18n="sec.mfa.cancel">Cancel</span></button>
+              </div>
+              <p id="mfaEnrollNote" class="contact-note" style="margin-top:12px;"></p>
+            </div>
+          </div>
+        </div>
+
+        <div id="mfaEnabledView" style="display:none; margin-top:18px;">
+          <div class="advisor-banner" style="background:var(--amber-soft); border-color:var(--amber); color:var(--amber-deep);">
+            <span data-i18n="sec.mfa.enabled">Two-factor authentication is enabled on your account.</span>
+          </div>
+          <button type="button" class="btn ghost" style="margin-top:16px;" id="mfaDisableBtn"><span data-i18n="sec.mfa.disable">Disable Two-Factor Authentication</span></button>
+          <p id="mfaDisableNote" class="contact-note" style="margin-top:12px;"></p>
+        </div>
+      </div>
+
+      <div class="info-block" style="margin-top:28px;">
+        <h4><span data-i18n="sec.pw.title">Change Password</span></h4>
+        <form id="pwForm" style="margin-top:18px;">
+          <div class="field"><label for="newPw"><span data-i18n="rp.f.new">New password</span></label><input id="newPw" type="password" minlength="8" required></div>
+          <div class="field" style="margin-top:14px;"><label for="newPw2"><span data-i18n="rp.f.confirm">Confirm new password</span></label><input id="newPw2" type="password" minlength="8" required></div>
+          <button type="submit" class="btn amber" style="margin-top:20px;"><span data-i18n="sec.pw.submit">Update Password</span></button>
+          <p id="pwNote" class="contact-note" style="margin-top:12px;"></p>
+        </form>
       </div>
     </div>
   </div>
@@ -136,6 +185,105 @@
     }
   });
 
+  /* ---------- Two-factor authentication (merged from the former
+     app/security.html) ---------- */
+  let pendingFactorId = null;
+
+  async function refreshMfaView() {
+    const factors = await INAPlatform.mfaListFactors();
+    const totp = factors.totp || [];
+    const verified = totp.find((f) => f.status === 'verified');
+
+    document.getElementById('mfaDisabledView').style.display = (!verified && !pendingFactorId) ? 'block' : 'none';
+    document.getElementById('mfaEnrollView').style.display = pendingFactorId ? 'block' : 'none';
+    document.getElementById('mfaEnabledView').style.display = (verified && !pendingFactorId) ? 'block' : 'none';
+  }
+
+  document.getElementById('mfaEnableBtn').addEventListener('click', async () => {
+    const mfaNote = document.getElementById('mfaEnableNote');
+    mfaNote.textContent = '';
+    try {
+      // Clean up any leftover unverified factor from a previously
+      // abandoned enrollment attempt before starting a fresh one.
+      const factors = await INAPlatform.mfaListFactors();
+      for (const f of (factors.totp || [])) {
+        if (f.status === 'unverified') {
+          try { await INAPlatform.mfaUnenroll(f.id); } catch (e) { /* best effort */ }
+        }
+      }
+      const enrolled = await INAPlatform.mfaEnroll();
+      pendingFactorId = enrolled.id;
+      document.getElementById('mfaQr').src = enrolled.totp.qr_code;
+      document.getElementById('mfaSecret').textContent = enrolled.totp.secret;
+      await refreshMfaView();
+    } catch (err) {
+      mfaNote.textContent = err.message || 'Something went wrong.';
+    }
+  });
+
+  document.getElementById('mfaCancelBtn').addEventListener('click', async () => {
+    if (pendingFactorId) {
+      try { await INAPlatform.mfaUnenroll(pendingFactorId); } catch (e) { /* best effort */ }
+      pendingFactorId = null;
+    }
+    document.getElementById('mfaCode').value = '';
+    await refreshMfaView();
+  });
+
+  document.getElementById('mfaConfirmBtn').addEventListener('click', async () => {
+    const enrollNote = document.getElementById('mfaEnrollNote');
+    enrollNote.textContent = '';
+    if (!pendingFactorId) return;
+    const code = document.getElementById('mfaCode').value.trim();
+    try {
+      await INAPlatform.mfaVerifyCode(pendingFactorId, code);
+      pendingFactorId = null;
+      document.getElementById('mfaCode').value = '';
+      await refreshMfaView();
+    } catch (err) {
+      enrollNote.textContent = err.message || 'Invalid code. Try again.';
+    }
+  });
+
+  document.getElementById('mfaDisableBtn').addEventListener('click', async () => {
+    const disableNote = document.getElementById('mfaDisableNote');
+    disableNote.textContent = '';
+    const confirmMsg = lang === 'es'
+      ? '¿Desactivar la verificación en dos pasos?'
+      : 'Disable two-factor authentication?';
+    if (!confirm(confirmMsg)) return;
+    try {
+      const factors = await INAPlatform.mfaListFactors();
+      const verified = (factors.totp || []).find((f) => f.status === 'verified');
+      if (verified) await INAPlatform.mfaUnenroll(verified.id);
+      await refreshMfaView();
+    } catch (err) {
+      disableNote.textContent = err.message || 'Something went wrong.';
+    }
+  });
+
+  /* ---------- Change password (merged from the former
+     app/security.html) ---------- */
+  const pwForm = document.getElementById('pwForm');
+  pwForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pwNote = document.getElementById('pwNote');
+    pwNote.textContent = '';
+    const p1 = document.getElementById('newPw').value;
+    const p2 = document.getElementById('newPw2').value;
+    if (p1 !== p2) {
+      pwNote.textContent = lang === 'es' ? 'Las contraseñas no coinciden.' : 'Passwords don’t match.';
+      return;
+    }
+    try {
+      await INAPlatform.updatePassword(p1);
+      pwNote.textContent = lang === 'es' ? 'Contraseña actualizada.' : 'Password updated.';
+      pwForm.reset();
+    } catch (err) {
+      pwNote.textContent = err.message || 'Something went wrong.';
+    }
+  });
+
   async function init() {
     if (!INAPlatform.isConfigured()) {
       document.getElementById('loadingState').textContent =
@@ -150,6 +298,7 @@
     document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
     document.getElementById('appUserName').textContent = profile.full_name || '';
     document.getElementById('appUser').style.display = 'flex';
+    if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
 
     document.getElementById('fullName').value = profile.full_name || '';
     document.getElementById('organization').value = profile.organization || '';
@@ -157,18 +306,20 @@
 
     document.getElementById('acctEmail').textContent = session.user.email || '';
     const rolePill = document.getElementById('acctRolePill');
-    const isAdvisor = INAPlatform.isAdvisor(profile);
-    rolePill.textContent = isAdvisor
-      ? (lang === 'es' ? 'Asesor' : 'Advisor')
-      : (lang === 'es' ? 'Usuario' : 'User');
-    if (isAdvisor) {
+    rolePill.textContent = INAPlatform.platformRoleLabel(profile.role);
+    if (profile.role === 'advisor') {
       rolePill.style.background = 'var(--ink)';
       rolePill.style.color = 'var(--amber)';
       rolePill.style.borderColor = 'var(--ink)';
+    } else if (profile.role === 'admin') {
+      rolePill.style.background = 'var(--amber)';
+      rolePill.style.color = 'var(--ink)';
+      rolePill.style.borderColor = 'var(--amber-deep)';
     }
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('profBody').style.display = 'block';
+    await refreshMfaView();
   }
   init();
 })();

@@ -21,6 +21,7 @@
     <nav class="app-nav">
       <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
       <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
+      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
     </nav>
     <div class="app-header-actions">
       <div class="lang-switch" aria-label="Language">
@@ -30,7 +31,6 @@
         <span class="app-user-avatar" id="appUserAvatar">–</span>
         <span class="app-user-name" id="appUserName"></span>
       </a>
-      <a href="security.html" class="app-back-link"><span data-i18n="sec.title">Security</span></a>
       <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
     </div>
   </div>
@@ -276,6 +276,7 @@
       document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
       document.getElementById('appUserName').textContent = profile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
+      if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
     } catch (e) { /* non-critical */ }
 
     const project = await INAPlatform.getProject(projectId);

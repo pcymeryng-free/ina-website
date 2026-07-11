@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="User Management — INA Platform" data-i18n-es="Gesti&oacute;n de Usuarios — Plataforma INA">User Management — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Manage user accounts and platform roles." data-i18n-es="Gestion&aacute; cuentas de usuario y roles de la plataforma." content="Manage user accounts and platform roles.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
+      <a href="admin.html" id="adminNavLink" class="active" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span><span data-i18n="admin.title">User Management</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="admin.title">User Management</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="admin.lede">View every registered user and change their platform role.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="adminBody" style="display:none; margin-top:32px;">
+      <div class="filter-bar">
+        <div class="ffield">
+          <label for="fRole"><span data-i18n="admin.filter.role">Role</span></label>
+          <select id="fRole"></select>
+        </div>
+        <div class="ffield" style="flex:1 1 240px;">
+          <label for="fSearch"><span data-i18n="dash.filter.search">Search</span></label>
+          <input type="search" id="fSearch" placeholder="">
+        </div>
+        <button type="button" class="fclear" id="fClear"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+      </div>
+      <p class="filter-count" id="filterCount"></p>
+
+      <div class="user-list" id="userList"></div>
+
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <div class="ei"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="currentColor" stroke-width="1.5"/></svg></div>
+        <p><span data-i18n="admin.empty">No users match these filters.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js"></script>
+<script src="/assets/script.js"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString(INAPlatform.currentLang() === 'es' ? 'es-AR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  let allUsers = [];
+  let currentUserId = null;
+  const ROLES = ['user', 'advisor', 'admin'];
+
+  const fRole = document.getElementById('fRole');
+  const fSearch = document.getElementById('fSearch');
+
+  function populateRoleFilter() {
+    const lang = INAPlatform.currentLang();
+    fRole.innerHTML = '';
+    const allOpt = document.createElement('option');
+    allOpt.value = '';
+    allOpt.textContent = lang === 'es' ? 'Todos' : 'All';
+    fRole.appendChild(allOpt);
+    ROLES.forEach((r) => {
+      const opt = document.createElement('option');
+      opt.value = r;
+      opt.textContent = INAPlatform.platformRoleLabel(r);
+      fRole.appendChild(opt);
+    });
+  }
+
+  function filteredUsers() {
+    const role = fRole.value;
+    const q = (fSearch.value || '').trim().toLowerCase();
+    return allUsers.filter((u) => {
+      if (role && u.role !== role) return false;
+      if (q) {
+        const hay = `${u.full_name || ''} ${u.email || ''} ${u.organization || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  async function handleRoleChange(select, user) {
+    const newRole = select.value;
+    const lang = INAPlatform.currentLang();
+    const confirmMsg = lang === 'es'
+      ? `¿Cambiar el rol de ${user.full_name || user.email} a "${INAPlatform.platformRoleLabel(newRole)}"?`
+      : `Change ${user.full_name || user.email}'s role to "${INAPlatform.platformRoleLabel(newRole)}"?`;
+    if (!confirm(confirmMsg)) {
+      select.value = user.role;
+      return;
+    }
+    select.disabled = true;
+    try {
+      const updated = await INAPlatform.updateUserRole(user.id, newRole);
+      user.role = updated.role;
+    } catch (err) {
+      select.value = user.role;
+      alert(err.message || (lang === 'es' ? 'No se pudo cambiar el rol.' : "Couldn't change the role."));
+    } finally {
+      select.disabled = (user.id === currentUserId);
+    }
+  }
+
+  function renderList() {
+    const list = document.getElementById('userList');
+    const users = filteredUsers();
+    document.getElementById('filterCount').textContent =
+      `${users.length} / ${allUsers.length}`;
+
+    list.innerHTML = '';
+    document.getElementById('emptyState').style.display = users.length ? 'none' : 'block';
+
+    users.forEach((u) => {
+      const row = document.createElement('div');
+      row.className = 'user-row';
+
+      const who = document.createElement('div');
+      who.className = 'uwho';
+      who.innerHTML = `
+        <span class="mini-avatar">${initials(u.full_name)}</span>
+        <span class="utext">
+          <span class="uname">${u.full_name || '—'}</span>
+          <span class="uemail">${u.email || ''}</span>
+        </span>`;
+
+      const org = document.createElement('div');
+      org.className = 'utext';
+      org.innerHTML = `
+        <span class="uorg">${u.organization || '—'}</span>
+        <span class="uroletype">${INAPlatform.roleTypeLabel(u.role_type)}</span>`;
+
+      const roleCell = document.createElement('div');
+      const select = document.createElement('select');
+      select.className = 'urole-select';
+      ROLES.forEach((r) => {
+        const opt = document.createElement('option');
+        opt.value = r;
+        opt.textContent = INAPlatform.platformRoleLabel(r);
+        if (r === u.role) opt.selected = true;
+        select.appendChild(opt);
+      });
+      const isSelf = u.id === currentUserId;
+      select.disabled = isSelf;
+      select.title = isSelf
+        ? (INAPlatform.currentLang() === 'es' ? 'No podés cambiar tu propio rol.' : "You can't change your own role.")
+        : '';
+      select.addEventListener('change', () => handleRoleChange(select, u));
+      roleCell.appendChild(select);
+
+      const dateCell = document.createElement('div');
+      dateCell.className = 'userdate';
+      dateCell.textContent = fmtDate(u.created_at);
+
+      row.appendChild(who);
+      row.appendChild(org);
+      row.appendChild(roleCell);
+      row.appendChild(dateCell);
+      list.appendChild(row);
+    });
+  }
+
+  fRole.addEventListener('change', renderList);
+  fSearch.addEventListener('input', renderList);
+  document.getElementById('fClear').addEventListener('click', () => {
+    fRole.value = '';
+    fSearch.value = '';
+    renderList();
+  });
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAdmin();
+    if (!session) return;
+    currentUserId = session.user.id;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      document.getElementById('adminNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    populateRoleFilter();
+    allUsers = await INAPlatform.listAllProfiles();
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('adminBody').style.display = 'block';
+    renderList();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
