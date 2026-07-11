@@ -50,6 +50,12 @@ const PROJECT_STATUS_LABELS = {
   error: { en: 'Error', es: 'Error' },
 };
 
+const PLATFORM_ROLE_LABELS = {
+  user: { en: 'User', es: 'Usuario' },
+  advisor: { en: 'Advisor', es: 'Asesor' },
+  admin: { en: 'Admin', es: 'Admin' },
+};
+
 const READINESS_STAGE_LABELS = {
   'Concept Stage': { en: 'Concept Stage', es: 'Etapa de Concepto' },
   'Early Structuring': { en: 'Early Structuring', es: 'Estructuración Temprana' },
@@ -144,6 +150,7 @@ const INAPlatform = {
   DIMENSION_ORDER,
   PRIORITY_LABELS,
   STATUS_FILTER_VALUES,
+  PLATFORM_ROLE_LABELS,
   currentLang,
 
   dimensionLabel(key) {
@@ -164,6 +171,20 @@ const INAPlatform = {
      manually by an admin via the Supabase Table Editor, never at signup. */
   isAdvisor(profile) {
     return !!profile && profile.role === 'advisor';
+  },
+
+  /* Full platform administrator — can view every project (same as
+     advisor) plus change any user's role from app/admin.html. Assigned
+     the same way advisors are: an existing admin promotes someone from
+     the admin panel, or (for the very first admin) via the Supabase
+     Table Editor / SQL Editor. */
+  isAdmin(profile) {
+    return !!profile && profile.role === 'admin';
+  },
+
+  platformRoleLabel(value) {
+    const entry = PLATFORM_ROLE_LABELS[value];
+    return entry ? entry[currentLang()] : value;
   },
 
   roleTypeLabel(value) { return labelFor(ROLE_TYPES, value, currentLang()); },
@@ -232,6 +253,21 @@ const INAPlatform = {
     return session;
   },
 
+  /* Call at the top of app/admin.html. Does everything requireAuth() does,
+     then also checks the signed-in user's profile.role and redirects
+     non-admins to dashboard.html — the RLS policies would block the actual
+     data access anyway, this just avoids showing the page shell first. */
+  async requireAdmin() {
+    const session = await this.requireAuth();
+    if (!session) return null;
+    const profile = await this.getProfile(session.user.id);
+    if (!this.isAdmin(profile)) {
+      location.href = 'dashboard.html';
+      return null;
+    }
+    return session;
+  },
+
   /* ---------- Password reset ---------- */
 
   /* Sends a password-reset email. The link inside it lands the user on
@@ -248,7 +284,7 @@ const INAPlatform = {
 
   /* Sets a new password for the current session — used both by
      reset-password.html (recovery session from an emailed link) and
-     security.html's "Change password" form (a normal logged-in session). */
+     profile.html's "Change password" form (a normal logged-in session). */
   async updatePassword(newPassword) {
     if (!supabaseClient) throw new Error('Platform not configured yet.');
     const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
@@ -348,6 +384,36 @@ const INAPlatform = {
         role_type: roleType,
       })
       .eq('id', session.user.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* ---------- Admin: user management ----------
+     All admin-only in practice: RLS (profiles_select_own_or_privileged /
+     profiles_update_admin, see supabase/migration_v4_admin_role.sql) is
+     what actually enforces this — a non-admin calling these gets an empty
+     result / a rejected update, not just a hidden button. */
+
+  async listAllProfiles() {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  /* Changes another user's platform role. Deliberately does nothing to
+     stop an admin from calling this on their OWN id from devtools — the
+     prevent_role_self_change_trigger rejects that at the database level
+     regardless of what the client sends. */
+  async updateUserRole(userId, role) {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .update({ role })
+      .eq('id', userId)
       .select()
       .single();
     if (error) throw error;

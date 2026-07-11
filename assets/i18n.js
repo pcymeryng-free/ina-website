@@ -3228,6 +3228,11 @@ const I18N = {
     "en": "Want to work with our advisors directly?",
     "es": "¿Querés trabajar directamente con nuestros asesores?"
   },
+  "admin.empty": { "en": "No users match these filters.", "es": "Ningún usuario coincide con estos filtros." },
+  "admin.filter.role": { "en": "Role", "es": "Rol" },
+  "admin.lede": { "en": "View every registered user and change their platform role.", "es": "Consultá todos los usuarios registrados y cambiá su rol en la plataforma." },
+  "admin.nav": { "en": "Admin", "es": "Admin" },
+  "admin.title": { "en": "User Management", "es": "Gestión de Usuarios" },
   "app.backToSite": { "en": "&larr; INA website", "es": "&larr; Sitio de INA" },
   "app.footer.site": { "en": "INA website", "es": "Sitio de INA" },
   "app.logo.label": { "en": "Platform", "es": "Plataforma" },
