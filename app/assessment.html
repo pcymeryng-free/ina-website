@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Self-Assessment — INA Platform" data-i18n-es="Autoevaluaci&oacute;n — Plataforma INA">Self-Assessment — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Answer the 9-dimension questionnaire to score your project's investment readiness." data-i18n-es="Respond&eacute; el cuestionario de 9 dimensiones para puntuar la preparaci&oacute;n de inversi&oacute;n de tu proyecto." content="Answer the 9-dimension questionnaire to score your project's investment readiness.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
+      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><a href="#" id="crumbProject">…</a><span>/</span><span><span data-i18n="assess.title">Self-Assessment</span></span></div>
+    <span class="eyebrow"><span data-i18n="pd.results.eyebrow">Investment Readiness Index&trade;</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="assess.title">Self-Assessment</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="assess.lede">Answer 3 quick statements for each of the 9 readiness dimensions and get an instant score — no waiting for AI analysis.</span></p>
+    <p style="margin-top:10px; max-width:640px; font-size:12.5px; color:var(--muted);"><span data-i18n="assess.aiFuture">In the future, INA's AI agent will be able to answer these questions for you automatically from your uploaded documents — for now, you answer them directly.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="assessBody" style="display:none; margin-top:24px; max-width:640px;">
+      <div class="assess-progress" id="assessProgress"></div>
+
+      <form id="assessForm">
+        <div id="dimList"></div>
+
+        <button type="submit" class="btn amber" id="assessSubmit" style="margin-top:32px;" disabled><span data-i18n="assess.submit">Calculate My Score</span></button>
+        <p id="assessNote" class="contact-note" style="margin-top:12px;"></p>
+      </form>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js"></script>
+<script src="/assets/script.js"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  const params = new URLSearchParams(location.search);
+  const projectId = params.get('id');
+  const lang = INAPlatform.currentLang();
+  const scaleLow = lang === 'es' ? 'Muy en desacuerdo' : 'Strongly disagree';
+  const scaleHigh = lang === 'es' ? 'Muy de acuerdo' : 'Strongly agree';
+
+  let dimensionSet = [];
+  const TOTAL_QUESTIONS_PER_DIM = 3;
+
+  function renderQuestionnaire(projectType) {
+    dimensionSet = INAPlatform.assessmentQuestionSet(projectType);
+    const dimList = document.getElementById('dimList');
+    dimList.innerHTML = '';
+
+    dimensionSet.forEach((dim, dimIdx) => {
+      const block = document.createElement('div');
+      block.className = 'assess-dim';
+      block.innerHTML = `<h4><span class="adnum">${dimIdx + 1}/${dimensionSet.length}</span>${INAPlatform.dimensionLabel(dim.key)}</h4>`;
+
+      dim.questions.forEach((q, qIdx) => {
+        const qWrap = document.createElement('div');
+        qWrap.className = 'likert-q';
+        const name = `${dim.key}__${qIdx}`;
+        const opts = [1, 2, 3, 4, 5].map((v) => `
+          <label class="likert-opt">
+            <input type="radio" name="${name}" value="${v}" data-dim="${dim.key}" required>
+            <span>${v}</span>
+          </label>
+        `).join('');
+        qWrap.innerHTML = `
+          <p class="likert-qtext">${q[lang] || q.en}</p>
+          <div class="likert-scale" role="radiogroup">${opts}</div>
+          <div class="likert-caption"><span>${scaleLow}</span><span>${scaleHigh}</span></div>
+        `;
+        block.appendChild(qWrap);
+      });
+
+      dimList.appendChild(block);
+    });
+
+    const totalQuestions = dimensionSet.length * TOTAL_QUESTIONS_PER_DIM;
+    updateProgress(0, totalQuestions);
+
+    dimList.addEventListener('change', () => {
+      const answeredNames = new Set();
+      dimList.querySelectorAll('input[type="radio"]:checked').forEach((el) => answeredNames.add(el.name));
+      updateProgress(answeredNames.size, totalQuestions);
+    });
+  }
+
+  function updateProgress(answered, total) {
+    const progress = document.getElementById('assessProgress');
+    const label = lang === 'es' ? 'preguntas respondidas' : 'questions answered';
+    progress.innerHTML = `<b>${answered}</b> / ${total} ${label}`;
+    document.getElementById('assessSubmit').disabled = answered < total;
+  }
+
+  const form = document.getElementById('assessForm');
+  let currentProject = null;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('assessNote');
+    note.textContent = '';
+    const submitBtn = document.getElementById('assessSubmit');
+    submitBtn.disabled = true;
+
+    const answers = {};
+    dimensionSet.forEach((dim) => { answers[dim.key] = []; });
+    new FormData(form).forEach((value, name) => {
+      const dimKey = name.split('__')[0];
+      if (answers[dimKey]) answers[dimKey].push(value);
+    });
+
+    try {
+      await INAPlatform.submitManualAssessment(projectId, currentProject.project_type, answers);
+      location.href = `project.html?id=${projectId}`;
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar la autoevaluación.' : "Couldn't save the self-assessment.");
+      submitBtn.disabled = false;
+    }
+  });
+
+  async function init() {
+    if (!projectId) { location.href = 'dashboard.html'; return; }
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    const project = await INAPlatform.getProject(projectId);
+    if (project.user_id !== session.user.id) {
+      // Self-assessment is owner-only — RLS would reject the insert anyway,
+      // this just avoids showing the form to an advisor/admin viewer.
+      location.href = `project.html?id=${projectId}`;
+      return;
+    }
+    currentProject = project;
+
+    const crumb = document.getElementById('crumbProject');
+    crumb.textContent = project.name;
+    crumb.href = `project.html?id=${projectId}`;
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('assessBody').style.display = 'block';
+    renderQuestionnaire(project.project_type);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

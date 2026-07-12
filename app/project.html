@@ -55,6 +55,7 @@
           <p class="who" id="ownerInfo" style="display:none;"></p>
         </div>
         <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+          <a href="#" id="assessLink" class="btn ghost small" style="display:none;"><span data-i18n="assess.cta">Self-Assessment</span></a>
           <a href="#" id="editLink" class="btn ghost small" style="display:none;"><span data-i18n="pd.editProject">Edit Project</span></a>
           <span class="status-pill" id="statusPill" style="font-size:12px; padding:8px 16px;"></span>
         </div>
@@ -83,7 +84,10 @@
         <hr class="rule">
         <div style="margin-top:44px;">
           <span class="eyebrow"><span data-i18n="pd.results.eyebrow">Investment Readiness Index&trade;</span></span>
-          <h2 class="h-section" style="margin-top:14px;"><span data-i18n="pd.results.title">Framework Analysis Results</span></h2>
+          <h2 class="h-section" style="margin-top:14px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+            <span data-i18n="pd.results.title">Framework Analysis Results</span>
+            <span class="status-pill" id="sourceBadge" style="font-size:10.5px; background:var(--paper-2); color:var(--muted); border:1px solid var(--paper-line);"></span>
+          </h2>
 
           <div class="readiness-score" style="margin-top:30px;">
             <div class="score-circle">
@@ -187,10 +191,23 @@
     document.getElementById('stageLabel').textContent = INAPlatform.stageLabel(a.stage);
     document.getElementById('summaryText').textContent = a.summary || '';
 
+    const lang = INAPlatform.currentLang();
+    const sourceBadge = document.getElementById('sourceBadge');
+    sourceBadge.textContent = a.source === 'manual'
+      ? (lang === 'es' ? 'Autoevaluación' : 'Self-Assessed')
+      : (lang === 'es' ? 'Análisis por IA' : 'AI Analysis');
+
     const dimGrid = document.getElementById('dimGrid');
     dimGrid.innerHTML = '';
     const dims = a.dimensions || {};
-    INAPlatform.DIMENSION_ORDER.forEach((key) => {
+    // Show the 8 canonical dimensions in their fixed order first, then any
+    // extra key (the manual questionnaire's 9th, project-type-specific
+    // dimension) that the AI's dimensions object never has.
+    const orderedKeys = [
+      ...INAPlatform.DIMENSION_ORDER.filter((k) => k in dims),
+      ...Object.keys(dims).filter((k) => !INAPlatform.DIMENSION_ORDER.includes(k)),
+    ];
+    orderedKeys.forEach((key) => {
       const entry = dims[key];
       const score = entry && typeof entry.score === 'number' ? entry.score : 0;
       const row = document.createElement('div');
@@ -291,6 +308,9 @@
       const editLink = document.getElementById('editLink');
       editLink.href = `new-project.html?id=${projectId}`;
       editLink.style.display = 'inline-flex';
+      const assessLink = document.getElementById('assessLink');
+      assessLink.href = `assessment.html?id=${projectId}`;
+      assessLink.style.display = 'inline-flex';
     } else {
       document.getElementById('advisorNote').style.display = 'flex';
     }
