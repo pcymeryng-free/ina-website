@@ -7,6 +7,20 @@ back an **Investment Readiness Index™** score (0–100 across 8 dimensions) pl
 against INA's own documented framework methodology (see `framework.html`,
 sections F2 and F6).
 
+There are two ways to get a score, and a project owner can use either or
+both: **AI Analysis** (the "Request Analysis" button — Claude reads the
+project description and attached documents) or **Self-Assessment**
+(`app/assessment.html` — a 27-question, 9-dimension questionnaire the owner
+answers by hand: the same 8 Investment Readiness Index™ dimensions plus a
+9th dimension specific to the project's type, e.g. "Route & Landing
+Feasibility" for a submarine cable or "Power & Cooling Readiness" for an AI
+datacenter). Both write to the same `framework_analysis` table and render
+identically on the results page, tagged with a small "AI Analysis" /
+"Self-Assessed" badge. The self-assessment path is meant as a stopgap —
+the long-term plan is for an AI agent to infer the same 27 answers directly
+from a project's uploaded documents instead of asking the owner to answer
+them by hand.
+
 There are three account roles. A regular **user** can only see and edit their
 own projects. An **advisor** can view every project submitted to the platform
 (read-only — editing and re-running analysis stay owner-only) in a filterable
@@ -56,6 +70,10 @@ to the old addresses breaks.
 >    `email` column on `profiles` for the admin panel, and lets
 >    advisors/admins read every profile row (needed for both the advisor
 >    grid's "submitted by" column and the admin user list).
+> 4. `supabase/migration_v5_manual_assessment.sql` — adds a `source`
+>    column to `framework_analysis` ('ai' / 'manual') and lets a project
+>    owner insert their own 'manual'-tagged row, for the new
+>    `app/assessment.html` self-assessment questionnaire.
 >
 > Skip straight to "Promoting a user to advisor or admin" below once
 > they're run.
