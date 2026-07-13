@@ -159,7 +159,11 @@
     document.getElementById('crumbName').textContent = p.name;
     document.getElementById('ptypeLabel').textContent = INAPlatform.projectTypeLabel(p.project_type);
     document.getElementById('pname').textContent = p.name;
-    document.getElementById('pmeta').textContent = p.country;
+    const lang = INAPlatform.currentLang();
+    const beneficiariesText = p.beneficiary_count != null
+      ? ` · ${p.beneficiary_count.toLocaleString(lang === 'es' ? 'es-AR' : 'en-US')} ${lang === 'es' ? 'beneficiarios' : 'beneficiaries'}`
+      : '';
+    document.getElementById('pmeta').textContent = p.country + beneficiariesText;
     document.getElementById('pdesc').textContent = p.description;
     document.getElementById('secondaryTypeTags').innerHTML = (p.secondary_types || [])
       .map((t) => `<span class="type-tag">${INAPlatform.projectTypeLabel(t)}</span>`)

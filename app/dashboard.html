@@ -73,6 +73,10 @@
           <label for="fTo"><span data-i18n="dash.filter.to">To</span></label>
           <input type="date" id="fTo">
         </div>
+        <div class="ffield">
+          <label for="fMinBeneficiaries"><span data-i18n="dash.filter.minBeneficiaries">Min. beneficiaries</span></label>
+          <input type="number" id="fMinBeneficiaries" min="0" step="1" style="min-width:110px;">
+        </div>
         <div class="ffield" style="flex:1 1 200px;">
           <label for="fSearch"><span data-i18n="dash.filter.search">Search</span></label>
           <input type="search" id="fSearch" placeholder="">
@@ -126,6 +130,7 @@
   const fType = document.getElementById('fType');
   const fFrom = document.getElementById('fFrom');
   const fTo = document.getElementById('fTo');
+  const fMinBeneficiaries = document.getElementById('fMinBeneficiaries');
   const fSearch = document.getElementById('fSearch');
 
   function initials(name) {
@@ -216,6 +221,7 @@
     const type = fType.value;
     const from = fFrom.value ? new Date(fFrom.value + 'T00:00:00') : null;
     const to = fTo.value ? new Date(fTo.value + 'T23:59:59') : null;
+    const minBeneficiaries = fMinBeneficiaries.value !== '' ? Number(fMinBeneficiaries.value) : null;
     const q = fSearch.value.trim().toLowerCase();
 
     return list.filter((p) => {
@@ -224,6 +230,7 @@
       const created = new Date(p.created_at);
       if (from && created < from) return false;
       if (to && created > to) return false;
+      if (minBeneficiaries != null && (p.beneficiary_count == null || p.beneficiary_count < minBeneficiaries)) return false;
       if (q) {
         const ownerName = (p.profiles && p.profiles.full_name) || '';
         const ownerOrg = (p.profiles && p.profiles.organization) || '';
@@ -275,11 +282,14 @@
       const secondaryTags = (p.secondary_types || [])
         .map((t) => `<span class="type-tag">${INAPlatform.projectTypeLabel(t)}</span>`)
         .join(' ');
+      const beneficiariesText = p.beneficiary_count != null
+        ? ` · ${p.beneficiary_count.toLocaleString(lang() === 'es' ? 'es-AR' : 'en-US')} ${lang() === 'es' ? 'beneficiarios' : 'beneficiaries'}`
+        : '';
       main.innerHTML = `
         <span class="ptype-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${typeIcon(p.project_type)}</svg></span>
         <span class="maintext">
           <div class="pname">${p.name}</div>
-          <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${p.country}</div>
+          <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${p.country}${beneficiariesText}</div>
           ${secondaryTags ? `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:5px;">${secondaryTags}</div>` : ''}
         </span>
       `;
@@ -324,12 +334,13 @@
     });
   }
 
-  [fStatus, fType, fFrom, fTo].forEach((el) => el.addEventListener('change', renderList));
+  [fStatus, fType, fFrom, fTo, fMinBeneficiaries].forEach((el) => el.addEventListener('change', renderList));
   fSearch.addEventListener('input', renderList);
 
   function clearFilters() {
     fStatus.value = '';
     fType.value = '';
+    fMinBeneficiaries.value = '';
     fFrom.value = '';
     fTo.value = '';
     fSearch.value = '';

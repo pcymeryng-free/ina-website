@@ -157,7 +157,9 @@
     });
 
     try {
-      await INAPlatform.submitManualAssessment(projectId, currentProject.project_type, answers);
+      await INAPlatform.submitManualAssessment(projectId, currentProject.project_type, answers, {
+        beneficiaryCount: currentProject.beneficiary_count,
+      });
       location.href = `project.html?id=${projectId}`;
     } catch (err) {
       note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar la autoevaluación.' : "Couldn't save the self-assessment.");

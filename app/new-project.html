@@ -58,6 +58,9 @@
 
       <div class="field" style="margin-top:18px;"><label for="pcountry"><span data-i18n="np.f.country">Country</span></label><input id="pcountry" type="text" required></div>
 
+      <div class="field" style="margin-top:18px;"><label for="pbeneficiaries"><span data-i18n="np.f.beneficiaries">Beneficiaries reached (households, optional)</span></label><input id="pbeneficiaries" type="number" min="0" step="1"></div>
+      <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.beneficiaries.help">For last-mile/universal-access projects — the number of households, businesses or public establishments the project reaches. Strengthens the case for Universal Service Fund financing.</span></p>
+
       <div class="field" style="margin-top:18px;"><label for="pdesc"><span data-i18n="np.f.desc">Project description</span></label>
         <textarea id="pdesc" required style="min-height:160px;" placeholder=""></textarea>
       </div>
@@ -231,6 +234,7 @@
       document.getElementById('pname').value = project.name || '';
       document.getElementById('ptype').value = project.project_type || '';
       document.getElementById('pcountry').value = project.country || '';
+      document.getElementById('pbeneficiaries').value = project.beneficiary_count != null ? project.beneficiary_count : '';
       document.getElementById('pdesc').value = project.description || '';
       secondaryChecked = new Set(project.secondary_types || []);
       renderSecondaryTypeOptions();
@@ -270,6 +274,7 @@
         secondaryTypes: Array.from(secondaryChecked),
         country: document.getElementById('pcountry').value,
         description: document.getElementById('pdesc').value,
+        beneficiaryCount: document.getElementById('pbeneficiaries').value,
       };
 
       const project = isEdit
