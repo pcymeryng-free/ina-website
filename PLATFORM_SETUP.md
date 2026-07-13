@@ -74,6 +74,12 @@ to the old addresses breaks.
 >    column to `framework_analysis` ('ai' / 'manual') and lets a project
 >    owner insert their own 'manual'-tagged row, for the new
 >    `app/assessment.html` self-assessment questionnaire.
+> 5. `supabase/migration_v6_secondary_project_types.sql` — adds
+>    `projects.secondary_types` (text array) so a submission can tag
+>    additional infrastructure components beyond its single primary type
+>    (e.g. a datacenter project that also involves a new submarine cable
+>    and a terrestrial backbone) — informational only, doesn't affect
+>    scoring.
 >
 > Skip straight to "Promoting a user to advisor or admin" below once
 > they're run.
