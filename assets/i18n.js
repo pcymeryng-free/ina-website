@@ -2116,6 +2116,10 @@ const I18N = {
     "en": "Commercial &amp; institutional capital",
     "es": "Capital comercial e institucional"
   },
+  "fw.f6.a9": {
+    "en": "Universal Service Funds",
+    "es": "Fondos de Servicio Universal"
+  },
   "fw.f6.dl1.t": {
     "en": "Financing Shortlist",
     "es": "Lista Corta de Financiamiento"
@@ -2227,6 +2231,14 @@ const I18N = {
   "fin.ci.d": {
     "en": "Banks and investors once a project clears readiness.",
     "es": "Bancos e inversores una vez que el proyecto supera la etapa de preparación."
+  },
+  "fin.usf.t": {
+    "en": "Universal Service Funds",
+    "es": "Fondos de Servicio Universal"
+  },
+  "fin.usf.d": {
+    "en": "Regulator-administered subsidized credit and grants for underserved-area buildout.",
+    "es": "Crédito subsidiado y subsidios administrados por el regulador para el despliegue en zonas desatendidas."
   },
   "fw.res.toolkits": {
     "en": "Browse Framework Toolkits",
@@ -3264,6 +3276,7 @@ const I18N = {
   "dash.empty.title": { "en": "No projects yet.", "es": "Todavía no hay proyectos." },
   "dash.filter.clear": { "en": "Clear filters", "es": "Limpiar filtros" },
   "dash.filter.from": { "en": "From", "es": "Desde" },
+  "dash.filter.minBeneficiaries": { "en": "Min. beneficiaries", "es": "Beneficiarios mín." },
   "dash.filter.none": { "en": "No projects match the current filters.", "es": "Ningún proyecto coincide con los filtros actuales." },
   "dash.filter.search": { "en": "Search", "es": "Buscar" },
   "dash.filter.status": { "en": "Status", "es": "Estado" },
@@ -3295,6 +3308,8 @@ const I18N = {
   "np.edit.reanalyze": { "en": "Saving changes will re-run the Investment Readiness Index&trade; analysis against the updated description.", "es": "Guardar los cambios volverá a ejecutar el análisis del Investment Readiness Index&trade; sobre la descripción actualizada." },
   "np.edit.submit": { "en": "Save Changes", "es": "Guardar Cambios" },
   "np.edit.title": { "en": "Edit Project", "es": "Editar Proyecto" },
+  "np.f.beneficiaries": { "en": "Beneficiaries reached (households, optional)", "es": "Beneficiarios alcanzados (hogares, opcional)" },
+  "np.f.beneficiaries.help": { "en": "For last-mile/universal-access projects — the number of households, businesses or public establishments the project reaches. Strengthens the case for Universal Service Fund financing.", "es": "Para proyectos de última milla/acceso universal — la cantidad de hogares, comercios o establecimientos públicos que alcanza el proyecto. Refuerza el caso para financiamiento de un Fondo de Servicio Universal." },
   "np.f.country": { "en": "Country", "es": "País" },
   "np.f.desc": { "en": "Project description", "es": "Descripción del proyecto" },
   "np.f.desc.help": { "en": "Include what you know: sector, size/scale, sponsor type, current stage, financing sources considered, key risks. The more detail, the more accurate the analysis.", "es": "Incluí lo que sepas: sector, tamaño/escala, tipo de patrocinador, etapa actual, fuentes de financiamiento consideradas, riesgos clave. Cuanto más detalle, más preciso el análisis." },

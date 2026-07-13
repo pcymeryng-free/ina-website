@@ -254,6 +254,20 @@ const STAGE_FINANCING_SUGGESTION = {
   },
 };
 
+// Suggested whenever a last-mile project reports a beneficiary_count —
+// regulator-administered Universal Service Funds (e.g. ENACOM's Fondo de
+// Servicio Universal in Argentina) specifically fund underserved-area
+// buildout measured by exactly this metric, and are a much more likely
+// fit than the generic stage-based suggestion below for that profile.
+const USF_SUGGESTION = {
+  mechanism: 'Universal Service Funds',
+  rationale: {
+    en: 'This project reports a concrete number of beneficiaries reached in an underserved area — a strong fit for a national Universal Service Fund’s subsidized-rate credit or grant line (e.g. ENACOM’s Fondo de Servicio Universal in Argentina).',
+    es: 'Este proyecto reporta una cantidad concreta de beneficiarios alcanzados en una zona desatendida — un buen candidato para una línea de crédito a tasa subsidiada o subsidio de un Fondo de Servicio Universal nacional (por ejemplo, el Fondo de Servicio Universal de ENACOM en Argentina).',
+  },
+};
+const USF_ELIGIBLE_TYPES = ['fiber_backbone_last_mile', 'fixed_wireless_access'];
+
 function stageForScore(score) {
   if (score <= 25) return 'Concept Stage';
   if (score <= 50) return 'Early Structuring';
@@ -276,7 +290,7 @@ function assessmentQuestionSet(projectType) {
    same shape framework_analysis rows use (overall_score/stage/dimensions/
    gap_roadmap/financing_recommendations/summary), so project.html renders
    a manual result exactly like an AI one. */
-function computeManualAssessment(projectType, answers) {
+function computeManualAssessment(projectType, answers, { beneficiaryCount } = {}) {
   const lang = currentLang();
   const set = assessmentQuestionSet(projectType);
 
@@ -301,10 +315,14 @@ function computeManualAssessment(projectType, answers) {
       action: (RECOMMENDATION_TIPS[d.key] && RECOMMENDATION_TIPS[d.key][lang]) || '',
     }));
 
+  const financingRecommendations = [];
+  if (Number(beneficiaryCount) > 0 && USF_ELIGIBLE_TYPES.includes(projectType)) {
+    financingRecommendations.push({ mechanism: USF_SUGGESTION.mechanism, rationale: USF_SUGGESTION.rationale[lang] });
+  }
   const financeSuggestion = STAGE_FINANCING_SUGGESTION[stage];
-  const financingRecommendations = financeSuggestion
-    ? [{ mechanism: financeSuggestion.mechanism, rationale: financeSuggestion.rationale[lang] }]
-    : [];
+  if (financeSuggestion) {
+    financingRecommendations.push({ mechanism: financeSuggestion.mechanism, rationale: financeSuggestion.rationale[lang] });
+  }
 
   const lowest = set
     .map(({ key }) => ({ key, score: dimensions[key].score }))
@@ -635,10 +653,10 @@ const INAPlatform = {
      supabase/migration_v5_manual_assessment.sql), and updates the
      project's status/readiness_stage the same way a completed AI analysis
      would, so the dashboard grid and project.html treat both identically. */
-  async submitManualAssessment(projectId, projectType, answers) {
+  async submitManualAssessment(projectId, projectType, answers, { beneficiaryCount } = {}) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
-    const result = computeManualAssessment(projectType, answers);
+    const result = computeManualAssessment(projectType, answers, { beneficiaryCount });
 
     const { error: insertError } = await supabaseClient
       .from('framework_analysis')
@@ -733,7 +751,11 @@ const INAPlatform = {
      or which 9th dimension the self-assessment questionnaire uses — that
      always follows the primary projectType. See
      supabase/migration_v6_secondary_project_types.sql. */
-  async createProject({ name, projectType, secondaryTypes, country, description }) {
+  /* beneficiaryCount is optional — households/beneficiaries reached (the
+     key impact metric for Universal Service Fund-style submissions, see
+     supabase/migration_v7_beneficiary_count.sql). Null/undefined is
+     stored as null. */
+  async createProject({ name, projectType, secondaryTypes, country, description, beneficiaryCount }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
@@ -745,6 +767,7 @@ const INAPlatform = {
         secondary_types: (secondaryTypes || []).filter((t) => t !== projectType),
         country,
         description,
+        beneficiary_count: beneficiaryCount === '' || beneficiaryCount == null ? null : Number(beneficiaryCount),
       })
       .select()
       .single();
@@ -756,7 +779,7 @@ const INAPlatform = {
      projects_update_own RLS policy, so this silently fails for anyone
      else even if called). Resets status/readiness_stage so the caller can
      re-trigger analysis against the updated description. */
-  async updateProject(id, { name, projectType, secondaryTypes, country, description }) {
+  async updateProject(id, { name, projectType, secondaryTypes, country, description, beneficiaryCount }) {
     const { data, error } = await supabaseClient
       .from('projects')
       .update({
@@ -765,6 +788,7 @@ const INAPlatform = {
         secondary_types: (secondaryTypes || []).filter((t) => t !== projectType),
         country,
         description,
+        beneficiary_count: beneficiaryCount === '' || beneficiaryCount == null ? null : Number(beneficiaryCount),
         status: 'submitted',
         readiness_stage: null,
         updated_at: new Date().toISOString(),
