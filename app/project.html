@@ -56,6 +56,7 @@
           <p class="who" id="ownerInfo" style="display:none;"></p>
         </div>
         <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+          <a href="#" id="fsuLink" class="btn ghost small" style="display:none;"><span data-i18n="fsu.cta">FSU Scoring</span></a>
           <a href="#" id="assessLink" class="btn ghost small" style="display:none;"><span data-i18n="assess.cta">Self-Assessment</span></a>
           <a href="#" id="editLink" class="btn ghost small" style="display:none;"><span data-i18n="pd.editProject">Edit Project</span></a>
           <span class="status-pill" id="statusPill" style="font-size:12px; padding:8px 16px;"></span>
@@ -65,6 +66,22 @@
       <div class="info-block" style="margin-top:0;">
         <h4><span data-i18n="pd.description">Project Description</span></h4>
         <p id="pdesc" style="font-size:14px; color:var(--muted); white-space:pre-wrap;"></p>
+      </div>
+
+      <div id="fsuBlock" style="margin-top:24px; display:none;">
+        <div class="info-block">
+          <h4 style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <span data-i18n="fsu.block.title">FSU Scoring &mdash; Res. ENACOM 359/2025</span>
+            <a href="#" id="fsuBlockEditLink" class="btn ghost small" style="display:none; padding:6px 12px;"><span data-i18n="fsu.block.edit">Edit</span></a>
+          </h4>
+          <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-top:6px;">
+            <div class="score-circle" style="width:74px; height:74px;">
+              <span class="num" id="fsuBlockScore" style="font-size:22px;">–</span>
+              <span class="max" style="font-size:9px;">/ 100</span>
+            </div>
+            <p style="font-size:13px; color:var(--muted); max-width:420px;"><span data-i18n="fsu.block.help">Estimación orientativa del puntaje de selección para el Certificado de Elegibilidad, calculada según la matriz del manual de ENACOM.</span></p>
+          </div>
+        </div>
       </div>
 
       <div id="docsBlock" style="margin-top:24px; display:none;">
@@ -119,7 +136,7 @@
 
       <div id="errorBlock" style="margin-top:40px; display:none;">
         <div class="analysis-pending" style="border-color:#d99;">
-          <p style="font-size:14.5px; color:#a13a3a;"><span data-i18n="pd.error">The analysis couldn't be completed.</span></p>
+          <p style="font-size:14.5px; color:#a13a3a;" id="errorText"><span data-i18n="pd.error">The analysis couldn't be completed.</span></p>
           <button class="btn ghost small" id="retryBtnError" style="margin-top:16px;"><span data-i18n="pd.retry">Retry Analysis</span></button>
         </div>
       </div>
@@ -154,6 +171,8 @@
   const projectId = params.get('id');
   let pollTimer = null;
   let isOwner = true;
+  let pollStartedAt = null;
+  const POLL_TIMEOUT_MS = 90000; // give up and show a retry-able error after ~90s
 
   function renderProject(p) {
     document.getElementById('crumbName').textContent = p.name;
@@ -253,14 +272,23 @@
     document.getElementById('pendingBlock').style.display = 'block';
   }
 
-  function showError() {
+  function showError(isTimeout) {
     document.getElementById('pendingBlock').style.display = 'none';
     document.getElementById('resultsBlock').style.display = 'none';
     document.getElementById('errorBlock').style.display = 'block';
+    const errorText = document.getElementById('errorText');
+    const lang = INAPlatform.currentLang();
+    if (isTimeout) {
+      errorText.innerHTML = '<span data-i18n="pd.error.timeout">This is taking longer than expected and may have timed out. Please retry — if it keeps happening, the document may be too large or complex to process.</span>';
+    } else {
+      errorText.innerHTML = '<span data-i18n="pd.error">The analysis couldn\'t be completed.</span>';
+    }
+    if (typeof applyLang === 'function') applyLang(lang);
   }
 
   async function runAnalysisAndPoll() {
     showPending();
+    pollStartedAt = Date.now();
     try {
       await INAPlatform.requestAnalysis(projectId);
     } catch (e) { /* fall through to polling / error state below */ }
@@ -269,6 +297,13 @@
 
   async function poll() {
     if (pollTimer) clearTimeout(pollTimer);
+
+    if (pollStartedAt && Date.now() - pollStartedAt > POLL_TIMEOUT_MS) {
+      showError(true);
+      if (isOwner) document.getElementById('retryBtnError').style.display = 'inline-flex';
+      return;
+    }
+
     try {
       const project = await INAPlatform.getProject(projectId);
       renderProject(project);
@@ -277,7 +312,7 @@
         const analysis = await INAPlatform.getAnalysis(projectId);
         if (analysis) { renderAnalysis(analysis); return; }
       }
-      if (project.status === 'error') { showError(); return; }
+      if (project.status === 'error') { showError(false); return; }
 
       showPending();
       pollTimer = setTimeout(poll, 4000);
@@ -319,8 +354,31 @@
       const assessLink = document.getElementById('assessLink');
       assessLink.href = `assessment.html?id=${projectId}`;
       assessLink.style.display = 'inline-flex';
+      if (project.project_type === INAPlatform.FSU_SCORING_ELIGIBLE_TYPE) {
+        const fsuLink = document.getElementById('fsuLink');
+        fsuLink.href = `fsu-scoring.html?id=${projectId}`;
+        fsuLink.style.display = 'inline-flex';
+      }
     } else {
       document.getElementById('advisorNote').style.display = 'flex';
+    }
+
+    // FSU Scoring block — shown for any viewer (owner or advisor) as long
+    // as the project type is eligible AND a score has actually been saved;
+    // getFsuScoring() returns null (not an error) when none exists yet.
+    if (project.project_type === INAPlatform.FSU_SCORING_ELIGIBLE_TYPE) {
+      try {
+        const fsu = await INAPlatform.getFsuScoring(projectId);
+        if (fsu) {
+          document.getElementById('fsuBlockScore').textContent = fsu.score_total;
+          document.getElementById('fsuBlock').style.display = 'block';
+          if (isOwner) {
+            const editLink = document.getElementById('fsuBlockEditLink');
+            editLink.href = `fsu-scoring.html?id=${projectId}`;
+            editLink.style.display = 'inline-flex';
+          }
+        }
+      } catch (e) { /* non-critical */ }
     }
 
     renderProject(project);
@@ -338,12 +396,17 @@
       if (analysis) { renderAnalysis(analysis); return; }
     }
     if (project.status === 'error') {
-      showError();
+      showError(false);
       if (isOwner) document.getElementById('retryBtnError').style.display = 'inline-flex';
       return;
     }
     showPending();
     if (isOwner) document.getElementById('retryBtn').style.display = 'inline-flex';
+    // Anchor the timeout window to when the project last changed status
+    // (not just page load) so reloading a genuinely-stuck page doesn't
+    // reset the clock and poll forever.
+    const lastUpdated = project.updated_at ? new Date(project.updated_at).getTime() : Date.now();
+    pollStartedAt = Math.min(Date.now(), lastUpdated);
     poll();
   }
 

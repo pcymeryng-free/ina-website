@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="FSU Scoring — INA Platform" data-i18n-es="Puntaje FSU — Plataforma INA">FSU Scoring — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Calculate the ENACOM Resoluci&oacute;n 359/2025 Fondo de Servicio Universal selection score for your fiber project." data-i18n-es="Calcul&aacute; el puntaje de selecci&oacute;n del Fondo de Servicio Universal (Resoluci&oacute;n ENACOM 359/2025) para tu proyecto de fibra." content="Calculate the ENACOM Resolución 359/2025 Fondo de Servicio Universal selection score for your fiber project.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
+      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><a href="#" id="crumbProject">…</a><span>/</span><span><span data-i18n="fsu.title">FSU Scoring</span></span></div>
+    <span class="eyebrow"><span data-i18n="fsu.kicker">Fondo de Servicio Universal &mdash; Res. ENACOM 359/2025</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="fsu.title">FSU Scoring</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="fsu.lede">The 100-point selection-scoring matrix from ENACOM's "Manual Estrat&eacute;gico de Elaboraci&oacute;n de Proyectos" — fill in the 7 criteria below and get an instant score for your fiber-to-the-home project's Certificado de Elegibilidad application.</span></p>
+    <p style="margin-top:10px; max-width:640px; font-size:12.5px; color:var(--muted);"><span data-i18n="fsu.disclaimer.top">This is an orientation tool based on the manual's published point table — it doesn't replace ENACOM's own evaluation, and only applies to Fiber Backbone / Last Mile projects.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="fsuBody" style="display:none; margin-top:24px; max-width:640px;">
+      <form id="fsuForm">
+
+        <div class="info-block" style="margin-top:0;">
+          <h4>1. <span data-i18n="fsu.c1.title">Baja Penetraci&oacute;n de Fibra</span> <span class="fsu-pts" id="ptsPenetracion">0 / 20</span></h4>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:14px;"><span data-i18n="fsu.c1.help">Penetraci&oacute;n = Accesos de Fibra (Datos Abiertos ENACOM) &divide; Total de Hogares (Censo 2022 / INDEC). Menos de 15%: 20 pts. Entre 15% y 38%: 15 pts. M&aacute;s de 38%: 0 pts.</span></p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="field"><label for="fTotalHogares"><span data-i18n="fsu.f.totalHogares">Total de hogares (localidad)</span></label><input id="fTotalHogares" type="number" min="0" step="1"></div>
+            <div class="field"><label for="fAccesosFibra"><span data-i18n="fsu.f.accesosFibra">Accesos de fibra actuales</span></label><input id="fAccesosFibra" type="number" min="0" step="1"></div>
+          </div>
+          <p style="margin-top:10px; font-size:12.5px; color:var(--amber-deep);" id="penetracionResult"></p>
+        </div>
+
+        <div class="info-block" style="margin-top:18px;">
+          <h4>2. <span data-i18n="fsu.c2.title">Modelo de Negocio</span> <span class="fsu-pts" id="ptsModelo">0 / 20</span></h4>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:14px;"><span data-i18n="fsu.c2.help">Una red mayorista neutral (Open Access) suma el m&aacute;ximo, incluso si tambi&eacute;n vende al p&uacute;blico.</span></p>
+          <div class="chk-group" id="modeloOptions"></div>
+        </div>
+
+        <div class="info-block" style="margin-top:18px;">
+          <h4>3. <span data-i18n="fsu.c3.title">Vanguardia Tecnol&oacute;gica</span> <span class="fsu-pts" id="ptsTecnologia">0 / 15</span></h4>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:14px;"><span data-i18n="fsu.c3.help">XGS-PON (10G sim&eacute;trico) suma el m&aacute;ximo; GPON est&aacute;ndar suma menos.</span></p>
+          <div class="chk-group" id="tecnologiaOptions"></div>
+        </div>
+
+        <div class="info-block" style="margin-top:18px;">
+          <h4>4. <span data-i18n="fsu.c4.title">Mejora de Velocidad Media</span> <span class="fsu-pts" id="ptsVelocidad">0 / 15</span></h4>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:14px;"><span data-i18n="fsu.c4.help">El manual define un &uacute;nico umbral: una elevaci&oacute;n de velocidad media local mayor al 300% suma los 15 puntos completos; no define puntaje parcial por debajo de ese umbral.</span></p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="field"><label for="fVelocidadActual"><span data-i18n="fsu.f.velocidadActual">Velocidad media actual (Mbps)</span></label><input id="fVelocidadActual" type="number" min="0" step="0.1"></div>
+            <div class="field"><label for="fVelocidadPropuesta"><span data-i18n="fsu.f.velocidadPropuesta">Velocidad ofrecida propuesta (Mbps)</span></label><input id="fVelocidadPropuesta" type="number" min="0" step="0.1"></div>
+          </div>
+          <p style="margin-top:10px; font-size:12.5px; color:var(--amber-deep);" id="velocidadResult"></p>
+        </div>
+
+        <div class="info-block" style="margin-top:18px;">
+          <h4>5. <span data-i18n="fsu.c5.title">Salto Tecnol&oacute;gico</span> <span class="fsu-pts" id="ptsSalto">0 / 10</span></h4>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:14px;"><span data-i18n="fsu.c5.help">&Aacute;rea Blanca (sin red fija previa) suma el m&aacute;ximo; migrar de cobre/wireless a fibra suma menos.</span></p>
+          <div class="chk-group" id="saltoOptions"></div>
+        </div>
+
+        <div class="info-block" style="margin-top:18px;">
+          <h4>6. <span data-i18n="fsu.c6.title">Densidad Poblacional</span> <span class="fsu-pts" id="ptsDensidad">0 / 10</span></h4>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:14px;"><span data-i18n="fsu.c6.help">Localidades de hasta 50.000 habitantes suman el m&aacute;ximo; de 50.001 a 100.000 suman menos; m&aacute;s de 100.000 no suma (fuera del rango objetivo del manual).</span></p>
+          <div class="field" style="max-width:280px;"><label for="fPoblacion"><span data-i18n="fsu.f.poblacion">Poblaci&oacute;n de la localidad</span></label><input id="fPoblacion" type="number" min="0" step="1"></div>
+        </div>
+
+        <div class="info-block" style="margin-top:18px;">
+          <h4>7. <span data-i18n="fsu.c7.title">Capacidad T&eacute;cnica</span> <span class="fsu-pts" id="ptsCapacidad">0 / 10</span></h4>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:14px;"><span data-i18n="fsu.c7.help">Antig&uuml;edad de la MiPyME/Cooperativa operando en TIC.</span></p>
+          <div class="chk-group" id="capacidadOptions"></div>
+        </div>
+
+        <div style="margin-top:40px;">
+          <hr class="rule">
+          <div class="readiness-score" style="margin-top:30px;">
+            <div class="score-circle">
+              <span class="num" id="fsuTotalNum">0</span>
+              <span class="max">/ 100</span>
+            </div>
+            <div>
+              <div class="eyebrow" style="color:var(--amber-deep);"><span data-i18n="fsu.result.title">Puntaje FSU</span></div>
+              <p style="margin-top:10px; max-width:420px; font-size:13px; color:var(--muted);"><span data-i18n="fsu.result.disclaimer">Estimaci&oacute;n orientativa seg&uacute;n la matriz publicada por ENACOM — el puntaje final y la elegibilidad los determina el organismo.</span></p>
+            </div>
+          </div>
+          <div class="dim-grid" id="fsuBreakdown"></div>
+        </div>
+
+        <button type="submit" class="btn amber" id="fsuSubmit" style="margin-top:32px;"><span data-i18n="fsu.submit">Guardar Puntaje FSU</span></button>
+        <p id="fsuNote" class="contact-note" style="margin-top:12px;"></p>
+      </form>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js"></script>
+<script src="/assets/script.js"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  const params = new URLSearchParams(location.search);
+  const projectId = params.get('id');
+  const lang = INAPlatform.currentLang();
+
+  function renderRadioGroup(containerId, options, name) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = options.map((opt) => `
+      <label class="chk-pill">
+        <input type="radio" name="${name}" value="${opt.value}">
+        <span>${opt[lang] || opt.en}</span>
+      </label>
+    `).join('');
+  }
+
+  renderRadioGroup('modeloOptions', INAPlatform.FSU_MODELO_NEGOCIO_OPTIONS, 'modeloNegocio');
+  renderRadioGroup('tecnologiaOptions', INAPlatform.FSU_TECNOLOGIA_OPTIONS, 'tecnologia');
+  renderRadioGroup('saltoOptions', INAPlatform.FSU_SALTO_TECNOLOGICO_OPTIONS, 'saltoTecnologico');
+  renderRadioGroup('capacidadOptions', INAPlatform.FSU_CAPACIDAD_TECNICA_OPTIONS, 'anosCapacidadTecnica');
+
+  const form = document.getElementById('fsuForm');
+
+  function currentInputs() {
+    const fd = new FormData(form);
+    return {
+      totalHogares: document.getElementById('fTotalHogares').value,
+      accesosFibra: document.getElementById('fAccesosFibra').value,
+      modeloNegocio: fd.get('modeloNegocio'),
+      tecnologia: fd.get('tecnologia'),
+      velocidadActualMbps: document.getElementById('fVelocidadActual').value,
+      velocidadPropuestaMbps: document.getElementById('fVelocidadPropuesta').value,
+      saltoTecnologico: fd.get('saltoTecnologico'),
+      poblacionLocalidad: document.getElementById('fPoblacion').value,
+      anosCapacidadTecnica: fd.get('anosCapacidadTecnica'),
+    };
+  }
+
+  function fmtPct(n) {
+    if (n == null) return null;
+    return (Math.round(n * 10) / 10).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
+  }
+
+  function recompute() {
+    const result = INAPlatform.computeFsuScore(currentInputs());
+
+    document.getElementById('ptsPenetracion').textContent = `${result.score_penetracion} / 20`;
+    document.getElementById('ptsModelo').textContent = `${result.score_modelo_negocio} / 20`;
+    document.getElementById('ptsTecnologia').textContent = `${result.score_tecnologia} / 15`;
+    document.getElementById('ptsVelocidad').textContent = `${result.score_velocidad} / 15`;
+    document.getElementById('ptsSalto').textContent = `${result.score_salto_tecnologico} / 10`;
+    document.getElementById('ptsDensidad').textContent = `${result.score_densidad} / 10`;
+    document.getElementById('ptsCapacidad').textContent = `${result.score_capacidad_tecnica} / 10`;
+    document.getElementById('fsuTotalNum').textContent = result.score_total;
+
+    const penetracionResult = document.getElementById('penetracionResult');
+    penetracionResult.textContent = result.penetracion_pct != null
+      ? (lang === 'es' ? `Penetración calculada: ${fmtPct(result.penetracion_pct)}%` : `Calculated penetration: ${fmtPct(result.penetracion_pct)}%`)
+      : '';
+
+    const velocidadResult = document.getElementById('velocidadResult');
+    velocidadResult.textContent = result.mejora_velocidad_pct != null
+      ? (lang === 'es' ? `Mejora calculada: ${fmtPct(result.mejora_velocidad_pct)}%` : `Calculated uplift: ${fmtPct(result.mejora_velocidad_pct)}%`)
+      : '';
+
+    const breakdown = document.getElementById('fsuBreakdown');
+    breakdown.innerHTML = INAPlatform.FSU_CRITERIA_META.map((c) => {
+      const score = result[c.key];
+      const pct = Math.round((score / c.max) * 100);
+      return `
+        <div class="dim-row">
+          <div class="dname">${INAPlatform.fsuCriterionLabel(c.key)}</div>
+          <div class="dtrack"><div class="dfill" style="width:${pct}%;"></div></div>
+          <div class="dval">${score}/${c.max}</div>
+        </div>
+      `;
+    }).join('');
+
+    return result;
+  }
+
+  form.addEventListener('input', recompute);
+  form.addEventListener('change', recompute);
+
+  function prefillForm(row) {
+    if (!row) return;
+    document.getElementById('fTotalHogares').value = row.total_hogares ?? '';
+    document.getElementById('fAccesosFibra').value = row.accesos_fibra ?? '';
+    document.getElementById('fVelocidadActual').value = row.velocidad_actual_mbps ?? '';
+    document.getElementById('fVelocidadPropuesta').value = row.velocidad_propuesta_mbps ?? '';
+    document.getElementById('fPoblacion').value = row.poblacion_localidad ?? '';
+    ['modeloNegocio', 'tecnologia', 'saltoTecnologico', 'anosCapacidadTecnica'].forEach((name) => {
+      const value = ({
+        modeloNegocio: row.modelo_negocio,
+        tecnologia: row.tecnologia,
+        saltoTecnologico: row.salto_tecnologico,
+        anosCapacidadTecnica: row.anos_capacidad_tecnica,
+      })[name];
+      if (!value) return;
+      const input = form.querySelector(`input[name="${name}"][value="${value}"]`);
+      if (input) input.checked = true;
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('fsuNote');
+    note.textContent = '';
+    const submitBtn = document.getElementById('fsuSubmit');
+    submitBtn.disabled = true;
+    try {
+      await INAPlatform.upsertFsuScoring(projectId, currentInputs());
+      location.href = `project.html?id=${projectId}`;
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar el puntaje FSU.' : "Couldn't save the FSU score.");
+      submitBtn.disabled = false;
+    }
+  });
+
+  async function init() {
+    if (!projectId) { location.href = 'dashboard.html'; return; }
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    const project = await INAPlatform.getProject(projectId);
+    // FSU Scoring is owner-only (RLS would reject the insert/update anyway)
+    // and only applies to fiber-to-the-home / last-mile projects — the
+    // manual's criteria (GPON/XGS-PON, splitter ratios, fiber penetration)
+    // don't translate to other project types.
+    if (project.user_id !== session.user.id || project.project_type !== INAPlatform.FSU_SCORING_ELIGIBLE_TYPE) {
+      location.href = `project.html?id=${projectId}`;
+      return;
+    }
+
+    const crumb = document.getElementById('crumbProject');
+    crumb.textContent = project.name;
+    crumb.href = `project.html?id=${projectId}`;
+
+    try {
+      const existing = await INAPlatform.getFsuScoring(projectId);
+      prefillForm(existing);
+    } catch (e) { /* no existing scoring yet — fine */ }
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('fsuBody').style.display = 'block';
+    recompute();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
