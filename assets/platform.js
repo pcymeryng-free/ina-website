@@ -726,7 +726,14 @@ const INAPlatform = {
     return data;
   },
 
-  async createProject({ name, projectType, country, description }) {
+  /* secondaryTypes is optional — additional infrastructure components
+     beyond the single PRIMARY projectType (e.g. a datacenter project that
+     also involves a new submarine cable landing and a terrestrial
+     backbone). Purely informational/filtering: it doesn't affect scoring
+     or which 9th dimension the self-assessment questionnaire uses — that
+     always follows the primary projectType. See
+     supabase/migration_v6_secondary_project_types.sql. */
+  async createProject({ name, projectType, secondaryTypes, country, description }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
@@ -735,6 +742,7 @@ const INAPlatform = {
         user_id: session.user.id,
         name,
         project_type: projectType,
+        secondary_types: (secondaryTypes || []).filter((t) => t !== projectType),
         country,
         description,
       })
@@ -748,12 +756,13 @@ const INAPlatform = {
      projects_update_own RLS policy, so this silently fails for anyone
      else even if called). Resets status/readiness_stage so the caller can
      re-trigger analysis against the updated description. */
-  async updateProject(id, { name, projectType, country, description }) {
+  async updateProject(id, { name, projectType, secondaryTypes, country, description }) {
     const { data, error } = await supabaseClient
       .from('projects')
       .update({
         name,
         project_type: projectType,
+        secondary_types: (secondaryTypes || []).filter((t) => t !== projectType),
         country,
         description,
         status: 'submitted',

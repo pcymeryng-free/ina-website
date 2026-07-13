@@ -545,6 +545,21 @@ form.advisory .full{ grid-column: 1 / -1; }
   .user-row .userdate{ display:none; }
 }
 
+.chk-group{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.chk-pill{
+  display:flex; align-items:center; gap:7px; padding:8px 14px; border:1px solid var(--paper-line);
+  background:var(--paper); font-size:12.5px; color:var(--text); cursor:pointer; transition:all .15s ease;
+}
+.chk-pill:hover{ border-color:var(--amber); }
+.chk-pill input{ accent-color:var(--amber-deep); margin:0; }
+.chk-pill:has(input:checked){ background:var(--amber-soft); border-color:var(--amber); color:var(--amber-deep); }
+
+.type-tag{
+  font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.05em;
+  padding:3px 9px; border-radius:100px; background:var(--paper-2); color:var(--muted);
+  border:1px solid var(--paper-line); white-space:nowrap;
+}
+
 .upload-drop{
   border:1px dashed var(--paper-line); padding:28px; text-align:center; cursor:pointer;
   font-size:13.5px; color:var(--muted); transition:all .15s ease;
