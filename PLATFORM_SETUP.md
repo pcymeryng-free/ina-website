@@ -80,6 +80,18 @@ to the old addresses breaks.
 >    (e.g. a datacenter project that also involves a new submarine cable
 >    and a terrestrial backbone) — informational only, doesn't affect
 >    scoring.
+> 6. `supabase/migration_v7_beneficiary_count.sql` — adds
+>    `projects.beneficiary_count` (integer, nullable): households/
+>    beneficiaries reached, the key impact metric for Universal Service
+>    Fund-style submissions (mirrors ENACOM's Fondo de Servicio Universal
+>    "carpeta técnica" format). "Universal Service Funds" was also added as
+>    a 9th financing mechanism alongside the Multilateral Finance
+>    Navigator™'s existing 8 — that part needs no migration, it's in
+>    `api/analyze-project.js` and `assets/platform.js`.
+> 7. `supabase/migration_v8_fsu_scoring.sql` — adds the `fsu_scoring` table:
+>    the 100-point ENACOM Resolución 359/2025 selection-scoring matrix for
+>    Fondo de Servicio Universal (FSU) applications, one row per project.
+>    See "FSU Scoring" under "How it works" below for what it covers.
 >
 > Skip straight to "Promoting a user to advisor or admin" below once
 > they're run.
@@ -247,7 +259,10 @@ requires another admin, or the Supabase steps above.
   Anthropic Claude API with a system prompt grounded in INA's own F2
   (Investment Readiness Index™) and F6 (Multilateral Finance Navigator™)
   methodology, as documented on `framework.html`. The API key never touches
-  the browser.
+  the browser. The function sets `module.exports.config = { maxDuration: 60 }`
+  so it can run up to 60 seconds (the Hobby-plan ceiling) — large PDFs (e.g.
+  30+ page technical dossiers) can take longer than Vercel's 10-second
+  default to process.
 - **No build step**: everything is still plain HTML/CSS/JS, consistent with
   the rest of the site. The only new thing is the `api/` folder, which Vercel
   runs as serverless functions automatically.
@@ -266,6 +281,58 @@ requires another admin, or the Supabase steps above.
   calls — the actual protection is server-side RLS
   (`profiles_select_own_or_privileged` / `profiles_update_admin` in
   `supabase/migration_v4_admin_role.sql`), not the page hiding the button.
+- **FSU Scoring**: `app/fsu-scoring.html` is a separate tool from the
+  Investment Readiness Index™ / manual assessment above — it implements the
+  100-point selection-scoring matrix published in ENACOM's "Manual
+  Estratégico de Elaboración de Proyectos: Obtención del Certificado de
+  Elegibilidad ENACOM" (Resolución 359/2025), used to rank Fondo de Servicio
+  Universal (FSU) applications from MiPyME/Cooperativa fiber operators. It
+  covers 7 named criteria — fiber penetration (20 pts, computed from
+  household count and current fiber accesses), business model (20 pts,
+  wholesale open-access vs. retail-exclusive), technology (15 pts, XGS-PON
+  vs. GPON), average speed uplift (15 pts), technology leap (10 pts,
+  greenfield "área blanca" vs. copper/wireless migration), population
+  density (10 pts) and the applicant's track record in TIC (10 pts) — summing
+  to a 0–100 score. `assets/platform.js`'s `computeFsuScore()` is a pure
+  function that mirrors the manual's point table exactly, so
+  `app/fsu-scoring.html` can show a live-updating breakdown as the form is
+  filled in, before ever saving. Only offered for `fiber_backbone_last_mile`
+  projects (`INAPlatform.FSU_SCORING_ELIGIBLE_TYPE`) — the criteria only make
+  sense for fiber-to-the-home builds — and only to the project owner; a
+  saved score shows as a badge on `project.html` for owner and advisor
+  viewers alike. This is an orientation estimate based on the manual's
+  published table, not an official ENACOM evaluation or eligibility
+  determination.
+
+## Troubleshooting: analysis stuck on "Applying the Investment Readiness Index…"
+
+If the results page spins indefinitely instead of completing:
+
+1. **Check Vercel's function logs first.** Go to your Vercel project →
+   **Deployments** → latest deployment → **Functions** → `api/analyze-project`,
+   and look for errors on the request. The most common causes:
+   - A missing/misspelled environment variable (`ANTHROPIC_API_KEY`,
+     `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`) — the
+     function returns early with a 500 in this case and never even marks the
+     project `analyzing`, so it looks "stuck" to the user from second one.
+   - The function timing out on a large document — before this fix, Vercel's
+     Hobby-plan default was 10 seconds, too short for multi-page PDFs; the
+     function is now configured for the 60-second maximum
+     (`module.exports.config = { maxDuration: 60 }` in
+     `api/analyze-project.js`), which should cover most real-world cases.
+   - An invalid/expired `ANTHROPIC_API_KEY`, or no billing enabled on the
+     Anthropic Console account it belongs to.
+2. **The results page itself now gives up automatically.** As of this fix,
+   `app/project.html` tracks how long it's been polling and, after ~90
+   seconds without an answer, replaces the spinner with a retry-able error
+   message (distinct copy explaining it may have timed out) instead of
+   spinning forever. If a user reloads a genuinely-stuck page, the 90-second
+   clock is anchored to the project's last-updated timestamp rather than
+   resetting on reload.
+3. If it keeps happening for a specific project, it's usually the attached
+   document — try resubmitting with a smaller/shorter file, or check whether
+   the PDF is mostly scanned images (which take longer for Claude to process
+   than text-based PDFs).
 
 ## Known limitations (v1)
 
@@ -288,3 +355,8 @@ requires another admin, or the Supabase steps above.
   (Concept Stage / Early Structuring / Advanced Structuring / Investment
   Ready) once an analysis completes, and the pipeline state (Submitted /
   Analyzing / Error) before that.
+- FSU Scoring's "Average Speed Uplift" criterion only implements the single
+  threshold the manual publishes (elevación > 300% → 15 pts) — the manual
+  doesn't define partial credit below that threshold, so neither does
+  `computeFsuScore()`. If ENACOM later clarifies a partial-credit scale,
+  update the function in `assets/platform.js`.
