@@ -272,11 +272,15 @@
       main.className = 'main';
       main.style.color = 'inherit';
       main.style.textDecoration = 'none';
+      const secondaryTags = (p.secondary_types || [])
+        .map((t) => `<span class="type-tag">${INAPlatform.projectTypeLabel(t)}</span>`)
+        .join(' ');
       main.innerHTML = `
         <span class="ptype-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${typeIcon(p.project_type)}</svg></span>
         <span class="maintext">
           <div class="pname">${p.name}</div>
           <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${p.country}</div>
+          ${secondaryTags ? `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:5px;">${secondaryTags}</div>` : ''}
         </span>
       `;
 

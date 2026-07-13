@@ -50,6 +50,12 @@
         <select id="ptype" required></select>
       </div>
 
+      <div class="field" style="margin-top:18px;">
+        <label><span data-i18n="np.f.secondaryTypes">Additional components (optional)</span></label>
+        <div id="secondaryTypesList" class="chk-group"></div>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.secondaryTypes.help">Check any other infrastructure components this project also includes — e.g. a datacenter project that also involves a new submarine cable landing.</span></p>
+      </div>
+
       <div class="field" style="margin-top:18px;"><label for="pcountry"><span data-i18n="np.f.country">Country</span></label><input id="pcountry" type="text" required></div>
 
       <div class="field" style="margin-top:18px;"><label for="pdesc"><span data-i18n="np.f.desc">Project description</span></label>
@@ -113,6 +119,33 @@
     opt.value = t.value;
     opt.textContent = t[lang] || t.en;
     typeSelect.appendChild(opt);
+  });
+
+  /* Secondary (additional-component) types — any PROJECT_TYPES value
+     except whichever is currently selected as the primary type. Purely
+     informational: doesn't affect scoring or the 9th self-assessment
+     dimension, which always follows the primary type. */
+  const secondaryTypesList = document.getElementById('secondaryTypesList');
+  let secondaryChecked = new Set();
+  function renderSecondaryTypeOptions() {
+    const primary = typeSelect.value;
+    secondaryChecked.delete(primary);
+    secondaryTypesList.innerHTML = '';
+    INAPlatform.PROJECT_TYPES.forEach((t) => {
+      if (t.value === primary) return;
+      const wrap = document.createElement('label');
+      wrap.className = 'chk-pill';
+      const checked = secondaryChecked.has(t.value) ? 'checked' : '';
+      wrap.innerHTML = `<input type="checkbox" value="${t.value}" ${checked}><span>${t[lang] || t.en}</span>`;
+      secondaryTypesList.appendChild(wrap);
+    });
+  }
+  renderSecondaryTypeOptions();
+  typeSelect.addEventListener('change', renderSecondaryTypeOptions);
+  secondaryTypesList.addEventListener('change', (e) => {
+    if (e.target.type !== 'checkbox') return;
+    if (e.target.checked) secondaryChecked.add(e.target.value);
+    else secondaryChecked.delete(e.target.value);
   });
 
   if (isEdit) {
@@ -199,6 +232,8 @@
       document.getElementById('ptype').value = project.project_type || '';
       document.getElementById('pcountry').value = project.country || '';
       document.getElementById('pdesc').value = project.description || '';
+      secondaryChecked = new Set(project.secondary_types || []);
+      renderSecondaryTypeOptions();
 
       try {
         const docs = await INAPlatform.listDocuments(editId);
@@ -232,6 +267,7 @@
       const payload = {
         name: document.getElementById('pname').value,
         projectType: document.getElementById('ptype').value,
+        secondaryTypes: Array.from(secondaryChecked),
         country: document.getElementById('pcountry').value,
         description: document.getElementById('pdesc').value,
       };
