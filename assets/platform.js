@@ -336,6 +336,139 @@ function computeManualAssessment(projectType, answers, { beneficiaryCount } = {}
   return { overall_score: overallScore, stage, dimensions, gap_roadmap: gapRoadmap, financing_recommendations: financingRecommendations, summary };
 }
 
+/* ---------- FSU Scoring (ENACOM Resolución 359/2025) ----------
+   A separate, deterministic, ENACOM-specific 100-point selection-scoring
+   matrix — distinct from the Investment Readiness Index™ above — published
+   in ENACOM's "Manual Estratégico de Elaboración de Proyectos: Obtención
+   del Certificado de Elegibilidad ENACOM" for MiPyME/Cooperativa projects
+   applying to the Fondo de Servicio Universal (FSU). Only offered for
+   fiber-to-the-home / last-mile projects: the criteria (GPON/XGS-PON,
+   splitter ratios, fiber-penetration math) only make sense for FTTx. See
+   the fsu_scoring table comment in supabase/schema.sql for the full
+   citation and rationale. */
+
+const FSU_SCORING_ELIGIBLE_TYPE = 'fiber_backbone_last_mile';
+
+const FSU_MODELO_NEGOCIO_OPTIONS = [
+  { value: 'mayorista_neutral', en: 'Wholesale Open Access (fine even if it also sells retail)', es: 'Mayorista Neutral / Open Access (puede además vender minorista)' },
+  { value: 'minorista_exclusiva', en: 'Retail-exclusive network', es: 'Red Minorista Exclusiva' },
+];
+
+const FSU_TECNOLOGIA_OPTIONS = [
+  { value: 'xgs_pon', en: 'XGS-PON (10G symmetric)', es: 'XGS-PON (10G Simétrico)' },
+  { value: 'gpon', en: 'Standard GPON', es: 'GPON estándar' },
+];
+
+const FSU_SALTO_TECNOLOGICO_OPTIONS = [
+  { value: 'area_blanca', en: 'White area (no prior fixed-line network)', es: 'Área Blanca (sin red fija previa)' },
+  { value: 'migracion_cobre_wireless', en: 'Migration from copper/wireless to fiber', es: 'Migración de Cobre/Wireless a Fibra' },
+];
+
+const FSU_CAPACIDAD_TECNICA_OPTIONS = [
+  { value: 'mas_5', en: '5+ years operating in TIC', es: '+5 años en TIC' },
+  { value: 'entre_2_y_5', en: '2 to 5 years operating in TIC', es: '+2 años y menos de 5 años en TIC' },
+  { value: 'menos_2', en: 'Less than 2 years operating in TIC', es: 'Menos de 2 años en TIC' },
+];
+
+// Bilingual per-criterion label + point cap, in the manual's table order —
+// used to render the live breakdown in app/fsu-scoring.html.
+const FSU_CRITERIA_META = [
+  { key: 'score_penetracion', max: 20, en: 'Low Fiber Penetration', es: 'Baja Penetración de Fibra' },
+  { key: 'score_modelo_negocio', max: 20, en: 'Business Model', es: 'Modelo de Negocio' },
+  { key: 'score_tecnologia', max: 15, en: 'Technology Edge', es: 'Vanguardia Tecnológica' },
+  { key: 'score_velocidad', max: 15, en: 'Average Speed Uplift', es: 'Mejora de Velocidad Media' },
+  { key: 'score_salto_tecnologico', max: 10, en: 'Technology Leap', es: 'Salto Tecnológico' },
+  { key: 'score_densidad', max: 10, en: 'Population Density', es: 'Densidad Poblacional' },
+  { key: 'score_capacidad_tecnica', max: 10, en: 'Technical Track Record', es: 'Capacidad Técnica' },
+];
+
+/* Pure function — replicates the manual's published point table exactly.
+   `inputs` uses the same camelCase field names app/fsu-scoring.html's form
+   collects; returns the snake_case shape the fsu_scoring table stores
+   (score_* columns + score_total + the two computed percentages), so the
+   caller can spread the result straight into an upsert() payload. */
+function computeFsuScore(inputs) {
+  const {
+    totalHogares, accesosFibra,
+    modeloNegocio,
+    tecnologia,
+    velocidadActualMbps, velocidadPropuestaMbps,
+    saltoTecnologico,
+    poblacionLocalidad,
+    anosCapacidadTecnica,
+  } = inputs || {};
+
+  // 1. Baja Penetración de Fibra (max 20) — < 15%: 20, 15%–38%: 15, > 38%: 0
+  let penetracionPct = null;
+  let scorePenetracion = 0;
+  const hogares = Number(totalHogares);
+  const accesos = Number(accesosFibra);
+  if (hogares > 0 && accesos >= 0) {
+    penetracionPct = (accesos / hogares) * 100;
+    if (penetracionPct < 15) scorePenetracion = 20;
+    else if (penetracionPct <= 38) scorePenetracion = 15;
+    else scorePenetracion = 0;
+  }
+
+  // 2. Modelo de Negocio (max 20) — Mayorista Neutral: 20, Minorista Exclusiva: 5
+  const scoreModeloNegocio = modeloNegocio === 'mayorista_neutral' ? 20 : modeloNegocio === 'minorista_exclusiva' ? 5 : 0;
+
+  // 3. Vanguardia Tecnológica (max 15) — XGS-PON: 15, GPON: 5
+  const scoreTecnologia = tecnologia === 'xgs_pon' ? 15 : tecnologia === 'gpon' ? 5 : 0;
+
+  // 4. Mejora de Velocidad Media (max 15) — manual defines a single tier:
+  // elevación > 300% => 15 pts (no partial credit specified below that).
+  let mejoraVelocidadPct = null;
+  let scoreVelocidad = 0;
+  const v1 = Number(velocidadActualMbps);
+  const v2 = Number(velocidadPropuestaMbps);
+  if (v1 > 0 && v2 >= 0) {
+    mejoraVelocidadPct = ((v2 - v1) / v1) * 100;
+    scoreVelocidad = mejoraVelocidadPct > 300 ? 15 : 0;
+  }
+
+  // 5. Salto Tecnológico (max 10) — Área Blanca: 10, Migración Cobre/Wireless: 5
+  const scoreSaltoTecnologico = saltoTecnologico === 'area_blanca' ? 10 : saltoTecnologico === 'migracion_cobre_wireless' ? 5 : 0;
+
+  // 6. Densidad Poblacional (max 10) — <= 50.000 hab: 10, 50.001–100.000: 5, > 100.000: 0
+  let scoreDensidad = 0;
+  const poblacion = Number(poblacionLocalidad);
+  if (poblacion > 0) {
+    if (poblacion <= 50000) scoreDensidad = 10;
+    else if (poblacion <= 100000) scoreDensidad = 5;
+    else scoreDensidad = 0;
+  }
+
+  // 7. Capacidad Técnica (max 10) — +5 años: 10, 2–5 años: 5, < 2 años: 0
+  const scoreCapacidadTecnica = anosCapacidadTecnica === 'mas_5' ? 10 : anosCapacidadTecnica === 'entre_2_y_5' ? 5 : 0;
+
+  const scoreTotal = scorePenetracion + scoreModeloNegocio + scoreTecnologia + scoreVelocidad
+    + scoreSaltoTecnologico + scoreDensidad + scoreCapacidadTecnica;
+
+  return {
+    penetracion_pct: penetracionPct != null ? Math.round(penetracionPct * 10) / 10 : null,
+    mejora_velocidad_pct: mejoraVelocidadPct != null ? Math.round(mejoraVelocidadPct * 10) / 10 : null,
+    score_penetracion: scorePenetracion,
+    score_modelo_negocio: scoreModeloNegocio,
+    score_tecnologia: scoreTecnologia,
+    score_velocidad: scoreVelocidad,
+    score_salto_tecnologico: scoreSaltoTecnologico,
+    score_densidad: scoreDensidad,
+    score_capacidad_tecnica: scoreCapacidadTecnica,
+    score_total: scoreTotal,
+  };
+}
+
+// Purely a UX aid for coloring/labeling the total score badge — NOT an
+// official ENACOM eligibility cutoff (the manual publishes the point table
+// but no pass/fail threshold for the Certificado de Elegibilidad itself).
+function fsuScoreBand(score) {
+  if (score >= 80) return 'strong';
+  if (score >= 60) return 'moderate';
+  if (score >= 40) return 'early';
+  return 'limited';
+}
+
 function currentLang() {
   return document.documentElement.getAttribute('lang') === 'es' ? 'es' : 'en';
 }
@@ -416,6 +549,22 @@ const INAPlatform = {
   priorityLabel(value) {
     const entry = PRIORITY_LABELS[(value || '').toLowerCase()];
     return entry ? entry[currentLang()] : value;
+  },
+
+  // FSU Scoring (ENACOM Resolución 359/2025) reference data + pure scoring
+  // function — see the section above for full documentation.
+  FSU_SCORING_ELIGIBLE_TYPE,
+  FSU_MODELO_NEGOCIO_OPTIONS,
+  FSU_TECNOLOGIA_OPTIONS,
+  FSU_SALTO_TECNOLOGICO_OPTIONS,
+  FSU_CAPACIDAD_TECNICA_OPTIONS,
+  FSU_CRITERIA_META,
+  computeFsuScore,
+  fsuScoreBand,
+  fsuOptionLabel(list, value) { return labelFor(list, value, currentLang()); },
+  fsuCriterionLabel(key) {
+    const entry = FSU_CRITERIA_META.find((c) => c.key === key);
+    return entry ? entry[currentLang()] : key;
   },
 
   isConfigured() {
@@ -685,6 +834,55 @@ const INAPlatform = {
     if (updateError) throw updateError;
 
     return result;
+  },
+
+  /* ---------- FSU Scoring (ENACOM Resolución 359/2025) ----------
+     app/fsu-scoring.html only offers this for FSU_SCORING_ELIGIBLE_TYPE
+     projects. computeFsuScore() is exported separately (pure, synchronous)
+     so the page can show a live-updating breakdown as the user fills the
+     form, before ever saving — these two methods are the persistence
+     layer on top of it. */
+
+  async getFsuScoring(projectId) {
+    const { data, error } = await supabaseClient
+      .from('fsu_scoring')
+      .select('*')
+      .eq('project_id', projectId)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+
+  /* `inputs` uses the camelCase field names the form collects (see
+     computeFsuScore's doc comment). Recomputes the full breakdown from
+     scratch every save and upserts by project_id — one FSU scoring record
+     per project, always reflecting the latest inputs. */
+  async upsertFsuScoring(projectId, inputs) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const computed = computeFsuScore(inputs);
+    const numOrNull = (v) => (v === '' || v == null ? null : Number(v));
+    const { data, error } = await supabaseClient
+      .from('fsu_scoring')
+      .upsert({
+        project_id: projectId,
+        user_id: session.user.id,
+        total_hogares: numOrNull(inputs.totalHogares),
+        accesos_fibra: numOrNull(inputs.accesosFibra),
+        modelo_negocio: inputs.modeloNegocio || null,
+        tecnologia: inputs.tecnologia || null,
+        velocidad_actual_mbps: numOrNull(inputs.velocidadActualMbps),
+        velocidad_propuesta_mbps: numOrNull(inputs.velocidadPropuestaMbps),
+        salto_tecnologico: inputs.saltoTecnologico || null,
+        poblacion_localidad: numOrNull(inputs.poblacionLocalidad),
+        anos_capacidad_tecnica: inputs.anosCapacidadTecnica || null,
+        ...computed,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'project_id' })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
   },
 
   /* ---------- Admin: user management ----------

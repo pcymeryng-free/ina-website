@@ -545,6 +545,10 @@ form.advisory .full{ grid-column: 1 / -1; }
   .user-row .userdate{ display:none; }
 }
 
+.fsu-pts{
+  font-family:var(--mono); font-size:11px; color:var(--amber-deep); background:var(--amber-soft);
+  padding:2px 9px; border-radius:100px; margin-left:6px; vertical-align:middle;
+}
 .chk-group{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
 .chk-pill{
   display:flex; align-items:center; gap:7px; padding:8px 14px; border:1px solid var(--paper-line);
