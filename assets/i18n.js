@@ -1356,6 +1356,22 @@ const I18N = {
     "en": "Requires structuring the \"viability gap\" and a legal PPP framework in place",
     "es": "Requiere estructurar la \"brecha de viabilidad\" y contar con un marco legal de APP"
   },
+  "finrow8.src": {
+    "en": "Bilateral development finance &amp; trade agencies (USTDA, DFC)",
+    "es": "Agencias bilaterales de financiamiento y comercio de EE. UU. (USTDA, DFC)"
+  },
+  "finrow8.inst": {
+    "en": "Feasibility study grants (USTDA); direct loans, equity and political risk insurance (DFC)",
+    "es": "Subvenciones para estudios de factibilidad (USTDA); préstamos directos, capital y seguro de riesgo político (DFC)"
+  },
+  "finrow8.use": {
+    "en": "Early-stage project preparation and long-term financing for U.S.-linked digital infrastructure",
+    "es": "Preparación de proyectos en etapa temprana y financiamiento de largo plazo para infraestructura digital vinculada a EE. UU."
+  },
+  "finrow8.con": {
+    "en": "USTDA funds preparation only, not construction; DFC financing typically requires a U.S. nexus and a bankable structure",
+    "es": "USTDA financia solo la preparación, no la construcción; el financiamiento de DFC generalmente requiere un vínculo con EE. UU. y una estructura bancable"
+  },
   "fw.f1.gov.title": {
     "en": "Governance Model",
     "es": "Modelo de Gobernanza"
@@ -3360,6 +3376,27 @@ const I18N = {
   "fsu.result.title": { "en": "FSU Score", "es": "Puntaje FSU" },
   "fsu.result.disclaimer": { "en": "Orientation estimate per ENACOM's published matrix — the final score and eligibility are determined by the agency.", "es": "Estimación orientativa según la matriz publicada por ENACOM — el puntaje final y la elegibilidad los determina el organismo." },
   "fsu.submit": { "en": "Save FSU Score", "es": "Guardar Puntaje FSU" },
+  "prog.nav": { "en": "Programs", "es": "Programas" },
+  "prog.title": { "en": "Programs", "es": "Programas" },
+  "prog.lede": { "en": "A Program groups several related projects under one umbrella — like Chubut's \"Hub Digital Patagónico,\" which bundled a submarine cable, a backbone and last-mile builds as separate, independently financed projects presented by the same organization.", "es": "Un Programa agrupa varios proyectos relacionados bajo un mismo paraguas — como el \"Hub Digital Patagónico\" de Chubut, que combinó un cable submarino, un backbone y despliegues de última milla como proyectos separados, financiados de forma independiente, presentados por la misma organización." },
+  "prog.form.new": { "en": "New Program", "es": "Nuevo Programa" },
+  "prog.form.edit": { "en": "Edit Program", "es": "Editar Programa" },
+  "prog.form.create": { "en": "Create Program", "es": "Crear Programa" },
+  "prog.form.save": { "en": "Save Changes", "es": "Guardar Cambios" },
+  "prog.form.cancel": { "en": "Cancel", "es": "Cancelar" },
+  "prog.f.name": { "en": "Program name", "es": "Nombre del programa" },
+  "prog.f.org": { "en": "Presenting organization", "es": "Organismo que lo presenta" },
+  "prog.f.orgType": { "en": "Organization type", "es": "Tipo de organismo" },
+  "prog.f.desc": { "en": "Description (optional)", "es": "Descripción (opcional)" },
+  "prog.list.eyebrow": { "en": "Your Programs", "es": "Tus Programas" },
+  "prog.list.title": { "en": "All Programs", "es": "Todos los Programas" },
+  "prog.viewProjects": { "en": "View Projects", "es": "Ver Proyectos" },
+  "prog.edit": { "en": "Edit", "es": "Editar" },
+  "prog.empty": { "en": "No programs yet — create one above, or leave the Program field blank on individual projects.", "es": "Todavía no hay programas — creá uno arriba, o dejá el campo Programa en blanco en los proyectos individuales." },
+  "np.f.program": { "en": "Program (optional)", "es": "Programa (opcional)" },
+  "np.f.program.help": { "en": "Group this project under a Program if it's part of a broader initiative with several independently-financed projects.", "es": "Agrupá este proyecto bajo un Programa si es parte de una iniciativa más amplia con varios proyectos financiados de forma independiente." },
+  "np.f.program.create": { "en": "Create a new program →", "es": "Crear un nuevo programa →" },
+  "dash.filter.program": { "en": "Program", "es": "Programa" },
   "pd.finance.title": { "en": "Multilateral Finance Navigator&trade; Recommendations", "es": "Recomendaciones del Multilateral Finance Navigator&trade;" },
   "pd.loading": { "en": "Loading project…", "es": "Cargando proyecto…" },
   "pd.viewingAsAdvisor": { "en": "You're viewing this project as an advisor — submitted by another user. Editing and re-running analysis are only available to the project owner.", "es": "Estás viendo este proyecto como asesor — fue enviado por otro usuario. Editar y volver a ejecutar el análisis solo están disponibles para el propietario del proyecto." },

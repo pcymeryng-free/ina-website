@@ -39,8 +39,51 @@ const PROJECT_TYPES = [
   { value: 'fiber_backbone_last_mile', en: 'Fiber Backbone / Last Mile', es: 'Backbone de Fibra / Última Milla' },
   { value: 'fixed_wireless_access', en: 'Fixed Wireless Access (FWA)', es: 'Acceso Inalámbrico Fijo (FWA)' },
   { value: 'ai_datacenter', en: 'Datacenter for AI Workloads', es: 'Datacenter para Cargas de IA' },
-  { value: 'satellite_constellation', en: 'Satellite Constellation', es: 'Constelación Satelital' },
+  { value: 'satellite_constellation', en: 'Satellite Communications', es: 'Comunicaciones Satelitales' },
   { value: 'other', en: 'Other', es: 'Otro' },
+];
+
+/* The 35 sovereign states of the Americas — used by new-project.html's
+   Country field (a <select>, not free text). `value` is always the
+   canonical English name regardless of UI language, so projects.country
+   stays consistent no matter which language a project was submitted in;
+   countryLabel() below translates it back for display. */
+const COUNTRIES_AMERICAS = [
+  { value: 'Antigua and Barbuda', en: 'Antigua and Barbuda', es: 'Antigua y Barbuda' },
+  { value: 'Argentina', en: 'Argentina', es: 'Argentina' },
+  { value: 'Bahamas', en: 'Bahamas', es: 'Bahamas' },
+  { value: 'Barbados', en: 'Barbados', es: 'Barbados' },
+  { value: 'Belize', en: 'Belize', es: 'Belice' },
+  { value: 'Bolivia', en: 'Bolivia', es: 'Bolivia' },
+  { value: 'Brazil', en: 'Brazil', es: 'Brasil' },
+  { value: 'Canada', en: 'Canada', es: 'Canadá' },
+  { value: 'Chile', en: 'Chile', es: 'Chile' },
+  { value: 'Colombia', en: 'Colombia', es: 'Colombia' },
+  { value: 'Costa Rica', en: 'Costa Rica', es: 'Costa Rica' },
+  { value: 'Cuba', en: 'Cuba', es: 'Cuba' },
+  { value: 'Dominica', en: 'Dominica', es: 'Dominica' },
+  { value: 'Dominican Republic', en: 'Dominican Republic', es: 'República Dominicana' },
+  { value: 'Ecuador', en: 'Ecuador', es: 'Ecuador' },
+  { value: 'El Salvador', en: 'El Salvador', es: 'El Salvador' },
+  { value: 'Grenada', en: 'Grenada', es: 'Granada' },
+  { value: 'Guatemala', en: 'Guatemala', es: 'Guatemala' },
+  { value: 'Guyana', en: 'Guyana', es: 'Guyana' },
+  { value: 'Haiti', en: 'Haiti', es: 'Haití' },
+  { value: 'Honduras', en: 'Honduras', es: 'Honduras' },
+  { value: 'Jamaica', en: 'Jamaica', es: 'Jamaica' },
+  { value: 'Mexico', en: 'Mexico', es: 'México' },
+  { value: 'Nicaragua', en: 'Nicaragua', es: 'Nicaragua' },
+  { value: 'Panama', en: 'Panama', es: 'Panamá' },
+  { value: 'Paraguay', en: 'Paraguay', es: 'Paraguay' },
+  { value: 'Peru', en: 'Peru', es: 'Perú' },
+  { value: 'Saint Kitts and Nevis', en: 'Saint Kitts and Nevis', es: 'San Cristóbal y Nieves' },
+  { value: 'Saint Lucia', en: 'Saint Lucia', es: 'Santa Lucía' },
+  { value: 'Saint Vincent and the Grenadines', en: 'Saint Vincent and the Grenadines', es: 'San Vicente y las Granadinas' },
+  { value: 'Suriname', en: 'Suriname', es: 'Surinam' },
+  { value: 'Trinidad and Tobago', en: 'Trinidad and Tobago', es: 'Trinidad y Tobago' },
+  { value: 'United States', en: 'United States', es: 'Estados Unidos' },
+  { value: 'Uruguay', en: 'Uruguay', es: 'Uruguay' },
+  { value: 'Venezuela', en: 'Venezuela', es: 'Venezuela' },
 ];
 
 const PROJECT_STATUS_LABELS = {
@@ -48,6 +91,14 @@ const PROJECT_STATUS_LABELS = {
   analyzing: { en: 'Analyzing', es: 'Analizando' },
   completed: { en: 'Completed', es: 'Completado' },
   error: { en: 'Error', es: 'Error' },
+};
+
+/* A Program's "organization_type" — the public or private entity
+   presenting it (e.g. a provincial government vs. a private operator or
+   cooperative). See app/programs.html. */
+const PROGRAM_ORG_TYPE_LABELS = {
+  public: { en: 'Public', es: 'Público' },
+  private: { en: 'Private', es: 'Privado' },
 };
 
 const PLATFORM_ROLE_LABELS = {
@@ -530,7 +581,9 @@ function statusFilterLabel(value) {
 const INAPlatform = {
   ROLE_TYPES,
   PROJECT_TYPES,
+  COUNTRIES_AMERICAS,
   PROJECT_STATUS_LABELS,
+  PROGRAM_ORG_TYPE_LABELS,
   READINESS_STAGE_LABELS,
   DIMENSION_LABELS,
   DIMENSION_ORDER,
@@ -594,6 +647,11 @@ const INAPlatform = {
 
   roleTypeLabel(value) { return labelFor(ROLE_TYPES, value, currentLang()); },
   projectTypeLabel(value) { return labelFor(PROJECT_TYPES, value, currentLang()); },
+  /* Translates a stored projects.country value (always the English
+     canonical name, see COUNTRIES_AMERICAS) back to the current UI
+     language. Falls back to the raw value for any pre-existing free-text
+     country that predates this select (doesn't match the curated list). */
+  countryLabel(value) { return labelFor(COUNTRIES_AMERICAS, value, currentLang()); },
   statusLabel(value) {
     const entry = PROJECT_STATUS_LABELS[value];
     return entry ? entry[currentLang()] : value;
@@ -926,7 +984,7 @@ const INAPlatform = {
   async listProjects() {
     const { data, error } = await supabaseClient
       .from('projects')
-      .select('*, profiles(full_name, organization)')
+      .select('*, profiles(full_name, organization), programs(name)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
@@ -935,7 +993,7 @@ const INAPlatform = {
   async getProject(id) {
     const { data, error } = await supabaseClient
       .from('projects')
-      .select('*, profiles(full_name, organization)')
+      .select('*, profiles(full_name, organization), programs(name)')
       .eq('id', id)
       .single();
     if (error) throw error;
@@ -953,7 +1011,10 @@ const INAPlatform = {
      key impact metric for Universal Service Fund-style submissions, see
      supabase/migration_v7_beneficiary_count.sql). Null/undefined is
      stored as null. */
-  async createProject({ name, projectType, secondaryTypes, country, description, beneficiaryCount }) {
+  /* programId is optional — groups this project under a Program (see
+     "Programs" section below and supabase/migration_v9_programs.sql).
+     Null/undefined/empty string all store as null (standalone project). */
+  async createProject({ name, projectType, secondaryTypes, programId, country, description, beneficiaryCount }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
@@ -963,6 +1024,7 @@ const INAPlatform = {
         name,
         project_type: projectType,
         secondary_types: (secondaryTypes || []).filter((t) => t !== projectType),
+        program_id: programId || null,
         country,
         description,
         beneficiary_count: beneficiaryCount === '' || beneficiaryCount == null ? null : Number(beneficiaryCount),
@@ -977,13 +1039,14 @@ const INAPlatform = {
      projects_update_own RLS policy, so this silently fails for anyone
      else even if called). Resets status/readiness_stage so the caller can
      re-trigger analysis against the updated description. */
-  async updateProject(id, { name, projectType, secondaryTypes, country, description, beneficiaryCount }) {
+  async updateProject(id, { name, projectType, secondaryTypes, programId, country, description, beneficiaryCount }) {
     const { data, error } = await supabaseClient
       .from('projects')
       .update({
         name,
         project_type: projectType,
         secondary_types: (secondaryTypes || []).filter((t) => t !== projectType),
+        program_id: programId || null,
         country,
         description,
         beneficiary_count: beneficiaryCount === '' || beneficiaryCount == null ? null : Number(beneficiaryCount),
@@ -996,6 +1059,73 @@ const INAPlatform = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  /* ---------- Programs ----------
+     A Program groups several related projects under one umbrella — e.g.
+     Chubut's "Hub Digital Patagónico", which bundled a submarine cable
+     landing, a regional backbone and last-mile builds as separate
+     projects, each financed independently, all presented by the same
+     sponsoring organization. See supabase/migration_v9_programs.sql. */
+
+  async listPrograms() {
+    const { data, error } = await supabaseClient
+      .from('programs')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  async getProgram(id) {
+    const { data, error } = await supabaseClient
+      .from('programs')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async createProgram({ name, organization, organizationType, description }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('programs')
+      .insert({
+        user_id: session.user.id,
+        name,
+        organization,
+        organization_type: organizationType || 'public',
+        description: description || null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Owner-only — enforced by programs_update_own RLS. */
+  async updateProgram(id, { name, organization, organizationType, description }) {
+    const { data, error } = await supabaseClient
+      .from('programs')
+      .update({
+        name,
+        organization,
+        organization_type: organizationType || 'public',
+        description: description || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  programOrgTypeLabel(value) {
+    const entry = PROGRAM_ORG_TYPE_LABELS[value];
+    return entry ? entry[currentLang()] : value;
   },
 
   async updateProjectStatus(projectId, status) {
