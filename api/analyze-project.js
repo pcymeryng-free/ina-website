@@ -16,6 +16,22 @@
  *                               NEVER the anon key, NEVER exposed client-side)
  *   SUPABASE_ANON_KEY         — used only to validate the caller's session token
  *   CLAUDE_MODEL               — optional, defaults to "claude-sonnet-5"
+ *
+ * IMPORTANT — function timeout: Vercel kills serverless functions after a
+ * plan-dependent limit (10s by default on the Hobby plan unless raised).
+ * Large attached PDFs (multi-page, image-heavy carpetas técnicas, etc.)
+ * can easily make the Claude call take longer than that default, and if
+ * Vercel kills the function AFTER it already PATCHed the project to
+ * status='analyzing' but BEFORE it could write the result or set
+ * status='error', the project is left stuck in "analyzing" forever from
+ * the client's point of view (see project.html's staleness check, which
+ * papers over this from the UI side, but raising this limit is the real
+ * fix). `maxDuration` below asks Vercel for up to 60s, the maximum the
+ * Hobby plan allows — on Pro/Enterprise you can raise it further for
+ * very large documents. (Set on module.exports at the bottom of this
+ * file, not here — module.exports gets reassigned to the handler
+ * function further down, which would wipe out a config property set
+ * this early.)
  */
 
 const DIMENSION_KEYS = [
@@ -45,7 +61,7 @@ const SYSTEM_PROMPT = `You are the analysis engine behind two of INA's (Internat
 
 1. INVESTMENT READINESS INDEX™ (Framework F2): scores a digital infrastructure project 0–100 across 8 weighted dimensions: Legal & Regulatory Clarity, Technical Design Maturity, Financial Model Robustness, Sponsor Capacity, Market Demand Evidence, Environmental & Social Readiness, Risk Mitigation Coverage, and Governance & Reporting. Score bands: 0–25 Concept Stage, 26–50 Early Structuring, 51–75 Advanced Structuring, 76–100 Investment Ready.
 
-2. MULTILATERAL FINANCE NAVIGATOR™ (Framework F6): reads the project's country, sector, size, maturity and risk profile, then recommends which financing mechanisms are the realistic fit, drawn ONLY from this list: Multilateral Development Banks, Development Finance Institutions, Project Finance, Public-Private Partnerships, Blended Finance, Guarantees & Credit Enhancement, Export Credit Agencies, Commercial & Institutional Capital, Universal Service Funds (national/regulator-administered funds — e.g. ENACOM's Fondo de Servicio Universal in Argentina — offering subsidized-rate credit or grants for underserved-area buildout; favor this when the project targets last-mile/universal-access coverage in underserved areas, especially for cooperatives or small/regional operators).
+2. MULTILATERAL FINANCE NAVIGATOR™ (Framework F6): reads the project's country, sector, size, maturity and risk profile, then recommends which financing mechanisms are the realistic fit, drawn ONLY from this list: Multilateral Development Banks, Development Finance Institutions (e.g. the U.S. International Development Finance Corporation/DFC for direct loans, equity and political risk insurance, and the U.S. Trade and Development Agency/USTDA for early-stage feasibility study grants — favor these when the project has a plausible U.S. company/technology nexus), Project Finance, Public-Private Partnerships, Blended Finance, Guarantees & Credit Enhancement, Export Credit Agencies, Commercial & Institutional Capital, Universal Service Funds (national/regulator-administered funds — e.g. ENACOM's Fondo de Servicio Universal in Argentina — offering subsidized-rate credit or grants for underserved-area buildout; favor this when the project targets last-mile/universal-access coverage in underserved areas, especially for cooperatives or small/regional operators).
 
 You will be given a project's name, type, country and description, and possibly supporting documents. Assess honestly based only on the evidence provided — if information for a dimension is missing or unclear, score it conservatively low and say so in the rationale rather than assuming strength. Do not inflate scores. Be specific and reference concrete details from the project description in your rationales wherever possible, rather than generic boilerplate.
 
@@ -139,7 +155,7 @@ function stageForScore(score) {
   return 'Investment Ready';
 }
 
-module.exports = async (req, res) => {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return json(res, 405, { error: 'Method not allowed' });
   }
@@ -353,4 +369,9 @@ module.exports = async (req, res) => {
     } catch (e2) { /* best effort */ }
     return json(res, 500, { error: 'Analysis failed', detail: String(err && err.message || err) });
   }
-};
+}
+
+module.exports = handler;
+// Vercel-specific per-function config — see the comment near the top of
+// this file for why this matters (large-document analysis timing out).
+module.exports.config = { maxDuration: 60 };
