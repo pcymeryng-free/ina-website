@@ -21,6 +21,7 @@
     <nav class="app-nav">
       <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
       <a href="new-project.html" class="active"><span data-i18n="dash.newProject">Submit New Project</span></a>
+      <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
       <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
     </nav>
     <div class="app-header-actions">
@@ -56,7 +57,15 @@
         <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.secondaryTypes.help">Check any other infrastructure components this project also includes — e.g. a datacenter project that also involves a new submarine cable landing.</span></p>
       </div>
 
-      <div class="field" style="margin-top:18px;"><label for="pcountry"><span data-i18n="np.f.country">Country</span></label><input id="pcountry" type="text" required></div>
+      <div class="field" style="margin-top:18px;">
+        <label for="pprogram"><span data-i18n="np.f.program">Program (optional)</span></label>
+        <select id="pprogram"></select>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.program.help">Group this project under a Program if it's part of a broader initiative with several independently-financed projects.</span> <a href="programs.html" target="_blank"><span data-i18n="np.f.program.create">Create a new program &rarr;</span></a></p>
+      </div>
+
+      <div class="field" style="margin-top:18px;"><label for="pcountry"><span data-i18n="np.f.country">Country</span></label>
+        <select id="pcountry" required></select>
+      </div>
 
       <div class="field" style="margin-top:18px;"><label for="pbeneficiaries"><span data-i18n="np.f.beneficiaries">Beneficiaries reached (households, optional)</span></label><input id="pbeneficiaries" type="number" min="0" step="1"></div>
       <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.beneficiaries.help">For last-mile/universal-access projects — the number of households, businesses or public establishments the project reaches. Strengthens the case for Universal Service Fund financing.</span></p>
@@ -123,6 +132,36 @@
     opt.textContent = t[lang] || t.en;
     typeSelect.appendChild(opt);
   });
+
+  const countrySelect = document.getElementById('pcountry');
+  INAPlatform.COUNTRIES_AMERICAS.forEach((c) => {
+    const opt = document.createElement('option');
+    opt.value = c.value;
+    opt.textContent = c[lang] || c.en;
+    countrySelect.appendChild(opt);
+  });
+
+  /* Programs are optional and fetched async (RLS-scoped to the user's own
+     programs, or every program for an advisor) — populated once on init(),
+     ahead of the edit-mode prefill below if this is an edit. */
+  async function loadPrograms() {
+    const sel = document.getElementById('pprogram');
+    let programs = [];
+    try {
+      programs = await INAPlatform.listPrograms();
+    } catch (e) { /* non-critical — field just stays empty */ }
+    sel.innerHTML = '';
+    const noneOpt = document.createElement('option');
+    noneOpt.value = '';
+    noneOpt.textContent = lang === 'es' ? 'Sin programa' : 'No program';
+    sel.appendChild(noneOpt);
+    programs.forEach((pg) => {
+      const opt = document.createElement('option');
+      opt.value = pg.id;
+      opt.textContent = pg.name;
+      sel.appendChild(opt);
+    });
+  }
 
   /* Secondary (additional-component) types — any PROJECT_TYPES value
      except whichever is currently selected as the primary type. Purely
@@ -216,6 +255,8 @@
       if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
     } catch (e) { /* non-critical */ }
 
+    await loadPrograms();
+
     if (isEdit) {
       let project;
       try {
@@ -233,7 +274,22 @@
       }
       document.getElementById('pname').value = project.name || '';
       document.getElementById('ptype').value = project.project_type || '';
-      document.getElementById('pcountry').value = project.country || '';
+      document.getElementById('pprogram').value = project.program_id || '';
+      // Country used to be free text; if this project's stored value
+      // doesn't match any option in the curated Americas list (older data,
+      // or a typo predating this select), add it as an extra option rather
+      // than silently discarding it.
+      if (project.country) {
+        const cSelect = document.getElementById('pcountry');
+        cSelect.value = project.country;
+        if (cSelect.value !== project.country) {
+          const opt = document.createElement('option');
+          opt.value = project.country;
+          opt.textContent = project.country;
+          cSelect.appendChild(opt);
+          cSelect.value = project.country;
+        }
+      }
       document.getElementById('pbeneficiaries').value = project.beneficiary_count != null ? project.beneficiary_count : '';
       document.getElementById('pdesc').value = project.description || '';
       secondaryChecked = new Set(project.secondary_types || []);
@@ -272,6 +328,7 @@
         name: document.getElementById('pname').value,
         projectType: document.getElementById('ptype').value,
         secondaryTypes: Array.from(secondaryChecked),
+        programId: document.getElementById('pprogram').value,
         country: document.getElementById('pcountry').value,
         description: document.getElementById('pdesc').value,
         beneficiaryCount: document.getElementById('pbeneficiaries').value,

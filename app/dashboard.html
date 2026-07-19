@@ -21,6 +21,7 @@
     <nav class="app-nav">
       <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
       <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
+      <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
       <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
     </nav>
     <div class="app-header-actions">
@@ -64,6 +65,10 @@
         <div class="ffield">
           <label for="fType"><span data-i18n="dash.filter.type">Project type</span></label>
           <select id="fType"></select>
+        </div>
+        <div class="ffield">
+          <label for="fProgram"><span data-i18n="dash.filter.program">Program</span></label>
+          <select id="fProgram"></select>
         </div>
         <div class="ffield">
           <label for="fFrom"><span data-i18n="dash.filter.from">From</span></label>
@@ -128,6 +133,7 @@
 
   const fStatus = document.getElementById('fStatus');
   const fType = document.getElementById('fType');
+  const fProgram = document.getElementById('fProgram');
   const fFrom = document.getElementById('fFrom');
   const fTo = document.getElementById('fTo');
   const fMinBeneficiaries = document.getElementById('fMinBeneficiaries');
@@ -213,12 +219,36 @@
       fType.appendChild(opt);
     });
 
+    fProgram.innerHTML = '';
+    const optAllProgram = document.createElement('option');
+    optAllProgram.value = '';
+    optAllProgram.textContent = allLabel;
+    fProgram.appendChild(optAllProgram);
+    // Distinct programs actually present among the visible projects, from
+    // the embedded programs(name) — not a separate listPrograms() call, so
+    // the filter only ever offers options that can actually match something.
+    const seen = new Map();
+    allProjects.forEach((p) => {
+      if (p.program_id && p.programs && !seen.has(p.program_id)) {
+        seen.set(p.program_id, p.programs.name);
+      }
+    });
+    Array.from(seen.entries())
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .forEach(([id, name]) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = name;
+        fProgram.appendChild(opt);
+      });
+
     fSearch.placeholder = lang() === 'es' ? 'Nombre del proyecto o usuario…' : 'Project name or user…';
   }
 
   function applyFilters(list) {
     const status = fStatus.value;
     const type = fType.value;
+    const program = fProgram.value;
     const from = fFrom.value ? new Date(fFrom.value + 'T00:00:00') : null;
     const to = fTo.value ? new Date(fTo.value + 'T23:59:59') : null;
     const minBeneficiaries = fMinBeneficiaries.value !== '' ? Number(fMinBeneficiaries.value) : null;
@@ -227,6 +257,7 @@
     return list.filter((p) => {
       if (status && INAPlatform.effectiveStatusValue(p) !== status) return false;
       if (type && p.project_type !== type) return false;
+      if (program && p.program_id !== program) return false;
       const created = new Date(p.created_at);
       if (from && created < from) return false;
       if (to && created > to) return false;
@@ -285,11 +316,12 @@
       const beneficiariesText = p.beneficiary_count != null
         ? ` · ${p.beneficiary_count.toLocaleString(lang() === 'es' ? 'es-AR' : 'en-US')} ${lang() === 'es' ? 'beneficiarios' : 'beneficiaries'}`
         : '';
+      const programText = p.programs && p.programs.name ? ` · ${p.programs.name}` : '';
       main.innerHTML = `
         <span class="ptype-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${typeIcon(p.project_type)}</svg></span>
         <span class="maintext">
           <div class="pname">${p.name}</div>
-          <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${p.country}${beneficiariesText}</div>
+          <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${INAPlatform.countryLabel(p.country)}${beneficiariesText}${programText}</div>
           ${secondaryTags ? `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:5px;">${secondaryTags}</div>` : ''}
         </span>
       `;
@@ -334,12 +366,13 @@
     });
   }
 
-  [fStatus, fType, fFrom, fTo, fMinBeneficiaries].forEach((el) => el.addEventListener('change', renderList));
+  [fStatus, fType, fProgram, fFrom, fTo, fMinBeneficiaries].forEach((el) => el.addEventListener('change', renderList));
   fSearch.addEventListener('input', renderList);
 
   function clearFilters() {
     fStatus.value = '';
     fType.value = '';
+    fProgram.value = '';
     fMinBeneficiaries.value = '';
     fFrom.value = '';
     fTo.value = '';
@@ -382,6 +415,15 @@
 
     renderStats();
     populateFilterOptions();
+
+    // Coming from a "View Projects" link on programs.html
+    // (dashboard.html?program=<id>) — preset the filter if that program
+    // actually matches one of the options just populated.
+    const presetProgram = new URLSearchParams(location.search).get('program');
+    if (presetProgram && Array.from(fProgram.options).some((o) => o.value === presetProgram)) {
+      fProgram.value = presetProgram;
+    }
+
     document.getElementById('dashBody').style.display = 'block';
     renderList();
   }

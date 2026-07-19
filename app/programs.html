@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Programs — INA Platform" data-i18n-es="Programas — Plataforma INA">Programs — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Group related projects under a single Program, presented by one organization." data-i18n-es="Agrup&aacute; proyectos relacionados bajo un mismo Programa, presentado por una organizaci&oacute;n." content="Group related projects under a single Program, presented by one organization.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
+      <a href="programs.html" class="active"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span><span data-i18n="prog.title">Programs</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="prog.title">Programs</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="prog.lede">A Program groups several related projects under one umbrella — like Chubut's "Hub Digital Patagónico," which bundled a submarine cable, a backbone and last-mile builds as separate, independently financed projects presented by the same organization.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="programsBody" style="display:none; margin-top:24px;">
+      <div class="info-block" style="max-width:640px;">
+        <h4 id="formTitle"><span data-i18n="prog.form.new">New Program</span></h4>
+        <form id="programForm">
+          <div class="field" style="margin-top:0;"><label for="pgName"><span data-i18n="prog.f.name">Program name</span></label><input id="pgName" type="text" required></div>
+          <div class="field" style="margin-top:16px;"><label for="pgOrg"><span data-i18n="prog.f.org">Presenting organization</span></label><input id="pgOrg" type="text" required></div>
+          <div class="field" style="margin-top:16px;">
+            <label><span data-i18n="prog.f.orgType">Organization type</span></label>
+            <div class="chk-group" id="orgTypeOptions"></div>
+          </div>
+          <div class="field" style="margin-top:16px;"><label for="pgDesc"><span data-i18n="prog.f.desc">Description (optional)</span></label>
+            <textarea id="pgDesc" style="min-height:80px;"></textarea>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; margin-top:20px;">
+            <button type="submit" class="btn amber" id="pgSubmit"><span data-i18n="prog.form.create">Create Program</span></button>
+            <button type="button" class="btn ghost small" id="pgCancel" style="display:none;"><span data-i18n="prog.form.cancel">Cancel</span></button>
+          </div>
+          <p id="pgNote" class="contact-note" style="margin-top:12px; min-height:18px;"></p>
+        </form>
+      </div>
+
+      <div style="margin-top:44px;">
+        <span class="eyebrow"><span data-i18n="prog.list.eyebrow">Your Programs</span></span>
+        <h3 class="h-card" style="margin-top:12px;"><span data-i18n="prog.list.title">All Programs</span></h3>
+        <div id="programList" style="margin-top:18px; display:flex; flex-direction:column; gap:14px;"></div>
+
+        <div class="empty-state" id="emptyState" style="display:none; margin-top:18px;">
+          <div class="ei"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.5"/></svg></div>
+          <p><span data-i18n="prog.empty">No programs yet — create one above, or leave the Program field blank on individual projects.</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js"></script>
+<script src="/assets/script.js"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  const lang = INAPlatform.currentLang();
+  const ORG_TYPES = ['public', 'private'];
+
+  function renderOrgTypeOptions() {
+    const el = document.getElementById('orgTypeOptions');
+    el.innerHTML = ORG_TYPES.map((v, i) => `
+      <label class="chk-pill">
+        <input type="radio" name="orgType" value="${v}" ${i === 0 ? 'checked' : ''}>
+        <span>${INAPlatform.programOrgTypeLabel(v)}</span>
+      </label>
+    `).join('');
+  }
+  renderOrgTypeOptions();
+
+  let allPrograms = [];
+  let allProjects = [];
+  let editingId = null;
+  let currentUserId = null;
+
+  const form = document.getElementById('programForm');
+  const note = document.getElementById('pgNote');
+  const submitBtn = document.getElementById('pgSubmit');
+  const cancelBtn = document.getElementById('pgCancel');
+  const formTitle = document.getElementById('formTitle');
+
+  function resetForm() {
+    editingId = null;
+    form.reset();
+    renderOrgTypeOptions();
+    formTitle.innerHTML = '<span data-i18n="prog.form.new">New Program</span>';
+    submitBtn.innerHTML = '<span data-i18n="prog.form.create">Create Program</span>';
+    cancelBtn.style.display = 'none';
+    note.textContent = '';
+  }
+
+  function startEdit(program) {
+    editingId = program.id;
+    document.getElementById('pgName').value = program.name || '';
+    document.getElementById('pgOrg').value = program.organization || '';
+    document.getElementById('pgDesc').value = program.description || '';
+    const radio = form.querySelector(`input[name="orgType"][value="${program.organization_type}"]`);
+    if (radio) radio.checked = true;
+    formTitle.innerHTML = '<span data-i18n="prog.form.edit">Edit Program</span>';
+    submitBtn.innerHTML = '<span data-i18n="prog.form.save">Save Changes</span>';
+    cancelBtn.style.display = 'inline-flex';
+    note.textContent = '';
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  cancelBtn.addEventListener('click', resetForm);
+
+  function projectCount(programId) {
+    return allProjects.filter((p) => p.program_id === programId).length;
+  }
+
+  function renderList() {
+    const list = document.getElementById('programList');
+    list.innerHTML = '';
+    document.getElementById('emptyState').style.display = allPrograms.length ? 'none' : 'block';
+
+    allPrograms.forEach((pg) => {
+      const count = projectCount(pg.id);
+      const countLabel = lang === 'es'
+        ? `${count} ${count === 1 ? 'proyecto' : 'proyectos'}`
+        : `${count} ${count === 1 ? 'project' : 'projects'}`;
+      const isOwner = pg.user_id === currentUserId;
+
+      const row = document.createElement('div');
+      row.className = 'info-block';
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div style="min-width:0;">
+            <h4 style="margin-bottom:4px;">${pg.name}</h4>
+            <p style="font-size:13px; color:var(--muted);">${pg.organization} <span class="type-tag" style="margin-left:4px;">${INAPlatform.programOrgTypeLabel(pg.organization_type)}</span></p>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span class="fsu-pts">${countLabel}</span>
+            <a href="dashboard.html?program=${pg.id}" class="btn ghost small"><span data-i18n="prog.viewProjects">View Projects</span></a>
+            ${isOwner ? `<button type="button" class="btn ghost small" data-edit="${pg.id}"><span data-i18n="prog.edit">Edit</span></button>` : ''}
+          </div>
+        </div>
+        ${pg.description ? `<p style="margin-top:12px; font-size:13.5px; color:var(--muted); white-space:pre-wrap;">${pg.description}</p>` : ''}
+      `;
+      list.appendChild(row);
+    });
+
+    list.querySelectorAll('[data-edit]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const pg = allPrograms.find((p) => p.id === btn.getAttribute('data-edit'));
+        if (pg) startEdit(pg);
+      });
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    note.textContent = '';
+    submitBtn.disabled = true;
+    const payload = {
+      name: document.getElementById('pgName').value,
+      organization: document.getElementById('pgOrg').value,
+      organizationType: (new FormData(form)).get('orgType') || 'public',
+      description: document.getElementById('pgDesc').value,
+    };
+    try {
+      if (editingId) {
+        const updated = await INAPlatform.updateProgram(editingId, payload);
+        allPrograms = allPrograms.map((p) => (p.id === updated.id ? updated : p));
+      } else {
+        const created = await INAPlatform.createProgram(payload);
+        allPrograms.push(created);
+        allPrograms.sort((a, b) => a.name.localeCompare(b.name));
+      }
+      resetForm();
+      renderList();
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar el programa.' : "Couldn't save the program.");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+    currentUserId = session.user.id;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    [allPrograms, allProjects] = await Promise.all([
+      INAPlatform.listPrograms(),
+      INAPlatform.listProjects(),
+    ]);
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('programsBody').style.display = 'block';
+    renderList();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

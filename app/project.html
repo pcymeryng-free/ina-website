@@ -21,6 +21,7 @@
     <nav class="app-nav">
       <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
       <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
+      <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
       <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
     </nav>
     <div class="app-header-actions">
@@ -182,7 +183,8 @@
     const beneficiariesText = p.beneficiary_count != null
       ? ` · ${p.beneficiary_count.toLocaleString(lang === 'es' ? 'es-AR' : 'en-US')} ${lang === 'es' ? 'beneficiarios' : 'beneficiaries'}`
       : '';
-    document.getElementById('pmeta').textContent = p.country + beneficiariesText;
+    const programText = p.programs && p.programs.name ? ` · ${p.programs.name}` : '';
+    document.getElementById('pmeta').textContent = INAPlatform.countryLabel(p.country) + beneficiariesText + programText;
     document.getElementById('pdesc').textContent = p.description;
     document.getElementById('secondaryTypeTags').innerHTML = (p.secondary_types || [])
       .map((t) => `<span class="type-tag">${INAPlatform.projectTypeLabel(t)}</span>`)
