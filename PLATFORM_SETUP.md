@@ -92,6 +92,10 @@ to the old addresses breaks.
 >    the 100-point ENACOM Resolución 359/2025 selection-scoring matrix for
 >    Fondo de Servicio Universal (FSU) applications, one row per project.
 >    See "FSU Scoring" under "How it works" below for what it covers.
+> 8. `supabase/migration_v9_programs.sql` — adds the `programs` table and
+>    `projects.program_id`: lets several related projects be grouped under
+>    one umbrella initiative, each still financed and analyzed
+>    independently. See "Programs" under "How it works" below.
 >
 > Skip straight to "Promoting a user to advisor or admin" below once
 > they're run.
@@ -303,6 +307,21 @@ requires another admin, or the Supabase steps above.
   viewers alike. This is an orientation estimate based on the manual's
   published table, not an official ENACOM evaluation or eligibility
   determination.
+- **Programs**: `app/programs.html` lets a user group several related
+  projects under one umbrella — e.g. Chubut's "Hub Digital Patagónico,"
+  which bundled a submarine cable landing, a regional backbone and
+  last-mile builds as separate projects, each financed and analyzed
+  independently, all presented by the same sponsoring organization. A
+  Program has its own minimal fields (name, presenting organization,
+  public/private, an optional description) — the substantive data always
+  lives on the individual projects, never duplicated at the program level.
+  `new-project.html` offers an optional "Program" dropdown when submitting
+  or editing a project (`INAPlatform.listPrograms()` /
+  `INAPlatform.createProgram()` / `INAPlatform.updateProgram()` in
+  `assets/platform.js`); the dashboard grid shows each project's program
+  name and can filter by it (`?program=<id>` in the URL, e.g. from
+  programs.html's "View Projects" link, presets the filter). See
+  `supabase/migration_v9_programs.sql`.
 
 ## Troubleshooting: analysis stuck on "Applying the Investment Readiness Index…"
 
