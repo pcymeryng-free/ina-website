@@ -159,6 +159,19 @@
     return allProjects.filter((p) => p.program_id === programId).length;
   }
 
+  /* A Program's "types" are derived, not stored: each member project is
+     always a single type (see supabase/migration_v10_remove_secondary_types.sql),
+     but a Program can span several by containing several single-type
+     projects — e.g. Chubut's "Hub Digital Patagónico" spans submarine
+     cable + backbone + last-mile because it groups one project of each
+     type, not because any one project carries multiple types. */
+  function programTypes(programId) {
+    const types = allProjects
+      .filter((p) => p.program_id === programId)
+      .map((p) => p.project_type);
+    return Array.from(new Set(types));
+  }
+
   function renderList() {
     const list = document.getElementById('programList');
     list.innerHTML = '';
@@ -170,6 +183,10 @@
         ? `${count} ${count === 1 ? 'proyecto' : 'proyectos'}`
         : `${count} ${count === 1 ? 'project' : 'projects'}`;
       const isOwner = pg.user_id === currentUserId;
+      const types = programTypes(pg.id);
+      const typeTags = types
+        .map((t) => `<span class="type-tag">${INAPlatform.projectTypeLabel(t)}</span>`)
+        .join(' ');
 
       const row = document.createElement('div');
       row.className = 'info-block';
@@ -185,6 +202,7 @@
             ${isOwner ? `<button type="button" class="btn ghost small" data-edit="${pg.id}"><span data-i18n="prog.edit">Edit</span></button>` : ''}
           </div>
         </div>
+        ${typeTags ? `<div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:5px;">${typeTags}</div>` : ''}
         ${pg.description ? `<p style="margin-top:12px; font-size:13.5px; color:var(--muted); white-space:pre-wrap;">${pg.description}</p>` : ''}
       `;
       list.appendChild(row);

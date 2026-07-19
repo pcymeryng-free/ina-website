@@ -310,9 +310,6 @@
       main.className = 'main';
       main.style.color = 'inherit';
       main.style.textDecoration = 'none';
-      const secondaryTags = (p.secondary_types || [])
-        .map((t) => `<span class="type-tag">${INAPlatform.projectTypeLabel(t)}</span>`)
-        .join(' ');
       const beneficiariesText = p.beneficiary_count != null
         ? ` · ${p.beneficiary_count.toLocaleString(lang() === 'es' ? 'es-AR' : 'en-US')} ${lang() === 'es' ? 'beneficiarios' : 'beneficiaries'}`
         : '';
@@ -322,7 +319,6 @@
         <span class="maintext">
           <div class="pname">${p.name}</div>
           <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${INAPlatform.countryLabel(p.country)}${beneficiariesText}${programText}</div>
-          ${secondaryTags ? `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:5px;">${secondaryTags}</div>` : ''}
         </span>
       `;
 
