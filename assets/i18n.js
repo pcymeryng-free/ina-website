@@ -3385,6 +3385,8 @@ const I18N = {
   "prog.f.name": { "en": "Program name", "es": "Nombre del programa" },
   "prog.f.org": { "en": "Presenting organization", "es": "Organismo que lo presenta" },
   "prog.f.orgType": { "en": "Organization type", "es": "Tipo de organismo" },
+  "prog.f.types": { "en": "Program type(s)", "es": "Tipo(s) de programa" },
+  "prog.f.types.help": { "en": "Select every infrastructure type this program is expected to cover — a Program can span several, unlike an individual project.", "es": "Seleccioná todos los tipos de infraestructura que este programa prevé abarcar — un Programa puede abarcar varios, a diferencia de un proyecto individual." },
   "prog.f.desc": { "en": "Description (optional)", "es": "Descripción (opcional)" },
   "prog.list.eyebrow": { "en": "Your Programs", "es": "Tus Programas" },
   "prog.list.title": { "en": "All Programs", "es": "Todos los Programas" },

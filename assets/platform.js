@@ -1084,7 +1084,12 @@ const INAPlatform = {
     return data;
   },
 
-  async createProgram({ name, organization, organizationType, description }) {
+  /* types is optional — a declared list of one or more project-type values
+     (from PROJECT_TYPES) this Program covers, set by the owner independent
+     of which projects have actually been submitted under it yet. Unlike a
+     project (always single-type), a Program can be several — see
+     supabase/migration_v11_program_types.sql. */
+  async createProgram({ name, organization, organizationType, types, description }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
@@ -1094,6 +1099,7 @@ const INAPlatform = {
         name,
         organization,
         organization_type: organizationType || 'public',
+        types: types || [],
         description: description || null,
       })
       .select()
@@ -1103,13 +1109,14 @@ const INAPlatform = {
   },
 
   /* Owner-only — enforced by programs_update_own RLS. */
-  async updateProgram(id, { name, organization, organizationType, description }) {
+  async updateProgram(id, { name, organization, organizationType, types, description }) {
     const { data, error } = await supabaseClient
       .from('programs')
       .update({
         name,
         organization,
         organization_type: organizationType || 'public',
+        types: types || [],
         description: description || null,
         updated_at: new Date().toISOString(),
       })
