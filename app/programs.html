@@ -56,6 +56,11 @@
             <label><span data-i18n="prog.f.orgType">Organization type</span></label>
             <div class="chk-group" id="orgTypeOptions"></div>
           </div>
+          <div class="field" style="margin-top:16px;">
+            <label><span data-i18n="prog.f.types">Program type(s)</span></label>
+            <div class="chk-group" id="programTypesOptions"></div>
+            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.types.help">Select every infrastructure type this program is expected to cover — a Program can span several, unlike an individual project.</span></p>
+          </div>
           <div class="field" style="margin-top:16px;"><label for="pgDesc"><span data-i18n="prog.f.desc">Description (optional)</span></label>
             <textarea id="pgDesc" style="min-height:80px;"></textarea>
           </div>
@@ -118,6 +123,28 @@
   }
   renderOrgTypeOptions();
 
+  /* Declared program types — checkboxes from the same catalog as
+     projects.project_type. A Program can have several checked, unlike a
+     project's single required type. See supabase/migration_v11_program_types.sql. */
+  let typesChecked = new Set();
+  function renderProgramTypeOptions() {
+    const el = document.getElementById('programTypesOptions');
+    el.innerHTML = INAPlatform.PROJECT_TYPES.map((t) => {
+      const checked = typesChecked.has(t.value) ? 'checked' : '';
+      return `
+      <label class="chk-pill">
+        <input type="checkbox" value="${t.value}" ${checked}>
+        <span>${t[lang] || t.en}</span>
+      </label>`;
+    }).join('');
+  }
+  renderProgramTypeOptions();
+  document.getElementById('programTypesOptions').addEventListener('change', (e) => {
+    if (e.target.type !== 'checkbox') return;
+    if (e.target.checked) typesChecked.add(e.target.value);
+    else typesChecked.delete(e.target.value);
+  });
+
   let allPrograms = [];
   let allProjects = [];
   let editingId = null;
@@ -133,6 +160,8 @@
     editingId = null;
     form.reset();
     renderOrgTypeOptions();
+    typesChecked = new Set();
+    renderProgramTypeOptions();
     formTitle.innerHTML = '<span data-i18n="prog.form.new">New Program</span>';
     submitBtn.innerHTML = '<span data-i18n="prog.form.create">Create Program</span>';
     cancelBtn.style.display = 'none';
@@ -146,6 +175,8 @@
     document.getElementById('pgDesc').value = program.description || '';
     const radio = form.querySelector(`input[name="orgType"][value="${program.organization_type}"]`);
     if (radio) radio.checked = true;
+    typesChecked = new Set(program.types || []);
+    renderProgramTypeOptions();
     formTitle.innerHTML = '<span data-i18n="prog.form.edit">Edit Program</span>';
     submitBtn.innerHTML = '<span data-i18n="prog.form.save">Save Changes</span>';
     cancelBtn.style.display = 'inline-flex';
@@ -159,15 +190,20 @@
     return allProjects.filter((p) => p.program_id === programId).length;
   }
 
-  /* A Program's "types" are derived, not stored: each member project is
-     always a single type (see supabase/migration_v10_remove_secondary_types.sql),
-     but a Program can span several by containing several single-type
-     projects — e.g. Chubut's "Hub Digital Patagónico" spans submarine
-     cable + backbone + last-mile because it groups one project of each
-     type, not because any one project carries multiple types. */
-  function programTypes(programId) {
+  /* A Program's displayed "types" prefer the owner's declared list
+     (pg.types, see supabase/migration_v11_program_types.sql) since that's
+     meant to reflect the program's intended scope even before every
+     project has been submitted. For older programs saved before that field
+     existed (or left blank), fall back to deriving it from actual member
+     projects — each always a single type (see
+     supabase/migration_v10_remove_secondary_types.sql), so a Program only
+     spans several by containing several single-type projects, e.g.
+     Chubut's "Hub Digital Patagónico" spanning submarine cable + backbone
+     + last-mile. */
+  function programTypes(pg) {
+    if (pg.types && pg.types.length) return pg.types;
     const types = allProjects
-      .filter((p) => p.program_id === programId)
+      .filter((p) => p.program_id === pg.id)
       .map((p) => p.project_type);
     return Array.from(new Set(types));
   }
@@ -183,7 +219,7 @@
         ? `${count} ${count === 1 ? 'proyecto' : 'proyectos'}`
         : `${count} ${count === 1 ? 'project' : 'projects'}`;
       const isOwner = pg.user_id === currentUserId;
-      const types = programTypes(pg.id);
+      const types = programTypes(pg);
       const typeTags = types
         .map((t) => `<span class="type-tag">${INAPlatform.projectTypeLabel(t)}</span>`)
         .join(' ');
@@ -224,6 +260,7 @@
       name: document.getElementById('pgName').value,
       organization: document.getElementById('pgOrg').value,
       organizationType: (new FormData(form)).get('orgType') || 'public',
+      types: Array.from(typesChecked),
       description: document.getElementById('pgDesc').value,
     };
     try {
