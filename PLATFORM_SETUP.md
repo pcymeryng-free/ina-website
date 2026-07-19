@@ -74,12 +74,12 @@ to the old addresses breaks.
 >    column to `framework_analysis` ('ai' / 'manual') and lets a project
 >    owner insert their own 'manual'-tagged row, for the new
 >    `app/assessment.html` self-assessment questionnaire.
-> 5. `supabase/migration_v6_secondary_project_types.sql` — adds
->    `projects.secondary_types` (text array) so a submission can tag
->    additional infrastructure components beyond its single primary type
->    (e.g. a datacenter project that also involves a new submarine cable
->    and a terrestrial backbone) — informational only, doesn't affect
->    scoring.
+> 5. `supabase/migration_v6_secondary_project_types.sql` — historical: added
+>    `projects.secondary_types` (text array) so a submission could tag
+>    additional infrastructure components beyond its single primary type.
+>    **Superseded by migration v10 below — if you're setting up fresh, run
+>    this one (it's harmless, the column gets dropped again by v10) or just
+>    skip both and use `schema.sql`, which no longer has the column at all.**
 > 6. `supabase/migration_v7_beneficiary_count.sql` — adds
 >    `projects.beneficiary_count` (integer, nullable): households/
 >    beneficiaries reached, the key impact metric for Universal Service
@@ -96,6 +96,15 @@ to the old addresses breaks.
 >    `projects.program_id`: lets several related projects be grouped under
 >    one umbrella initiative, each still financed and analyzed
 >    independently. See "Programs" under "How it works" below.
+> 9. `supabase/migration_v10_remove_secondary_types.sql` — ⚠️ **drops**
+>    `projects.secondary_types` and its data. The model is now: a project
+>    is always a single type; a Program (v9, above) is what can span
+>    several types, by containing several single-type projects. If you ran
+>    v6 above (or used an older `schema.sql`) and already have projects
+>    with secondary types set, **read the warning inside the migration
+>    file and decide whether to split any of them into separate projects
+>    under a shared Program before running this** — it does not do that
+>    split for you, it only deletes the column.
 >
 > Skip straight to "Promoting a user to advisor or admin" below once
 > they're run.
@@ -320,8 +329,12 @@ requires another admin, or the Supabase steps above.
   `INAPlatform.createProgram()` / `INAPlatform.updateProgram()` in
   `assets/platform.js`); the dashboard grid shows each project's program
   name and can filter by it (`?program=<id>` in the URL, e.g. from
-  programs.html's "View Projects" link, presets the filter). See
-  `supabase/migration_v9_programs.sql`.
+  programs.html's "View Projects" link, presets the filter). Each project
+  is always a single type, but a Program can span several — `programs.html`
+  computes this client-side as the distinct `project_type` values among a
+  program's member projects (no stored field for it) and shows them as
+  tags on the program's card. See `supabase/migration_v9_programs.sql` and
+  `supabase/migration_v10_remove_secondary_types.sql`.
 
 ## Troubleshooting: analysis stuck on "Applying the Investment Readiness Index…"
 
