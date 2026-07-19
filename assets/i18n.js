@@ -3333,8 +3333,6 @@ const I18N = {
   "np.f.docs.drop": { "en": "Click to choose files, or drag and drop", "es": "Hacé clic para elegir archivos, o arrastralos aquí" },
   "np.f.docs.existing": { "en": "Already uploaded", "es": "Ya subidos" },
   "np.f.name": { "en": "Project name", "es": "Nombre del proyecto" },
-  "np.f.secondaryTypes": { "en": "Additional components (optional)", "es": "Componentes adicionales (opcional)" },
-  "np.f.secondaryTypes.help": { "en": "Check any other infrastructure components this project also includes — e.g. a datacenter project that also involves a new submarine cable landing.", "es": "Marcá cualquier otro componente de infraestructura que también incluya este proyecto — por ejemplo, un proyecto de datacenter que también implique un nuevo punto de amarre de cable submarino." },
   "np.f.type": { "en": "Project type", "es": "Tipo de proyecto" },
   "np.lede": { "en": "Tell us about the project. Once submitted, INA applies the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade; to generate a scored analysis with financing recommendations.", "es": "Contanos sobre el proyecto. Una vez enviado, INA aplica el Investment Readiness Index&trade; y el Multilateral Finance Navigator&trade; para generar un análisis con puntaje y recomendaciones de financiamiento." },
   "np.submit": { "en": "Submit for Analysis", "es": "Enviar para Análisis" },
