@@ -105,6 +105,11 @@ to the old addresses breaks.
 >    file and decide whether to split any of them into separate projects
 >    under a shared Program before running this** — it does not do that
 >    split for you, it only deletes the column.
+> 10. `supabase/migration_v11_program_types.sql` — adds `programs.types`
+>    (text array): a declared list of one or more infrastructure types a
+>    Program covers, set by its owner independent of which projects exist
+>    under it yet. Unlike a project (always single-type), a Program can be
+>    several. See "Programs" under "How it works" below.
 >
 > Skip straight to "Promoting a user to advisor or admin" below once
 > they're run.
@@ -330,11 +335,16 @@ requires another admin, or the Supabase steps above.
   `assets/platform.js`); the dashboard grid shows each project's program
   name and can filter by it (`?program=<id>` in the URL, e.g. from
   programs.html's "View Projects" link, presets the filter). Each project
-  is always a single type, but a Program can span several — `programs.html`
-  computes this client-side as the distinct `project_type` values among a
-  program's member projects (no stored field for it) and shows them as
-  tags on the program's card. See `supabase/migration_v9_programs.sql` and
-  `supabase/migration_v10_remove_secondary_types.sql`.
+  is always a single type, but a Program can span several. This is now a
+  declared field (`programs.types`, a checkbox multi-select on
+  `programs.html`) the owner sets independent of which projects exist
+  under the program yet — useful when planning a program's scope before
+  submitting any of its projects. For programs saved before this field
+  existed, or left blank, `programs.html` falls back to computing it
+  client-side as the distinct `project_type` values among the program's
+  actual member projects. See `supabase/migration_v9_programs.sql`,
+  `supabase/migration_v10_remove_secondary_types.sql` and
+  `supabase/migration_v11_program_types.sql`.
 
 ## Troubleshooting: analysis stuck on "Applying the Investment Readiness Index…"
 
