@@ -134,6 +134,27 @@ const PRIORITY_LABELS = {
   low: { en: 'Low Priority', es: 'Prioridad Baja' },
 };
 
+/* The 9 Multilateral Finance Navigator™ mechanism names — both
+   /api/analyze-project.js's FINANCING_MECHANISMS list (AI path) and this
+   file's STAGE_FINANCING_SUGGESTION/USF_SUGGESTION (manual-assessment
+   path) always write one of these exact English strings into
+   framework_analysis.financing_recommendations[].mechanism, regardless of
+   UI language — it's used as a stable key, not display text. Translated
+   here at render time instead (project.html calls financeMechanismLabel()
+   rather than printing item.mechanism directly), reusing the same Spanish
+   wording as the public finance.html page. */
+const MECHANISM_LABELS = {
+  'Multilateral Development Banks': { en: 'Multilateral Development Banks', es: 'Bancos Multilaterales de Desarrollo' },
+  'Development Finance Institutions': { en: 'Development Finance Institutions', es: 'Instituciones de Financiamiento para el Desarrollo' },
+  'Project Finance': { en: 'Project Finance', es: 'Project Finance' },
+  'Public-Private Partnerships': { en: 'Public-Private Partnerships', es: 'Asociaciones Público-Privadas' },
+  'Blended Finance': { en: 'Blended Finance', es: 'Finanzas Mixtas' },
+  'Guarantees & Credit Enhancement': { en: 'Guarantees & Credit Enhancement', es: 'Garantías y Mejora Crediticia' },
+  'Export Credit Agencies': { en: 'Export Credit Agencies', es: 'Agencias de Crédito a la Exportación' },
+  'Commercial & Institutional Capital': { en: 'Commercial & Institutional Capital', es: 'Capital Comercial e Institucional' },
+  'Universal Service Funds': { en: 'Universal Service Funds', es: 'Fondos de Servicio Universal' },
+};
+
 /* ---------- Manual 9-dimension self-assessment (app/assessment.html) ----------
    The questionnaire covers the 8 generic Investment Readiness Index™
    dimensions above, PLUS one 9th dimension specific to the project's type
@@ -590,12 +611,22 @@ const INAPlatform = {
   TYPE_DIMENSION_LABELS,
   TYPE_DIMENSION_KEY,
   PRIORITY_LABELS,
+  MECHANISM_LABELS,
   STATUS_FILTER_VALUES,
   PLATFORM_ROLE_LABELS,
   currentLang,
 
   dimensionLabel(key) {
     return dimLabelLookup(key, currentLang());
+  },
+  /* Financing mechanism names are stored as a stable English key in
+     framework_analysis.financing_recommendations[].mechanism (both the AI
+     and manual-assessment paths — see the comment above
+     MECHANISM_LABELS). Always render through this rather than printing
+     the raw value, so it follows the UI language like everything else. */
+  financeMechanismLabel(value) {
+    const entry = MECHANISM_LABELS[value];
+    return entry ? entry[currentLang()] : value;
   },
   assessmentQuestionSet,
   computeManualAssessment,

@@ -3468,6 +3468,23 @@ function applyLang(lang) {
 (function () {
   let saved = 'en';
   try { saved = localStorage.getItem('ina_lang') || 'en'; } catch (e) {}
+  // Set the <html lang> attribute — which INAPlatform.currentLang() in
+  // assets/platform.js reads — synchronously, right now, rather than
+  // waiting for DOMContentLoaded like the rest of applyLang() below has
+  // to (it also walks [data-i18n] elements and populates <select>
+  // options, which need the page body to exist first). <html> itself is
+  // always already parsed by the time this script runs (it's the very
+  // first tag in the document), so this is safe to do immediately.
+  //
+  // This matters because several app/ pages populate dropdowns/checkbox
+  // lists (project type, country, program type, role type, FSU option
+  // pills…) with their own inline <script> synchronously, straight after
+  // this file and assets/platform.js load — i.e. before DOMContentLoaded
+  // fires. Without this line, INAPlatform.currentLang() would still read
+  // the hardcoded <html lang="en"> default at that point no matter what
+  // language was saved, and those lists would always render in English on
+  // first load regardless of the user's preference.
+  document.documentElement.setAttribute('lang', saved);
   document.addEventListener('DOMContentLoaded', () => {
     applyLang(saved);
     document.querySelectorAll('.lang-btn').forEach((b) => {
