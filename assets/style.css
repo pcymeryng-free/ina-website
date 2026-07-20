@@ -205,6 +205,22 @@ nav.links a.current{ color: var(--amber-deep); }
 .on-dark .lang-btn.active, section.hero .lang-btn.active{ background: var(--amber); color:#141008; box-shadow:0 1px 3px rgba(0,0,0,0.35); }
 @media (max-width:1200px){ header.site > .wrap.nav > .lang-switch{ display:none; } }
 
+/* Institution badges ("Methodologies aligned with" row on the homepage) —
+   deliberately NOT the institutions' official logos (World Bank, IDB, CAF,
+   ITU, PMI, DFC, USTDA haven't endorsed or partnered with INA, and their
+   marks are trademarked/brand-guideline-restricted) — a plain-text
+   acronym pill in INA's own visual language instead, using the same amber
+   dot motif as the logo mark and the same pill shape as .lang-switch. */
+.method-badges{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.method-badge{
+  display:inline-flex; align-items:center; gap:7px;
+  padding:7px 15px; border:1px solid var(--paper-line); border-radius:100px;
+  font-family:var(--mono); font-size:12.5px; letter-spacing:.03em; color:var(--text);
+  background: var(--paper-2);
+  white-space:nowrap;
+}
+.method-badge::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--amber); flex:0 0 auto; }
+
 /* ---------- Section shells ---------- */
 section{ padding: 108px 0; }
 section.on-dark{ background: var(--ink); color: var(--text-on-dark); }
