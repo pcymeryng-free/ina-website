@@ -95,6 +95,29 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+/* CORS — needed once the site moved to Bluehost for production (see
+   MIGRACION_BLUEHOST.md Parte 3/4): this function stays on Vercel
+   permanently (Bluehost has no Node.js support), reachable from the
+   Bluehost site via api.international-network-advisors.com, which is no
+   longer the same origin as the page making the request. Allows the
+   production domain (with and without www) plus any *.vercel.app
+   deployment so the Vercel copy keeps working as the dev/test
+   environment. Deliberately NOT a wildcard '*' — this endpoint reads the
+   caller's Supabase session token from the Authorization header. */
+const ALLOWED_ORIGINS = [
+  'https://international-network-advisors.com',
+  'https://www.international-network-advisors.com',
+];
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  try {
+    return new URL(origin).hostname.endsWith('.vercel.app');
+  } catch (e) {
+    return false;
+  }
+}
+
 async function supabaseRest(path, { method = 'GET', body, serviceKey, supabaseUrl, extraHeaders } = {}) {
   const res = await fetch(`${supabaseUrl}/rest/v1${path}`, {
     method,
@@ -156,6 +179,22 @@ function stageForScore(score) {
 }
 
 async function handler(req, res) {
+  const origin = req.headers.origin;
+  if (isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Browsers send a preflight OPTIONS request before the real POST for a
+  // cross-origin call with a custom Authorization header — no body/auth
+  // to check yet, just confirm the CORS headers above and stop here.
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+
   if (req.method !== 'POST') {
     return json(res, 405, { error: 'Method not allowed' });
   }
