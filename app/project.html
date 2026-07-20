@@ -163,6 +163,20 @@
     location.href = 'login.html';
   });
 
+  // assets/i18n.js's applyLang() only re-translates elements tagged
+  // data-i18n — it doesn't know about the project/analysis content this
+  // page renders dynamically below (project type/country labels, the
+  // self-assessment summary, gap roadmap, financing mechanism names…).
+  // Re-render that from the last-fetched data whenever the language is
+  // switched, so toggling EN/ES while viewing a project actually updates
+  // everything, not just the static chrome.
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (currentProject) renderProject(currentProject);
+      if (currentAnalysis) renderAnalysis(currentAnalysis);
+    });
+  });
+
   function initials(name) {
     return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
   }
@@ -174,7 +188,14 @@
   let pollStartedAt = null;
   const POLL_TIMEOUT_MS = 90000; // give up and show a retry-able error after ~90s
 
+  // Kept so a language toggle can re-render the dynamic (non data-i18n)
+  // content below without a page reload — see the .lang-btn listener near
+  // the bottom of this script.
+  let currentProject = null;
+  let currentAnalysis = null;
+
   function renderProject(p) {
+    currentProject = p;
     document.getElementById('crumbName').textContent = p.name;
     document.getElementById('ptypeLabel').textContent = INAPlatform.projectTypeLabel(p.project_type);
     document.getElementById('pname').textContent = p.name;
@@ -208,13 +229,42 @@
   }
 
   function renderAnalysis(a) {
+    // Keep the original DB row (not the recomputed one below) so a later
+    // language toggle can re-derive fresh text from raw_model_output again
+    // in whatever language is selected at that point.
+    currentAnalysis = a;
+
+    // Self-assessment (source='manual') results are scored client-side by
+    // INAPlatform.computeManualAssessment(), which bakes the CURRENT UI
+    // language into the summary/gap-roadmap/financing text it returns —
+    // and that's what submitManualAssessment() saved to the DB. If the
+    // page is later viewed (or toggled) in the other language, those
+    // saved strings would otherwise stay frozen in whatever language was
+    // active at submission time. Since the raw Likert answers are also
+    // saved (raw_model_output), recompute live in the current language
+    // instead of trusting the possibly-stale saved text — this is exactly
+    // what fixed the "Self-Assessment results show in English even with
+    // Spanish selected" issue.
+    let data = a;
+    if (a.source === 'manual' && a.raw_model_output && currentProject) {
+      try {
+        const answers = JSON.parse(a.raw_model_output);
+        const recomputed = INAPlatform.computeManualAssessment(
+          currentProject.project_type,
+          answers,
+          { beneficiaryCount: currentProject.beneficiary_count }
+        );
+        data = Object.assign({}, a, recomputed);
+      } catch (e) { /* malformed/legacy raw_model_output — fall back to the stored fields */ }
+    }
+
     document.getElementById('pendingBlock').style.display = 'none';
     document.getElementById('errorBlock').style.display = 'none';
     document.getElementById('resultsBlock').style.display = 'block';
 
-    document.getElementById('scoreNum').textContent = a.overall_score != null ? a.overall_score : '–';
-    document.getElementById('stageLabel').textContent = INAPlatform.stageLabel(a.stage);
-    document.getElementById('summaryText').textContent = a.summary || '';
+    document.getElementById('scoreNum').textContent = data.overall_score != null ? data.overall_score : '–';
+    document.getElementById('stageLabel').textContent = INAPlatform.stageLabel(data.stage);
+    document.getElementById('summaryText').textContent = data.summary || '';
 
     const lang = INAPlatform.currentLang();
     const sourceBadge = document.getElementById('sourceBadge');
@@ -224,7 +274,7 @@
 
     const dimGrid = document.getElementById('dimGrid');
     dimGrid.innerHTML = '';
-    const dims = a.dimensions || {};
+    const dims = data.dimensions || {};
     // Show the 8 canonical dimensions in their fixed order first, then any
     // extra key (the manual questionnaire's 9th, project-type-specific
     // dimension) that the AI's dimensions object never has.
@@ -247,7 +297,7 @@
 
     const roadmapList = document.getElementById('roadmapList');
     roadmapList.innerHTML = '';
-    (a.gap_roadmap || []).forEach((item) => {
+    (data.gap_roadmap || []).forEach((item) => {
       const row = document.createElement('div');
       row.className = 'roadmap-item';
       row.innerHTML = `<span class="pr">${INAPlatform.priorityLabel(item.priority)}</span><span>${item.action}</span>`;
@@ -256,10 +306,10 @@
 
     const financeGrid = document.getElementById('financeGrid');
     financeGrid.innerHTML = '';
-    (a.financing_recommendations || []).forEach((item) => {
+    (data.financing_recommendations || []).forEach((item) => {
       const card = document.createElement('div');
       card.className = 'finance-rec-card';
-      card.innerHTML = `<h4>${item.mechanism || ''}</h4><p>${item.rationale || ''}</p>`;
+      card.innerHTML = `<h4>${INAPlatform.financeMechanismLabel(item.mechanism) || ''}</h4><p>${item.rationale || ''}</p>`;
       financeGrid.appendChild(card);
     });
   }

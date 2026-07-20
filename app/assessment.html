@@ -79,20 +79,55 @@
     location.href = 'login.html';
   });
 
+  // assets/i18n.js's applyLang() only re-translates data-i18n elements —
+  // it doesn't know about the questionnaire this page builds dynamically.
+  // Re-render it on a language toggle too, so switching EN/ES mid-way
+  // through answering actually re-renders the questions in the new
+  // language instead of just the static page chrome. Already-selected
+  // answers are captured beforehand and reapplied after, so toggling
+  // language doesn't throw away progress.
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (!currentProject) return;
+      const savedAnswers = {};
+      document.querySelectorAll('#dimList input[type="radio"]:checked').forEach((el) => {
+        savedAnswers[el.name] = el.value;
+      });
+      renderQuestionnaire(currentProject.project_type);
+      let answeredCount = 0;
+      Object.keys(savedAnswers).forEach((name) => {
+        const input = document.querySelector(`#dimList input[name="${name}"][value="${savedAnswers[name]}"]`);
+        if (input) { input.checked = true; answeredCount += 1; }
+      });
+      updateProgress(answeredCount, dimensionSet.length * TOTAL_QUESTIONS_PER_DIM);
+    });
+  });
+
   function initials(name) {
     return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
   }
 
   const params = new URLSearchParams(location.search);
   const projectId = params.get('id');
-  const lang = INAPlatform.currentLang();
-  const scaleLow = lang === 'es' ? 'Muy en desacuerdo' : 'Strongly disagree';
-  const scaleHigh = lang === 'es' ? 'Muy de acuerdo' : 'Strongly agree';
 
   let dimensionSet = [];
   const TOTAL_QUESTIONS_PER_DIM = 3;
 
+  // NOTE: lang is intentionally looked up fresh with INAPlatform.currentLang()
+  // inside each function below, never captured once at the top of this
+  // script. i18n.js only sets <html lang="..."> (which currentLang() reads)
+  // inside a DOMContentLoaded handler, which hasn't fired yet by the time
+  // this inline script runs — a top-level `const lang = ...` here would
+  // always resolve to the hardcoded <html lang="en"> default and the
+  // questionnaire would show English regardless of the saved preference.
+  // By the time renderQuestionnaire() actually runs (after init()'s awaited
+  // network calls), DOMContentLoaded has long since fired and the saved
+  // language is correctly in place.
   function renderQuestionnaire(projectType) {
+    const lang = INAPlatform.currentLang();
+    const scaleLow = lang === 'es' ? 'Muy en desacuerdo' : 'Strongly disagree';
+    const scaleHigh = lang === 'es' ? 'Muy de acuerdo' : 'Strongly agree';
+
     dimensionSet = INAPlatform.assessmentQuestionSet(projectType);
     const dimList = document.getElementById('dimList');
     dimList.innerHTML = '';
@@ -134,6 +169,7 @@
   }
 
   function updateProgress(answered, total) {
+    const lang = INAPlatform.currentLang();
     const progress = document.getElementById('assessProgress');
     const label = lang === 'es' ? 'preguntas respondidas' : 'questions answered';
     progress.innerHTML = `<b>${answered}</b> / ${total} ${label}`;
@@ -163,6 +199,7 @@
       });
       location.href = `project.html?id=${projectId}`;
     } catch (err) {
+      const lang = INAPlatform.currentLang();
       note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar la autoevaluación.' : "Couldn't save the self-assessment.");
       submitBtn.disabled = false;
     }
