@@ -24,6 +24,25 @@ const supabaseClient = (SUPABASE_URL_CLEAN !== 'YOUR_SUPABASE_URL' && SUPABASE_U
   ? window.supabase.createClient(SUPABASE_URL_CLEAN, SUPABASE_ANON_KEY_CLEAN)
   : null;
 
+/* ---------- AI analysis endpoint (Bluehost migration) ----------
+   /api/analyze-project.js is a Vercel serverless function; Bluehost has
+   no Node.js support, so it stays on Vercel permanently even once the
+   site itself is served from Bluehost in production (see
+   MIGRACION_BLUEHOST.md Parte 3/4). On the production domain the site and
+   the function are no longer same-origin, so this needs an absolute URL
+   to the api.* subdomain (CNAME'd to Vercel) instead of the plain
+   relative path. Everywhere else — the Vercel dev/test copy, localhost —
+   the site and function still share an origin, so the relative path
+   keeps working exactly as before. */
+const PRODUCTION_HOSTNAMES = ['international-network-advisors.com', 'www.international-network-advisors.com'];
+const PRODUCTION_API_ORIGIN = 'https://api.international-network-advisors.com';
+function analyzeProjectUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/analyze-project`;
+  }
+  return '/api/analyze-project';
+}
+
 /* ---------- Reference data (bilingual) ---------- */
 
 const ROLE_TYPES = [
@@ -1224,13 +1243,15 @@ const INAPlatform = {
     return data;
   },
 
-  /* Calls the Vercel serverless function that runs the AI analysis.
-     This is a POST to a same-origin /api route, so no CORS setup is
-     needed — it works automatically once deployed on Vercel. */
+  /* Calls the serverless function that runs the AI analysis — see
+     analyzeProjectUrl() near the top of this file for why the URL isn't
+     always the same relative path: on Bluehost production it's a
+     cross-origin call to the api.* subdomain on Vercel, which
+     /api/analyze-project.js sends matching CORS headers for. */
   async requestAnalysis(projectId) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
-    const res = await fetch('/api/analyze-project', {
+    const res = await fetch(analyzeProjectUrl(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
