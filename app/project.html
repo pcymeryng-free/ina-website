@@ -170,8 +170,21 @@
   // Re-render that from the last-fetched data whenever the language is
   // switched, so toggling EN/ES while viewing a project actually updates
   // everything, not just the static chrome.
+  //
+  // Important: this listener is registered here, synchronously, before
+  // DOMContentLoaded — while i18n.js's OWN click listener on these same
+  // buttons (the one that calls applyLang(), which is what actually
+  // updates document.documentElement's lang attribute and localStorage)
+  // is only registered once DOMContentLoaded fires. Listeners on the same
+  // element run in registration order, so without the explicit
+  // setAttribute below, this handler would fire and re-render using the
+  // language BEFORE i18n.js's handler switches it — one click behind.
+  // Setting it here too (redundant with what applyLang() does a moment
+  // later, but harmless) makes this handler correct regardless of that
+  // ordering.
   document.querySelectorAll('.lang-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
+      document.documentElement.setAttribute('lang', btn.getAttribute('data-lang'));
       if (currentProject) renderProject(currentProject);
       if (currentAnalysis) renderAnalysis(currentAnalysis);
     });

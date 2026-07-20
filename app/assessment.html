@@ -86,8 +86,20 @@
   // language instead of just the static page chrome. Already-selected
   // answers are captured beforehand and reapplied after, so toggling
   // language doesn't throw away progress.
+  //
+  // Important: this listener is registered here, synchronously, before
+  // DOMContentLoaded — while i18n.js's OWN click listener on these same
+  // buttons (the one that calls applyLang(), which actually updates
+  // document.documentElement's lang attribute) is only registered once
+  // DOMContentLoaded fires. Listeners on the same element run in
+  // registration order, so without the explicit setAttribute below, this
+  // handler would re-render using the language BEFORE i18n.js's handler
+  // switches it — one click behind. Setting it here too (redundant with
+  // what applyLang() does a moment later, but harmless) makes this
+  // handler correct regardless of that ordering.
   document.querySelectorAll('.lang-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
+      document.documentElement.setAttribute('lang', btn.getAttribute('data-lang'));
       if (!currentProject) return;
       const savedAnswers = {};
       document.querySelectorAll('#dimList input[type="radio"]:checked').forEach((el) => {
