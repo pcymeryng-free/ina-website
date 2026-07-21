@@ -54,6 +54,13 @@
       <div class="ci-row"><div class="lab"><span data-i18n="contact.profile.lab">Company Profile</span></div><div class="val"><span data-i18n="contact.profile.val">Download the INA Company Profile (PDF)</span></div></div>
     </div>
     <form class="advisory reveal" id="advisoryForm">
+      <!-- Honeypot: hidden from real visitors via CSS, left empty by them.
+           Bots that auto-fill every field trip this, and the server
+           silently discards the submission instead of emailing it. -->
+      <div style="position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;" aria-hidden="true">
+        <label for="company_website">Company Website</label>
+        <input id="company_website" type="text" tabindex="-1" autocomplete="off">
+      </div>
       <div class="field"><label for="name"><span data-i18n="contact.f.name">Full name</span></label><input id="name" type="text" required></div>
       <div class="field"><label for="org"><span data-i18n="contact.f.org">Organization</span></label><input id="org" type="text" required></div>
       <div class="field"><label for="type"><span data-i18n="contact.f.type">You are a</span></label>

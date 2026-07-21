@@ -1,0 +1,9 @@
+{
+  "name": "ina-website",
+  "private": true,
+  "version": "1.0.0",
+  "description": "INA (International Network Advisors) institutional site + platform. This package.json exists only so Vercel installs the one npm dependency api/contact.js needs (nodemailer) — the rest of the site and api/analyze-project.js use no external dependencies on purpose.",
+  "dependencies": {
+    "nodemailer": "^6.9.14"
+  }
+}
