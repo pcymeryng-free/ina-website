@@ -3144,6 +3144,14 @@ const I18N = {
     "en": "Request received — thank you. An advisor will follow up shortly.",
     "es": "Solicitud recibida — gracias. Un asesor se pondrá en contacto en breve."
   },
+  "contact.note.sending": {
+    "en": "Sending…",
+    "es": "Enviando…"
+  },
+  "contact.note.error": {
+    "en": "We couldn't send that automatically. Click here to email us directly.",
+    "es": "No pudimos enviarlo automáticamente. Hacé clic acá para escribirnos directamente."
+  },
   "meta.contact.title": {
     "en": "Contact — International Network Advisors",
     "es": "Contacto — International Network Advisors"
