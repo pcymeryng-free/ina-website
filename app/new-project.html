@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/style.css?v=3">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body class="app-body">
@@ -54,7 +54,7 @@
       <div class="field" style="margin-top:18px;">
         <label for="pprogram"><span data-i18n="np.f.program">Program (optional)</span></label>
         <select id="pprogram"></select>
-        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.program.help">Group this project under a Program if it's part of a broader initiative with several independently-financed projects.</span> <a href="programs.html" target="_blank"><span data-i18n="np.f.program.create">Create a new program &rarr;</span></a></p>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.program.help">Group this project under a Program if it's part of a broader initiative with several independently-financed projects.</span> <a href="new-program.html" target="_blank"><span data-i18n="np.f.program.create">Create a new program &rarr;</span></a></p>
       </div>
 
       <div class="field" style="margin-top:18px;"><label for="pcountry"><span data-i18n="np.f.country">Country</span></label>
@@ -71,16 +71,59 @@
 
       <div id="existingDocsBlock" style="margin-top:26px; display:none;">
         <label><span data-i18n="np.f.docs.existing">Already uploaded</span></label>
-        <ul id="existingDocsList" style="margin-top:10px; display:flex; flex-direction:column; gap:6px; font-size:13.5px; color:var(--muted);"></ul>
+        <div id="existingDocsList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
       </div>
 
+      <!-- Four separate, independently-optional upload zones instead of one
+           flat list — see supabase/migration_v15_document_categories.sql.
+           The technical, financial and administrative documents are all
+           eventually needed for evaluation, but none are required to submit
+           the project; "Other attachments" catches anything that doesn't
+           fit the first three. Each zone is driven generically by the JS
+           below via its [data-category] attribute rather than four
+           hand-wired copies. -->
       <div class="field" style="margin-top:26px;">
-        <label><span data-i18n="np.f.docs">Supporting documents (optional)</span></label>
-        <div class="upload-drop" id="dropZone">
-          <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
-          <input type="file" id="fileInput" multiple style="display:none;">
+        <label><span data-i18n="np.f.docs.section">Supporting documents</span></label>
+        <p style="font-size:12px; color:var(--muted); margin-top:4px;"><span data-i18n="np.f.docs.section.help">Nothing here is required to submit — attach what you have now and add the rest later from the Edit screen. All three categories below are used during evaluation.</span></p>
+
+        <div class="doc-upload-group" data-category="technical" style="margin-top:18px;">
+          <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.technical">Technical folder</span></label>
+          <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.technical.help">Engineering studies, technical specifications, route/site surveys, network diagrams.</span></p>
+          <div class="upload-drop" data-dropzone style="margin-top:8px;">
+            <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+            <input type="file" data-fileinput multiple style="display:none;">
+          </div>
+          <div class="upload-list" data-uploadlist></div>
         </div>
-        <div class="upload-list" id="uploadList"></div>
+
+        <div class="doc-upload-group" data-category="financial" style="margin-top:20px;">
+          <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.financial">Financial &amp; economic documentation</span></label>
+          <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.financial.help">Financial model, cost estimates, revenue projections, funding sources considered.</span></p>
+          <div class="upload-drop" data-dropzone style="margin-top:8px;">
+            <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+            <input type="file" data-fileinput multiple style="display:none;">
+          </div>
+          <div class="upload-list" data-uploadlist></div>
+        </div>
+
+        <div class="doc-upload-group" data-category="administrative" style="margin-top:20px;">
+          <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.administrative">Administrative documentation</span></label>
+          <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.administrative.help">Legal/corporate documents, permits, licenses, regulatory filings.</span></p>
+          <div class="upload-drop" data-dropzone style="margin-top:8px;">
+            <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+            <input type="file" data-fileinput multiple style="display:none;">
+          </div>
+          <div class="upload-list" data-uploadlist></div>
+        </div>
+
+        <div class="doc-upload-group" data-category="other" style="margin-top:20px;">
+          <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.other">Other attachments</span></label>
+          <div class="upload-drop" data-dropzone style="margin-top:8px;">
+            <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+            <input type="file" data-fileinput multiple style="display:none;">
+          </div>
+          <div class="upload-list" data-uploadlist></div>
+        </div>
       </div>
 
       <p id="editNote" style="font-size:12.5px; color:var(--amber-deep); margin-top:18px; display:none;"><span data-i18n="np.edit.reanalyze">Saving changes will re-run the Investment Readiness Index&trade; analysis against the updated description.</span></p>
@@ -97,10 +140,10 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js"></script>
+<script src="/assets/i18n.js?v=4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js"></script>
-<script src="/assets/script.js"></script>
+<script src="/assets/platform.js?v=9"></script>
+<script src="/assets/script.js?v=12"></script>
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
@@ -119,21 +162,59 @@
   }
 
   const typeSelect = document.getElementById('ptype');
-  const lang = INAPlatform.currentLang();
-  INAPlatform.PROJECT_TYPES.forEach((t) => {
-    const opt = document.createElement('option');
-    opt.value = t.value;
-    opt.textContent = t[lang] || t.en;
-    typeSelect.appendChild(opt);
-  });
-
   const countrySelect = document.getElementById('pcountry');
-  INAPlatform.COUNTRIES_AMERICAS.forEach((c) => {
-    const opt = document.createElement('option');
-    opt.value = c.value;
-    opt.textContent = c[lang] || c.en;
-    countrySelect.appendChild(opt);
-  });
+  // NOT a const — see the .lang-btn listener further down. This page builds
+  // the project-type/country <select> options, the "Already uploaded"
+  // document-category headings and the program dropdown's "No program"
+  // option in plain JS, none of which carry [data-i18n]; assets/i18n.js's
+  // own lang-btn listener only re-translates elements that do, so without
+  // this it kept showing whichever language was active on first load (e.g.
+  // "Technical folder" never switching to "Carpeta técnica"). Same fix as
+  // dashboard.html/project.html/assessment.html/programs.html.
+  let lang = INAPlatform.currentLang();
+
+  // Rebuilds the type <select> in the current `lang`, preserving whatever
+  // was selected (used both on first load and again from the lang-btn
+  // listener below).
+  function renderTypeOptions() {
+    const selected = typeSelect.value;
+    typeSelect.innerHTML = '';
+    INAPlatform.PROJECT_TYPES.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t[lang] || t.en;
+      typeSelect.appendChild(opt);
+    });
+    if (selected) typeSelect.value = selected;
+  }
+  renderTypeOptions();
+
+  // Same idea for the country <select>. Country used to be free text; if
+  // the selected value doesn't match any option in the curated Americas
+  // list (older data, or a typo predating this select), re-add it as an
+  // extra option after rebuilding rather than silently discarding it —
+  // matches the edit-mode prefill logic in init() below.
+  function renderCountryOptions() {
+    const selected = countrySelect.value;
+    countrySelect.innerHTML = '';
+    INAPlatform.COUNTRIES_AMERICAS.forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c.value;
+      opt.textContent = c[lang] || c.en;
+      countrySelect.appendChild(opt);
+    });
+    if (selected) {
+      countrySelect.value = selected;
+      if (countrySelect.value !== selected) {
+        const opt = document.createElement('option');
+        opt.value = selected;
+        opt.textContent = selected;
+        countrySelect.appendChild(opt);
+        countrySelect.value = selected;
+      }
+    }
+  }
+  renderCountryOptions();
 
   /* Programs are optional and fetched async (RLS-scoped to the user's own
      programs, or every program for an advisor) — populated once on init(),
@@ -157,6 +238,25 @@
     });
   }
 
+  // Program *names* are user-entered data, not translated — only the "No
+  // program" placeholder option needs updating on a language switch.
+  function updateProgramPlaceholderLang() {
+    const sel = document.getElementById('pprogram');
+    if (sel.options.length && sel.options[0].value === '') {
+      sel.options[0].textContent = lang === 'es' ? 'Sin programa' : 'No program';
+    }
+  }
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      lang = btn.getAttribute('data-lang');
+      renderTypeOptions();
+      renderCountryOptions();
+      updateProgramPlaceholderLang();
+      renderExistingDocs();
+    });
+  });
+
   if (isEdit) {
     document.getElementById('pageTitle').innerHTML = '<span data-i18n="np.edit.title">Edit Project</span>';
     document.getElementById('pageLede').innerHTML = '<span data-i18n="np.edit.lede">Update the project details below. INA will re-run the Investment Readiness Index&trade; analysis against your changes.</span>';
@@ -165,45 +265,123 @@
     document.getElementById('editNote').style.display = 'block';
   }
 
-  let pendingFiles = [];
-  const dropZone = document.getElementById('dropZone');
-  const fileInput = document.getElementById('fileInput');
-  const uploadList = document.getElementById('uploadList');
+  // One pendingFiles[] array per document category (technical / financial /
+  // administrative / other), keyed off each .doc-upload-group's
+  // [data-category] — see DOCUMENT_TYPES in assets/platform.js. Wired
+  // generically here instead of four hand-copied dropzone handlers, since
+  // the markup for each of the four zones is identical apart from that
+  // attribute.
+  const pendingFilesByCategory = { technical: [], financial: [], administrative: [], other: [] };
 
-  function renderFiles() {
-    uploadList.innerHTML = '';
-    pendingFiles.forEach((f, i) => {
-      const row = document.createElement('div');
-      row.className = 'uf';
-      row.innerHTML = `<span>${f.name}</span>`;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = '×';
-      btn.addEventListener('click', () => {
-        pendingFiles.splice(i, 1);
-        renderFiles();
+  document.querySelectorAll('.doc-upload-group').forEach((group) => {
+    const category = group.getAttribute('data-category');
+    const dropZone = group.querySelector('[data-dropzone]');
+    const fileInput = group.querySelector('[data-fileinput]');
+    const uploadList = group.querySelector('[data-uploadlist]');
+
+    function renderFiles() {
+      uploadList.innerHTML = '';
+      pendingFilesByCategory[category].forEach((f, i) => {
+        const row = document.createElement('div');
+        row.className = 'uf';
+        row.innerHTML = `<span>${f.name}</span>`;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = '×';
+        btn.addEventListener('click', () => {
+          pendingFilesByCategory[category].splice(i, 1);
+          renderFiles();
+        });
+        row.appendChild(btn);
+        uploadList.appendChild(row);
       });
-      row.appendChild(btn);
-      uploadList.appendChild(row);
+    }
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      pendingFilesByCategory[category] = pendingFilesByCategory[category].concat(Array.from(fileInput.files));
+      fileInput.value = '';
+      renderFiles();
     });
+    ['dragover', 'dragenter'].forEach((evt) =>
+      dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); })
+    );
+    ['dragleave', 'drop'].forEach((evt) =>
+      dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); })
+    );
+    dropZone.addEventListener('drop', (e) => {
+      pendingFilesByCategory[category] = pendingFilesByCategory[category].concat(Array.from(e.dataTransfer.files));
+      renderFiles();
+    });
+  });
+
+  // Already-uploaded documents (edit mode only) — populated by init() below,
+  // grouped by document_type same as the four upload zones above. Kept in
+  // this array (rather than re-fetching on every change) so a delete just
+  // splices the array and re-renders, no extra round trip.
+  let existingDocs = [];
+
+  function renderExistingDocs() {
+    const block = document.getElementById('existingDocsBlock');
+    const list = document.getElementById('existingDocsList');
+    list.innerHTML = '';
+    if (!existingDocs.length) {
+      block.style.display = 'none';
+      return;
+    }
+    INAPlatform.DOCUMENT_TYPES.forEach((t) => {
+      const inCategory = existingDocs.filter((d) => (d.document_type || 'other') === t.value);
+      if (!inCategory.length) return;
+      const group = document.createElement('div');
+      const heading = document.createElement('div');
+      heading.style.cssText = 'font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--amber-deep); margin-bottom:4px;';
+      heading.textContent = INAPlatform.documentTypeLabel(t.value);
+      group.appendChild(heading);
+      const ul = document.createElement('ul');
+      ul.style.cssText = 'display:flex; flex-direction:column; gap:4px; font-size:13.5px; color:var(--muted);';
+      inCategory.forEach((d) => {
+        const li = document.createElement('li');
+        li.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px;';
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = `📄 ${d.file_name}`;
+        nameSpan.style.cssText = 'overflow-wrap:anywhere;';
+        li.appendChild(nameSpan);
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'icon-btn icon-btn-delete';
+        delBtn.title = lang === 'es' ? 'Eliminar adjunto' : 'Delete attachment';
+        delBtn.textContent = '🗑';
+        delBtn.style.cssText = 'flex:0 0 auto;';
+        delBtn.addEventListener('click', () => deleteExistingDoc(d));
+        li.appendChild(delBtn);
+        ul.appendChild(li);
+      });
+      group.appendChild(ul);
+      list.appendChild(group);
+    });
+    block.style.display = 'block';
   }
 
-  dropZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', () => {
-    pendingFiles = pendingFiles.concat(Array.from(fileInput.files));
-    fileInput.value = '';
-    renderFiles();
-  });
-  ['dragover', 'dragenter'].forEach((evt) =>
-    dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); })
-  );
-  ['dragleave', 'drop'].forEach((evt) =>
-    dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); })
-  );
-  dropZone.addEventListener('drop', (e) => {
-    pendingFiles = pendingFiles.concat(Array.from(e.dataTransfer.files));
-    renderFiles();
-  });
+  // Deletes immediately (like dashboard/programs' row-delete buttons) rather
+  // than waiting for the form to be saved — there's no "undo," so a
+  // mistaken click is caught by the confirm() dialog instead. To replace a
+  // file: delete it here, then drop the new one into the matching category's
+  // upload zone below and save — that uploads as a fresh document.
+  async function deleteExistingDoc(d) {
+    const msg = lang === 'es'
+      ? `¿Eliminar el adjunto "${d.file_name}"? Para reemplazarlo, subí el nuevo archivo en la zona correspondiente antes de guardar.`
+      : `Delete the attachment "${d.file_name}"? To replace it, drop the new file in the matching upload zone before saving.`;
+    if (!confirm(msg)) return;
+    try {
+      await INAPlatform.deleteDocument(d);
+      existingDocs = existingDocs.filter((x) => x.id !== d.id);
+      renderExistingDocs();
+    } catch (err) {
+      alert(lang === 'es'
+        ? `No se pudo eliminar el adjunto: ${err.message || err}`
+        : `Couldn't delete the attachment: ${err.message || err}`);
+    }
+  }
 
   const form = document.getElementById('projectForm');
   const note = document.getElementById('formNote');
@@ -261,17 +439,8 @@
       document.getElementById('pdesc').value = project.description || '';
 
       try {
-        const docs = await INAPlatform.listDocuments(editId);
-        if (docs && docs.length) {
-          const block = document.getElementById('existingDocsBlock');
-          const list = document.getElementById('existingDocsList');
-          docs.forEach((d) => {
-            const li = document.createElement('li');
-            li.textContent = `📄 ${d.file_name}`;
-            list.appendChild(li);
-          });
-          block.style.display = 'block';
-        }
+        existingDocs = (await INAPlatform.listDocuments(editId)) || [];
+        renderExistingDocs();
       } catch (e) { /* non-critical */ }
     }
   }
@@ -302,8 +471,10 @@
         ? await INAPlatform.updateProject(editId, payload)
         : await INAPlatform.createProject(payload);
 
-      for (const file of pendingFiles) {
-        await INAPlatform.uploadDocument(project.id, file);
+      for (const category of Object.keys(pendingFilesByCategory)) {
+        for (const file of pendingFilesByCategory[category]) {
+          await INAPlatform.uploadDocument(project.id, file, category);
+        }
       }
 
       note.textContent = lang2 === 'es'

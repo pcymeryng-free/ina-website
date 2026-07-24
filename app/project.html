@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/style.css?v=3">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body class="app-body">
@@ -59,11 +59,22 @@
           <a href="#" id="fsuLink" class="btn ghost small" style="display:none;"><span data-i18n="fsu.cta">FSU Scoring</span></a>
           <a href="#" id="assessLink" class="btn ghost small" style="display:none;"><span data-i18n="assess.cta">Self-Assessment</span></a>
           <a href="#" id="editLink" class="btn ghost small" style="display:none;"><span data-i18n="pd.editProject">Edit Project</span></a>
+          <button type="button" id="deleteLink" class="btn ghost small" style="display:none; color:#a13a3a; border-color:#d99;"><span data-i18n="pd.deleteProject">Delete Project</span></button>
           <span class="status-pill" id="statusPill" style="font-size:12px; padding:8px 16px;"></span>
         </div>
       </div>
 
-      <div class="info-block" style="margin-top:0;">
+      <div id="workflowBlock" class="info-block" style="margin-top:0; display:none;">
+        <h4><span data-i18n="wf.title">Project Workflow</span></h4>
+        <div class="wf-stepper" id="wfStepper"></div>
+        <div class="wf-advisor-row">
+          <p id="wfAdvisorText"></p>
+          <div class="wf-actions" id="wfActions" style="display:none;"></div>
+        </div>
+        <div class="wf-history" id="wfHistory" style="display:none;"></div>
+      </div>
+
+      <div class="info-block" style="margin-top:24px;">
         <h4><span data-i18n="pd.description">Project Description</span></h4>
         <p id="pdesc" style="font-size:14px; color:var(--muted); white-space:pre-wrap;"></p>
       </div>
@@ -86,7 +97,7 @@
 
       <div id="docsBlock" style="margin-top:24px; display:none;">
         <h4 style="font-size:14px;"><span data-i18n="pd.documents">Supporting Documents</span></h4>
-        <ul id="docsList" style="margin-top:10px; display:flex; flex-direction:column; gap:6px; font-size:13.5px; color:var(--muted);"></ul>
+        <div id="docsList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
       </div>
 
       <div id="pendingBlock" style="margin-top:40px; display:none;">
@@ -150,10 +161,10 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js"></script>
+<script src="/assets/i18n.js?v=4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js"></script>
-<script src="/assets/script.js"></script>
+<script src="/assets/platform.js?v=9"></script>
+<script src="/assets/script.js?v=12"></script>
 <script>
 (function () {
   const signOutBtn = document.getElementById('signOutBtn');
@@ -187,6 +198,7 @@
       document.documentElement.setAttribute('lang', btn.getAttribute('data-lang'));
       if (currentProject) renderProject(currentProject);
       if (currentAnalysis) renderAnalysis(currentAnalysis);
+      if (currentDocs) renderDocs(currentDocs);
     });
   });
 
@@ -206,6 +218,9 @@
   // the bottom of this script.
   let currentProject = null;
   let currentAnalysis = null;
+  let currentDocs = null;
+  let currentProfile = null; // the VIEWER's own profile (role/id), not the project owner's
+  let currentWorkflowEvents = [];
 
   function renderProject(p) {
     currentProject = p;
@@ -228,16 +243,174 @@
       ownerInfo.textContent = `${p.profiles.full_name || ''}${p.profiles.organization ? ' · ' + p.profiles.organization : ''}`;
       ownerInfo.style.display = 'block';
     }
+
+    renderWorkflow(p);
   }
 
+  /* ---------- Project workflow (stepper + take/advance + history) ----------
+     Reuses the 4 Investment Readiness Index™ stages (readiness_stage) as
+     the workflow's states — see supabase/migration_v12_workflow.sql. Shown
+     for any viewer (owner or advisor); the Take/Advance actions only for
+     advisors/admins, since only they can call the underlying RPCs. */
+  function renderWorkflow(p) {
+    const block = document.getElementById('workflowBlock');
+    // Only a project that's actually reached the analysis pipeline has a
+    // meaningful workflow to show — a brand-new project still being
+    // filled out (status === 'submitted' with no analysis yet) has
+    // nothing to step through.
+    if (p.status !== 'completed' && p.status !== 'analyzing' && !p.readiness_stage) {
+      block.style.display = 'none';
+      return;
+    }
+    block.style.display = 'block';
+
+    const lang = INAPlatform.currentLang();
+    const current = p.readiness_stage || INAPlatform.STAGE_ORDER[0];
+    const currentIdx = INAPlatform.STAGE_ORDER.indexOf(current);
+
+    // Stepper
+    const stepper = document.getElementById('wfStepper');
+    stepper.innerHTML = '';
+    INAPlatform.STAGE_ORDER.forEach((stage, i) => {
+      const step = document.createElement('div');
+      const state = i < currentIdx ? 'done' : (i === currentIdx ? 'current' : '');
+      step.className = `wf-step ${state}`;
+      step.innerHTML = `
+        <div class="wf-step-line"></div>
+        <div class="wf-step-dot">${i < currentIdx ? '✓' : i + 1}</div>
+        <div class="wf-step-label">${INAPlatform.stageLabel(stage)}</div>
+      `;
+      stepper.appendChild(step);
+    });
+
+    // Assigned advisor
+    const advisorText = document.getElementById('wfAdvisorText');
+    const advisor = p.assigned_advisor;
+    if (advisor && advisor.full_name) {
+      advisorText.innerHTML = (lang === 'es' ? 'Asesor asignado: ' : 'Assigned advisor: ') + `<b>${advisor.full_name}</b>`;
+    } else {
+      advisorText.textContent = lang === 'es' ? 'Sin asesor asignado' : 'No advisor assigned yet';
+    }
+
+    // Actions — advisors/admins only, and only advisors can act at all
+    // (owners just watch the workflow progress on their own project).
+    const actions = document.getElementById('wfActions');
+    actions.innerHTML = '';
+    actions.style.display = 'none';
+    const viewerIsAdvisor = currentProfile && (INAPlatform.isAdvisor(currentProfile) || INAPlatform.isAdmin(currentProfile));
+    if (viewerIsAdvisor) {
+      actions.style.display = 'flex';
+      const takeBtn = document.createElement('button');
+      takeBtn.type = 'button';
+      takeBtn.className = 'btn ghost small';
+      takeBtn.textContent = lang === 'es' ? 'Tomar proyecto' : 'Take project';
+      takeBtn.addEventListener('click', async () => {
+        takeBtn.disabled = true;
+        try {
+          await INAPlatform.takeProject(p.id);
+          await refreshProjectAndWorkflow();
+        } catch (e) {
+          alert(e.message || (lang === 'es' ? 'No se pudo tomar el proyecto.' : 'Could not take the project.'));
+        } finally {
+          takeBtn.disabled = false;
+        }
+      });
+      actions.appendChild(takeBtn);
+
+      const nextStage = INAPlatform.nextWorkflowStage(p);
+      if (nextStage) {
+        const advanceBtn = document.createElement('button');
+        advanceBtn.type = 'button';
+        advanceBtn.className = 'btn amber small';
+        advanceBtn.textContent = (lang === 'es' ? 'Avanzar a ' : 'Advance to ') + INAPlatform.stageLabel(nextStage);
+        advanceBtn.addEventListener('click', async () => {
+          const confirmMsg = lang === 'es'
+            ? `¿Avanzar este proyecto a "${INAPlatform.stageLabel(nextStage)}"?`
+            : `Advance this project to "${INAPlatform.stageLabel(nextStage)}"?`;
+          if (!confirm(confirmMsg)) return;
+          advanceBtn.disabled = true;
+          try {
+            await INAPlatform.advanceProjectWorkflow(p.id);
+            await refreshProjectAndWorkflow();
+          } catch (e) {
+            alert(e.message || (lang === 'es' ? 'No se pudo avanzar el proyecto.' : 'Could not advance the project.'));
+          } finally {
+            advanceBtn.disabled = false;
+          }
+        });
+        actions.appendChild(advanceBtn);
+      } else {
+        const doneLabel = document.createElement('span');
+        doneLabel.style.cssText = 'font-size:12.5px; color:var(--muted);';
+        doneLabel.textContent = lang === 'es' ? 'Ya está en la etapa final.' : 'Already at the final stage.';
+        actions.appendChild(doneLabel);
+      }
+    }
+
+    // History
+    renderWorkflowHistory();
+  }
+
+  function renderWorkflowHistory() {
+    const wrap = document.getElementById('wfHistory');
+    if (!currentWorkflowEvents.length) {
+      wrap.style.display = 'none';
+      wrap.innerHTML = '';
+      return;
+    }
+    const lang = INAPlatform.currentLang();
+    wrap.style.display = 'block';
+    wrap.innerHTML = `<div style="font-size:11px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.05em; color:var(--amber-deep); margin-bottom:8px;">${lang === 'es' ? 'Historial' : 'History'}</div>`;
+    // Most recent first.
+    [...currentWorkflowEvents].reverse().forEach((ev) => {
+      const row = document.createElement('div');
+      row.className = 'wf-history-item';
+      const advisorName = (ev.advisor && ev.advisor.full_name) || (lang === 'es' ? 'Asesor' : 'Advisor');
+      const dateStr = new Date(ev.created_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      const fromLabel = ev.from_stage ? INAPlatform.stageLabel(ev.from_stage) : (lang === 'es' ? 'Inicio' : 'Start');
+      const toLabel = INAPlatform.stageLabel(ev.to_stage);
+      row.innerHTML = lang === 'es'
+        ? `<b>${advisorName}</b> avanzó de ${fromLabel} a ${toLabel} · ${dateStr}`
+        : `<b>${advisorName}</b> advanced from ${fromLabel} to ${toLabel} · ${dateStr}`;
+      wrap.appendChild(row);
+    });
+  }
+
+  async function refreshProjectAndWorkflow() {
+    const [project, events] = await Promise.all([
+      INAPlatform.getProject(projectId),
+      INAPlatform.getWorkflowEvents(projectId),
+    ]);
+    currentWorkflowEvents = events;
+    renderProject(project);
+  }
+
+  // Grouped by document_type (technical / financial / administrative /
+  // other — see supabase/migration_v15_document_categories.sql) so an
+  // evaluator can go straight to, say, the financial documentation instead
+  // of scanning one flat list. Pre-v15 uploads default to 'other'.
   function renderDocs(docs) {
     if (!docs.length) return;
     document.getElementById('docsBlock').style.display = 'block';
     const list = document.getElementById('docsList');
-    docs.forEach((d) => {
-      const li = document.createElement('li');
-      li.textContent = `📄 ${d.file_name}`;
-      list.appendChild(li);
+    list.innerHTML = '';
+    INAPlatform.DOCUMENT_TYPES.forEach((t) => {
+      const inCategory = docs.filter((d) => (d.document_type || 'other') === t.value);
+      if (!inCategory.length) return;
+      const group = document.createElement('div');
+      const heading = document.createElement('div');
+      heading.style.cssText = 'font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--amber-deep); margin-bottom:4px;';
+      heading.textContent = INAPlatform.documentTypeLabel(t.value);
+      group.appendChild(heading);
+      const ul = document.createElement('ul');
+      ul.style.cssText = 'display:flex; flex-direction:column; gap:4px; font-size:13.5px; color:var(--muted);';
+      inCategory.forEach((d) => {
+        const li = document.createElement('li');
+        li.textContent = `📄 ${d.file_name}`;
+        ul.appendChild(li);
+      });
+      group.appendChild(ul);
+      list.appendChild(group);
     });
   }
 
@@ -394,14 +567,27 @@
 
     try {
       const profile = await INAPlatform.getProfile(session.user.id);
+      currentProfile = profile;
       document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
       document.getElementById('appUserName').textContent = profile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
       if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
     } catch (e) { /* non-critical */ }
 
-    const project = await INAPlatform.getProject(projectId);
+    let project;
+    try {
+      project = await INAPlatform.getProject(projectId);
+    } catch (e) {
+      // Surface the real error instead of leaving "Loading project…"
+      // spinning forever with no clue why (e.g. a PostgREST query error).
+      document.getElementById('loadingState').textContent =
+        (INAPlatform.currentLang() === 'es' ? 'No se pudo cargar el proyecto: ' : 'Could not load the project: ') + (e.message || e);
+      return;
+    }
     const docs = await INAPlatform.listDocuments(projectId);
+    try {
+      currentWorkflowEvents = await INAPlatform.getWorkflowEvents(projectId);
+    } catch (e) { currentWorkflowEvents = []; /* non-critical — workflow block just shows no history */ }
 
     isOwner = project.user_id === session.user.id;
 
@@ -424,6 +610,31 @@
       document.getElementById('advisorNote').style.display = 'flex';
     }
 
+    // Delete — owner or admin only (enforced again server-side by RLS, see
+    // supabase/migration_v14_delete_policies.sql).
+    const isAdminViewer = currentProfile && INAPlatform.isAdmin(currentProfile);
+    if (isOwner || isAdminViewer) {
+      const deleteLink = document.getElementById('deleteLink');
+      deleteLink.style.display = 'inline-flex';
+      deleteLink.addEventListener('click', async () => {
+        const lang2 = INAPlatform.currentLang();
+        const msg = lang2 === 'es'
+          ? `¿Está seguro que desea eliminar definitivamente el proyecto "${project.name}"? Esta acción no se puede deshacer — se borran también sus documentos y análisis.`
+          : `Are you sure you want to permanently delete the project "${project.name}"? This can't be undone — its documents and analysis will be deleted too.`;
+        if (!confirm(msg)) return;
+        deleteLink.disabled = true;
+        try {
+          await INAPlatform.deleteProject(projectId);
+          location.href = 'dashboard.html';
+        } catch (err) {
+          alert(lang2 === 'es'
+            ? `No se pudo eliminar el proyecto: ${err.message || err}`
+            : `Couldn't delete the project: ${err.message || err}`);
+          deleteLink.disabled = false;
+        }
+      });
+    }
+
     // FSU Scoring block — shown for any viewer (owner or advisor) as long
     // as the project type is eligible AND a score has actually been saved;
     // getFsuScoring() returns null (not an error) when none exists yet.
@@ -443,6 +654,7 @@
     }
 
     renderProject(project);
+    currentDocs = docs;
     renderDocs(docs);
 
     // Retrying/re-running analysis is owner-only — the serverless function
@@ -471,7 +683,14 @@
     poll();
   }
 
-  init();
+  init().catch((e) => {
+    // Last-resort net: catches anything that throws/rejects before the
+    // getProject() try/catch above (e.g. requireAuth() or an unexpected
+    // error), so the page never silently sits on "Loading project…"
+    // forever with no clue why.
+    document.getElementById('loadingState').textContent =
+      (INAPlatform.currentLang() === 'es' ? 'Error inesperado: ' : 'Unexpected error: ') + (e && e.message ? e.message : e);
+  });
 })();
 </script>
 </body>

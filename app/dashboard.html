@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/style.css?v=3">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body class="app-body">
@@ -114,10 +114,10 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js"></script>
+<script src="/assets/i18n.js?v=4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js"></script>
-<script src="/assets/script.js"></script>
+<script src="/assets/platform.js?v=9"></script>
+<script src="/assets/script.js?v=12"></script>
 <script>
 (function () {
   const signOutBtn = document.getElementById('signOutBtn');
@@ -127,8 +127,33 @@
     location.href = 'login.html';
   });
 
+  // assets/i18n.js's own .lang-btn listener only re-translates elements
+  // tagged with [data-i18n] — it has no idea this page also builds a
+  // project grid, stat strip and filter dropdowns dynamically in plain
+  // JS (status pills, type labels, "N of M projects", etc.), none of
+  // which carry [data-i18n]. Without this, switching language updated the
+  // static chrome but left all of that dynamic content stuck in whatever
+  // language it was first rendered in. Re-render it explicitly here,
+  // after setting <html lang> immediately so INAPlatform.currentLang()
+  // (which every render function below reads) is already correct by the
+  // time they run — same fix already applied to project.html/assessment.html.
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.documentElement.setAttribute('lang', btn.getAttribute('data-lang'));
+      if (!allProjects.length) return; // nothing rendered yet to refresh
+      const savedFilters = { status: fStatus.value, type: fType.value, program: fProgram.value };
+      renderStats();
+      populateFilterOptions();
+      fStatus.value = savedFilters.status;
+      fType.value = savedFilters.type;
+      fProgram.value = savedFilters.program;
+      renderList();
+    });
+  });
+
   let allProjects = [];
   let currentUserId = null;
+  let currentIsAdmin = false;
   const lang = () => INAPlatform.currentLang();
 
   const fStatus = document.getElementById('fStatus');
@@ -340,26 +365,68 @@
       ownerEl.className = 'powner';
       ownerEl.innerHTML = `<span class="mini-avatar">${initials(ownerName === '—' ? '' : ownerName)}</span><span class="otext">${ownerName}${ownerOrg ? `<span class="oorg">${ownerOrg}</span>` : ''}</span>`;
 
+      // Edit + delete grouped tightly together as one compact action pair
+      // (see .icon-action-group / .icon-btn in assets/style.css) rather
+      // than scattered across separate columns.
+      const actions = document.createElement('div');
+      actions.className = 'icon-action-group';
+
       const editEl = document.createElement('a');
+      editEl.className = 'icon-btn';
       if (isOwner) {
         editEl.href = `new-project.html?id=${p.id}`;
-        editEl.className = 'pedit';
         editEl.title = lang() === 'es' ? 'Editar proyecto' : 'Edit project';
         editEl.textContent = '✎';
       } else {
         editEl.href = `project.html?id=${p.id}`;
-        editEl.className = 'pedit';
         editEl.style.opacity = '0.35';
         editEl.textContent = '→';
+      }
+      actions.appendChild(editEl);
+
+      // Delete — owner or admin only (enforced again server-side by RLS,
+      // see supabase/migration_v14_delete_policies.sql; this button is
+      // just UI-level gating on top of that).
+      if (isOwner || currentIsAdmin) {
+        const deleteEl = document.createElement('button');
+        deleteEl.type = 'button';
+        deleteEl.className = 'icon-btn icon-btn-delete';
+        deleteEl.title = lang() === 'es' ? 'Eliminar proyecto' : 'Delete project';
+        deleteEl.textContent = '🗑';
+        deleteEl.addEventListener('click', () => deleteProject(p));
+        actions.appendChild(deleteEl);
       }
 
       row.appendChild(main);
       row.appendChild(dateLink);
       row.appendChild(statusLink);
       row.appendChild(ownerEl);
-      row.appendChild(editEl);
+      row.appendChild(actions);
       list.appendChild(row);
     });
+  }
+
+  async function deleteProject(p) {
+    const msg = lang() === 'es'
+      ? `¿Está seguro que desea eliminar definitivamente el proyecto "${p.name}"? Esta acción no se puede deshacer — se borran también sus documentos y análisis.`
+      : `Are you sure you want to permanently delete the project "${p.name}"? This can't be undone — its documents and analysis will be deleted too.`;
+    if (!confirm(msg)) return;
+    try {
+      await INAPlatform.deleteProject(p.id);
+      allProjects = allProjects.filter((proj) => proj.id !== p.id);
+      if (!allProjects.length) {
+        document.getElementById('dashBody').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+        return;
+      }
+      renderStats();
+      populateFilterOptions();
+      renderList();
+    } catch (err) {
+      alert(lang() === 'es'
+        ? `No se pudo eliminar el proyecto: ${err.message || err}`
+        : `Couldn't delete the project: ${err.message || err}`);
+    }
   }
 
   [fStatus, fType, fProgram, fFrom, fTo, fMinBeneficiaries].forEach((el) => el.addEventListener('change', renderList));
@@ -396,12 +463,21 @@
       document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
       document.getElementById('appUserName').textContent = profile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
-      if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
+      currentIsAdmin = INAPlatform.isAdmin(profile);
+      if (currentIsAdmin) document.getElementById('adminNavLink').style.display = 'inline';
       advisor = INAPlatform.isAdvisor(profile);
       if (advisor) document.getElementById('advisorBanner').style.display = 'flex';
     } catch (e) { /* profile not critical to show projects */ }
 
-    allProjects = await INAPlatform.listProjects();
+    try {
+      allProjects = await INAPlatform.listProjects();
+    } catch (e) {
+      // Surface the real error instead of leaving "Loading projects…"
+      // spinning forever with no clue why (e.g. a PostgREST query error).
+      document.getElementById('loadingState').textContent =
+        (INAPlatform.currentLang() === 'es' ? 'No se pudieron cargar los proyectos: ' : 'Could not load projects: ') + (e.message || e);
+      return;
+    }
     document.getElementById('loadingState').style.display = 'none';
 
     if (!allProjects.length) {
@@ -424,7 +500,14 @@
     renderList();
   }
 
-  init();
+  init().catch((e) => {
+    // Last-resort net: catches anything that throws/rejects BEFORE the
+    // listProjects() try/catch above (e.g. requireAuth() or an unexpected
+    // error), so the page never silently sits on "Loading your projects…"
+    // forever with no clue why.
+    document.getElementById('loadingState').textContent =
+      (INAPlatform.currentLang() === 'es' ? 'Error inesperado: ' : 'Unexpected error: ') + (e && e.message ? e.message : e);
+  });
 })();
 </script>
 </body>
