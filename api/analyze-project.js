@@ -88,15 +88,20 @@
  * this early.)
  */
 
-// Only actually loaded/used on the LLM_PROVIDER='groq'/'bedrock' paths —
-// see the "Build the model input" section below. require()'d
-// unconditionally here (cheap, no top-level side effects) rather than
-// lazily inside the handler, to keep the control flow simple.
-const { PDFParse } = require('pdf-parse');
-// Only actually used on the LLM_PROVIDER='bedrock' path — see "Call the
-// model" below. The SDK handles AWS SigV4 request signing, which would be
-// impractical to hand-roll here.
-const { BedrockRuntimeClient, ConverseCommand } = require('@aws-sdk/client-bedrock-runtime');
+// NOTE: pdf-parse and @aws-sdk/client-bedrock-runtime are deliberately
+// require()'d LAZILY, at their actual point of use further down (the PDF
+// text-extraction branch, and the 'bedrock' model-call branch,
+// respectively) — NOT unconditionally up here. Learned the hard way:
+// pdf-parse pulls in an optional native dependency (@napi-rs/canvas) that
+// doesn't install cleanly on Vercel's serverless runtime, and when that
+// happens pdf-parse throws a fatal `ReferenceError: DOMMatrix is not
+// defined` the moment it's require()'d — not when it's actually used. A
+// top-level require() here meant that crash happened on EVERY invocation
+// of this function regardless of which LLM_PROVIDER was active, including
+// providers ('anthropic', 'bedrock-mock') that never touch pdf-parse at
+// all. Lazy requires wrapped in try/catch (see below) mean a broken
+// optional dependency degrades to "that one PDF couldn't be read" instead
+// of taking down the whole endpoint.
 
 const GROQ_MODEL_DEFAULT = 'llama-3.3-70b-versatile';
 const BEDROCK_MODEL_DEFAULT = 'meta.llama3-3-70b-instruct-v1:0';
@@ -432,19 +437,33 @@ async function handler(req, res) {
           // large PDFs here would blow that budget in a single request
           // (Bedrock has no such hard cap, but the same truncation keeps
           // behavior/cost predictable across both text-only providers).
-          const parser = new PDFParse({ data: fileBuffer });
+          //
+          // require('pdf-parse') is deliberately done HERE, not at the top
+          // of the file, and wrapped in its own try/catch — see the
+          // comment at the top of the file. If pdf-parse itself can't even
+          // load in this environment, this document is just skipped rather
+          // than crashing every analysis regardless of provider.
+          let PDFParseCtor = null;
           try {
-            const extracted = await parser.getText();
-            const text = (extracted.text || '').trim();
-            if (text) {
-              projectText += `\n\n--- ATTACHED FILE (text extracted from PDF): ${doc.file_name} ---\n${text.slice(0, 4000)}`;
-            } else {
-              skippedNotes.push(`${doc.file_name} (no extractable text — likely scanned/image-only)`);
+            ({ PDFParse: PDFParseCtor } = require('pdf-parse'));
+          } catch (loadErr) {
+            skippedNotes.push(`${doc.file_name} (PDF text extraction unavailable in this environment)`);
+          }
+          if (PDFParseCtor) {
+            const parser = new PDFParseCtor({ data: fileBuffer });
+            try {
+              const extracted = await parser.getText();
+              const text = (extracted.text || '').trim();
+              if (text) {
+                projectText += `\n\n--- ATTACHED FILE (text extracted from PDF): ${doc.file_name} ---\n${text.slice(0, 4000)}`;
+              } else {
+                skippedNotes.push(`${doc.file_name} (no extractable text — likely scanned/image-only)`);
+              }
+            } catch (e) {
+              skippedNotes.push(`${doc.file_name} (couldn't parse PDF)`);
+            } finally {
+              await parser.destroy().catch(() => {});
             }
-          } catch (e) {
-            skippedNotes.push(`${doc.file_name} (couldn't parse PDF)`);
-          } finally {
-            await parser.destroy().catch(() => {});
           }
         } else {
           contentBlocks.push({
@@ -521,11 +540,18 @@ async function handler(req, res) {
       // handles AWS SigV4 request signing from AWS_ACCESS_KEY_ID/
       // AWS_SECRET_ACCESS_KEY — see the file header comment for the IAM
       // setup this needs.
-      const bedrockClient = new BedrockRuntimeClient({
-        region: AWS_REGION || BEDROCK_REGION_DEFAULT,
-        credentials: { accessKeyId: AWS_ACCESS_KEY_ID, secretAccessKey: AWS_SECRET_ACCESS_KEY },
-      });
       try {
+        // require()'d here rather than at the top of the file, same
+        // reasoning as pdf-parse above — a broken/missing dependency on
+        // this path should only break the 'bedrock' provider, not every
+        // provider. This one is a well-behaved pure-JS AWS package with no
+        // native/optional dependencies, so it's a low-risk require, but
+        // there's no upside to risking it at module-load time regardless.
+        const { BedrockRuntimeClient, ConverseCommand } = require('@aws-sdk/client-bedrock-runtime');
+        const bedrockClient = new BedrockRuntimeClient({
+          region: AWS_REGION || BEDROCK_REGION_DEFAULT,
+          credentials: { accessKeyId: AWS_ACCESS_KEY_ID, secretAccessKey: AWS_SECRET_ACCESS_KEY },
+        });
         const bedrockRes = await bedrockClient.send(new ConverseCommand({
           modelId: BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT,
           system: [{ text: SYSTEM_PROMPT }],
