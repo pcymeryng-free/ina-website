@@ -5,17 +5,71 @@
  *
  * Applies the INA Investment Readiness Index™ (Framework F2) and
  * Multilateral Finance Navigator™ (Framework F6) to a submitted project,
- * using the Anthropic Claude API, and writes the structured result to
+ * using an LLM (Anthropic Claude by default, or a free open-source model
+ * via Groq — see LLM_PROVIDER below), and writes the structured result to
  * Supabase (framework_analysis table).
  *
  * Required environment variables (set in Vercel → Project → Settings →
  * Environment Variables):
- *   ANTHROPIC_API_KEY        — your Anthropic API key
  *   SUPABASE_URL              — same value as in assets/platform.js
  *   SUPABASE_SERVICE_ROLE_KEY — Supabase service role key (server-only,
  *                               NEVER the anon key, NEVER exposed client-side)
  *   SUPABASE_ANON_KEY         — used only to validate the caller's session token
- *   CLAUDE_MODEL               — optional, defaults to "claude-sonnet-5"
+ *
+ * Model provider (pick ONE path — see LLM_PROVIDER below):
+ *   ANTHROPIC_API_KEY   — required when LLM_PROVIDER is unset or 'anthropic'
+ *                         (the default — this is what runs in production)
+ *   CLAUDE_MODEL        — optional, defaults to "claude-sonnet-5"
+ *   ------------------------------------------------------------------
+ *   LLM_PROVIDER        — optional, defaults to 'anthropic'. Set to 'groq'
+ *                         to use a free open-source model via Groq
+ *                         (groq.com) instead — meant for the dev/test
+ *                         environment only, to avoid burning Anthropic
+ *                         credits while iterating. Scope this (and
+ *                         GROQ_API_KEY below) to Vercel's Preview/
+ *                         Development environments only, leaving
+ *                         Production on Anthropic — see "Using a free
+ *                         open-source model in development" in
+ *                         PLATFORM_SETUP.md for the full walkthrough.
+ *   GROQ_API_KEY        — required when LLM_PROVIDER='groq'. Free account
+ *                         at console.groq.com, no credit card needed.
+ *   GROQ_MODEL          — optional, defaults to 'llama-3.3-70b-versatile'.
+ *   ------------------------------------------------------------------
+ *   Set LLM_PROVIDER='bedrock' to run an open-weight model (Meta Llama
+ *   3.3 70B by default) through AWS Bedrock instead — an open-source model
+ *   with the same kind of enterprise no-training/no-retention data
+ *   handling terms as Anthropic, at a fraction of the per-token cost. This
+ *   is the recommended PRODUCTION option when the projects being analyzed
+ *   contain confidential information and a managed (not self-hosted) open
+ *   model is preferred. See "Using AWS Bedrock (open-source model,
+ *   confidential-data-friendly)" in PLATFORM_SETUP.md for the full
+ *   walkthrough (IAM user setup, enabling model access, etc.).
+ *   AWS_ACCESS_KEY_ID     — required when LLM_PROVIDER='bedrock'. Use a
+ *                           dedicated IAM user scoped to bedrock:Converse
+ *                           only — never a root/admin key.
+ *   AWS_SECRET_ACCESS_KEY — required when LLM_PROVIDER='bedrock'.
+ *   AWS_REGION            — optional, defaults to 'us-east-1'. Must be a
+ *                           region where the chosen model is enabled for
+ *                           your account (Bedrock console → Model access).
+ *   BEDROCK_MODEL_ID      — optional, defaults to
+ *                           'meta.llama3-3-70b-instruct-v1:0'.
+ *
+ *   Set LLM_PROVIDER='bedrock-mock' to try the interface end-to-end
+ *   WITHOUT an AWS account — no AWS_* variables are read or required on
+ *   this path. It fabricates a plausible-looking result locally (random
+ *   but bounded per-dimension scores, generic rationale text) instead of
+ *   calling any model at all, and every piece of generated text is
+ *   prefixed/labeled "SIMULATED" so it can never be mistaken for a real
+ *   assessment if someone reads it later. Meant purely for demoing the
+ *   submit → analyze → results flow before deciding whether to actually
+ *   set up a paid AWS account — swap to 'bedrock' (see above) once ready.
+ *
+ *   The Groq and Bedrock paths both talk to a plain chat-style endpoint
+ *   rather than Anthropic's native-document Messages API, and — unlike
+ *   Claude — neither reads PDFs/images natively here, so for both this
+ *   function extracts PDF text itself first (via the `pdf-parse` package)
+ *   and skips images rather than sending them; see "Build the model input"
+ *   below.
  *
  * IMPORTANT — function timeout: Vercel kills serverless functions after a
  * plan-dependent limit (10s by default on the Hobby plan unless raised).
@@ -33,6 +87,20 @@
  * function further down, which would wipe out a config property set
  * this early.)
  */
+
+// Only actually loaded/used on the LLM_PROVIDER='groq'/'bedrock' paths —
+// see the "Build the model input" section below. require()'d
+// unconditionally here (cheap, no top-level side effects) rather than
+// lazily inside the handler, to keep the control flow simple.
+const { PDFParse } = require('pdf-parse');
+// Only actually used on the LLM_PROVIDER='bedrock' path — see "Call the
+// model" below. The SDK handles AWS SigV4 request signing, which would be
+// impractical to hand-roll here.
+const { BedrockRuntimeClient, ConverseCommand } = require('@aws-sdk/client-bedrock-runtime');
+
+const GROQ_MODEL_DEFAULT = 'llama-3.3-70b-versatile';
+const BEDROCK_MODEL_DEFAULT = 'meta.llama3-3-70b-instruct-v1:0';
+const BEDROCK_REGION_DEFAULT = 'us-east-1';
 
 const DIMENSION_KEYS = [
   'legal_regulatory',
@@ -178,6 +246,60 @@ function stageForScore(score) {
   return 'Investment Ready';
 }
 
+/* Only used on the LLM_PROVIDER='bedrock-mock' path — see file header
+   comment. Builds a JSON string in EXACTLY the same shape the real
+   models are prompted to return, so it flows through the existing
+   parse/normalize/persist code below completely unchanged. Every score is
+   randomized-but-bounded (40-85, comfortably mid-range — never a
+   suspiciously perfect or suspiciously terrible result) purely so a demo
+   with several test projects doesn't look identical every time; none of it
+   is derived from actually reading the project's description or
+   documents. That's why "SIMULATED" is baked into the summary and every
+   rationale string rather than left to a UI badge alone — this data can
+   end up read out of context (exported, screenshotted, quoted in an
+   email) long after anyone remembers which provider generated it. */
+function buildMockAnalysis(project) {
+  const rand = (min, max) => Math.floor(min + Math.random() * (max - min + 1));
+
+  const dimensions = {};
+  let sum = 0;
+  DIMENSION_KEYS.forEach((key) => {
+    const score = rand(40, 85);
+    sum += score;
+    dimensions[key] = {
+      score,
+      rationale: `[SIMULATED — no model was called] Placeholder rationale for ${key.replace(/_/g, ' ')}.`,
+    };
+  });
+  const overallScore = Math.round(sum / DIMENSION_KEYS.length);
+  const stage = stageForScore(overallScore);
+
+  const lowestThree = DIMENSION_KEYS
+    .map((key) => ({ key, score: dimensions[key].score }))
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3);
+  const gapRoadmap = lowestThree.map((d, i) => ({
+    priority: i === 0 ? 'high' : i === 1 ? 'medium' : 'low',
+    action: `[SIMULATED] Example next step for ${d.key.replace(/_/g, ' ')} — not a real recommendation.`,
+  }));
+
+  const shuffledMechanisms = [...FINANCING_MECHANISMS].sort(() => Math.random() - 0.5);
+  const financingRecommendations = shuffledMechanisms.slice(0, 2).map((mechanism) => ({
+    mechanism,
+    rationale: '[SIMULATED] Example financing mechanism — not a real recommendation.',
+  }));
+
+  const summary = `⚠️ SIMULATED RESULT — no AI model was called (LLM_PROVIDER=bedrock-mock). This is placeholder data for trying out the "${project.name}" submission flow, not a real assessment of this project. Set LLM_PROVIDER to 'anthropic' or 'bedrock' for a real analysis.`;
+
+  return JSON.stringify({
+    overall_score: overallScore,
+    dimensions,
+    gap_roadmap: gapRoadmap,
+    financing_recommendations: financingRecommendations,
+    summary,
+  });
+}
+
 async function handler(req, res) {
   const origin = req.headers.origin;
   if (isAllowedOrigin(origin)) {
@@ -205,10 +327,33 @@ async function handler(req, res) {
     SUPABASE_SERVICE_ROLE_KEY,
     SUPABASE_ANON_KEY,
     CLAUDE_MODEL,
+    LLM_PROVIDER,
+    GROQ_API_KEY,
+    GROQ_MODEL,
+    AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY,
+    AWS_REGION,
+    BEDROCK_MODEL_ID,
   } = process.env;
 
-  if (!ANTHROPIC_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
-    return json(res, 500, { error: 'Server misconfigured: missing required environment variables.' });
+  // 'anthropic' (production default), 'groq' (free, dev-only), 'bedrock'
+  // (open-source model via AWS Bedrock — recommended production option for
+  // confidential data), or 'bedrock-mock' (no model call at all, no
+  // credentials needed — see file header comment). Whichever real-model
+  // path is active still needs the same three Supabase vars; only the
+  // model-provider credentials differ.
+  const provider = (LLM_PROVIDER || 'anthropic').toLowerCase();
+  const providerKeyMissing = provider === 'groq'
+    ? !GROQ_API_KEY
+    : provider === 'bedrock'
+      ? (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY)
+      : provider === 'bedrock-mock'
+        ? false
+        : !ANTHROPIC_API_KEY;
+  if (providerKeyMissing || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
+    return json(res, 500, {
+      error: `Server misconfigured: missing required environment variables (provider: ${provider}).`,
+    });
   }
 
   let body;
@@ -248,13 +393,21 @@ async function handler(req, res) {
       supabaseUrl: SUPABASE_URL,
     });
 
-    // Build the Claude message content: project text + up to 5 documents
-    // (PDFs/images sent natively, plain text files inlined, everything
-    // else referenced by filename only).
+    // Build the model input: project text + up to 5 documents. On the
+    // Anthropic path, PDFs/images are sent natively (Claude reads them
+    // directly) via `contentBlocks`; plain text files are always inlined
+    // into `projectText` either way. On the Groq and Bedrock paths (see
+    // LLM_PROVIDER in the file header comment), there's no native
+    // document/image support wired up here, so PDFs are text-extracted
+    // instead (via `pdf-parse`) and images are simply skipped — noted in
+    // `skippedNotes` like anything else that couldn't be read.
+    const textOnlyProvider = provider === 'groq' || provider === 'bedrock';
     const contentBlocks = [];
     let projectText = `PROJECT NAME: ${project.name}\nPROJECT TYPE: ${project.project_type}\nCOUNTRY: ${project.country}\n\nDESCRIPTION:\n${project.description}`;
 
-    const docsToInclude = (documents || []).slice(0, 5);
+    // bedrock-mock never reads any of this — skip the Storage
+    // downloads/PDF parsing entirely rather than doing pointless work.
+    const docsToInclude = provider === 'bedrock-mock' ? [] : (documents || []).slice(0, 5);
     const skippedNotes = [];
 
     for (const doc of docsToInclude) {
@@ -270,19 +423,46 @@ async function handler(req, res) {
       if (!fileBuffer) { skippedNotes.push(doc.file_name); continue; }
 
       if (mediaType === 'application/pdf') {
-        if (fileBuffer.length <= 25 * 1024 * 1024) {
+        if (fileBuffer.length > 25 * 1024 * 1024) {
+          skippedNotes.push(`${doc.file_name} (too large)`);
+        } else if (textOnlyProvider) {
+          // Text-extract rather than send the raw PDF — see comment above.
+          // Truncated fairly aggressively (4000 chars/doc): Groq's free
+          // tier is rate-limited at 6K tokens/minute total, so several
+          // large PDFs here would blow that budget in a single request
+          // (Bedrock has no such hard cap, but the same truncation keeps
+          // behavior/cost predictable across both text-only providers).
+          const parser = new PDFParse({ data: fileBuffer });
+          try {
+            const extracted = await parser.getText();
+            const text = (extracted.text || '').trim();
+            if (text) {
+              projectText += `\n\n--- ATTACHED FILE (text extracted from PDF): ${doc.file_name} ---\n${text.slice(0, 4000)}`;
+            } else {
+              skippedNotes.push(`${doc.file_name} (no extractable text — likely scanned/image-only)`);
+            }
+          } catch (e) {
+            skippedNotes.push(`${doc.file_name} (couldn't parse PDF)`);
+          } finally {
+            await parser.destroy().catch(() => {});
+          }
+        } else {
           contentBlocks.push({
             type: 'document',
             source: { type: 'base64', media_type: mediaType, data: fileBuffer.toString('base64') },
           });
-        } else {
-          skippedNotes.push(`${doc.file_name} (too large)`);
         }
       } else if (mediaType.startsWith('image/')) {
-        contentBlocks.push({
-          type: 'image',
-          source: { type: 'base64', media_type: mediaType, data: fileBuffer.toString('base64') },
-        });
+        if (textOnlyProvider) {
+          // No image input wired up on the Groq/Bedrock paths — see file
+          // header comment. Noted so the model at least knows it exists.
+          skippedNotes.push(`${doc.file_name} (image — not analyzed with this model provider)`);
+        } else {
+          contentBlocks.push({
+            type: 'image',
+            source: { type: 'base64', media_type: mediaType, data: fileBuffer.toString('base64') },
+          });
+        }
       } else if (mediaType === 'text/plain') {
         projectText += `\n\n--- ATTACHED FILE: ${doc.file_name} ---\n${fileBuffer.toString('utf-8').slice(0, 8000)}`;
       }
@@ -294,36 +474,110 @@ async function handler(req, res) {
 
     contentBlocks.unshift({ type: 'text', text: projectText });
 
-    const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL || 'claude-sonnet-5',
-        max_tokens: 3000,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: contentBlocks }],
-      }),
-    });
-
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text().catch(() => '');
-      await supabaseRest(`/projects?id=eq.${projectId}`, {
-        method: 'PATCH',
-        body: { status: 'error', updated_at: new Date().toISOString() },
-        serviceKey: SUPABASE_SERVICE_ROLE_KEY,
-        supabaseUrl: SUPABASE_URL,
+    let rawText;
+    if (provider === 'bedrock-mock') {
+      rawText = buildMockAnalysis(project);
+    } else if (provider === 'groq') {
+      // OpenAI-compatible chat completions endpoint — see
+      // https://console.groq.com/docs/api-reference#chat-create. Only
+      // `projectText` is sent (no contentBlocks/vision — see above), as a
+      // plain string user message rather than Anthropic's content-block
+      // array shape.
+      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: GROQ_MODEL || GROQ_MODEL_DEFAULT,
+          max_tokens: 3000,
+          temperature: 0.2,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: projectText },
+          ],
+        }),
       });
-      return json(res, 502, { error: 'Analysis model request failed', detail: errText });
-    }
 
-    const anthropicData = await anthropicRes.json();
-    const rawText = (anthropicData.content || [])
-      .map((b) => (b.type === 'text' ? b.text : ''))
-      .join('');
+      if (!groqRes.ok) {
+        const errText = await groqRes.text().catch(() => '');
+        await supabaseRest(`/projects?id=eq.${projectId}`, {
+          method: 'PATCH',
+          body: { status: 'error', updated_at: new Date().toISOString() },
+          serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+          supabaseUrl: SUPABASE_URL,
+        });
+        return json(res, 502, { error: 'Analysis model request failed', detail: errText });
+      }
+
+      const groqData = await groqRes.json();
+      rawText = (groqData.choices && groqData.choices[0] && groqData.choices[0].message && groqData.choices[0].message.content) || '';
+    } else if (provider === 'bedrock') {
+      // AWS Bedrock's Converse API — a unified request/response shape that
+      // works the same way across every model family Bedrock hosts
+      // (Llama, Mistral, Claude, etc.), so this doesn't need a
+      // model-specific request body the way raw InvokeModel would. The SDK
+      // handles AWS SigV4 request signing from AWS_ACCESS_KEY_ID/
+      // AWS_SECRET_ACCESS_KEY — see the file header comment for the IAM
+      // setup this needs.
+      const bedrockClient = new BedrockRuntimeClient({
+        region: AWS_REGION || BEDROCK_REGION_DEFAULT,
+        credentials: { accessKeyId: AWS_ACCESS_KEY_ID, secretAccessKey: AWS_SECRET_ACCESS_KEY },
+      });
+      try {
+        const bedrockRes = await bedrockClient.send(new ConverseCommand({
+          modelId: BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT,
+          system: [{ text: SYSTEM_PROMPT }],
+          messages: [{ role: 'user', content: [{ text: projectText }] }],
+          inferenceConfig: { maxTokens: 3000, temperature: 0.2 },
+        }));
+        const outputContent = (bedrockRes.output && bedrockRes.output.message && bedrockRes.output.message.content) || [];
+        rawText = outputContent.map((b) => b.text || '').join('');
+      } catch (bedrockErr) {
+        await supabaseRest(`/projects?id=eq.${projectId}`, {
+          method: 'PATCH',
+          body: { status: 'error', updated_at: new Date().toISOString() },
+          serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+          supabaseUrl: SUPABASE_URL,
+        });
+        return json(res, 502, {
+          error: 'Analysis model request failed',
+          detail: String((bedrockErr && bedrockErr.message) || bedrockErr),
+        });
+      }
+    } else {
+      const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: CLAUDE_MODEL || 'claude-sonnet-5',
+          max_tokens: 3000,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: contentBlocks }],
+        }),
+      });
+
+      if (!anthropicRes.ok) {
+        const errText = await anthropicRes.text().catch(() => '');
+        await supabaseRest(`/projects?id=eq.${projectId}`, {
+          method: 'PATCH',
+          body: { status: 'error', updated_at: new Date().toISOString() },
+          serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+          supabaseUrl: SUPABASE_URL,
+        });
+        return json(res, 502, { error: 'Analysis model request failed', detail: errText });
+      }
+
+      const anthropicData = await anthropicRes.json();
+      rawText = (anthropicData.content || [])
+        .map((b) => (b.type === 'text' ? b.text : ''))
+        .join('');
+    }
 
     let parsed;
     try {
