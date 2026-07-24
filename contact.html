@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=3">
 </head>
 <body>
 <header class="site">
@@ -35,36 +35,37 @@
     </div>
   </div>
 </header>
-<section class="page-hero">
+<section class="tight contact-onepage">
   <div class="wrap">
-    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span><span data-i18n="crumb.contact">Contact</span></span></div>
-    <span class="eyebrow on-dark"><span data-i18n="crumb.contact">Contact</span></span>
-    <h1 class="h-page"><span data-i18n="contact.hero.title">Start a professional engagement.</span></h1>
-    <p class="lede"><span data-i18n="contact.hero.lede">Tell us who you are and what you're structuring — an advisor will follow up to scope the engagement.</span></p>
-  </div>
-</section>
-<section class="tight">
-  <div class="wrap contact-wrap">
-    <div class="contact-info reveal">
+    <div class="contact-head">
+      <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span><span data-i18n="crumb.contact">Contact</span></span></div>
       <span class="eyebrow"><span data-i18n="crumb.contact">Contact</span></span>
-      <h2 class="h-section"><span data-i18n="contact.info.title">Start a professional engagement.</span></h2>
-      <p class="lede" style="margin-top:16px;"><span data-i18n="contact.info.lede">Tell us who you are and what you're structuring. An advisor will follow up to scope the engagement.</span></p>
+      <h1 class="h-section" style="margin-top:10px;"><span data-i18n="contact.hero.title">Start a professional engagement.</span></h1>
+      <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="contact.hero.lede">Tell us who you are and what you're structuring — an advisor will follow up to scope the engagement.</span></p>
+    </div>
+    <div class="contact-wrap">
+    <div class="contact-info reveal">
       <div class="ci-row"><div class="lab"><span data-i18n="contact.advisory.lab">Advisory Requests</span></div><div class="val"><a href="mailto:info@inaai.co">info@inaai.co</a></div></div>
       <div class="ci-row"><div class="lab"><span data-i18n="contact.meeting.lab">Meeting Scheduling</span></div><div class="val"><span data-i18n="contact.meeting.val">Book a 30-minute scoping call</span></div></div>
       <div class="ci-row"><div class="lab"><span data-i18n="contact.profile.lab">Company Profile</span></div><div class="val"><span data-i18n="contact.profile.val">Download the INA Company Profile (PDF)</span></div></div>
     </div>
-    <form class="advisory reveal" id="advisoryForm">
+    <form class="advisory reveal" id="advisoryForm" action="/contact.php" method="POST">
       <!-- Honeypot: hidden from real visitors via CSS, left empty by them.
            Bots that auto-fill every field trip this, and the server
-           silently discards the submission instead of emailing it. -->
+           silently discards the submission instead of emailing it.
+           Field name/id/label deliberately avoid "company"/"website" —
+           those words make Chrome's address autofill treat this as a
+           real Company field and silently fill it in on the second
+           submission of a session, which made real visitors' second
+           attempt look like spam and drop silently. -->
       <div style="position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;" aria-hidden="true">
-        <label for="company_website">Company Website</label>
-        <input id="company_website" type="text" tabindex="-1" autocomplete="off">
+        <label for="hp_ref">Reference</label>
+        <input id="hp_ref" name="hp_ref" type="text" tabindex="-1" autocomplete="off">
       </div>
-      <div class="field"><label for="name"><span data-i18n="contact.f.name">Full name</span></label><input id="name" type="text" required></div>
-      <div class="field"><label for="org"><span data-i18n="contact.f.org">Organization</span></label><input id="org" type="text" required></div>
+      <div class="field"><label for="name"><span data-i18n="contact.f.name">Full name</span></label><input id="name" name="name" type="text" required></div>
+      <div class="field"><label for="org"><span data-i18n="contact.f.org">Organization</span></label><input id="org" name="org" type="text" required></div>
       <div class="field"><label for="type"><span data-i18n="contact.f.type">You are a</span></label>
-        <select id="type">
+        <select id="type" name="type">
           <option>Government / Regulator</option>
           <option>Development Finance Institution</option>
           <option>Investor / Infrastructure Fund</option>
@@ -72,13 +73,19 @@
           <option>Other</option>
         </select>
       </div>
-      <div class="field"><label for="email"><span data-i18n="contact.f.email">Email</span></label><input id="email" type="email" required></div>
-      <div class="field full"><label for="msg"><span data-i18n="contact.f.msg">Tell us about the opportunity</span></label><textarea id="msg" required></textarea></div>
+      <div class="field"><label for="email"><span data-i18n="contact.f.email">Email</span></label><input id="email" name="email" type="email" required></div>
+      <div class="field full"><label for="msg"><span data-i18n="contact.f.msg">Tell us about the opportunity</span></label><textarea id="msg" name="message" required></textarea></div>
       <div class="full" style="display:flex; align-items:center; gap:18px;">
         <button type="submit" class="btn amber"><span data-i18n="contact.submit">Submit Request</span></button>
         <span class="contact-note" id="formNote"><span data-i18n="contact.note">We typically respond within two business days.</span></span>
       </div>
     </form>
+    <!-- Hidden submission target: assets/script.js points the form here
+         (via target="contact_target") so the POST to /contact.php happens
+         as a genuine browser navigation — required for Bluehost's anti-bot
+         challenge to pass — without the visible page itself reloading. -->
+    <iframe name="contact_target" id="contactTargetFrame" style="display:none;" aria-hidden="true" tabindex="-1" title="Contact form submission"></iframe>
+    </div>
   </div>
 </section>
 <footer>
@@ -110,7 +117,7 @@
     </div>
   </div>
 </footer>
-<script src="assets/i18n.js"></script>
-<script src="assets/script.js"></script>
+<script src="assets/i18n.js?v=4"></script>
+<script src="assets/script.js?v=12"></script>
 </body>
 </html>

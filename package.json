@@ -1,9 +1,9 @@
 {
-  "name": "ina-website",
+  "name": "ina-platform-api",
   "private": true,
-  "version": "1.0.0",
-  "description": "INA (International Network Advisors) institutional site + platform. This package.json exists only so Vercel installs the one npm dependency api/contact.js needs (nodemailer) — the rest of the site and api/analyze-project.js use no external dependencies on purpose.",
+  "description": "Dependencies for the Vercel serverless functions under api/. Not published; the static site itself (index.html, app/, assets/) has zero dependencies and needs no build step.",
   "dependencies": {
-    "nodemailer": "^6.9.14"
+    "pdf-parse": "2.4.5",
+    "@aws-sdk/client-bedrock-runtime": "^3.1095.0"
   }
 }

@@ -110,6 +110,47 @@ to the old addresses breaks.
 >    Program covers, set by its owner independent of which projects exist
 >    under it yet. Unlike a project (always single-type), a Program can be
 >    several. See "Programs" under "How it works" below.
+> 11. `supabase/migration_v12_workflow.sql` — adds the project **workflow**:
+>    `profiles.specialization` (nullable, unused for now — every advisor
+>    stays general-purpose until technical/financial/administrative
+>    advisor roles actually exist), `projects.assigned_advisor_id`, the
+>    `project_workflow_events` audit-trail table, and two functions —
+>    `take_project()` and `advance_project_workflow()` — that an advisor
+>    calls from `app/project.html` to claim a project and push it one step
+>    forward through the same 4 Investment Readiness Index™ stages already
+>    used elsewhere (Concept Stage → Early Structuring → Advanced
+>    Structuring → Investment Ready). See "Project workflow" under "How it
+>    works" below.
+> 12. `supabase/migration_v13_program_documents.sql` — adds
+>    `program_documents` (same shape as `project_documents`, scoped to a
+>    Program instead), letting a program owner attach supporting files
+>    (PDFs, images, etc.) when creating or editing a Program in
+>    `app/programs.html`. Reuses the existing `project-documents` Storage
+>    bucket — no new bucket or bucket policies to create.
+> 13. `supabase/migration_v14_delete_policies.sql` — adds DELETE policies for
+>    `projects` and `programs` (owner or admin only — see "Deleting
+>    projects and programs" under "How it works" below), plus a fix to six
+>    pre-existing SELECT policies (`projects`, `programs`,
+>    `project_documents`, `program_documents`, `framework_analysis`,
+>    `fsu_scoring`) that only ever checked `is_advisor()`, never
+>    `is_admin()` — meaning a pure admin account (role is a single value,
+>    never both `advisor` and `admin` at once) couldn't actually see
+>    another user's project or program at all. Run this even if you don't
+>    care about deleting yet — it's also what makes `app/admin.html`-style
+>    full visibility work correctly for admins across these tables.
+> 14. `supabase/migration_v15_document_categories.sql` — adds
+>    `project_documents.document_type` (`technical` / `financial` /
+>    `administrative` / `other`, defaults to `other`). Lets
+>    `app/new-project.html` offer four separate, independently-optional
+>    upload zones instead of one flat list. See "Document categories" under
+>    "How it works" below.
+> 15. `supabase/migration_v16_document_delete.sql` — adds owner-only DELETE
+>    policies for `project_documents` and `program_documents`, plus a
+>    matching DELETE policy on `storage.objects` for the
+>    `project-documents` bucket. Lets a project/program owner remove or
+>    replace an already-uploaded attachment from `app/new-project.html` /
+>    `app/new-program.html`. See "Deleting or replacing attachments" under
+>    "How it works" below.
 >
 > Skip straight to "Promoting a user to advisor or admin" below once
 > they're run.
@@ -344,7 +385,212 @@ requires another admin, or the Supabase steps above.
   client-side as the distinct `project_type` values among the program's
   actual member projects. See `supabase/migration_v9_programs.sql`,
   `supabase/migration_v10_remove_secondary_types.sql` and
-  `supabase/migration_v11_program_types.sql`.
+  `supabase/migration_v11_program_types.sql`. A program owner can also
+  attach supporting documents (PDFs, images or other files — technical
+  memos, maps, photos, presentations) directly on the program itself when
+  creating or editing it, via the same drop-zone UI project submissions
+  use (`INAPlatform.uploadProgramDocument()` /
+  `INAPlatform.listProgramDocuments()` in `assets/platform.js`, backed by
+  the `program_documents` table — see
+  `supabase/migration_v13_program_documents.sql`). These are separate from
+  — and don't replace — documents attached to the program's individual
+  projects.
+- **Project workflow**: `app/project.html` now shows a stepper for the same
+  4 Investment Readiness Index™ stages already used elsewhere (Concept
+  Stage → Early Structuring → Advanced Structuring → Investment Ready),
+  visible to owner and advisor viewers alike. An advisor viewing a project
+  can click **Take project** to claim it (`INAPlatform.takeProject()` →
+  `take_project()` in the database) and **Advance to `<next stage>`**
+  (`INAPlatform.advanceProjectWorkflow()` → `advance_project_workflow()`)
+  to manually push it one stage forward — logged to
+  `project_workflow_events` (who, when, from/to) and shown as a history
+  list under the stepper. This is deliberately independent of the
+  AI/manual framework analysis: a fresh analysis can still set
+  `readiness_stage` on its own exactly as before, and an advisor's manual
+  advance doesn't require or wait for one. Both writes go through
+  `SECURITY DEFINER` database functions (never a direct client `.update()`
+  on `projects`), so an advisor gets exactly this one capability without a
+  broad "advisors can edit any project" policy.
+
+  Today **every advisor can act at every stage** — `profiles.specialization`
+  exists (nullable: `technical` / `financial` / `administrative`) but isn't
+  read or enforced anywhere yet. When Pablo is ready to split advisors by
+  specialty (e.g. only a technical advisor can act while a project is in
+  Concept Stage), the follow-up is small: decide the stage→specialization
+  mapping, assign each advisor's `specialization` (same manual
+  admin-panel/Table Editor pattern as `role` itself), and add the check
+  inside `advance_project_workflow()` in
+  `supabase/migration_v12_workflow.sql`/`schema.sql` — no new tables or
+  migration needed for that step. See `supabase/migration_v12_workflow.sql`.
+- **Deleting projects and programs**: `app/dashboard.html` (a 🗑 icon per
+  row), `app/project.html` (a "Delete Project" button) and
+  `app/programs.html` (a "Delete" button per row) all let the **owner or a
+  platform admin** permanently delete a project or program, after a native
+  `confirm()` dialog. Backed by `INAPlatform.deleteProject()` /
+  `deleteProgram()` in `assets/platform.js`, which are plain
+  Supabase-js `.delete()` calls — the real enforcement is server-side, via
+  the `projects_delete_own_or_admin` / `programs_delete_own_or_admin` RLS
+  policies (see `supabase/migration_v14_delete_policies.sql`); the
+  UI-level owner/admin check just avoids showing a button that would fail.
+  Deliberately **not** open to advisors — view access is their whole
+  design intent elsewhere in the platform, and deleting is a step beyond
+  that. Deleting a **project** cascades to its documents, framework
+  analysis, FSU scoring and workflow history (all pre-existing "on delete
+  cascade" foreign keys — nothing new to clean up). Deleting a **program**
+  does NOT delete its member projects — `projects.program_id` is "on
+  delete set null", so they're simply unlinked and remain exactly as they
+  were, just without a program grouping; the confirm dialog says as much
+  when a program still has linked projects. Program *documents* attached
+  to the program itself ARE cascade-deleted along with it.
+- **Document categories**: `app/new-project.html` offers four separate,
+  independently-optional drop zones when submitting or editing a project —
+  **Technical folder**, **Financial & economic documentation**,
+  **Administrative documentation**, and **Other attachments** — instead of
+  one flat upload list. None of the four are required to submit; the point
+  is just to let a submitter organize documents by category as they become
+  available (they can always come back and add more from the Edit screen)
+  rather than being forced to have the full technical/financial/
+  administrative set ready on day one. Backed by
+  `project_documents.document_type` (`technical` / `financial` /
+  `administrative` / `other`, defaults to `other` — see
+  `supabase/migration_v15_document_categories.sql`), set by
+  `INAPlatform.uploadDocument(projectId, file, documentType)` in
+  `assets/platform.js`. `app/project.html`'s "Supporting Documents" block
+  and `new-project.html`'s "Already uploaded" list both group existing
+  uploads by this same category (`INAPlatform.DOCUMENT_TYPES` /
+  `documentTypeLabel()`) so an evaluator can go straight to, say, the
+  financial documentation instead of scanning one flat list.
+- **Deleting or replacing attachments**: the "Already uploaded" list in
+  `app/new-project.html` (edit mode) and `app/new-program.html` (edit mode)
+  has a 🗑 button next to every existing file, deleting it immediately (with
+  a confirm dialog) via `INAPlatform.deleteDocument()` /
+  `deleteProgramDocument()` in `assets/platform.js`. There's no separate
+  "replace" button — to swap a file out, delete the old one, then drop the
+  new one into the matching category's upload zone below and save; it
+  uploads as a new document. Deleting removes both the `project_documents`/
+  `program_documents` row and the underlying Storage object (the Storage
+  removal is best-effort — if it fails for any reason the DB row is still
+  removed so the file disappears from the UI either way). Owner-only,
+  enforced server-side by the `documents_delete_own` /
+  `program_documents_delete_own` RLS policies and a matching
+  `doc_delete_own_folder` Storage policy — see
+  `supabase/migration_v16_document_delete.sql`.
+
+## Using a free open-source model in development
+
+`api/analyze-project.js` can run on either Anthropic Claude (the production
+default) or a free open-source model via [Groq](https://groq.com), controlled
+by the `LLM_PROVIDER` environment variable — same code, same
+`framework_analysis` output shape, just a different model underneath.
+Meant for iterating on the platform (submitting test projects over and over)
+without spending Anthropic credits — Groq's free tier needs no credit card.
+
+**Trade-off to know going in:** Claude reads PDFs and images natively; the
+free Groq models used here don't. So on the Groq path, this function
+extracts text out of attached PDFs itself (via the `pdf-parse` npm package,
+capped at 4000 characters per document to stay inside Groq's free-tier rate
+limit) and skips images entirely, noting them as unread rather than
+analyzing them. A scanned/image-only PDF (no extractable text layer) is
+also effectively skipped. In short: dev-mode analysis is a reasonable
+stand-in for iterating on everything EXCEPT how well a specific PDF/image
+gets read — test that specifically against the real (Anthropic) path before
+shipping.
+
+**Setup:**
+
+1. Create a free account at [console.groq.com](https://console.groq.com) —
+   no credit card required — and generate an API key.
+2. In Vercel → your project → **Settings → Environment Variables**, add:
+   - `LLM_PROVIDER` = `groq`
+   - `GROQ_API_KEY` = the key from step 1
+   - `GROQ_MODEL` (optional) — defaults to `llama-3.3-70b-versatile` if unset.
+     Groq's free-tier catalog also includes `llama-3.1-8b-instant` (faster,
+     weaker), `llama-4-scout`, `qwen3-32b` and `openai/gpt-oss-120b` as of
+     mid-2026 — check
+     [console.groq.com/docs/models](https://console.groq.com/docs/models)
+     for the current list, since free-tier model availability shifts over
+     time.
+3. **Tick ONLY "Preview" and/or "Development" for these three variables —
+   NOT "Production."** Production should keep using `ANTHROPIC_API_KEY`
+   with `LLM_PROVIDER` left unset (defaults to `'anthropic'`). This is the
+   same per-environment scoping already used for the other env vars (see
+   the checkboxes next to each variable in that same settings screen) — it
+   means the exact same codebase runs Claude in production and Groq in
+   preview/dev deployments, with no code change or manual toggling needed
+   between them.
+4. Redeploy (env var changes need a fresh deployment to take effect, same
+   as any other variable here).
+5. Free-tier limits as of mid-2026: 30 requests/minute, 6,000 tokens/minute,
+   14,400 requests/day, no credit card. Generous for manual testing; if you
+   script/batch a lot of test submissions you may hit the per-minute cap —
+   the error surfaces the same way as any other model-request failure (a
+   502 on `analyze-project` with Groq's error message in `detail`).
+
+## Using AWS Bedrock (open-source model, confidential-data-friendly)
+
+For **production**, `api/analyze-project.js` also supports running an
+open-weight model (Meta Llama 3.3 70B by default) through
+[AWS Bedrock](https://aws.amazon.com/bedrock/) instead of Anthropic —
+set `LLM_PROVIDER=bedrock`. Unlike the Groq option above (free, but no
+enterprise data-handling agreement — meant for dev/test only), Bedrock
+gives an open-source model the same kind of contractual guarantee Anthropic
+already provides: your prompts and documents aren't used to train the
+model and aren't retained beyond serving the request. This is the
+recommended path if the projects being analyzed contain confidential
+information and a self-hosted model (running your own GPU server) is more
+operational overhead than you want. It's also meaningfully cheaper per
+token than Claude.
+
+**Trade-off to know going in:** same one as Groq — no native PDF/image
+reading is wired up on this path, so PDFs are text-extracted (via
+`pdf-parse`, capped at 4000 characters/document) and images are skipped
+and noted as unread. Test PDF-heavy submissions against the real
+(Anthropic) path if that matters for a specific case.
+
+**Setup:**
+
+1. In the [AWS Console](https://console.aws.amazon.com), go to **Bedrock →
+   Model access** (in whichever region you plan to use — `us-east-1` is the
+   default here) and request/enable access to **Llama 3.3 70B Instruct**
+   (published by Meta). This is a one-time approval step AWS requires per
+   account per model before it can be invoked — usually instant, sometimes
+   takes a few minutes.
+2. Create a **dedicated IAM user** for this (never reuse root or a broad
+   admin key) with a policy scoped to just what this function needs, e.g.:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [{
+       "Effect": "Allow",
+       "Action": "bedrock:InvokeModel",
+       "Resource": "arn:aws:bedrock:*::foundation-model/meta.llama3-3-70b-instruct-v1:0"
+     }]
+   }
+   ```
+   Generate an access key for that user (**IAM → Users → your user →
+   Security credentials → Create access key**).
+3. In Vercel → your project → **Settings → Environment Variables**, add:
+   - `LLM_PROVIDER` = `bedrock`
+   - `AWS_ACCESS_KEY_ID` = the access key from step 2
+   - `AWS_SECRET_ACCESS_KEY` = the matching secret key
+   - `AWS_REGION` (optional) — defaults to `us-east-1`. Must match the
+     region where you enabled model access in step 1.
+   - `BEDROCK_MODEL_ID` (optional) — defaults to
+     `meta.llama3-3-70b-instruct-v1:0`. Swap in a different Bedrock model ID
+     (e.g. a Mistral or DeepSeek model, if/when available in your region)
+     without any code change.
+4. Tick whichever Vercel environments (Production/Preview/Development)
+   should use this — for a genuinely independent (non-ENACOM) project with
+   no data-residency requirement pinning it to a specific country, it's
+   reasonable to tick **Production** here directly, unlike the Groq option
+   above which is dev-only.
+5. Redeploy for the env var changes to take effect.
+6. Pricing (subject to change — check
+   [aws.amazon.com/bedrock/pricing](https://aws.amazon.com/bedrock/pricing/)):
+   Llama 3.3 70B on-demand is billed per token, no monthly minimum — for
+   this platform's usage pattern (occasional project analyses, not
+   high-volume traffic) this should come out to well under what the
+   equivalent Anthropic usage costs.
 
 ## Troubleshooting: analysis stuck on "Applying the Investment Readiness Index…"
 
@@ -375,6 +621,56 @@ If the results page spins indefinitely instead of completing:
    document — try resubmitting with a smaller/shorter file, or check whether
    the PDF is mostly scanned images (which take longer for Claude to process
    than text-based PDFs).
+4. **If the browser's Network tab shows NO request to `analyze-project` at
+   all** (checked on `project.html` right after submitting) — this used to
+   be a real bug, not a red herring: `app/new-project.html` fires
+   `INAPlatform.requestAnalysis()` and then *immediately* navigates to
+   `project.html` via `location.href` without awaiting it. Browsers cancel
+   in-flight requests from a page the instant it's torn down for
+   navigation, so the request could get killed before it ever reached
+   Vercel — and since it belonged to the page that just navigated away, it
+   understandably doesn't show up in the new page's Network log either.
+   Fixed by adding `keepalive: true` to the `fetch()` call inside
+   `requestAnalysis()` (`assets/platform.js`) — the same mechanism
+   `navigator.sendBeacon()` uses to survive page unload, appropriate here
+   since the request body is tiny (just a project id) and well under the
+   ~64KB cap Chrome enforces on keepalive requests. If a project is
+   currently stuck from before this fix, click **Retry Analysis** on
+   `project.html` once the updated `assets/platform.js` is deployed — that
+   button already stays on the page (no navigation), so it isn't affected
+   by the original bug and should complete normally.
+5. **CORS error on the `analyze-project` preflight, specifically a 404 on
+   the `OPTIONS` request** — the `api.international-network-advisors.com`
+   subdomain being correctly pointed at Vercel (Domains tab shows "Valid
+   Configuration") does NOT by itself mean `/analyze-project` resolves to
+   the function. Vercel only ever serves `api/analyze-project.js` at the
+   path `/api/analyze-project` — a request to `/analyze-project` (no `/api`
+   prefix, which is what `analyzeProjectUrl()` in `assets/platform.js`
+   calls on production) 404s unless something rewrites it. Fixed by adding
+   a `rewrites` entry to `vercel.json`:
+   `{ "source": "/analyze-project", "destination": "/api/analyze-project" }`.
+   Since Vercel deploys are usually git-connected, this file has to be
+   committed/pushed (or edited directly on GitHub/GitLab) — editing the
+   copy in this project folder alone doesn't reach the live deployment.
+6. **500 `"Server misconfigured: missing required environment variables"`,
+   even though the 4 variables look present in Vercel** — check the
+   variable NAMES character-by-character; a typo there fails silently
+   (`process.env.SUPABASE_URL` returns `undefined` if the variable is
+   actually named `SUPBASE_URL`, no error, it just looks unset). Also
+   confirm each one is ticked for the **Production** environment
+   specifically, not just Preview/Development — and redeploy after any
+   change, since Vercel doesn't hot-reload env vars into already-running
+   functions.
+7. **401 `"Invalid session"`** — the function validates the caller's
+   Supabase access token against `SUPABASE_URL`/`SUPABASE_ANON_KEY` in its
+   OWN environment variables. If those don't exactly match the project
+   `assets/platform.js` signs users in against
+   (`https://lyyuxoltyyckfppfjbyn.supabase.co` and its anon key, set in
+   `INA_PLATFORM_CONFIG` near the top of that file), every token gets
+   rejected as invalid even though the user is genuinely logged in.
+8. **502 `"Analysis model request failed"` mentioning `"credit balance is
+   too low"`** — not a bug; the Anthropic Console account behind
+   `ANTHROPIC_API_KEY` needs billing set up. Console → Plans & Billing.
 
 ## Known limitations (v1)
 
