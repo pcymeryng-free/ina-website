@@ -98,3 +98,47 @@
 
 /* ---------- Small app-page polish (dashboard / new-project / project) ---------- */
 .app-main > section.tight:first-of-type{ padding-top:48px; }
+
+/* ---------- Project workflow stepper (app/project.html) ----------
+   Shows the project's progress through the 4 Investment Readiness Index™
+   stages, reused here as the workflow's states — see
+   supabase/migration_v12_workflow.sql. Colors reuse the same
+   .status-pill.stage-* palette (style.css) so the stepper visually agrees
+   with the status pill shown elsewhere on this same page. */
+.wf-stepper{ display:flex; align-items:flex-start; gap:0; margin:18px 0 20px; }
+.wf-step{ flex:1 1 0; display:flex; flex-direction:column; align-items:center; text-align:center; min-width:0; position:relative; }
+.wf-step-line{
+  position:absolute; top:13px; left:-50%; width:100%; height:2px;
+  background:var(--paper-line); z-index:0;
+}
+.wf-step:first-child .wf-step-line{ display:none; }
+.wf-step.done .wf-step-line, .wf-step.current .wf-step-line{ background:var(--amber); }
+.wf-step-dot{
+  position:relative; z-index:1; width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:11px; font-weight:600;
+  background:var(--paper-2); color:var(--muted); border:2px solid var(--paper-line);
+}
+.wf-step.done .wf-step-dot{ background:var(--amber); color:var(--ink); border-color:var(--amber); }
+.wf-step.current .wf-step-dot{ background:var(--ink); color:var(--amber); border-color:var(--ink); }
+.wf-step-label{ margin-top:8px; font-size:11.5px; color:var(--muted); max-width:110px; line-height:1.3; }
+.wf-step.current .wf-step-label{ color:var(--text); font-weight:600; }
+
+.wf-advisor-row{
+  display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  padding-top:16px; border-top:1px solid var(--paper-line);
+}
+.wf-advisor-row p{ font-size:13.5px; color:var(--muted); }
+.wf-advisor-row p b{ color:var(--text); font-weight:600; }
+.wf-actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+.wf-history{ margin-top:18px; padding-top:16px; border-top:1px solid var(--paper-line); }
+.wf-history-item{
+  font-size:12.5px; color:var(--muted); padding:6px 0;
+  display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+}
+.wf-history-item b{ color:var(--text); font-weight:600; }
+.wf-history-toggle{
+  font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--amber-deep); cursor:pointer; background:none; border:none; padding:0;
+}

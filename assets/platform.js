@@ -62,6 +62,19 @@ const PROJECT_TYPES = [
   { value: 'other', en: 'Other', es: 'Otro' },
 ];
 
+/* The 4 project_documents.document_type categories (see
+   supabase/migration_v15_document_categories.sql). Technical, financial and
+   administrative documents are all eventually needed for evaluation, but
+   none are required at upload time — new-project.html just offers four
+   optional drop zones instead of one so submitters can organize as they go
+   and evaluators can find things faster later. */
+const DOCUMENT_TYPES = [
+  { value: 'technical', en: 'Technical folder', es: 'Carpeta técnica' },
+  { value: 'financial', en: 'Financial & economic documentation', es: 'Documentación económico-financiera' },
+  { value: 'administrative', en: 'Administrative documentation', es: 'Documentación administrativa' },
+  { value: 'other', en: 'Other attachments', es: 'Otros adjuntos' },
+];
+
 /* The 35 sovereign states of the Americas — used by new-project.html's
    Country field (a <select>, not free text). `value` is always the
    canonical English name regardless of UI language, so projects.country
@@ -131,6 +144,23 @@ const READINESS_STAGE_LABELS = {
   'Early Structuring': { en: 'Early Structuring', es: 'Estructuración Temprana' },
   'Advanced Structuring': { en: 'Advanced Structuring', es: 'Estructuración Avanzada' },
   'Investment Ready': { en: 'Investment Ready', es: 'Listo para Inversión' },
+};
+
+/* Project workflow (app/project.html "workflow stepper") — the ordered
+   list of the same 4 stages above, walked one step at a time by an
+   advisor via advanceProjectWorkflow() below. See
+   supabase/migration_v12_workflow.sql for the full rationale. */
+const STAGE_ORDER = ['Concept Stage', 'Early Structuring', 'Advanced Structuring', 'Investment Ready'];
+
+/* Advisor specialization — unused/unenforced today (every advisor is
+   general-purpose: "por el momento el advisor puede hacer todo"), but the
+   profiles.specialization column and this label map already exist so that
+   wiring in the technical/financial/administrative advisor roles later is
+   a small follow-up, not a new migration. */
+const SPECIALIZATION_LABELS = {
+  technical: { en: 'Technical', es: 'Técnico' },
+  financial: { en: 'Financial', es: 'Financiero' },
+  administrative: { en: 'Administrative', es: 'Administrativo' },
 };
 
 /* Investment Readiness Index™ (F2) — the 8 scoring dimensions, matching
@@ -697,6 +727,8 @@ const INAPlatform = {
 
   roleTypeLabel(value) { return labelFor(ROLE_TYPES, value, currentLang()); },
   projectTypeLabel(value) { return labelFor(PROJECT_TYPES, value, currentLang()); },
+  DOCUMENT_TYPES,
+  documentTypeLabel(value) { return labelFor(DOCUMENT_TYPES, value, currentLang()); },
   /* Translates a stored projects.country value (always the English
      canonical name, see COUNTRIES_AMERICAS) back to the current UI
      language. Falls back to the raw value for any pre-existing free-text
@@ -1030,11 +1062,26 @@ const INAPlatform = {
      their own rows, an advisor's policy returns every row — this query is
      identical for both, no client-side role branching needed. The embedded
      `profiles(full_name, organization)` is what lets the advisor grid show
-     who submitted each project. */
+     who submitted each project.
+
+     projects now has TWO foreign keys into profiles (user_id, the owner,
+     and assigned_advisor_id — see supabase/migration_v12_workflow.sql), so
+     an unqualified `profiles(...)` embed is ambiguous to PostgREST; both
+     embeds below are qualified by the FK CONSTRAINT name
+     (`profiles!projects_user_id_fkey`) to disambiguate.
+
+     Tried the FK COLUMN name (`profiles!user_id`) first — PostgREST is
+     documented to accept either, but on this project's PostgREST version
+     it still errored PGRST201 "more than one relationship was found",
+     confirmed from the browser console. The constraint name is the more
+     reliable form; Postgres auto-names an unnamed inline `references`
+     constraint as `<table>_<column>_fkey`, which is exactly what both
+     constraints below were created as (see supabase/schema.sql /
+     migration_v12_workflow.sql — neither FK was given an explicit name). */
   async listProjects() {
     const { data, error } = await supabaseClient
       .from('projects')
-      .select('*, profiles(full_name, organization), programs(name)')
+      .select('*, profiles!projects_user_id_fkey(full_name, organization), programs(name)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
@@ -1043,7 +1090,12 @@ const INAPlatform = {
   async getProject(id) {
     const { data, error } = await supabaseClient
       .from('projects')
-      .select('*, profiles(full_name, organization), programs(name)')
+      .select(`
+        *,
+        profiles!projects_user_id_fkey(full_name, organization),
+        assigned_advisor:profiles!projects_assigned_advisor_id_fkey(full_name, organization),
+        programs(name)
+      `)
       .eq('id', id)
       .single();
     if (error) throw error;
@@ -1106,6 +1158,20 @@ const INAPlatform = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  /* Owner or admin only — enforced by the projects_delete_own_or_admin RLS
+     policy (see supabase/migration_v14_delete_policies.sql), so this
+     silently deletes nothing for anyone else even if called. Cascades to
+     project_documents, framework_analysis, fsu_scoring and
+     project_workflow_events via their existing FKs — nothing else to clean
+     up client-side. */
+  async deleteProject(id) {
+    const { error } = await supabaseClient
+      .from('projects')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
   },
 
   /* ---------- Programs ----------
@@ -1177,6 +1243,20 @@ const INAPlatform = {
     return data;
   },
 
+  /* Owner or admin only — enforced by the programs_delete_own_or_admin RLS
+     policy (see supabase/migration_v14_delete_policies.sql). Does NOT
+     delete the program's member projects — projects.program_id is "on
+     delete set null", so they're simply unlinked, not removed. Any
+     program_documents attached to this program ARE cascade-deleted along
+     with it. */
+  async deleteProgram(id) {
+    const { error } = await supabaseClient
+      .from('programs')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+
   programOrgTypeLabel(value) {
     const entry = PROGRAM_ORG_TYPE_LABELS[value];
     return entry ? entry[currentLang()] : value;
@@ -1190,14 +1270,77 @@ const INAPlatform = {
     if (error) throw error;
   },
 
+  /* ---------- Project workflow (advisor-driven stage advancement) ----------
+     See supabase/migration_v12_workflow.sql. All writes go through the two
+     RPCs below (both SECURITY DEFINER functions on the database side) —
+     never a direct .update() on projects — so an advisor gets exactly this
+     one narrow capability without a broad "advisors can edit any project"
+     RLS grant. */
+
+  /* Claims a project for the calling advisor. Unrestricted today: any
+     advisor/admin can take (or re-take from someone else) any project. */
+  async takeProject(projectId) {
+    const { error } = await supabaseClient.rpc('take_project', { p_project_id: projectId });
+    if (error) throw error;
+  },
+
+  /* Pushes a project exactly one stage forward (Concept Stage → Early
+     Structuring → Advanced Structuring → Investment Ready), claims it for
+     the calling advisor, and logs the transition. Throws if the project is
+     already at the final stage, or the caller isn't an advisor/admin —
+     callers should check nextWorkflowStage() first to disable the button
+     rather than relying solely on this throwing. Returns the new stage. */
+  async advanceProjectWorkflow(projectId, note) {
+    const { data, error } = await supabaseClient.rpc('advance_project_workflow', {
+      p_project_id: projectId,
+      p_note: note || null,
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  /* Full transition history for a project, oldest first — used to render
+     the workflow's "who did what, when" log on project.html. */
+  async getWorkflowEvents(projectId) {
+    const { data, error } = await supabaseClient
+      .from('project_workflow_events')
+      .select('*, advisor:profiles!project_workflow_events_advisor_id_fkey(full_name)')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  STAGE_ORDER,
+  SPECIALIZATION_LABELS,
+  specializationLabel(value) {
+    const entry = SPECIALIZATION_LABELS[value];
+    return entry ? entry[currentLang()] : value;
+  },
+  /* The stage a project would move to if advanced right now, or null if
+     it's already at the final stage. A project with no readiness_stage
+     yet (no analysis has completed) is treated as starting from 'Concept
+     Stage', matching advance_project_workflow()'s server-side fallback. */
+  nextWorkflowStage(project) {
+    const current = (project && project.readiness_stage) || STAGE_ORDER[0];
+    const idx = STAGE_ORDER.indexOf(current);
+    if (idx === -1 || idx === STAGE_ORDER.length - 1) return null;
+    return STAGE_ORDER[idx + 1];
+  },
+
   /* ---------- Documents ---------- */
 
-  async uploadDocument(projectId, file) {
+  // documentType defaults to 'other' — see DOCUMENT_TYPES above and
+  // supabase/migration_v15_document_categories.sql. Callers (new-project.html)
+  // pass 'technical' / 'financial' / 'administrative' / 'other' depending on
+  // which of the four (all optional) drop zones the file was added to.
+  async uploadDocument(projectId, file, documentType) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const userId = session.user.id;
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const storagePath = `${userId}/${projectId}/${Date.now()}_${safeName}`;
+    const type = DOCUMENT_TYPES.some((t) => t.value === documentType) ? documentType : 'other';
 
     const { error: uploadError } = await supabaseClient
       .storage
@@ -1212,6 +1355,7 @@ const INAPlatform = {
         user_id: userId,
         file_name: file.name,
         storage_path: storagePath,
+        document_type: type,
       })
       .select()
       .single();
@@ -1227,6 +1371,86 @@ const INAPlatform = {
       .order('uploaded_at', { ascending: true });
     if (error) throw error;
     return data;
+  },
+
+  /* Owner-only — enforced by the documents_delete_own RLS policy (see
+     supabase/migration_v16_document_delete.sql). `doc` is a row from
+     listDocuments() (needs .id and .storage_path). Removing the Storage
+     object is best-effort: if it fails (e.g. the bucket policy hasn't been
+     applied yet), the DB row is still deleted so the UI stays consistent —
+     a stray orphaned file in Storage is harmless, a document that won't
+     disappear from the list is confusing. There's no separate "replace"
+     call: the UI deletes the old file and lets the user drop a new one in
+     the same category's upload zone, which uploads as a new row. */
+  async deleteDocument(doc) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    try {
+      await supabaseClient.storage.from('project-documents').remove([doc.storage_path]);
+    } catch (e) { /* best-effort, see doc comment above */ }
+    const { error } = await supabaseClient
+      .from('project_documents')
+      .delete()
+      .eq('id', doc.id);
+    if (error) throw error;
+  },
+
+  /* Same idea as uploadDocument()/listDocuments() above, scoped to a
+     Program instead of a Project — see supabase/migration_v13_program_documents.sql.
+     Reuses the same "project-documents" Storage bucket (its policies only
+     check the {user_id} folder prefix), just under a "programs/" subpath so
+     the two don't visually mix in the bucket browser. */
+  async uploadProgramDocument(programId, file) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const userId = session.user.id;
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `${userId}/programs/${programId}/${Date.now()}_${safeName}`;
+
+    const { error: uploadError } = await supabaseClient
+      .storage
+      .from('project-documents')
+      .upload(storagePath, file);
+    if (uploadError) throw uploadError;
+
+    const { data, error } = await supabaseClient
+      .from('program_documents')
+      .insert({
+        program_id: programId,
+        user_id: userId,
+        file_name: file.name,
+        storage_path: storagePath,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async listProgramDocuments(programId) {
+    const { data, error } = await supabaseClient
+      .from('program_documents')
+      .select('*')
+      .eq('program_id', programId)
+      .order('uploaded_at', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  /* Same idea as deleteDocument() above, scoped to a Program — see
+     program_documents_delete_own RLS policy in
+     supabase/migration_v16_document_delete.sql. */
+  async deleteProgramDocument(doc) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    try {
+      await supabaseClient.storage.from('project-documents').remove([doc.storage_path]);
+    } catch (e) { /* best-effort, see deleteDocument()'s doc comment */ }
+    const { error } = await supabaseClient
+      .from('program_documents')
+      .delete()
+      .eq('id', doc.id);
+    if (error) throw error;
   },
 
   /* ---------- Framework analysis ---------- */
@@ -1251,8 +1475,23 @@ const INAPlatform = {
   async requestAnalysis(projectId) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
+    // keepalive: true — new-project.html fires this and then immediately
+    // navigates to project.html (`location.href = ...`) without awaiting
+    // it, so the poller on the results page can start right away instead
+    // of the form staying on-screen for up to a minute. Without keepalive,
+    // that navigation aborts this fetch mid-flight the instant it fires
+    // (Chrome/Firefox both cancel in-flight requests from a page that's
+    // being unloaded) — the request never even reaches Vercel, which is
+    // why it wouldn't show up in project.html's Network tab (it belonged
+    // to the page that just got torn down) and why the project can end up
+    // stuck on "Applying the Investment Readiness Index…" until the
+    // client-side poll timeout. keepalive keeps the request alive across
+    // the navigation, the same mechanism `navigator.sendBeacon()` uses.
+    // The request body here is tiny (just `projectId`) so it's nowhere
+    // near the ~64KB cap Chrome enforces on keepalive requests.
     const res = await fetch(analyzeProjectUrl(), {
       method: 'POST',
+      keepalive: true,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,

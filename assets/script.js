@@ -48,22 +48,46 @@ if (tocLinks.length && fwSections.length) {
   fwSections.forEach((s) => spy.observe(s));
 }
 
-// ============ Contact form (real send via /api/contact, SMTP to info@inaai.co) ============
+// ============ Contact form (real send via /contact.php, runs directly on Bluehost) ============
+// contact.php sits at the site root (next to contact.html) and sends
+// through the local mail server on the same account that runs
+// info@inaai.co — no Vercel, no SMTP credentials, no environment
+// variables involved.
+//
+// This form submits as a real <form method="POST" action="/contact.php">
+// — NOT a fetch()/AJAX call. That's deliberate: Bluehost's WAF runs a
+// "Human Presence Check" on POSTs it isn't sure come from a real browser,
+// replying with a tiny HTML/JS challenge page (sets a cookie, then
+// reloads) instead of forwarding the request to contact.php. A real
+// browser navigation runs that challenge script and passes it
+// automatically; fetch() never executes a returned <script> tag, so AJAX
+// submissions were silently dying against that wall no matter what the
+// PHP code did.
+//
+// To avoid a visible full-page reload while still submitting as a real
+// navigation (so the anti-bot challenge still gets satisfied), the form
+// targets a hidden <iframe> (see contact.html, #contactTargetFrame)
+// instead of the top-level window. The browser genuinely navigates —
+// just contained inside that invisible frame — so the visitor's page
+// never flashes/scrolls to the top.
+//
+// When contact.html finishes loading *inside that hidden iframe* (after
+// the redirect from contact.php lands), this very same script runs again
+// there too. Rather than have the top-level page try to peek at the
+// iframe's URL (fragile: this script's own query-string-reading logic
+// below, running inside the iframe, rewrites that URL via
+// history.replaceState() essentially as soon as it loads — racing
+// against the parent trying to read it, and losing more often than not),
+// the iframe copy explicitly tells the parent what happened via
+// postMessage(). That's the standard, race-free way for two same-origin
+// documents to talk to each other.
+//
+// The plain action="/contact.php" + query-string-reading logic below is
+// also what runs for a plain top-level submit (JS-disabled browsers, or
+// this page loaded standalone/not inside our own iframe) — graceful
+// fallback either way.
 const CONTACT_EMAIL = 'info@inaai.co';
-
-// Same pattern as INAPlatform.analyzeProjectUrl() in assets/platform.js:
-// on the production domain (Bluehost, static hosting, no Node.js) this
-// calls the api. subdomain which points at the Vercel function; on
-// Vercel itself (and localhost during development) it uses the
-// relative path, since /api/contact.js is same-origin there.
-const CONTACT_PRODUCTION_HOSTNAMES = ['international-network-advisors.com', 'www.international-network-advisors.com'];
-const CONTACT_PRODUCTION_API_ORIGIN = 'https://api.international-network-advisors.com';
-function contactUrl() {
-  if (typeof location !== 'undefined' && CONTACT_PRODUCTION_HOSTNAMES.includes(location.hostname)) {
-    return `${CONTACT_PRODUCTION_API_ORIGIN}/contact`;
-  }
-  return '/api/contact';
-}
+const CONTACT_MESSAGE_SOURCE = 'ina-contact-form';
 
 function contactNoteText(key, fallback) {
   const lang = document.documentElement.getAttribute('lang') === 'es' ? 'es' : 'en';
@@ -76,60 +100,129 @@ const form = document.getElementById('advisoryForm');
 if (form) {
   const note = document.getElementById('formNote');
   const submitBtn = form.querySelector('button[type="submit"]');
+  const isEmbedded = window.self !== window.top;
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (submitBtn) submitBtn.disabled = true;
-
-    const name = (document.getElementById('name') || {}).value || '';
-    const org = (document.getElementById('org') || {}).value || '';
-    const typeSelect = document.getElementById('type');
-    const type = typeSelect ? typeSelect.options[typeSelect.selectedIndex].text : '';
-    const email = (document.getElementById('email') || {}).value || '';
-    const msg = (document.getElementById('msg') || {}).value || '';
-    const honeypot = (document.getElementById('company_website') || {}).value || '';
-
-    if (note) note.textContent = contactNoteText('contact.note.sending', 'Sending…');
-
-    try {
-      const res = await fetch(contactUrl(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, org, type, email, message: msg, company_website: honeypot }),
-      });
-      if (!res.ok) throw new Error('send failed');
-
-      if (note) note.textContent = contactNoteText('contact.note.sent', 'Request received — thank you. An advisor will follow up shortly.');
-      form.reset();
-    } catch (err) {
-      // Fall back to a mailto link so the visitor's request isn't lost
-      // even if the server-side send is down or not configured yet.
-      const subject = `Advisory Request — ${org || name}`;
-      const body =
-        `Name: ${name}\n` +
-        `Organization: ${org}\n` +
-        `Type: ${type}\n` +
-        `Email: ${email}\n\n` +
-        `Message:\n${msg}`;
-      const mailtoLink =
-        `mailto:${CONTACT_EMAIL}` +
-        `?subject=${encodeURIComponent(subject)}` +
-        `&body=${encodeURIComponent(body)}`;
-
-      if (note) {
-        const errorMsg = contactNoteText(
-          'contact.note.error',
-          `We couldn't send that automatically. Click here to email us directly at ${CONTACT_EMAIL}.`
-        );
-        note.innerHTML = '';
-        const link = document.createElement('a');
-        link.href = mailtoLink;
-        link.textContent = errorMsg;
-        link.style.textDecoration = 'underline';
-        note.appendChild(link);
-      }
-    } finally {
-      if (submitBtn) submitBtn.disabled = false;
+  function showContactResult(type) {
+    if (!note) return;
+    note.innerHTML = '';
+    if (type === 'sent') {
+      note.textContent = contactNoteText('contact.note.sent', 'Request received — thank you. An advisor will follow up shortly.');
+    } else if (type === 'validation') {
+      note.textContent = contactNoteText('contact.note.error.validation', 'Please fill in all required fields and try again.');
+    } else if (type === 'email') {
+      note.textContent = contactNoteText('contact.note.error.email', 'Please enter a valid email address and try again.');
+    } else if (type === 'length') {
+      note.textContent = contactNoteText('contact.note.error.length', 'Your message is too long. Please shorten it and try again.');
+    } else if (type === 'timeout') {
+      note.textContent = contactNoteText(
+        'contact.note.error.timeout',
+        "This is taking longer than expected. Please try again in a moment, or email us directly."
+      );
+    } else {
+      // 'mail' (server-side send failed) or anything unrecognized — offer
+      // a mailto fallback so the visitor's request isn't lost.
+      const link = document.createElement('a');
+      link.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Advisory Request')}`;
+      link.textContent = contactNoteText(
+        'contact.note.error',
+        `We couldn't send that automatically. Click here to email us directly at ${CONTACT_EMAIL}.`
+      );
+      link.style.textDecoration = 'underline';
+      note.appendChild(link);
     }
-  });
+    // This form is wrapped in ".reveal" (opacity:0 until scrolled into
+    // view). Force it visible immediately so the result is never hidden
+    // behind an animation the visitor hasn't triggered yet.
+    form.classList.add('in');
+  }
+
+  const params = new URLSearchParams(location.search);
+  let resultType = null;
+  if (params.get('sent') === '1') resultType = 'sent';
+  else if (params.has('error')) resultType = params.get('error') || 'error';
+
+  // TEMPORARY diagnostic logging — remove once the iframe/postMessage
+  // handoff is confirmed working end-to-end. Prefixed so it's easy to
+  // spot and to grep back out later.
+  console.log('[INA contact] script loaded', { isEmbedded, href: location.href, resultType });
+
+  if (isEmbedded) {
+    // This copy of the page is running inside our own hidden submission
+    // iframe — there's no visitor looking at it. Its only job is to
+    // report the result to the parent page and stay out of the way.
+    if (resultType && window.parent) {
+      try {
+        console.log('[INA contact] embedded copy posting result to parent', resultType);
+        window.parent.postMessage({ source: CONTACT_MESSAGE_SOURCE, result: resultType }, location.origin);
+      } catch (e) {
+        console.log('[INA contact] postMessage threw', e);
+        // Cross-origin or unavailable — nothing more we can do from here;
+        // the parent's own 15s timeout will cover it.
+      }
+    } else {
+      console.log('[INA contact] embedded copy has no resultType to report (or no window.parent)');
+    }
+  } else {
+    // --- Fallback path: a plain top-level submit landed back here with a
+    // result in the query string (JS-disabled browsers, or the iframe
+    // trick below being unavailable for some reason). ---
+    if (resultType) {
+      showContactResult(resultType);
+      if (resultType === 'sent') form.reset();
+      history.replaceState(null, '', location.pathname);
+      setTimeout(() => note && note.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+    }
+
+    // --- Preferred path: submit into the hidden iframe so the visible
+    // page never navigates at all; wait for it to postMessage() the
+    // result back once it lands. ---
+    const targetFrame = document.getElementById('contactTargetFrame');
+    if (targetFrame) {
+      form.setAttribute('target', 'contact_target');
+
+      let submissionInFlight = false;
+      let timeoutId = null;
+
+      form.addEventListener('submit', () => {
+        console.log('[INA contact] form submitted, target=', form.getAttribute('target'));
+        submissionInFlight = true;
+        if (submitBtn) submitBtn.disabled = true;
+        if (note) {
+          note.textContent = contactNoteText('contact.note.sending', 'Sending…');
+          form.classList.add('in');
+        }
+        clearTimeout(timeoutId);
+        // The anti-bot challenge (when it triggers) resolves itself within
+        // a couple seconds; if we still haven't heard back after 15s,
+        // something's actually wrong — stop waiting and let the visitor know.
+        timeoutId = setTimeout(() => {
+          console.log('[INA contact] 15s timeout fired, submissionInFlight=', submissionInFlight);
+          if (!submissionInFlight) return;
+          submissionInFlight = false;
+          if (submitBtn) submitBtn.disabled = false;
+          showContactResult('timeout');
+        }, 15000);
+      });
+
+      window.addEventListener('message', (event) => {
+        console.log('[INA contact] parent received a message event', {
+          origin: event.origin,
+          expectedOrigin: location.origin,
+          data: event.data,
+          submissionInFlight,
+        });
+        if (event.origin !== location.origin) return;
+        if (!event.data || event.data.source !== CONTACT_MESSAGE_SOURCE) return;
+        if (!submissionInFlight) return;
+
+        submissionInFlight = false;
+        clearTimeout(timeoutId);
+        if (submitBtn) submitBtn.disabled = false;
+
+        const result = event.data.result;
+        showContactResult(result);
+        if (result === 'sent') form.reset();
+      });
+    }
+  }
 }

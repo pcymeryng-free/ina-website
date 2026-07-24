@@ -3152,6 +3152,22 @@ const I18N = {
     "en": "We couldn't send that automatically. Click here to email us directly.",
     "es": "No pudimos enviarlo automáticamente. Hacé clic acá para escribirnos directamente."
   },
+  "contact.note.error.validation": {
+    "en": "Please fill in all required fields and try again.",
+    "es": "Completá todos los campos requeridos e intentá de nuevo."
+  },
+  "contact.note.error.email": {
+    "en": "Please enter a valid email address and try again.",
+    "es": "Ingresá una dirección de email válida e intentá de nuevo."
+  },
+  "contact.note.error.length": {
+    "en": "Your message is too long. Please shorten it and try again.",
+    "es": "Tu mensaje es demasiado largo. Acortalo e intentá de nuevo."
+  },
+  "contact.note.error.timeout": {
+    "en": "This is taking longer than expected. Please try again in a moment, or email us directly.",
+    "es": "Esto está tardando más de lo esperado. Intentá de nuevo en un momento, o escribinos directamente."
+  },
   "meta.contact.title": {
     "en": "Contact — International Network Advisors",
     "es": "Contacto — International Network Advisors"
@@ -3256,6 +3272,14 @@ const I18N = {
     "en": "Biography coming soon.",
     "es": "Biografía próximamente."
   },
+  "ab.francos.role": {
+    "en": "Founding Partner, Córdova Francos Abogados",
+    "es": "Socio Fundador, Córdova Francos Abogados"
+  },
+  "ab.francos.bio": {
+    "en": "International lawyer with 20+ years advising on cross-border venture capital, private equity, M&A and financing transactions. Former General Counsel of IBM Argentina, Paraguay & Uruguay; former director of technology, telecom and energy companies.",
+    "es": "Abogado internacional con más de 20 años de experiencia asesorando en venture capital transfronterizo, private equity, M&A y transacciones de financiamiento. Fue General Counsel de IBM Argentina, Paraguay y Uruguay, y director de empresas de tecnología, telecomunicaciones y energía."
+  },
   "ab.cta.eyebrow": {
     "en": "Join the Conversation",
     "es": "Sumate a la Conversación"
@@ -3340,6 +3364,15 @@ const I18N = {
   "np.f.docs": { "en": "Supporting documents (optional)", "es": "Documentos de respaldo (opcional)" },
   "np.f.docs.drop": { "en": "Click to choose files, or drag and drop", "es": "Hacé clic para elegir archivos, o arrastralos aquí" },
   "np.f.docs.existing": { "en": "Already uploaded", "es": "Ya subidos" },
+  "np.f.docs.section": { "en": "Supporting documents", "es": "Documentos de respaldo" },
+  "np.f.docs.section.help": { "en": "Nothing here is required to submit — attach what you have now and add the rest later from the Edit screen. All three categories below are used during evaluation.", "es": "Nada de esto es obligatorio para enviar — adjuntá lo que tengas ahora y sumá el resto más adelante desde la pantalla de Editar. Las tres categorías siguientes se usan durante la evaluación." },
+  "doc.type.technical": { "en": "Technical folder", "es": "Carpeta técnica" },
+  "doc.type.technical.help": { "en": "Engineering studies, technical specifications, route/site surveys, network diagrams.", "es": "Estudios de ingeniería, especificaciones técnicas, relevamientos de traza/sitio, diagramas de red." },
+  "doc.type.financial": { "en": "Financial & economic documentation", "es": "Documentación económico-financiera" },
+  "doc.type.financial.help": { "en": "Financial model, cost estimates, revenue projections, funding sources considered.", "es": "Modelo financiero, estimación de costos, proyecciones de ingresos, fuentes de financiamiento consideradas." },
+  "doc.type.administrative": { "en": "Administrative documentation", "es": "Documentación administrativa" },
+  "doc.type.administrative.help": { "en": "Legal/corporate documents, permits, licenses, regulatory filings.", "es": "Documentación legal/societaria, permisos, licencias, presentaciones regulatorias." },
+  "doc.type.other": { "en": "Other attachments", "es": "Otros adjuntos" },
   "np.f.name": { "en": "Project name", "es": "Nombre del proyecto" },
   "np.f.type": { "en": "Project type", "es": "Tipo de proyecto" },
   "np.lede": { "en": "Tell us about the project. Once submitted, INA applies the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade; to generate a scored analysis with financing recommendations.", "es": "Contanos sobre el proyecto. Una vez enviado, INA aplica el Investment Readiness Index&trade; y el Multilateral Finance Navigator&trade; para generar un análisis con puntaje y recomendaciones de financiamiento." },
@@ -3347,9 +3380,11 @@ const I18N = {
   "np.title": { "en": "Submit New Project", "es": "Enviar Nuevo Proyecto" },
   "pd.analyzing": { "en": "Applying the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade;…", "es": "Aplicando el Investment Readiness Index&trade; y el Multilateral Finance Navigator&trade;…" },
   "pd.analyzing.wait": { "en": "This usually takes under a minute. This page will update automatically.", "es": "Esto suele tardar menos de un minuto. Esta página se actualiza automáticamente." },
+  "wf.title": { "en": "Project Workflow", "es": "Flujo de Trabajo del Proyecto" },
   "pd.description": { "en": "Project Description", "es": "Descripción del Proyecto" },
   "pd.documents": { "en": "Supporting Documents", "es": "Documentos de Respaldo" },
   "pd.editProject": { "en": "Edit Project", "es": "Editar Proyecto" },
+  "pd.deleteProject": { "en": "Delete Project", "es": "Eliminar Proyecto" },
   "pd.error": { "en": "The analysis couldn't be completed.", "es": "No se pudo completar el análisis." },
   "pd.error.timeout": { "en": "This is taking longer than expected and may have timed out. Please retry — if it keeps happening, the document may be too large or complex to process.", "es": "Esto está tardando más de lo esperado y puede haber excedido el tiempo límite. Por favor reintentá — si sigue ocurriendo, el documento podría ser demasiado grande o complejo para procesar." },
   "fsu.cta": { "en": "FSU Scoring", "es": "Puntaje FSU" },
@@ -3396,10 +3431,14 @@ const I18N = {
   "prog.f.types": { "en": "Program type(s)", "es": "Tipo(s) de programa" },
   "prog.f.types.help": { "en": "Select every infrastructure type this program is expected to cover — a Program can span several, unlike an individual project.", "es": "Seleccioná todos los tipos de infraestructura que este programa prevé abarcar — un Programa puede abarcar varios, a diferencia de un proyecto individual." },
   "prog.f.desc": { "en": "Description (optional)", "es": "Descripción (opcional)" },
+  "prog.f.docs": { "en": "Supporting documents (optional)", "es": "Documentos de respaldo (opcional)" },
+  "prog.f.docs.help": { "en": "PDFs, images or other files describing the program — technical memos, maps, photos, presentations.", "es": "PDFs, imágenes u otros archivos que describan el programa — memorias técnicas, mapas, fotos, presentaciones." },
+  "prog.f.docs.existing": { "en": "Already uploaded", "es": "Ya subidos" },
   "prog.list.eyebrow": { "en": "Your Programs", "es": "Tus Programas" },
   "prog.list.title": { "en": "All Programs", "es": "Todos los Programas" },
   "prog.viewProjects": { "en": "View Projects", "es": "Ver Proyectos" },
   "prog.edit": { "en": "Edit", "es": "Editar" },
+  "prog.delete": { "en": "Delete", "es": "Eliminar" },
   "prog.empty": { "en": "No programs yet — create one above, or leave the Program field blank on individual projects.", "es": "Todavía no hay programas — creá uno arriba, o dejá el campo Programa en blanco en los proyectos individuales." },
   "np.f.program": { "en": "Program (optional)", "es": "Programa (opcional)" },
   "np.f.program.help": { "en": "Group this project under a Program if it's part of a broader initiative with several independently-financed projects.", "es": "Agrupá este proyecto bajo un Programa si es parte de una iniciativa más amplia con varios proyectos financiados de forma independiente." },
