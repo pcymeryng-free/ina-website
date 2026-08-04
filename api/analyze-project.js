@@ -384,7 +384,25 @@ async function handler(req, res) {
     });
     const project = projects && projects[0];
     if (!project) return json(res, 404, { error: 'Project not found' });
-    if (project.user_id !== user.id) return json(res, 403, { error: 'Not your project' });
+    // Allowed to run analysis: the project owner, or the advisor who has
+    // "taken" it (projects.assigned_advisor_id, set only via the
+    // advisor/admin-only take_project()/promote_project_workflow()/
+    // demote_project_workflow() RPCs — see supabase/migration_v12_workflow.sql
+    // and migration_v20_workflow_promote_demote.sql — so trusting this
+    // column here doesn't need a separate role re-check).
+    const isOwner = project.user_id === user.id;
+    const isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === user.id;
+    if (!isOwner && !isAssignedAdvisor) return json(res, 403, { error: 'Not your project' });
+
+    // Workflow guard (migration_v20_workflow_promote_demote.sql): AI
+    // Analysis isn't offered while the project is still Not Analyzed
+    // (readiness_stage null) — it only becomes available once the owner's
+    // self-assessment has moved it to Concept Stage. app/project.html
+    // already hides the button in that state; this is the matching
+    // server-side check.
+    if (!project.readiness_stage) {
+      return json(res, 409, { error: 'This project needs the owner’s self-assessment before AI Analysis can run.' });
+    }
 
     await supabaseRest(`/projects?id=eq.${projectId}`, {
       method: 'PATCH',
@@ -668,10 +686,15 @@ async function handler(req, res) {
 
     await supabaseRest(`/projects?id=eq.${projectId}`, {
       method: 'PATCH',
-      // readiness_stage is denormalized onto projects (not just
-      // framework_analysis) so the dashboard grid's status column/filter
-      // can show the framework-derived stage without an extra join.
-      body: { status: 'completed', readiness_stage: stage, updated_at: new Date().toISOString() },
+      // Since migration_v20_workflow_promote_demote.sql, projects.
+      // readiness_stage is the workflow stage (Not Analyzed → Concept →
+      // Early/Advanced Structuring → Investment Ready), moved only by the
+      // owner's self-assessment and the advisor's promote/demote/return
+      // actions — NOT by this analysis. `stage` here (the score-derived
+      // band) is stored on the framework_analysis row only, purely
+      // informational ("this score would suggest..."), never written back
+      // onto the project itself.
+      body: { status: 'completed', updated_at: new Date().toISOString() },
       serviceKey: SUPABASE_SERVICE_ROLE_KEY,
       supabaseUrl: SUPABASE_URL,
     });
