@@ -63,11 +63,38 @@
  *   assessment if someone reads it later. Meant purely for demoing the
  *   submit → analyze → results flow before deciding whether to actually
  *   set up a paid AWS account — swap to 'bedrock' (see above) once ready.
+ *   ------------------------------------------------------------------
+ *   Set LLM_PROVIDER='local' to use a model running entirely on your own
+ *   machine/infrastructure (Ollama, LM Studio, llama.cpp server, vLLM —
+ *   anything that exposes an OpenAI-compatible /v1/chat/completions
+ *   endpoint) instead of any cloud provider. No project data ever leaves
+ *   your own network on this path — the strongest confidentiality option
+ *   available here, at zero per-token cost, at the price of needing that
+ *   machine to be running and reachable whenever an analysis is requested.
+ *   See "Using a local/on-premise model (Ollama, LM Studio, etc.)" in
+ *   PLATFORM_SETUP.md for the full walkthrough, including the important
+ *   caveat that this Vercel function runs in Vercel's cloud, NOT on your
+ *   PC — reaching a model on your own machine from a deployed site
+ *   requires either running the whole platform locally too (recommended
+ *   for personal/dev use) or exposing your local model through a tunnel
+ *   (Cloudflare Tunnel recommended) if you want the live production site
+ *   to use it.
+ *   LOCAL_LLM_BASE_URL — optional, defaults to 'http://localhost:11434/v1'
+ *                         (Ollama's default OpenAI-compatible endpoint).
+ *                         Point this at whatever your local server's
+ *                         OpenAI-compatible base URL is (e.g. LM Studio
+ *                         defaults to http://localhost:1234/v1).
+ *   LOCAL_LLM_MODEL     — required when LLM_PROVIDER='local'. No safe
+ *                         default — the model name your local server has
+ *                         loaded (e.g. 'llama3.1:8b', 'qwen2.5:14b-instruct').
+ *   LOCAL_LLM_API_KEY   — optional. Most local servers need no auth at
+ *                         all; set this only if yours is protected (e.g.
+ *                         sitting behind a tunnel with a bearer token).
  *
- *   The Groq and Bedrock paths both talk to a plain chat-style endpoint
- *   rather than Anthropic's native-document Messages API, and — unlike
- *   Claude — neither reads PDFs/images natively here, so for both this
- *   function extracts PDF text itself first (via the `pdf-parse` package)
+ *   The Groq, Bedrock and local-model paths all talk to a plain chat-style
+ *   endpoint rather than Anthropic's native-document Messages API, and —
+ *   unlike Claude — none of them read PDFs/images natively here, so for all
+ *   three this function extracts PDF text itself first (via the `pdf-parse` package)
  *   and skips images rather than sending them; see "Build the model input"
  *   below.
  *
@@ -106,6 +133,7 @@
 const GROQ_MODEL_DEFAULT = 'llama-3.3-70b-versatile';
 const BEDROCK_MODEL_DEFAULT = 'meta.llama3-3-70b-instruct-v1:0';
 const BEDROCK_REGION_DEFAULT = 'us-east-1';
+const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
 
 const DIMENSION_KEYS = [
   'legal_regulatory',
@@ -339,13 +367,17 @@ async function handler(req, res) {
     AWS_SECRET_ACCESS_KEY,
     AWS_REGION,
     BEDROCK_MODEL_ID,
+    LOCAL_LLM_BASE_URL,
+    LOCAL_LLM_MODEL,
+    LOCAL_LLM_API_KEY,
   } = process.env;
 
   // 'anthropic' (production default), 'groq' (free, dev-only), 'bedrock'
   // (open-source model via AWS Bedrock — recommended production option for
-  // confidential data), or 'bedrock-mock' (no model call at all, no
-  // credentials needed — see file header comment). Whichever real-model
-  // path is active still needs the same three Supabase vars; only the
+  // confidential data), 'local' (a model running on your own machine/
+  // infrastructure — see file header comment), or 'bedrock-mock' (no model
+  // call at all, no credentials needed). Whichever real-model path is
+  // active still needs the same three Supabase vars; only the
   // model-provider credentials differ.
   const provider = (LLM_PROVIDER || 'anthropic').toLowerCase();
   const providerKeyMissing = provider === 'groq'
@@ -354,7 +386,13 @@ async function handler(req, res) {
       ? (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY)
       : provider === 'bedrock-mock'
         ? false
-        : !ANTHROPIC_API_KEY;
+        : provider === 'local'
+          // No API key required — a local server typically has none. Only
+          // the model name is required (no safe default, unlike
+          // LOCAL_LLM_BASE_URL below); the base URL falls back to Ollama's
+          // default if unset.
+          ? !LOCAL_LLM_MODEL
+          : !ANTHROPIC_API_KEY;
   if (providerKeyMissing || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
     return json(res, 500, {
       error: `Server misconfigured: missing required environment variables (provider: ${provider}).`,
@@ -424,7 +462,7 @@ async function handler(req, res) {
     // document/image support wired up here, so PDFs are text-extracted
     // instead (via `pdf-parse`) and images are simply skipped — noted in
     // `skippedNotes` like anything else that couldn't be read.
-    const textOnlyProvider = provider === 'groq' || provider === 'bedrock';
+    const textOnlyProvider = provider === 'groq' || provider === 'bedrock' || provider === 'local';
     const contentBlocks = [];
     let projectText = `PROJECT NAME: ${project.name}\nPROJECT TYPE: ${project.project_type}\nCOUNTRY: ${project.country}\n\nDESCRIPTION:\n${project.description}`;
 
@@ -550,6 +588,49 @@ async function handler(req, res) {
 
       const groqData = await groqRes.json();
       rawText = (groqData.choices && groqData.choices[0] && groqData.choices[0].message && groqData.choices[0].message.content) || '';
+    } else if (provider === 'local') {
+      // Same OpenAI-compatible chat completions shape as the Groq branch
+      // above — Ollama, LM Studio, llama.cpp's server (--api) and vLLM's
+      // OpenAI server all speak this, so this one branch works regardless
+      // of which of them you're running. IMPORTANT: this code runs inside
+      // this Vercel function, i.e. in Vercel's cloud, NOT on your PC — for
+      // this fetch() to reach a model on your own machine, LOCAL_LLM_BASE_URL
+      // must be a URL Vercel's servers can actually reach (a tunnel, e.g.
+      // Cloudflare Tunnel, if you want the deployed site to use it; plain
+      // localhost only works if you're also running this function locally
+      // via `vercel dev` — see "Using a local/on-premise model" in
+      // PLATFORM_SETUP.md). No Authorization header is sent unless
+      // LOCAL_LLM_API_KEY is set — most local servers don't check for one.
+      const localRes = await fetch(`${(LOCAL_LLM_BASE_URL || LOCAL_LLM_BASE_URL_DEFAULT).replace(/\/$/, '')}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(LOCAL_LLM_API_KEY ? { Authorization: `Bearer ${LOCAL_LLM_API_KEY}` } : {}),
+        },
+        body: JSON.stringify({
+          model: LOCAL_LLM_MODEL,
+          max_tokens: 3000,
+          temperature: 0.2,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: projectText },
+          ],
+        }),
+      });
+
+      if (!localRes.ok) {
+        const errText = await localRes.text().catch(() => '');
+        await supabaseRest(`/projects?id=eq.${projectId}`, {
+          method: 'PATCH',
+          body: { status: 'error', updated_at: new Date().toISOString() },
+          serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+          supabaseUrl: SUPABASE_URL,
+        });
+        return json(res, 502, { error: 'Analysis model request failed (local model)', detail: errText });
+      }
+
+      const localData = await localRes.json();
+      rawText = (localData.choices && localData.choices[0] && localData.choices[0].message && localData.choices[0].message.content) || '';
     } else if (provider === 'bedrock') {
       // AWS Bedrock's Converse API — a unified request/response shape that
       // works the same way across every model family Bedrock hosts

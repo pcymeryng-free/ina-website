@@ -29,14 +29,18 @@
  * SUPABASE_ANON_KEY — the service role key is used only to read
  * project_documents/Storage server-side and to verify project ownership;
  * see api/analyze-project.js's file header for the full explanation), plus
- * the SAME LLM_PROVIDER switch and per-provider credentials (ANTHROPIC_API_KEY
- * / GROQ_API_KEY / AWS_* / BEDROCK_MODEL_ID) — no new env vars to set up if
- * AI Analysis is already configured.
+ * the SAME LLM_PROVIDER switch and per-provider credentials
+ * (ANTHROPIC_API_KEY / GROQ_API_KEY / AWS_* / BEDROCK_MODEL_ID /
+ * LOCAL_LLM_BASE_URL / LOCAL_LLM_MODEL / LOCAL_LLM_API_KEY — see
+ * api/analyze-project.js's file header for what each does, including
+ * LLM_PROVIDER='local' for a model running on your own machine) — no new
+ * env vars to set up here if AI Analysis is already configured.
  */
 
 const GROQ_MODEL_DEFAULT = 'llama-3.3-70b-versatile';
 const BEDROCK_MODEL_DEFAULT = 'meta.llama3-3-70b-instruct-v1:0';
 const BEDROCK_REGION_DEFAULT = 'us-east-1';
+const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
 
 // How many documents / how much text per document to read — generous
 // relative to api/analyze-project.js's per-call budget (4-8K chars/doc)
@@ -189,6 +193,9 @@ async function handler(req, res) {
     AWS_SECRET_ACCESS_KEY,
     AWS_REGION,
     BEDROCK_MODEL_ID,
+    LOCAL_LLM_BASE_URL,
+    LOCAL_LLM_MODEL,
+    LOCAL_LLM_API_KEY,
   } = process.env;
 
   const provider = (LLM_PROVIDER || 'anthropic').toLowerCase();
@@ -198,7 +205,9 @@ async function handler(req, res) {
       ? (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY)
       : provider === 'bedrock-mock'
         ? false
-        : !ANTHROPIC_API_KEY;
+        : provider === 'local'
+          ? !LOCAL_LLM_MODEL
+          : !ANTHROPIC_API_KEY;
   if (providerKeyMissing || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
     return json(res, 500, {
       error: `Server misconfigured: missing required environment variables (provider: ${provider}).`,
@@ -331,6 +340,33 @@ async function handler(req, res) {
       }
       const groqData = await groqRes.json();
       rawText = (groqData.choices && groqData.choices[0] && groqData.choices[0].message && groqData.choices[0].message.content) || '';
+    } else if (provider === 'local') {
+      // Same OpenAI-compatible shape as the Groq branch — see the matching
+      // branch/comment in api/analyze-project.js for the full explanation,
+      // including the important caveat that this function runs in Vercel's
+      // cloud, not on your PC.
+      const localRes = await fetch(`${(LOCAL_LLM_BASE_URL || LOCAL_LLM_BASE_URL_DEFAULT).replace(/\/$/, '')}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(LOCAL_LLM_API_KEY ? { Authorization: `Bearer ${LOCAL_LLM_API_KEY}` } : {}),
+        },
+        body: JSON.stringify({
+          model: LOCAL_LLM_MODEL,
+          max_tokens: 2000,
+          temperature: 0,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userContent },
+          ],
+        }),
+      });
+      if (!localRes.ok) {
+        const errText = await localRes.text().catch(() => '');
+        return json(res, 502, { error: 'Extraction model request failed (local model)', detail: errText });
+      }
+      const localData = await localRes.json();
+      rawText = (localData.choices && localData.choices[0] && localData.choices[0].message && localData.choices[0].message.content) || '';
     } else if (provider === 'bedrock') {
       try {
         const { BedrockRuntimeClient, ConverseCommand } = require('@aws-sdk/client-bedrock-runtime');
