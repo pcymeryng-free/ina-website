@@ -432,13 +432,17 @@ async function handler(req, res) {
     const isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === user.id;
     if (!isOwner && !isAssignedAdvisor) return json(res, 403, { error: 'Not your project' });
 
-    // Workflow guard (migration_v20_workflow_promote_demote.sql): AI
-    // Analysis isn't offered while the project is still Not Analyzed
-    // (readiness_stage null) — it only becomes available once the owner's
-    // self-assessment has moved it to Concept Stage. app/project.html
-    // already hides the button in that state; this is the matching
-    // server-side check.
-    if (!project.readiness_stage) {
+    // Workflow guard (migration_v20_workflow_promote_demote.sql), owner
+    // path only: for the OWNER, AI Analysis isn't offered while the
+    // project is still Not Analyzed (readiness_stage null) — it only
+    // becomes available once their own self-assessment has moved it to
+    // Concept Stage. An assigned ADVISOR is exempt from this guard: they
+    // can run AI Analysis at any stage, including before any
+    // self-assessment exists, since for an advisor it's a decision-support
+    // tool independent of whether the owner has self-assessed yet (see the
+    // matching client-side gate in app/project.html's canRunAnalysis and
+    // PLATFORM_SETUP.md's "AI Analysis at any stage (advisor)" note).
+    if (!project.readiness_stage && !isAssignedAdvisor) {
       return json(res, 409, { error: 'This project needs the owner’s self-assessment before AI Analysis can run.' });
     }
 
@@ -765,17 +769,31 @@ async function handler(req, res) {
       supabaseUrl: SUPABASE_URL,
     });
 
+    // Since migration_v20_workflow_promote_demote.sql, projects.
+    // readiness_stage is the workflow stage (Not Analyzed → Concept →
+    // Early/Advanced Structuring → Investment Ready), moved only by
+    // explicit entry/promote/demote/return actions — NOT by re-running
+    // this analysis on a project that already has a stage. `stage` here
+    // (the score-derived band) is always stored on the framework_analysis
+    // row as a suggestion (app/project.html surfaces it to the advisor
+    // next to the current stage — see renderAnalysis()'s stage-suggestion
+    // notice); it's only ever written back onto the project itself in the
+    // one case below, which mirrors submitManualAssessment()'s existing
+    // "first time only" rule in assets/platform.js: if this project was
+    // still Not Analyzed (readiness_stage null — only possible here when
+    // an assigned advisor ran AI Analysis before any self-assessment, per
+    // the guard above), completing its very first analysis is what enters
+    // it into the pipeline, same as a first self-assessment would. It
+    // always lands on Concept Stage (not the AI's suggested `stage`) so an
+    // advisor still moves it forward deliberately, one step at a time,
+    // using the suggestion as a guide rather than an auto-jump.
+    const projectUpdate = { status: 'completed', updated_at: new Date().toISOString() };
+    if (!project.readiness_stage) {
+      projectUpdate.readiness_stage = 'Concept Stage';
+    }
     await supabaseRest(`/projects?id=eq.${projectId}`, {
       method: 'PATCH',
-      // Since migration_v20_workflow_promote_demote.sql, projects.
-      // readiness_stage is the workflow stage (Not Analyzed → Concept →
-      // Early/Advanced Structuring → Investment Ready), moved only by the
-      // owner's self-assessment and the advisor's promote/demote/return
-      // actions — NOT by this analysis. `stage` here (the score-derived
-      // band) is stored on the framework_analysis row only, purely
-      // informational ("this score would suggest..."), never written back
-      // onto the project itself.
-      body: { status: 'completed', updated_at: new Date().toISOString() },
+      body: projectUpdate,
       serviceKey: SUPABASE_SERVICE_ROLE_KEY,
       supabaseUrl: SUPABASE_URL,
     });
