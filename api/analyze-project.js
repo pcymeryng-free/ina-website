@@ -422,27 +422,46 @@ async function handler(req, res) {
     });
     const project = projects && projects[0];
     if (!project) return json(res, 404, { error: 'Project not found' });
-    // Allowed to run analysis: the project owner, or the advisor who has
+
+    // Full platform admins can run AI Analysis on ANY project, at any
+    // stage, without owning it or having "taken" it as an advisor first —
+    // unlike isAssignedAdvisor (below), this isn't derived from a trusted
+    // column on the project row, so it needs its own lookup against
+    // profiles.role. Fails closed (isAdminCaller stays false) if the
+    // lookup errors or the profile row is missing, rather than throwing —
+    // a broken admin check should just fall through to the normal
+    // owner/advisor rules, never silently grant access.
+    let isAdminCaller = false;
+    try {
+      const callerProfiles = await supabaseRest(`/profiles?id=eq.${user.id}&select=role`, {
+        serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+        supabaseUrl: SUPABASE_URL,
+      });
+      isAdminCaller = !!(callerProfiles && callerProfiles[0] && callerProfiles[0].role === 'admin');
+    } catch (e) { isAdminCaller = false; }
+
+    // Allowed to run analysis: the project owner, the advisor who has
     // "taken" it (projects.assigned_advisor_id, set only via the
     // advisor/admin-only take_project()/promote_project_workflow()/
     // demote_project_workflow() RPCs — see supabase/migration_v12_workflow.sql
     // and migration_v20_workflow_promote_demote.sql — so trusting this
-    // column here doesn't need a separate role re-check).
+    // column here doesn't need a separate role re-check), or any admin.
     const isOwner = project.user_id === user.id;
     const isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === user.id;
-    if (!isOwner && !isAssignedAdvisor) return json(res, 403, { error: 'Not your project' });
+    if (!isOwner && !isAssignedAdvisor && !isAdminCaller) return json(res, 403, { error: 'Not your project' });
 
     // Workflow guard (migration_v20_workflow_promote_demote.sql), owner
     // path only: for the OWNER, AI Analysis isn't offered while the
     // project is still Not Analyzed (readiness_stage null) — it only
     // becomes available once their own self-assessment has moved it to
-    // Concept Stage. An assigned ADVISOR is exempt from this guard: they
-    // can run AI Analysis at any stage, including before any
-    // self-assessment exists, since for an advisor it's a decision-support
-    // tool independent of whether the owner has self-assessed yet (see the
-    // matching client-side gate in app/project.html's canRunAnalysis and
-    // PLATFORM_SETUP.md's "AI Analysis at any stage (advisor)" note).
-    if (!project.readiness_stage && !isAssignedAdvisor) {
+    // Concept Stage. An assigned ADVISOR, or any ADMIN (regardless of
+    // assignment), is exempt from this guard: either can run AI Analysis
+    // at any stage, including before any self-assessment exists, since for
+    // them it's a decision-support tool independent of whether the owner
+    // has self-assessed yet (see the matching client-side gate in
+    // app/project.html's canRunAnalysis and PLATFORM_SETUP.md's "AI
+    // Analysis at any stage (advisor/admin)" note).
+    if (!project.readiness_stage && !isAssignedAdvisor && !isAdminCaller) {
       return json(res, 409, { error: 'This project needs the owner’s self-assessment before AI Analysis can run.' });
     }
 
