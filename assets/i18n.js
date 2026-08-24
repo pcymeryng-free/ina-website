@@ -233,16 +233,16 @@ const I18N = {
     "es": "Despliegue hyperscale y satelital"
   },
   "home.serve.ops.4": {
-    "en": "Project development support",
-    "es": "Apoyo al desarrollo de proyectos"
+    "en": "Project control, audit &amp; monitoring",
+    "es": "Control, auditoría y seguimiento de proyectos"
   },
   "home.fw.eyebrow": {
     "en": "The Flagship &mdash; INA Frameworks&trade; Suite",
     "es": "La Insignia &mdash; Suite de Metodologías INA&trade;"
   },
   "home.fw.title": {
-    "en": "Six proprietary methodologies. One integrated project lifecycle.",
-    "es": "Seis metodologías propias. Un ciclo de vida de proyecto integrado."
+    "en": "Seven proprietary methodologies. One integrated project lifecycle.",
+    "es": "Siete metodologías propias. Un ciclo de vida de proyecto integrado."
   },
   "home.fw.lede": {
     "en": "Inspired by PMI, the World Bank, IDB, CAF and ITU &mdash; with an identity entirely INA's own. <a href=\"framework.html\" style=\"color:var(--amber); border-bottom:1px solid var(--amber);\">Read the full methodology &rarr;</a>",
@@ -299,6 +299,10 @@ const I18N = {
   "fw.f6.purpose.short": {
     "en": "Recommends financing mechanisms across MDBs, DFIs and blended finance.",
     "es": "Recomienda mecanismos de financiamiento entre bancos multilaterales, instituciones de desarrollo y finanzas mixtas."
+  },
+  "fw.f7.purpose.short": {
+    "en": "Controls, audits and tracks progress with PM &amp; network management tools.",
+    "es": "Controla, audita y hace seguimiento del avance con herramientas de PM y network management."
   },
   "home.ind.eyebrow": {
     "en": "Where We Work",
@@ -389,8 +393,8 @@ const I18N = {
     "es": "Traenos la oportunidad. Nosotros ponemos la estructura."
   },
   "home.cta.lede": {
-    "en": "Whether you're screening a first opportunity or closing financing on a live project, INA's frameworks meet you where you are.",
-    "es": "Ya sea que estés evaluando una primera oportunidad o cerrando el financiamiento de un proyecto en curso, las metodologías de INA se adaptan a tu etapa."
+    "en": "Whether you're screening a first opportunity, closing financing, or already executing a live project, INA's frameworks meet you where you are &mdash; through structuring, financing, control and audit.",
+    "es": "Ya sea que estés evaluando una primera oportunidad, cerrando el financiamiento o ya ejecutando un proyecto en curso, las metodologías de INA se adaptan a tu etapa &mdash; desde la estructuración y el financiamiento hasta el control y la auditoría."
   },
   "home.ainative.eyebrow": {
     "en": "The INA Difference",
@@ -517,8 +521,8 @@ const I18N = {
     "es": "Convertirse en la plataforma internacional de asesoría líder en infraestructura digital, estructuración de proyectos e inteligencia de inversión."
   },
   "why.vision.p1": {
-    "en": "International Network Advisors (INA) was conceived with a clear ambition: to redefine how governments, development banks, investors and technology companies identify, structure, finance and implement digital infrastructure projects.",
-    "es": "International Network Advisors (INA) fue concebida con una ambición clara: redefinir cómo los gobiernos, bancos de desarrollo, inversores y empresas tecnológicas identifican, estructuran, financian e implementan proyectos de infraestructura digital."
+    "en": "International Network Advisors (INA) was conceived with a clear ambition: to redefine how governments, development banks, investors and technology companies identify, structure, finance, implement, control and audit digital infrastructure projects.",
+    "es": "International Network Advisors (INA) fue concebida con una ambición clara: redefinir cómo los gobiernos, bancos de desarrollo, inversores y empresas tecnológicas identifican, estructuran, financian, implementan, controlan y auditan proyectos de infraestructura digital."
   },
   "why.vision.p2": {
     "en": "Digital infrastructure is no longer limited to telecommunications networks. It now encompasses fiber optic backbones, submarine cable systems, hyperscale data centers, cloud infrastructure, artificial intelligence computing facilities, satellite constellations, smart energy systems and the digital ecosystems that support modern economies.",
@@ -581,12 +585,12 @@ const I18N = {
     "es": "Estructuración de proveedores y entrega"
   },
   "why.mission.6.t": {
-    "en": "Monitoring &amp; Impact",
-    "es": "Monitoreo e Impacto"
+    "en": "Control, Audit &amp; Monitoring",
+    "es": "Control, Auditoría y Seguimiento"
   },
   "why.mission.6.d": {
-    "en": "Implementation through evaluation",
-    "es": "Desde la implementación hasta la evaluación"
+    "en": "PM &amp; network management tools, through evaluation",
+    "es": "Herramientas de PM y network management, hasta la evaluación"
   },
   "why.pos.eyebrow": {
     "en": "Strategic Positioning",
@@ -805,16 +809,16 @@ const I18N = {
     "es": "La Suite de Metodologías INA&trade;"
   },
   "fw.hero.lede": {
-    "en": "Six proprietary methodologies that structure how INA identifies, evaluates, finances and monitors digital infrastructure projects.",
-    "es": "Seis metodologías propias que estructuran cómo INA identifica, evalúa, financia y monitorea proyectos de infraestructura digital."
+    "en": "Seven proprietary methodologies that structure how INA identifies, evaluates, finances, controls and monitors digital infrastructure projects.",
+    "es": "Siete metodologías propias que estructuran cómo INA identifica, evalúa, financia, controla y monitorea proyectos de infraestructura digital."
   },
   "fw.intro.eyebrow": {
     "en": "The Suite",
     "es": "La Suite"
   },
   "fw.intro.title": {
-    "en": "Six frameworks. One project lifecycle.",
-    "es": "Seis metodologías. Un ciclo de vida de proyecto."
+    "en": "Seven frameworks. One project lifecycle.",
+    "es": "Siete metodologías. Un ciclo de vida de proyecto."
   },
   "fw.intro.p": {
     "en": "Each INA Framework&trade; works as a standalone methodology, but reaches its full value applied together, across a project's life &mdash; from first opportunity screen to post-implementation monitoring. Every framework is designed to evolve into a software module or AI-assisted capability as the INA platform matures.",
@@ -841,8 +845,8 @@ const I18N = {
     "es": "Identificar Financiamiento"
   },
   "wf.implement": {
-    "en": "Implement &amp; Monitor",
-    "es": "Implementar y Monitorear"
+    "en": "Implement &amp; Control",
+    "es": "Implementar y Controlar"
   },
   "fw.toc.label": {
     "en": "On This Page",
@@ -871,6 +875,10 @@ const I18N = {
   "fw.toc.f6": {
     "en": "F6 &middot; Finance Navigator",
     "es": "F6 &middot; Navegador de Financiamiento"
+  },
+  "fw.toc.f7": {
+    "en": "F7 &middot; Control &amp; Monitoring",
+    "es": "F7 &middot; Control y Seguimiento"
   },
   "fw.toc.finance": {
     "en": "Multilateral Finance",
@@ -2172,6 +2180,86 @@ const I18N = {
     "en": "F6 is the most natural candidate for a true decision-engine product: a structured intake that returns a ranked shortlist of financing mechanisms and matching institutions.",
     "es": "F6 es el candidato más natural para convertirse en un verdadero motor de decisión: una admisión estructurada que devuelve una lista priorizada de mecanismos de financiamiento e instituciones compatibles."
   },
+  "fw.f7.kicker": {
+    "en": "Control &amp; Assurance Methodology",
+    "es": "Metodología de Control y Aseguramiento"
+  },
+  "fw.f7.title": {
+    "en": "Project Control &amp; Monitoring Framework&trade;",
+    "es": "Metodología de Control y Seguimiento de Proyectos&trade;"
+  },
+  "fw.f7.overview": {
+    "en": "Applies proven project management (PMI/PRINCE2-aligned) tools and telecom network management (FCAPS-based) methodology to audit, control and track a project's schedule, cost, quality and technical performance from financial close through operational handover &mdash; independent of the vendor's own reporting.",
+    "es": "Aplica herramientas de project management probadas (alineadas a PMI/PRINCE2) y metodología de network management de telecomunicaciones (basada en FCAPS) para auditar, controlar y hacer seguimiento del cronograma, costo, calidad y performance técnica de un proyecto, desde el cierre financiero hasta la entrega operativa &mdash; de forma independiente del reporte del propio proveedor."
+  },
+  "fw.f7.p1": {
+    "en": "Control runs continuously, not only at gates",
+    "es": "El control es continuo, no solo en los gates"
+  },
+  "fw.f7.p2": {
+    "en": "Independent audit trail, separate from the vendor's own reporting",
+    "es": "Traza de auditoría independiente, separada del autorreporte del proveedor"
+  },
+  "fw.f7.p3": {
+    "en": "Network performance treated as a control input, not just an operations metric",
+    "es": "La performance de red se trata como insumo de control, no solo como métrica de operaciones"
+  },
+  "fw.f7.d1": {
+    "en": "Schedule &amp; Milestone Control",
+    "es": "Control de Cronograma e Hitos"
+  },
+  "fw.f7.d2": {
+    "en": "Cost &amp; Disbursement Audit",
+    "es": "Auditoría de Costos y Desembolsos"
+  },
+  "fw.f7.d3": {
+    "en": "Network Performance &amp; Fault Monitoring",
+    "es": "Monitoreo de Performance de Red y Fallas"
+  },
+  "fw.f7.d4": {
+    "en": "Quality &amp; Contractual Compliance",
+    "es": "Calidad y Cumplimiento Contractual"
+  },
+  "fw.f7.d5": {
+    "en": "Governance &amp; Stage Reporting",
+    "es": "Gobernanza y Reportes por Etapa"
+  },
+  "fw.f7.dl1.t": {
+    "en": "Control Dashboard",
+    "es": "Dashboard de Control"
+  },
+  "fw.f7.dl1.d": {
+    "en": "Real-time schedule, cost &amp; technical status",
+    "es": "Estado en tiempo real de cronograma, costo y técnica"
+  },
+  "fw.f7.dl2.t": {
+    "en": "Audit Trail",
+    "es": "Traza de Auditoría"
+  },
+  "fw.f7.dl2.d": {
+    "en": "Independent record of milestones &amp; disbursements",
+    "es": "Registro independiente de hitos y desembolsos"
+  },
+  "fw.f7.dl3.t": {
+    "en": "Network Performance Report",
+    "es": "Reporte de Performance de Red"
+  },
+  "fw.f7.dl3.d": {
+    "en": "SLA/KPI compliance &amp; fault trends",
+    "es": "Cumplimiento de SLA/KPI y tendencia de fallas"
+  },
+  "fw.f7.dl4.t": {
+    "en": "Corrective Action Log",
+    "es": "Registro de Acciones Correctivas"
+  },
+  "fw.f7.dl4.d": {
+    "en": "Deviations, root cause &amp; owner",
+    "es": "Desvíos, causa raíz y responsable"
+  },
+  "fw.f7.ai": {
+    "en": "F7 is designed to ingest vendor progress reports, financial disbursement records and live network telemetry, reconciling them automatically and flagging variances before they become stage-gate blockers.",
+    "es": "F7 está diseñado para incorporar reportes de avance del proveedor, registros de desembolsos financieros y telemetría de red en vivo, conciliándolos automáticamente y señalando desvíos antes de que se conviertan en bloqueos de gate."
+  },
   "fw.finance.kicker": {
     "en": "Financing Landscape",
     "es": "Panorama de Financiamiento"
@@ -2273,8 +2361,8 @@ const I18N = {
     "es": "La Suite de Metodologías INA™ — Metodología"
   },
   "meta.fw.desc": {
-    "en": "The six proprietary INA Frameworks: Project Structuring, Investment Readiness, Maturity Model, AI Advisory, Risk Assessment and Multilateral Finance Navigator.",
-    "es": "Las seis metodologías propias de INA: Estructuración de Proyectos, Preparación para la Inversión, Modelo de Madurez, Asesoría en IA, Evaluación de Riesgo y Navegador de Financiamiento Multilateral."
+    "en": "The seven proprietary INA Frameworks: Project Structuring, Investment Readiness, Maturity Model, AI Advisory, Risk Assessment, Multilateral Finance Navigator and Project Control & Monitoring.",
+    "es": "Las siete metodologías propias de INA: Estructuración de Proyectos, Preparación para la Inversión, Modelo de Madurez, Asesoría en IA, Evaluación de Riesgo, Navegador de Financiamiento Multilateral y Control y Seguimiento de Proyectos."
   },
   "crumb.services": {
     "en": "Services",
@@ -2465,32 +2553,32 @@ const I18N = {
     "es": "Hoja de ruta de adopción"
   },
   "svc7.sub": {
-    "en": "Implementation Governance",
-    "es": "Gobernanza de la Implementación"
+    "en": "Project Management &amp; Network Management Methodology",
+    "es": "Metodología de Project Management y Network Management"
   },
   "svc7.title": {
-    "en": "Project Monitoring",
-    "es": "Monitoreo de Proyectos"
+    "en": "Project Control, Audit &amp; Monitoring",
+    "es": "Control, Auditoría y Seguimiento de Proyectos"
   },
   "svc7.desc": {
-    "en": "Tracking implementation against plan with structured dashboards, milestone governance and continuous risk monitoring.",
-    "es": "Seguimiento de la implementación contra el plan mediante dashboards estructurados, gobernanza de hitos y monitoreo continuo de riesgos."
+    "en": "Controlling, auditing and tracking a project's actual progress against plan &mdash; combining project management discipline (schedule, cost, quality) with network management tools and metrics for connectivity and infrastructure projects, not just structuring and financing them.",
+    "es": "Controlamos, auditamos y hacemos seguimiento del avance real de un proyecto contra lo planificado &mdash; combinando disciplina de project management (cronograma, costo, calidad) con herramientas y métricas de network management para proyectos de conectividad e infraestructura, más allá de estructurarlos y financiarlos."
   },
   "svc7.c1": {
-    "en": "Milestone &amp; KPI dashboards",
-    "es": "Dashboards de hitos y KPI"
+    "en": "Independent schedule &amp; cost audit",
+    "es": "Auditoría independiente de cronograma y costos"
   },
   "svc7.c2": {
-    "en": "Risk register monitoring",
-    "es": "Monitoreo del registro de riesgos"
+    "en": "Milestone, KPI &amp; risk-register dashboards",
+    "es": "Dashboards de hitos, KPI y registro de riesgos"
   },
   "svc7.c3": {
-    "en": "Stage-gate governance",
-    "es": "Gobernanza por etapas"
+    "en": "Network performance &amp; SLA monitoring (FCAPS-based)",
+    "es": "Monitoreo de performance de red y cumplimiento de SLA (basado en FCAPS)"
   },
   "svc7.c4": {
-    "en": "Lender / DFI reporting support",
-    "es": "Apoyo en reportes a prestamistas e instituciones de financiamiento"
+    "en": "Stage-gate governance &amp; lender / DFI reporting support",
+    "es": "Gobernanza por etapas y apoyo en reportes a prestamistas e instituciones de financiamiento"
   },
   "svc8.sub": {
     "en": "Environmental, Social &amp; Governance",
@@ -3257,20 +3345,8 @@ const I18N = {
     "es": "Consejo Asesor"
   },
   "ab.intro.lede": {
-    "en": "Profiles are being finalized and will appear here shortly.",
-    "es": "Los perfiles se están finalizando y aparecerán aquí en breve."
-  },
-  "ab.card.name": {
-    "en": "Full Name",
-    "es": "Nombre Completo"
-  },
-  "ab.card.role": {
-    "en": "Title / Specialization",
-    "es": "Cargo / Especialización"
-  },
-  "ab.card.bio": {
-    "en": "Biography coming soon.",
-    "es": "Biografía próximamente."
+    "en": "Four senior leaders spanning law, finance, technology and public policy — engaged directly on every advisory mandate.",
+    "es": "Cuatro líderes senior en derecho, finanzas, tecnología y política pública — involucrados directamente en cada mandato de asesoría."
   },
   "ab.francos.role": {
     "en": "Founding Partner, Córdova Francos Abogados",
@@ -3279,6 +3355,30 @@ const I18N = {
   "ab.francos.bio": {
     "en": "International lawyer with 20+ years advising on cross-border venture capital, private equity, M&A and financing transactions. Former General Counsel of IBM Argentina, Paraguay & Uruguay; former director of technology, telecom and energy companies.",
     "es": "Abogado internacional con más de 20 años de experiencia asesorando en venture capital transfronterizo, private equity, M&A y transacciones de financiamiento. Fue General Counsel de IBM Argentina, Paraguay y Uruguay, y director de empresas de tecnología, telecomunicaciones y energía."
+  },
+  "ab.cohen.role": {
+    "en": "CEO, Grupo Cohen",
+    "es": "CEO, Grupo Cohen"
+  },
+  "ab.cohen.bio": {
+    "en": "Executive with a track record as Partner and Board Member across Europe and Latin America, specializing in strategic design, corporate governance and digital transformation. Former CEO of Argentina's Investment and Foreign Trade Agency and Undersecretary of Economic Development for the City of Buenos Aires; economist (UBA) with an MBA from London Business School.",
+    "es": "Ejecutivo con trayectoria como Partner y Miembro de Directorios en Europa y Latinoamérica, especializado en diseño estratégico, gobierno corporativo y transformación digital. Ex CEO de la Agencia Argentina de Inversiones y Comercio Exterior y ex Subsecretario de Desarrollo Económico de la Ciudad de Buenos Aires; economista (UBA) con MBA de London Business School."
+  },
+  "ab.monaro.role": {
+    "en": "Technology & Product Strategy Executive",
+    "es": "Ejecutivo de Estrategia de Tecnología y Producto"
+  },
+  "ab.monaro.bio": {
+    "en": "Strategic technology and product executive with 10+ years leading product management, commercial strategy and enterprise transformation across satellite, broadband and mobile markets. Track record driving triple-digit subscriber growth, new connectivity product launches and revenue-focused pricing redesigns across the U.S., Canada and Central America.",
+    "es": "Ejecutivo de tecnología y producto con más de 10 años liderando gestión de producto, estrategia comercial y transformación empresarial en los mercados satelital, de banda ancha y móvil. Trayectoria impulsando crecimiento de suscriptores de tres dígitos, lanzamiento de nuevos productos de conectividad y rediseño de precios orientado a ingresos en EE.UU., Canadá y Centroamérica."
+  },
+  "ab.kaplan.role": {
+    "en": "Digital Policy Expert; former VP Government Affairs, Liberty Latin America",
+    "es": "Experto en Políticas Digitales; ex Vicepresidente de Asuntos Gubernamentales, Liberty Latin America"
+  },
+  "ab.kaplan.bio": {
+    "en": "Digital policy expert with 20+ years in senior leadership roles at technology companies across Latin America. Most recently VP of Government Affairs at Liberty Latin America and Head of Connectivity & Economic Policy for Latin America and the Caribbean at Meta; earlier led regulatory affairs at Millicom (Tigo), Groupon and Claro, and was a Senior Associate at Marval, O'Farrell & Mairal. LLM, Northwestern University School of Law.",
+    "es": "Experto en políticas digitales con más de 20 años en cargos de alta dirección en empresas de tecnología de América Latina. Fue Vicepresidente de Asuntos Gubernamentales de Liberty Latin America y Jefe de Conectividad y Política Económica para América Latina y el Caribe en Meta; anteriormente lideró asuntos regulatorios en Millicom (Tigo), Groupon y Claro, y fue Asociado Senior en Marval, O'Farrell & Mairal. Maestría en Derecho (LLM), Northwestern University School of Law."
   },
   "ab.cta.eyebrow": {
     "en": "Join the Conversation",
@@ -3314,6 +3414,8 @@ const I18N = {
   "auth.login.lede": { "en": "Access your submitted projects and framework analysis results.", "es": "Accedé a tus proyectos enviados y a los resultados del análisis del framework." },
   "auth.login.title": { "en": "Sign in", "es": "Iniciar sesión" },
   "auth.noAccount": { "en": "Don't have an account?", "es": "¿No tenés una cuenta?" },
+  "auth.register.checkEmail.lede": { "en": "We sent a confirmation link to the address you entered. Click it to activate your account, then sign in below.", "es": "Te enviamos un link de confirmación a la dirección que ingresaste. Hacé clic en el link para activar tu cuenta y después iniciá sesión." },
+  "auth.register.checkEmail.title": { "en": "Check your email", "es": "Revisá tu email" },
   "auth.register.lede": { "en": "Submit projects for Investment Readiness Index&trade; scoring and Multilateral Finance Navigator&trade; recommendations.", "es": "Enviá proyectos para obtener un puntaje del Investment Readiness Index&trade; y recomendaciones del Multilateral Finance Navigator&trade;." },
   "auth.register.submit": { "en": "Create Account", "es": "Crear Cuenta" },
   "auth.register.title": { "en": "Create your account", "es": "Creá tu cuenta" },
@@ -3353,26 +3455,88 @@ const I18N = {
   "mfa.submit": { "en": "Verify", "es": "Verificar" },
   "mfa.title": { "en": "Enter verification code", "es": "Ingresá el código de verificación" },
   "np.edit.lede": { "en": "Update the project details below. INA will re-run the Investment Readiness Index&trade; analysis against your changes.", "es": "Actualizá los datos del proyecto a continuación. INA volverá a ejecutar el análisis del Investment Readiness Index&trade; sobre los cambios." },
-  "np.edit.reanalyze": { "en": "Saving changes will re-run the Investment Readiness Index&trade; analysis against the updated description.", "es": "Guardar los cambios volverá a ejecutar el análisis del Investment Readiness Index&trade; sobre la descripción actualizada." },
+  "np.edit.reanalyze": { "en": "Saving changes clears the current analysis — run the Investment Readiness Index&trade; again manually from the project page afterwards.", "es": "Guardar los cambios borra el análisis actual — volvé a ejecutar el Investment Readiness Index&trade; manualmente desde la ficha del proyecto." },
   "np.edit.submit": { "en": "Save Changes", "es": "Guardar Cambios" },
   "np.edit.title": { "en": "Edit Project", "es": "Editar Proyecto" },
   "np.f.beneficiaries": { "en": "Beneficiaries reached (households, optional)", "es": "Beneficiarios alcanzados (hogares, opcional)" },
   "np.f.beneficiaries.help": { "en": "For last-mile/universal-access projects — the number of households, businesses or public establishments the project reaches. Strengthens the case for Universal Service Fund financing.", "es": "Para proyectos de última milla/acceso universal — la cantidad de hogares, comercios o establecimientos públicos que alcanza el proyecto. Refuerza el caso para financiamiento de un Fondo de Servicio Universal." },
+  "np.f.duration": { "en": "Estimated duration (optional)", "es": "Duración estimada (opcional)" },
+  "np.f.priority": { "en": "Priority (optional)", "es": "Prioridad (opcional)" },
+  "np.f.technicalCriticality": { "en": "Technical criticality (optional)", "es": "Criticidad técnica (opcional)" },
+  "np.f.technicalCriticality.help": { "en": "The impact of a technical failure or delay — a different axis from priority above (which is about management urgency).", "es": "El impacto de una falla o demora técnica — un eje distinto de la prioridad de arriba (que refiere a la urgencia de gestión)." },
+  "np.f.fsuSection": { "en": "Universal Service Fund (FSU)", "es": "Fondo de Servicio Universal (FSU)" },
+  "np.f.fsuAmount": { "en": "FSU amount requested (ARS, optional)", "es": "Monto FSU solicitado (ARS, opcional)" },
+  "np.f.fsuAmountUsd": { "en": "FSU amount requested (USD, optional)", "es": "Monto FSU solicitado (USD, opcional)" },
+  "np.f.fsuScope": { "en": "FSU scope (optional)", "es": "Alcance FSU (opcional)" },
+  "np.f.fsuScope.help": { "en": "What the FSU financing would cover — localities, households, services.", "es": "Qué cubriría el financiamiento FSU — localidades, hogares, servicios." },
+  "np.f.budget": { "en": "Total estimated budget (ARS, optional)", "es": "Presupuesto total estimado (ARS, opcional)" },
+  "np.f.budgetUsd": { "en": "Total estimated budget (USD, optional)", "es": "Presupuesto total estimado (USD, opcional)" },
+  "np.f.budgetUsd.help": { "en": "Independent of the ARS figure above — fill in either, or both, if the source document quotes dollars.", "es": "Independiente de la cifra en pesos de arriba — completá una, la otra, o ambas, si el documento de origen cotiza en dólares." },
+  "np.f.exchangeRate": { "en": "Exchange rate used (ARS per USD, optional)", "es": "Tipo de cambio usado (ARS por USD, opcional)" },
+  "np.f.exchangeRate.help": { "en": "Shared by the budget and FSU dollar amounts on this project — used only to show an ARS-equivalent, never written into the ARS fields automatically.", "es": "Compartido por los montos en dólares de presupuesto y FSU de este proyecto — se usa solo para mostrar un equivalente en pesos, nunca se escribe automáticamente en los campos en ARS." },
+  "np.f.exchangeRateDate": { "en": "Exchange rate date (optional)", "es": "Fecha del tipo de cambio (opcional)" },
+  "np.f.complexity": { "en": "Complexity (optional)", "es": "Complejidad (opcional)" },
+  "np.f.complexity.help": { "en": "The project's intrinsic difficulty — moving parts, interdependencies, unproven technology. A different axis from priority and technical criticality above.", "es": "La dificultad intrínseca del proyecto — partes móviles, interdependencias, tecnología no probada. Un eje distinto de la prioridad y la criticidad técnica de arriba." },
+  "np.f.fsuPercentage": { "en": "FSU share of total budget (%, optional)", "es": "Porcentaje del presupuesto que cubre el FSU (%, opcional)" },
+  "np.f.fsuPercentage.help": { "en": "What percentage of the total budget the FSU would cover — e.g. 40 if it funds a first stage worth 40% of the project.", "es": "Qué porcentaje del presupuesto total cubriría el FSU — por ejemplo 40 si financia una primera etapa que representa el 40% del proyecto." },
+  "np.f.otherFinancingSection": { "en": "Other financing source", "es": "Otra fuente de financiamiento" },
+  "np.f.otherFinancingSection.help": { "en": "For any remaining share not covered by the FSU or a Program registered above — e.g. the proponent's own funds, or a credit line not modeled as a Program.", "es": "Para el resto del presupuesto no cubierto por el FSU ni por un Programa registrado arriba — por ejemplo, fondos propios del proponente, o una línea de crédito que no está modelada como Programa." },
+  "np.f.otherFinancingPercentage": { "en": "Share of total budget (%, optional)", "es": "Porcentaje del presupuesto (%, opcional)" },
+  "np.f.otherFinancingAmount": { "en": "Amount (ARS, optional)", "es": "Monto (ARS, opcional)" },
+  "np.f.otherFinancingNotes": { "en": "Source description (optional)", "es": "Descripción de la fuente (opcional)" },
+  "np.f.otherFinancingNotes.help": { "en": "E.g. \"Own funds from the Cooperative\" or \"Banco Nación credit line, not a registered Program.\"", "es": "Por ejemplo, \"Fondos propios de la Cooperativa\" o \"Línea de crédito del Banco Nación, no es un Programa registrado.\"" },
+  "np.f.entityName": { "en": "Generating entity (optional)", "es": "Entidad que genera el proyecto (opcional)" },
+  "np.f.entityType": { "en": "Entity type", "es": "Tipo de entidad" },
+  "np.f.entityType.help": { "en": "The organization submitting this project — regulator, government, ISP, manufacturer, integrator, etc.", "es": "El organismo que presenta este proyecto — ente regulador, gobierno, ISP, fabricante, integrador, etc." },
   "np.f.country": { "en": "Country", "es": "País" },
   "np.f.desc": { "en": "Project description", "es": "Descripción del proyecto" },
   "np.f.desc.help": { "en": "Include what you know: sector, size/scale, sponsor type, current stage, financing sources considered, key risks. The more detail, the more accurate the analysis.", "es": "Incluí lo que sepas: sector, tamaño/escala, tipo de patrocinador, etapa actual, fuentes de financiamiento consideradas, riesgos clave. Cuanto más detalle, más preciso el análisis." },
+  "np.f.useTemplate": { "en": "Fill using template", "es": "Completar usando template" },
+  "np.f.useProgramTemplate": { "en": "Fill using this program's template", "es": "Completar usando el template del programa" },
+  "pt.submit": { "en": "Use this & return to the project form", "es": "Usar esto y volver al formulario del proyecto" },
+  "pt.cancel": { "en": "Cancel & go back", "es": "Cancelar y volver" },
+  "pt.help": { "en": "Nothing here is saved yet — fill in what you know, then return to the project form. Everything gets compiled into the description field, which you can still edit by hand before submitting.", "es": "Todavía no se guarda nada acá — completá lo que sepas y volvé al formulario del proyecto. Todo se compila en el campo de descripción, que podés seguir editando a mano antes de enviar." },
+  "pt.autofill": { "en": "Autocomplete from documents", "es": "Autocompletar desde documentos" },
+  "pt.autofill.help": { "en": "Reads this project's uploaded documents (and anything already filled in on other templates for this project) to fill in what it can — only fields still blank are touched, so nothing already typed gets overwritten.", "es": "Lee los documentos ya subidos a este proyecto (y lo que ya se haya completado en otros templates de este mismo proyecto) para llenar lo que pueda — sólo toca campos vacíos, así que no pisa nada que ya hayas escrito." },
+  "pt.print": { "en": "Print / Save as PDF", "es": "Imprimir / Guardar como PDF" },
+  "pt.print.help": { "en": "Prints only what's filled in below, formatted as a clean document — handy for presenting a completed program template (e.g. USTDA) outside the platform. In the print dialog, choose \"Save as PDF\" as the destination to get a PDF file instead of printing on paper.", "es": "Imprime sólo lo que esté completado abajo, con formato de documento prolijo — útil para presentar un template de programa ya completado (por ej. USTDA) fuera de la plataforma. En el diálogo de impresión, elegí \"Guardar como PDF\" como destino para obtener un archivo PDF en vez de imprimir en papel." },
   "np.f.docs": { "en": "Supporting documents (optional)", "es": "Documentos de respaldo (opcional)" },
   "np.f.docs.drop": { "en": "Click to choose files, or drag and drop", "es": "Hacé clic para elegir archivos, o arrastralos aquí" },
   "np.f.docs.existing": { "en": "Already uploaded", "es": "Ya subidos" },
   "np.f.docs.section": { "en": "Supporting documents", "es": "Documentos de respaldo" },
-  "np.f.docs.section.help": { "en": "Nothing here is required to submit — attach what you have now and add the rest later from the Edit screen. All three categories below are used during evaluation.", "es": "Nada de esto es obligatorio para enviar — adjuntá lo que tengas ahora y sumá el resto más adelante desde la pantalla de Editar. Las tres categorías siguientes se usan durante la evaluación." },
-  "doc.type.technical": { "en": "Technical folder", "es": "Carpeta técnica" },
+  "np.f.docs.section.help": { "en": "Nothing here is required to submit — attach what you have now and add the rest later. Files upload immediately and are used during evaluation.", "es": "Nada de esto es obligatorio para enviar — adjuntá lo que tengas ahora y sumá el resto más adelante. Los archivos se suben al instante y se usan durante la evaluación." },
+  "np.wizard.step1": { "en": "Project", "es": "Proyecto" },
+  "np.wizard.step2": { "en": "Attached documents", "es": "Documentación adjunta" },
+  "np.wizard.step3": { "en": "Financing", "es": "Financiación" },
+  "np.wizard.step4": { "en": "Templates", "es": "Templates" },
+  "np.wizard.next": { "en": "Continue", "es": "Continuar" },
+  "np.wizard.back": { "en": "Back", "es": "Atrás" },
+  "np.wizard.cancel": { "en": "Cancel", "es": "Cancelar" },
+  "np.wizard.skip": { "en": "Skip for now", "es": "Omitir por ahora" },
+  "np.wizard.step1.name.err": { "en": "Enter the project name.", "es": "Ingresá el nombre del proyecto." },
+  "np.wizard.step1.type.err": { "en": "Choose a project type.", "es": "Elegí un tipo de proyecto." },
+  "np.wizard.step1.desc.err": { "en": "Enter a project description.", "es": "Ingresá una descripción del proyecto." },
+  "np.wizard.step1.creating": { "en": "Creating project…", "es": "Creando proyecto…" },
+  "np.wizard.step3.lede": { "en": "This project type has a guided template. Fill it in manually, or — if you uploaded documents earlier — let INA's AI agent scan them and prefill it automatically.", "es": "Este tipo de proyecto tiene un template guiado. Completalo manualmente, o — si subiste documentos antes — dejá que el agente de IA de INA los escanee y lo complete automáticamente." },
+  "np.wizard.step3.empty": { "en": "This project type doesn't have a guided template — there's nothing to fill in here.", "es": "Este tipo de proyecto no tiene un template guiado — no hay nada para completar acá." },
+  "np.wizard.step4.program.lede": { "en": "The Program selected in the Project section has its own guided template.", "es": "El Programa seleccionado en la sección Proyecto tiene su propio template guiado." },
+  "np.wizard.step4.prep.lede": { "en": "The project preparation funding program selected in Financing has its own guided template.", "es": "El programa de financiamiento para la elaboración del proyecto seleccionado en Financiación tiene su propio template guiado." },
+  "np.f.templateForType": { "en": "Corresponds to the project type:", "es": "Corresponde al tipo de proyecto:" },
+  "np.f.templateForProgram": { "en": "Corresponds to the financing program:", "es": "Corresponde al programa de financiamiento:" },
+  "np.f.templateForPrepProgram": { "en": "Corresponds to the project-preparation funding program:", "es": "Corresponde al programa de financiamiento para la elaboración del proyecto:" },
+  "doc.type.technical": { "en": "Technical description", "es": "Descripción técnica" },
   "doc.type.technical.help": { "en": "Engineering studies, technical specifications, route/site surveys, network diagrams.", "es": "Estudios de ingeniería, especificaciones técnicas, relevamientos de traza/sitio, diagramas de red." },
-  "doc.type.financial": { "en": "Financial & economic documentation", "es": "Documentación económico-financiera" },
+  "doc.type.economic": { "en": "Economic documentation", "es": "Documentación económica" },
+  "doc.type.economic.help": { "en": "Market analysis, demand studies, economic feasibility, cost-benefit analysis.", "es": "Análisis de mercado, estudios de demanda, factibilidad económica, análisis costo-beneficio." },
+  "doc.type.financial": { "en": "Financial documentation", "es": "Documentación financiera" },
   "doc.type.financial.help": { "en": "Financial model, cost estimates, revenue projections, funding sources considered.", "es": "Modelo financiero, estimación de costos, proyecciones de ingresos, fuentes de financiamiento consideradas." },
+  "doc.type.bylaws": { "en": "Bylaws / corporate charter", "es": "Estatuto" },
+  "doc.type.bylaws.help": { "en": "Corporate bylaws, articles of incorporation, governance documents.", "es": "Estatuto social, acta constitutiva, documentos de gobernanza." },
   "doc.type.administrative": { "en": "Administrative documentation", "es": "Documentación administrativa" },
-  "doc.type.administrative.help": { "en": "Legal/corporate documents, permits, licenses, regulatory filings.", "es": "Documentación legal/societaria, permisos, licencias, presentaciones regulatorias." },
-  "doc.type.other": { "en": "Other attachments", "es": "Otros adjuntos" },
+  "doc.type.administrative.help": { "en": "Legal/corporate documents, permits, regulatory filings.", "es": "Documentación legal/societaria, permisos, presentaciones regulatorias." },
+  "doc.type.licenses": { "en": "Licenses", "es": "Licencias" },
+  "doc.type.licenses.help": { "en": "Spectrum licenses, operating permits, regulatory authorizations.", "es": "Licencias de espectro, permisos de operación, autorizaciones regulatorias." },
+  "doc.type.other": { "en": "Other", "es": "Otros" },
   "np.f.name": { "en": "Project name", "es": "Nombre del proyecto" },
   "np.f.type": { "en": "Project type", "es": "Tipo de proyecto" },
   "np.lede": { "en": "Tell us about the project. Once submitted, INA applies the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade; to generate a scored analysis with financing recommendations.", "es": "Contanos sobre el proyecto. Una vez enviado, INA aplica el Investment Readiness Index&trade; y el Multilateral Finance Navigator&trade; para generar un análisis con puntaje y recomendaciones de financiamiento." },
@@ -3380,11 +3544,39 @@ const I18N = {
   "np.title": { "en": "Submit New Project", "es": "Enviar Nuevo Proyecto" },
   "pd.analyzing": { "en": "Applying the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade;…", "es": "Aplicando el Investment Readiness Index&trade; y el Multilateral Finance Navigator&trade;…" },
   "pd.analyzing.wait": { "en": "This usually takes under a minute. This page will update automatically.", "es": "Esto suele tardar menos de un minuto. Esta página se actualiza automáticamente." },
-  "wf.title": { "en": "Project Workflow", "es": "Flujo de Trabajo del Proyecto" },
-  "pd.description": { "en": "Project Description", "es": "Descripción del Proyecto" },
+  "pd.notAnalyzed": { "en": "This project hasn't been analyzed yet.", "es": "Este proyecto todavía no fue analizado." },
+  "pd.notAnalyzed.help": { "en": "Run the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade; whenever you're ready — it usually takes under a minute.", "es": "Ejecutá el Investment Readiness Index&trade; y el Multilateral Finance Navigator&trade; cuando estés listo — suele tardar menos de un minuto." },
+  "pd.startAnalysis": { "en": "AI Analysis", "es": "Análisis IA" },
+  "pd.analyzing.short": { "en": "Analyzing…", "es": "Analizando…" },
+  "wf.title": { "en": "Workflow", "es": "Flujo de Trabajo" },
+  "wf.step.notAnalyzed": { "en": "Not Analyzed", "es": "No Analizado" },
+  "pd.description": { "en": "Description", "es": "Descripción" },
+  "pd.attrs.title": { "en": "Project Attributes", "es": "Atributos del Proyecto" },
+  "pd.fsuAttr.title": { "en": "Universal Service Fund (FSU)", "es": "Fondo de Servicio Universal (FSU)" },
+  "pd.otherFinancing.title": { "en": "Other Financing Source", "es": "Otra Fuente de Financiamiento" },
   "pd.documents": { "en": "Supporting Documents", "es": "Documentos de Respaldo" },
-  "pd.editProject": { "en": "Edit Project", "es": "Editar Proyecto" },
-  "pd.deleteProject": { "en": "Delete Project", "es": "Eliminar Proyecto" },
+  "pd.programs.title": { "en": "Financing Programs", "es": "Programas de Financiamiento" },
+  "pd.programs.help": { "en": "Apply this project to funding for elaborating it (e.g. USTDA), and to one or more programs financing the project itself (e.g. FSU, BID).", "es": "Aplicá este proyecto a financiamiento para su elaboración (ej. USTDA), y a uno o más programas que financien el proyecto en sí (ej. FSU, BID)." },
+  "pd.programs.preparation": { "en": "Project preparation funding", "es": "Financiamiento para la elaboración del proyecto" },
+  "pd.programs.financing": { "en": "Project financing", "es": "Financiamiento del proyecto" },
+  "pd.programs.apply": { "en": "Apply to program", "es": "Aplicar a programa" },
+  "pd.programs.preparation.empty": { "en": "Not applied to any project-preparation funding yet.", "es": "Todavía no se aplicó a ningún financiamiento para elaboración del proyecto." },
+  "pd.programs.financing.empty": { "en": "Not applied to any financing program yet.", "es": "Todavía no se aplicó a ningún programa de financiamiento." },
+  "pd.programs.fsuGroup.empty": { "en": "No FSU financing registered for this project yet.", "es": "Todavía no hay financiamiento FSU registrado para este proyecto." },
+  "pd.programs.otherGroup.empty": { "en": "No other financing sources registered for this project yet.", "es": "Todavía no hay otras fuentes de financiamiento registradas para este proyecto." },
+  "pd.roadmaps.title": { "en": "Roadmaps", "es": "Hojas de Ruta" },
+  "pd.roadmaps.help": { "en": "Administrative and regulatory procedures this project needs to work through, one at a time — each run by a specific entity against a specific checklist. Only advisors and admins can start or advance one; the project owner sees the list read-only.", "es": "Hojas de ruta administrativas y regulatorias que este proyecto necesita completar, de a una — cada una ejecutada por una entidad específica sobre un checklist específico. Solo los asesores y administradores pueden iniciarlas o avanzarlas; el propietario del proyecto ve la lista en modo lectura." },
+  "pd.roadmaps.empty": { "en": "No roadmaps started yet for this project.", "es": "Todavía no se inició ninguna hoja de ruta para este proyecto." },
+  "pd.editProject": { "en": "Edit", "es": "Editar" },
+  "pd.deleteProject": { "en": "Delete", "es": "Eliminar" },
+  "pd.downloadPdf": { "en": "Download PDF", "es": "Descargar PDF" },
+  "pd.actions": { "en": "Actions", "es": "Acciones" },
+  "pd.close": { "en": "Close", "es": "Cerrar" },
+  "pd.newProject": { "en": "New Project", "es": "Nuevo Proyecto" },
+  "nav.project": { "en": "Project", "es": "Proyecto" },
+  "nav.help": { "en": "Help", "es": "Ayuda" },
+  "wf.actions.analysis": { "en": "Analysis", "es": "Análisis" },
+  "wf.returnToNotAnalyzed": { "en": "Return to Not Analyzed", "es": "Devolver a No Analizado" },
   "pd.error": { "en": "The analysis couldn't be completed.", "es": "No se pudo completar el análisis." },
   "pd.error.timeout": { "en": "This is taking longer than expected and may have timed out. Please retry — if it keeps happening, the document may be too large or complex to process.", "es": "Esto está tardando más de lo esperado y puede haber excedido el tiempo límite. Por favor reintentá — si sigue ocurriendo, el documento podría ser demasiado grande o complejo para procesar." },
   "fsu.cta": { "en": "FSU Scoring", "es": "Puntaje FSU" },
@@ -3394,7 +3586,7 @@ const I18N = {
   "fsu.title": { "en": "FSU Scoring", "es": "Puntaje FSU" },
   "fsu.kicker": { "en": "Fondo de Servicio Universal — Res. ENACOM 359/2025", "es": "Fondo de Servicio Universal — Res. ENACOM 359/2025" },
   "fsu.lede": { "en": "The 100-point selection-scoring matrix from ENACOM's \"Manual Estratégico de Elaboración de Proyectos\" — fill in the 7 criteria below and get an instant score for your fiber-to-the-home project's Certificado de Elegibilidad application.", "es": "La matriz de puntaje de selección de 100 puntos del \"Manual Estratégico de Elaboración de Proyectos\" de ENACOM — completá los 7 criterios y obtené al instante el puntaje para la solicitud del Certificado de Elegibilidad de tu proyecto de fibra." },
-  "fsu.disclaimer.top": { "en": "This is an orientation tool based on the manual's published point table — it doesn't replace ENACOM's own evaluation, and only applies to Fiber Backbone / Last Mile projects.", "es": "Esta es una herramienta orientativa basada en la tabla de puntaje publicada en el manual — no reemplaza la evaluación propia de ENACOM, y solo aplica a proyectos de Backbone de Fibra / Última Milla." },
+  "fsu.disclaimer.top": { "en": "This is an orientation tool based on the manual's published point table — it doesn't replace ENACOM's own evaluation, and only applies to Fiber Backbone / Last Mile projects, or any project applying under a Programa FATIC line (Mercado de Capitales, TASU, or Equipment Provision).", "es": "Esta es una herramienta orientativa basada en la tabla de puntaje publicada en el manual — no reemplaza la evaluación propia de ENACOM, y solo aplica a proyectos de Backbone de Fibra / Última Milla, o a cualquier proyecto que aplique bajo una línea del Programa FATIC (Mercado de Capitales, TASU o Provisión de Equipamiento)." },
   "fsu.c1.title": { "en": "Low Fiber Penetration", "es": "Baja Penetración de Fibra" },
   "fsu.c1.help": { "en": "Penetration = Fiber Accesses (ENACOM Open Data) ÷ Total Households (2022 Census / INDEC). Under 15%: 20 pts. 15%–38%: 15 pts. Over 38%: 0 pts.", "es": "Penetración = Accesos de Fibra (Datos Abiertos ENACOM) ÷ Total de Hogares (Censo 2022 / INDEC). Menos de 15%: 20 pts. Entre 15% y 38%: 15 pts. Más de 38%: 0 pts." },
   "fsu.f.totalHogares": { "en": "Total households (locality)", "es": "Total de hogares (localidad)" },
@@ -3427,9 +3619,15 @@ const I18N = {
   "prog.form.cancel": { "en": "Cancel", "es": "Cancelar" },
   "prog.f.name": { "en": "Program name", "es": "Nombre del programa" },
   "prog.f.org": { "en": "Presenting organization", "es": "Organismo que lo presenta" },
+  "prog.f.financingEntity": { "en": "Financing entity (optional)", "es": "Entidad financiadora (opcional)" },
+  "prog.f.financingEntity.help": { "en": "The institution that actually finances this program — not the presenting organization above. For Universal Service Fund programs, use exactly \"ENACOM-FSU\" so it groups correctly on the project's Financing tab.", "es": "La institución que efectivamente financia este programa — no es el organismo que lo presenta (campo anterior). Para programas del Fondo de Servicio Universal, usar exactamente \"ENACOM-FSU\" para que agrupe correctamente en la solapa de Financiamiento del proyecto." },
   "prog.f.orgType": { "en": "Organization type", "es": "Tipo de organismo" },
+  "prog.f.fundingStage": { "en": "What does this program fund?", "es": "¿Qué financia este programa?" },
+  "prog.f.fundingStage.help": { "en": "\"Project financing\" (default) funds the project's implementation, like FSU or a multilateral loan. \"Project preparation\" funds elaborating/structuring the project itself before it's finished — e.g. a USTDA feasibility-study grant.", "es": "\"Financiamiento del proyecto\" (por defecto) financia la implementación del proyecto, como el FSU o un préstamo multilateral. \"Financiamiento para elaboración\" financia la elaboración/estructuración del proyecto en sí antes de que esté terminado — por ejemplo, un grant de estudio de factibilidad de USTDA." },
   "prog.f.types": { "en": "Program type(s)", "es": "Tipo(s) de programa" },
   "prog.f.types.help": { "en": "Select every infrastructure type this program is expected to cover — a Program can span several, unlike an individual project.", "es": "Seleccioná todos los tipos de infraestructura que este programa prevé abarcar — un Programa puede abarcar varios, a diferencia de un proyecto individual." },
+  "prog.f.template": { "en": "Program template (optional)", "es": "Template del programa (opcional)" },
+  "prog.f.template.help": { "en": "If this program follows a standardized ENACOM financing line (e.g. a debt-instrument line under a Universal Service Fund program), pick its template — anyone submitting a project under this program then gets a guided, standardized form to apply.", "es": "Si este programa sigue una línea de financiamiento estandarizada de ENACOM (ej. una línea de instrumentos de deuda dentro de un programa del Fondo de Servicio Universal), elegí su template — quien presente un proyecto bajo este programa obtendrá un formulario guiado y estandarizado para aplicar." },
   "prog.f.desc": { "en": "Description (optional)", "es": "Descripción (opcional)" },
   "prog.f.docs": { "en": "Supporting documents (optional)", "es": "Documentos de respaldo (opcional)" },
   "prog.f.docs.help": { "en": "PDFs, images or other files describing the program — technical memos, maps, photos, presentations.", "es": "PDFs, imágenes u otros archivos que describan el programa — memorias técnicas, mapas, fotos, presentaciones." },
@@ -3440,9 +3638,46 @@ const I18N = {
   "prog.edit": { "en": "Edit", "es": "Editar" },
   "prog.delete": { "en": "Delete", "es": "Eliminar" },
   "prog.empty": { "en": "No programs yet — create one above, or leave the Program field blank on individual projects.", "es": "Todavía no hay programas — creá uno arriba, o dejá el campo Programa en blanco en los proyectos individuales." },
+  "rm.nav": { "en": "Roadmaps", "es": "Hojas de Ruta" },
+  "rm.title": { "en": "Roadmap Models", "es": "Modelos de Hoja de Ruta" },
+  "rm.lede": { "en": "A reusable checklist of the administrative and regulatory procedures a Roadmap needs to work through — each step naming the public and/or private entity involved. Define a model here, then start a Roadmap from it (with or without a project) using \"New Roadmap\".", "es": "Un checklist reutilizable de los pasos administrativos y regulatorios que una Hoja de Ruta necesita completar — cada paso nombrando la entidad pública y/o privada involucrada. Definí un modelo acá, y después iniciá una Hoja de Ruta a partir de él (con o sin proyecto) usando \"Nueva Hoja de Ruta\"." },
+  "rm.form.create": { "en": "Create Model", "es": "Crear Modelo" },
+  "rm.empty": { "en": "No roadmap models yet — create one above.", "es": "Todavía no hay modelos de hoja de ruta — creá uno arriba." },
+  "rm.form.new": { "en": "New Roadmap Model", "es": "Nuevo Modelo de Hoja de Ruta" },
+  "rm.form.edit": { "en": "Edit Roadmap Model", "es": "Editar Modelo de Hoja de Ruta" },
+  "rm.form.lede": { "en": "Set the name, optional project type, and the ordered list of steps advisors will load onto matching projects. Each step can name one responsible entity, plus any other entities involved in it.", "es": "Definí el nombre, el tipo de proyecto opcional, y la lista ordenada de pasos que los asesores cargarán en los proyectos que correspondan. Cada paso puede tener una entidad responsable, más cualquier otra entidad involucrada en él." },
+  "rm.f.name": { "en": "Model name", "es": "Nombre del modelo" },
+  "rm.f.type": { "en": "Project type", "es": "Tipo de proyecto" },
+  "rm.f.type.help": { "en": "Leave as \"Any project type\" to make this model available on every project, or pick one to scope it — e.g. only Early Warning System projects.", "es": "Dejá \"Cualquier tipo de proyecto\" para que este modelo esté disponible en todos los proyectos, o elegí uno para acotarlo — ej. solo proyectos de Alerta Temprana." },
+  "rm.f.desc": { "en": "Description (optional)", "es": "Descripción (opcional)" },
+  "rm.f.steps": { "en": "Steps", "es": "Pasos" },
+  "rm.f.addStep": { "en": "Add step", "es": "Agregar paso" },
+  "rm.f.required": { "en": "Required", "es": "Obligatorio" },
+  "rm.form.save": { "en": "Save Model", "es": "Guardar Modelo" },
+  "rm.f.allowedEntity": { "en": "Entity type allowed to perform it", "es": "Tipo de entidad que puede realizar esta hoja de ruta" },
+  "rm.f.allowedEntity.help": { "en": "Leave as \"Any entity type\" if any organization can run this checklist — or restrict it, e.g. Alerta Temprana is regulator-only.", "es": "Dejá \"Cualquier tipo de entidad\" si cualquier organización puede ejecutar este checklist — o restringilo, ej. Alerta Temprana es solo para entes reguladores." },
+  "rmi.form.new": { "en": "New Roadmap", "es": "Nueva Hoja de Ruta" },
+  "rmi.form.lede": { "en": "A Roadmap doesn't need a project to exist yet — it's often the step that comes before one. Pick the entity actually carrying it out and which checklist applies (optionally linking an existing project). Once started, the steps show up one at a time — you decide whether to advance past each one.", "es": "Una hoja de ruta no necesita que exista un proyecto todavía — muchas veces es el paso previo a uno. Elegí la entidad que efectivamente la va a realizar y qué checklist corresponde (opcionalmente vinculando un proyecto existente). Una vez iniciada, los pasos aparecen de a uno — vos decidís si avanzás a cada siguiente." },
+  "rmi.f.project": { "en": "Link to an existing project (optional)", "es": "Vincular a un proyecto existente (opcional)" },
+  "rmi.f.project.help": { "en": "Leave blank if this Roadmap comes before the project exists yet — you can always come back and manage it from here.", "es": "Dejalo en blanco si esta hoja de ruta es previa a que el proyecto exista — siempre podés volver y gestionarla desde acá." },
+  "rmi.f.entityName": { "en": "Entity performing this roadmap", "es": "Entidad que realiza la hoja de ruta" },
+  "rmi.f.entityType": { "en": "Entity type", "es": "Tipo de entidad" },
+  "rmi.f.template": { "en": "Roadmap (checklist)", "es": "Hoja de Ruta (checklist)" },
+  "rmi.f.template.help": { "en": "Shows models that match the performing entity's type (and this project's type, if you link one below).", "es": "Muestra los modelos que corresponden al tipo de entidad que la realiza (y al tipo del proyecto, si vinculás uno abajo)." },
+  "rmi.f.name": { "en": "Name for this instance", "es": "Nombre de esta hoja de ruta" },
+  "rmi.f.name.help": { "en": "Defaults to the checklist's name — rename it if you'll run this same checklist more than once (e.g. per region).", "es": "Por defecto usa el nombre del checklist — cambialo si vas a correr este mismo checklist más de una vez (ej. por región)." },
+  "rmi.f.start": { "en": "Start Roadmap", "es": "Iniciar Hoja de Ruta" },
+  "rmi.list.title": { "en": "Roadmap Instances", "es": "Instancias de Hoja de Ruta" },
+  "rmi.list.empty": { "en": "No roadmap instances started yet.", "es": "Todavía no se inició ninguna hoja de ruta." },
   "np.f.program": { "en": "Program (optional)", "es": "Programa (opcional)" },
   "np.f.program.help": { "en": "Group this project under a Program if it's part of a broader initiative with several independently-financed projects.", "es": "Agrupá este proyecto bajo un Programa si es parte de una iniciativa más amplia con varios proyectos financiados de forma independiente." },
   "np.f.program.create": { "en": "Create a new program →", "es": "Crear un nuevo programa →" },
+  "np.f.prepProgram": { "en": "Project preparation funding (optional)", "es": "Financiamiento para la elaboración del proyecto (opcional)" },
+  "np.f.prepProgram.help": { "en": "A program that funds elaborating/structuring this project itself before it's finished — e.g. a USTDA feasibility-study grant.", "es": "Un programa que financia la elaboración/estructuración de este proyecto en sí antes de que esté terminado — por ejemplo, un grant de estudio de factibilidad de USTDA." },
+  "np.f.financingPrograms": { "en": "Project financing program(s) (optional)", "es": "Programa(s) de financiamiento del proyecto (opcional)" },
+  "np.f.financingPrograms.help": { "en": "Select every program financing this project, if more than one — e.g. CAF and BID each funding a share of it.", "es": "Seleccioná todos los programas que financian este proyecto, si hay más de uno — por ejemplo, CAF y BID financiando cada uno un porcentaje." },
+  "np.f.financingPrograms.amountHelp": { "en": "For each selected program, enter its share as a % of the total budget, an amount in ARS, or both.", "es": "Para cada programa seleccionado, indicá su participación como % del presupuesto total, un monto en ARS, o ambos." },
+  "np.f.prepTemplateFilled": { "en": "✓ Template filled in — it will be saved when you submit.", "es": "✓ Template completado — se va a guardar cuando envíes el formulario." },
   "dash.filter.program": { "en": "Program", "es": "Programa" },
   "pd.finance.title": { "en": "Multilateral Finance Navigator&trade; Recommendations", "es": "Recomendaciones del Multilateral Finance Navigator&trade;" },
   "pd.loading": { "en": "Loading project…", "es": "Cargando proyecto…" },
@@ -3465,6 +3700,11 @@ const I18N = {
   "plat.live.lede": { "en": "Submit your project and get an Investment Readiness Index&trade; score across 8 dimensions, plus Multilateral Finance Navigator&trade; recommendations on which financing mechanisms realistically fit.", "es": "Enviá tu proyecto y obtené un puntaje del Investment Readiness Index&trade; en 8 dimensiones, además de recomendaciones del Multilateral Finance Navigator&trade; sobre qué mecanismos de financiamiento se ajustan realmente." },
   "plat.live.start": { "en": "Get Started", "es": "Empezar" },
   "plat.live.title": { "en": "Investment Readiness Index&trade; Self-Assessment", "es": "Autoevaluación del Investment Readiness Index&trade;" },
+  "ec.checking": { "en": "Confirming your email…", "es": "Confirmando tu email…" },
+  "ec.done.lede": { "en": "Your account is active. You can now sign in.", "es": "Tu cuenta está activa. Ya podés iniciar sesión." },
+  "ec.done.title": { "en": "Email confirmed", "es": "Email confirmado" },
+  "ec.invalid.lede": { "en": "Confirmation links only work once and expire after a while. Try signing in — if your account still isn&rsquo;t confirmed, register again to get a new link.", "es": "Los links de confirmación funcionan una sola vez y expiran después de un tiempo. Probá iniciar sesión — si tu cuenta todavía no está confirmada, registrate de nuevo para recibir un link nuevo." },
+  "ec.invalid.title": { "en": "This link is invalid or expired", "es": "Este link no es válido o expiró" },
   "rp.checking": { "en": "Verifying your reset link…", "es": "Verificando tu link de restablecimiento…" },
   "rp.done.lede": { "en": "Sign in again with your new password.", "es": "Iniciá sesión nuevamente con tu nueva contraseña." },
   "rp.done.title": { "en": "Password updated", "es": "Contraseña actualizada" },

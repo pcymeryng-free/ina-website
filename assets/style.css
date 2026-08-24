@@ -36,7 +36,7 @@ body{
 }
 img,svg{display:block; max-width:100%;}
 a{color:inherit; text-decoration:none;}
-ul{list-style:none;}
+ul,ol{list-style:none;}
 .wrap{max-width: var(--maxw); margin:0 auto; padding:0 32px;}
 @media (max-width:640px){ .wrap{padding:0 20px;} #mobileMenu .wrap{ padding:18px 20px !important; } }
 
@@ -282,12 +282,14 @@ hr.rule{ border:none; border-top:1px solid var(--paper-line); }
 @media (max-width:920px){ .fw-grid{ grid-template-columns:repeat(2,1fr);} }
 @media (max-width:600px){ .fw-grid{ grid-template-columns:1fr;} }
 
-.workflow{ margin-top: 64px; display:flex; align-items:center; overflow-x:auto; gap:0; padding-bottom: 12px; }
-.wf-node{ font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--text);
-  border:1px solid var(--amber-deep); border-radius:100px; padding:10px 16px; white-space:nowrap; flex:0 0 auto; background:var(--paper); }
+.workflow{ margin-top: 64px; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; row-gap:20px; column-gap:0; }
+.wf-step{ display:inline-flex; align-items:center; flex:0 0 auto; }
+.wf-node{ font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--text); line-height:1.3;
+  border:1px solid var(--amber-deep); border-radius:100px; padding:7px 11px; white-space:nowrap; flex:0 0 auto; background:var(--paper); }
 .on-dark .wf-node{ color:var(--text-on-dark); border-color:var(--amber); background:transparent; }
-.wf-arrow{ color: var(--muted); padding:0 10px; flex:0 0 auto; }
+.wf-arrow{ color: var(--muted); padding:0 5px; flex:0 0 auto; line-height:1; }
 .on-dark .wf-arrow{ color: var(--muted-on-dark); }
+@media (max-width:600px){ .wf-node{ font-size:9px; padding:6px 10px; } }
 
 /* ---------- Industries ---------- */
 .industry-grid{ display:grid; grid-template-columns: repeat(5,1fr); gap:1px; background:var(--paper-line); border:1px solid var(--paper-line); }
@@ -420,11 +422,18 @@ form.advisory .full{ grid-column: 1 / -1; }
 @media (max-width:900px){ .contact-onepage{ min-height:auto; } }
 
 /* ---------- Advisory Board ---------- */
-.board-grid{ display:grid; grid-template-columns: repeat(3,1fr); gap:1px; background: var(--paper-line); border:1px solid var(--paper-line); margin-top:30px; }
-.board-card{ background: var(--paper); padding: 30px 26px; display:flex; flex-direction:column; gap:14px; min-height:270px; border:1px dashed transparent; }
+/* Two columns by default — with a small, fixed roster (4 profiles today)
+   this reads as a clean, balanced 2x2 rather than leaving an orphan card
+   dangling in a third column. Falls back to one column on narrow screens. */
+.board-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:1px; background: var(--paper-line); border:1px solid var(--paper-line); margin-top:30px; }
+.board-card{
+  background: var(--paper); padding: 36px 34px; display:flex; flex-direction:row; align-items:flex-start;
+  gap:22px; min-height:180px; border:1px dashed transparent; transition: background .15s ease;
+}
+.board-card:hover{ background: var(--paper-2); }
 .board-card.placeholder{ border-color: var(--paper-line); }
 .board-avatar{
-  width:60px; height:60px; border-radius:50%; flex:0 0 auto;
+  width:88px; height:88px; border-radius:50%; flex:0 0 auto;
   background: var(--paper-2); border:1px dashed var(--muted);
   display:flex; align-items:center; justify-content:center;
   font-family:var(--mono); font-size:10px; letter-spacing:.04em; color:var(--muted); text-transform:uppercase;
@@ -434,11 +443,14 @@ form.advisory .full{ grid-column: 1 / -1; }
    placeholder border/background once there's an actual photo to show. */
 .board-avatar.has-photo{ border-style:solid; border-color:var(--paper-line); }
 .board-avatar img{ width:100%; height:100%; object-fit:cover; }
-.board-card h3{ font-size:18px; color:var(--text); }
-.board-card .role{ font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--amber-deep); margin-top:-8px; }
-.board-card .bio{ font-size:13.5px; color:var(--muted); margin-top:auto; line-height:1.5; }
-@media (max-width:920px){ .board-grid{ grid-template-columns: repeat(2,1fr); } }
-@media (max-width:600px){ .board-grid{ grid-template-columns: 1fr; } }
+.board-card-body{ display:flex; flex-direction:column; gap:10px; min-width:0; }
+.board-card h3{ font-size:19px; color:var(--text); }
+.board-card .role{ font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--amber-deep); margin-top:-6px; display:block; }
+.board-card .bio{ font-size:13.5px; color:var(--muted); line-height:1.55; }
+@media (max-width:760px){
+  .board-grid{ grid-template-columns: 1fr; }
+  .board-card{ flex-direction:column; padding:28px 26px; }
+}
 
 /* ---------- INA Platform (auth, dashboard, projects) ---------- */
 .auth-wrap{ max-width:460px; margin:0 auto; }
@@ -489,7 +501,19 @@ form.advisory .full{ grid-column: 1 / -1; }
   text-decoration:underline; padding-bottom:9px; white-space:nowrap; transition:color .15s ease;
 }
 .filter-bar .fclear:hover{ color:var(--amber-deep); }
-.filter-count{ font-size:12.5px; color:var(--muted); margin-bottom:14px; }
+.filter-count{ font-size:12.5px; color:var(--muted); margin:0; }
+.filter-count-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+/* ---------- List/Grid view toggle (dashboard.html) ---------- */
+.view-toggle{ display:flex; border:1px solid var(--paper-line); }
+.view-toggle-btn{
+  display:flex; align-items:center; justify-content:center; width:32px; height:30px;
+  background:var(--paper); border:none; color:var(--muted); cursor:pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.view-toggle-btn:not(:last-child){ border-right:1px solid var(--paper-line); }
+.view-toggle-btn svg{ width:15px; height:15px; }
+.view-toggle-btn:hover{ color:var(--amber-deep); }
+.view-toggle-btn.active{ background:var(--ink); color:var(--amber); }
 
 .project-list{ display:flex; flex-direction:column; gap:1px; background:var(--paper-line); border:1px solid var(--paper-line); }
 .project-row{
@@ -511,6 +535,71 @@ form.advisory .full{ grid-column: 1 / -1; }
 .project-row .maintext{ min-width:0; }
 .project-row .pname{ font-size:15.5px; font-weight:500; overflow-wrap:break-word; }
 .project-row .pmeta{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+/* Score badges (Self-Assessment / AI Analysis / FSU Scoring) shown under a
+   project row's name+type line on dashboard.html — see scoreBadgesHtml()
+   there. All three are colored by their SCORE, not by which of the three
+   they are — every badge gets one of the .stage-* modifiers below (via
+   INAPlatform.scoreBandClass()) so a 20/100 reads as "needs work" and an
+   85/100 reads as "strong" the same way regardless of whether it's a
+   Self-Assessment, an AI Analysis or an FSU Scoring — the exact same
+   0-25/25-50/50-75/75-100 bands and colors as .status-pill.stage-*. The
+   "Auto"/"IA"/"FSU" label text is what tells the three metrics apart, not
+   the color. */
+.score-badges{ display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+.score-badge{
+  font-family:var(--mono); font-size:10px; letter-spacing:.02em; white-space:nowrap;
+  padding:3px 8px; border-radius:100px; line-height:1.3;
+  background:var(--paper-2); color:var(--muted); border:1px solid var(--paper-line); /* fallback if no band resolves */
+}
+.score-badge i{ font-style:normal; opacity:.65; margin-left:1px; }
+.score-badge.stage-concept{ background:var(--paper-2); color:var(--muted); border:1px solid var(--paper-line); }
+.score-badge.stage-early{ background:var(--amber-soft); color:var(--amber-deep); border:1px solid var(--amber); }
+.score-badge.stage-advanced{ background:var(--amber); color:var(--ink); border:1px solid var(--amber-deep); }
+.score-badge.stage-ready{ background:var(--ink); color:var(--amber); border:1px solid var(--ink); }
+
+/* Budget/duration/complexity/technical-criticality tags — see attrTagsHtml()
+   in dashboard.html. Plain-text tags for budget/duration; complexity and
+   technical criticality additionally get a .tier-pill low/medium/high color
+   (same 3-tier convention as .score-badge.stage-*, just reusing muted/amber/
+   ink instead of the 4-band score scale, since these are a 3-tier scale). */
+.attr-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+.attr-tag{
+  font-family:var(--mono); font-size:10px; letter-spacing:.02em; white-space:nowrap;
+  padding:3px 8px; border-radius:100px; line-height:1.3;
+  background:var(--paper-2); color:var(--muted); border:1px solid var(--paper-line);
+}
+.attr-tag.tier-pill.tier-low{ background:var(--paper-2); color:var(--muted); border:1px solid var(--paper-line); }
+.attr-tag.tier-pill.tier-medium{ background:var(--amber-soft); color:var(--amber-deep); border:1px solid var(--amber); }
+.attr-tag.tier-pill.tier-high{ background:var(--ink); color:var(--amber); border:1px solid var(--ink); }
+
+/* ---------- Grid/card layout (dashboard.html "Grid view") ----------
+   Alternative to .project-list/.project-row above — same data, same
+   accent-border/actions, just arranged as a self-contained card in a
+   responsive grid instead of a wide row of columns. Toggled via
+   .view-toggle-btn / setViewMode() in dashboard.html. */
+.project-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px; }
+.project-card{
+  background:var(--paper); border:1px solid var(--paper-line); padding:18px;
+  border-left:3px solid transparent; display:flex; flex-direction:column; gap:12px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.project-card:hover{ box-shadow:0 2px 10px rgba(11,21,38,.06); }
+.project-card[data-accent="progress"]{ border-left-color: var(--amber); }
+.project-card[data-accent="ready"]{ border-left-color: var(--ink); }
+.project-card[data-accent="attention"]{ border-left-color: #b23b3b; }
+.project-card[data-accent="neutral"]{ border-left-color: var(--paper-line); }
+.project-card .pc-main{ display:block; color:inherit; text-decoration:none; }
+.project-card .pc-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+.project-card .pname{ font-size:15px; font-weight:500; overflow-wrap:break-word; }
+.project-card .pmeta{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+.project-card .pc-footer{
+  display:flex; align-items:center; gap:9px; color:inherit; text-decoration:none;
+  padding-top:12px; border-top:1px solid var(--paper-line); font-size:12.5px; color:var(--text);
+}
+.project-card .pc-footer .pc-owner-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.project-card .pc-footer .pc-date{ color:var(--muted); white-space:nowrap; }
+.project-card .icon-action-group{ justify-self:auto; justify-content:flex-end; }
+@media (max-width:520px){ .project-grid{ grid-template-columns:1fr; } }
 .project-row .powner{ font-size:12.5px; color:var(--text); display:flex; align-items:center; gap:9px; justify-content:flex-end; }
 .project-row .powner .mini-avatar{
   width:26px; height:26px; border-radius:50%; background:var(--amber); color:var(--ink); flex:0 0 auto;
@@ -545,6 +634,12 @@ form.advisory .full{ grid-column: 1 / -1; }
 .status-pill.stage-early{ background:var(--amber-soft); color:var(--amber-deep); border:1px solid var(--amber); }
 .status-pill.stage-advanced{ background:var(--amber); color:var(--ink); border:1px solid var(--amber-deep); }
 .status-pill.stage-ready{ background:var(--ink); color:var(--amber); border:1px solid var(--ink); }
+/* Roadmaps checklist status pills — see the Roadmaps block in
+   app/project.html and supabase/migration_v26_gestion_templates.sql. */
+.status-pill.roadmap-status-pending{ background:var(--paper-2); color:var(--muted); border:1px solid var(--paper-line); }
+.status-pill.roadmap-status-in_progress{ background:var(--amber-soft); color:var(--amber-deep); border:1px solid var(--amber); }
+.status-pill.roadmap-status-completed{ background:var(--ink); color:var(--amber); border:1px solid var(--ink); }
+.status-pill.roadmap-status-blocked{ background:#f4d9d9; color:#a13a3a; border:1px solid #d99; }
 .empty-state{ padding:64px 30px; text-align:center; border:1px dashed var(--paper-line); color:var(--muted); }
 .empty-state .ei{
   width:52px; height:52px; border-radius:50%; border:1px solid var(--paper-line); background:var(--paper-2);
@@ -584,6 +679,44 @@ form.advisory .full{ grid-column: 1 / -1; }
 .likert-caption{
   display:flex; justify-content:space-between; margin-top:6px; font-size:10.5px; color:var(--muted);
   font-family:var(--mono); text-transform:uppercase; letter-spacing:.04em; max-width:216px;
+}
+
+/* ---------- Guided project-submission templates (app/project-template.html) ---------- */
+.tmpl-section{ margin-top:32px; padding-top:24px; border-top:1px solid var(--paper-line); }
+.tmpl-section:first-of-type{ margin-top:0; padding-top:0; border-top:none; }
+.tmpl-section h3{
+  font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--amber-deep); margin-bottom:16px;
+}
+.tmpl-fields{ display:grid; grid-template-columns:1fr 1fr; gap:18px 28px; }
+@media (max-width:700px){ .tmpl-fields{ grid-template-columns:1fr; } }
+
+/* Print / Save-as-PDF view for a filled-in template (app/project-template.html).
+   Hidden on screen; only #tplPrintView is shown when the browser print dialog runs. */
+.print-only{ display:none; }
+@media print{
+  body *{ visibility:hidden; }
+  #tplPrintView, #tplPrintView *{ visibility:visible; }
+  #tplPrintView{
+    display:block; position:absolute; top:0; left:0; width:100%;
+    padding:0; margin:0; color:#000; background:#fff; font-family:var(--sans, Arial, sans-serif);
+  }
+  .p-header{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:20px;
+  }
+  .p-brand{ font-weight:700; font-size:14px; letter-spacing:.04em; text-transform:uppercase; }
+  .p-date{ font-size:11px; color:#333; }
+  #tplPrintView h1{ font-size:19px; margin:0 0 4px; }
+  .p-project{ font-size:12px; color:#333; margin:0 0 18px; }
+  #tplPrintView h3{
+    font-size:12px; text-transform:uppercase; letter-spacing:.05em;
+    margin:22px 0 10px; padding-bottom:4px; border-bottom:1px solid #999;
+  }
+  .p-field{ margin-bottom:10px; page-break-inside:avoid; }
+  .p-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:#555; margin:0 0 2px; }
+  .p-value{ font-size:12.5px; margin:0; white-space:pre-wrap; }
+  .p-notes{ margin-top:22px; }
 }
 
 /* ---------- Admin: user management panel ---------- */
@@ -633,6 +766,40 @@ form.advisory .full{ grid-column: 1 / -1; }
   border:1px solid var(--paper-line); white-space:nowrap;
 }
 
+/* Program funding_stage badge (see app/programs.html and
+   supabase/migration_v21_program_funding_stage_and_applications.sql) —
+   'preparation' Programs (fund elaborating the project itself, e.g. USTDA)
+   get an amber tint to stand out from the default 'financing' badge, which
+   just uses .type-tag's neutral styling. */
+.funding-stage-preparation{
+  background:rgba(217,146,46,.12); color:var(--amber-deep); border-color:rgba(217,146,46,.35);
+}
+
+/* Program financing_entity tag (see migration_v36_program_financing_entity.sql
+   and INAPlatform.isFsuFinancingEntity()) — programs financed by ENACOM-FSU
+   get a blue tint so they read as "part of the FSU group" at a glance in
+   app/programs.html's list and app/project.html's Financing tab grouping. */
+.financing-entity-fsu{
+  background:rgba(46,110,217,.12); color:#2e5fc7; border-color:rgba(46,110,217,.35);
+}
+
+/* Financing tab grouping (app/project.html's "Project financing"
+   subsection, see migration_v36_program_financing_entity.sql) — everything
+   FSU-related (the project's own direct FSU fields + any Program
+   application whose financing_entity is ENACOM-FSU) sits in one bordered
+   block, everything else in a second one, so the split reads clearly at a
+   glance. #fsuFinancingGroup reuses the same blue tint as
+   .financing-entity-fsu above for visual consistency. */
+.financing-group{
+  padding:14px 16px; border:1px solid var(--paper-line); border-radius:10px; background:var(--paper);
+}
+#fsuFinancingGroup{
+  border-color:rgba(46,110,217,.35); background:rgba(46,110,217,.05);
+}
+.financing-group-title{
+  font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:0;
+}
+
 .upload-drop{
   border:1px dashed var(--paper-line); padding:28px; text-align:center; cursor:pointer;
   font-size:13.5px; color:var(--muted); transition:all .15s ease;
@@ -641,6 +808,116 @@ form.advisory .full{ grid-column: 1 / -1; }
 .upload-list{ margin-top:14px; display:flex; flex-direction:column; gap:8px; }
 .upload-list .uf{ display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:8px 12px; background:var(--paper-2); }
 .upload-list .uf button{ background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; line-height:1; }
+.upload-status{ font-size:12px; color:var(--amber-deep); margin-top:8px; min-height:14px; }
+
+/* ---------- Roadmaps ---------- */
+/* Per-project checklist rows in app/project.html's Roadmaps block — see
+   supabase/migration_v26_gestion_templates.sql. Same look in both the
+   advisor/admin editable variant and the project owner's read-only
+   variant (renderRoadmapInstanceRow() in app/project.html branches the HTML, not
+   the container styling). */
+.roadmap-row{ padding:14px 16px; border:1px solid var(--paper-line); border-radius:10px; background:var(--paper); }
+/* Used as a clickable card linking to roadmap-instance.html (project.html's
+   Roadmaps list) as well as the non-interactive step cards there — the
+   hover only matters for the <a> variant, harmless on the rest. */
+a.roadmap-row:hover{ border-color:var(--amber); }
+.roadmap-row input[type="text"], .roadmap-row select, .roadmap-row textarea, .roadmap-row input[type="date"]{
+  border:none; border-bottom:1px solid var(--paper-line); background:transparent;
+  font-family:var(--sans); color:var(--text); border-radius:0;
+}
+.roadmap-row input[type="text"]:focus, .roadmap-row select:focus, .roadmap-row textarea:focus, .roadmap-row input[type="date"]:focus{
+  outline:none; border-bottom-color:var(--amber);
+}
+.roadmap-row-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.roadmap-row textarea{ width:100%; font-size:13px; padding:8px 2px; resize:vertical; min-height:44px; }
+.roadmap-row-meta{
+  display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:8px; font-size:12px; color:var(--muted);
+}
+
+/* Step-editor rows in app/new-roadmap-template.html — dynamic, reorderable
+   list of { title, description, entity, entity type, required } used to
+   build a roadmap_templates + roadmap_template_steps definition. */
+.roadmap-step-row{ padding:16px 18px; border:1px solid var(--paper-line); border-radius:10px; background:var(--paper-2); }
+.roadmap-step-row input[type="text"], .roadmap-step-row select, .roadmap-step-row textarea{
+  border:none; border-bottom:1px solid var(--paper-line); background:transparent;
+  font-family:var(--sans); color:var(--text); border-radius:0;
+}
+.roadmap-step-row input[type="text"]:focus, .roadmap-step-row select:focus, .roadmap-step-row textarea:focus{
+  outline:none; border-bottom-color:var(--amber);
+}
+.roadmap-step-row-head{ display:flex; align-items:center; gap:10px; }
+.roadmap-step-num{
+  flex:0 0 auto; width:22px; height:22px; border-radius:50%; background:var(--amber-soft); color:var(--amber-deep);
+  font-family:var(--mono); font-size:11px; display:flex; align-items:center; justify-content:center;
+}
+.roadmap-step-row-head input.rt-step-title{ flex:1 1 auto; min-width:120px; font-size:13.5px; padding:4px 2px; }
+.roadmap-step-row-actions{ display:flex; align-items:center; gap:4px; flex:0 0 auto; }
+.roadmap-step-row-actions .icon-btn:disabled{ opacity:.35; cursor:default; }
+.roadmap-step-row textarea{ width:100%; font-size:13px; padding:8px 2px; resize:vertical; min-height:50px; margin-top:8px; }
+.roadmap-step-row-fields{
+  display:grid; grid-template-columns:1fr auto auto; gap:10px 14px; margin-top:10px; align-items:center;
+}
+.roadmap-step-row-fields input[type="text"]{ font-size:12.5px; padding:8px 2px; }
+.roadmap-step-row-fields select{ font-size:12.5px; padding:8px 2px; }
+@media (max-width:640px){ .roadmap-step-row-fields{ grid-template-columns:1fr; } }
+
+/* Involved-entities chip list (app/new-roadmap-template.html) — a step's
+   OTHER participating entities, distinct from its single responsible
+   entity above (.roadmap-step-row-fields' first input). Free-form tags,
+   added via Enter/+ Add and removed individually — see MMM4 in
+   PLATFORM_SETUP.md and migration_v29_gestion_step_entities.sql. */
+.roadmap-step-involved .rt-step-involved-input{
+  border:none; border-bottom:1px solid var(--paper-line); background:transparent;
+  font-family:var(--sans); color:var(--text); border-radius:0; font-size:12.5px; padding:8px 2px;
+}
+.roadmap-step-involved .rt-step-involved-input:focus{ outline:none; border-bottom-color:var(--amber); }
+.entity-chip-list{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; min-height:0; }
+.entity-chip{
+  display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:4px 6px 4px 10px;
+  border-radius:100px; background:var(--paper); border:1px solid var(--paper-line); color:var(--text);
+}
+.entity-chip-remove{
+  border:none; background:none; cursor:pointer; color:var(--muted); font-size:14px; line-height:1;
+  padding:2px 4px; border-radius:50%;
+}
+.entity-chip-remove:hover{ background:var(--paper-2); color:#a13a3a; }
+
+/* New-project 4-section interface (app/new-project.html) — name+type /
+   documents / optional AI template autofill / remaining details — one
+   .wizard-panel visible at a time, identical in both create and edit mode.
+   Every section name below is directly clickable to jump straight there
+   (see the wizard-step-dot click handler + canJumpTo() in
+   app/new-project.html) — section 1 is always reachable, sections 2-4 as
+   soon as the project record exists (immediately when editing; after
+   section 1's "Continue" when creating). See PLATFORM_SETUP.md for the
+   full rationale. */
+.wizard-steps{ display:flex; flex-wrap:wrap; gap:0; margin-bottom:32px; border-bottom:1px solid var(--paper-line); }
+.wizard-step-dot{
+  font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--muted); padding:0 20px 12px 0; margin-right:20px; border-bottom:2px solid transparent;
+  white-space:nowrap; cursor:pointer; transition:color .15s ease;
+}
+.wizard-step-dot .num{
+  display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px;
+  border-radius:50%; background:var(--paper-2); color:var(--muted); font-size:10px; margin-right:7px;
+  transition:all .15s ease;
+}
+.wizard-step-dot:hover{ color:var(--amber-deep); }
+.wizard-step-dot:hover .num{ background:var(--amber); color:#fff; }
+.wizard-step-dot.active{ color:var(--amber-deep); border-bottom-color:var(--amber); }
+.wizard-step-dot.active .num{ background:var(--amber); color:#fff; }
+/* .done marks a section actually visited and now behind the current one —
+   purely a progress checkmark, not a clickability gate (every section name
+   is clickable per the comment above). */
+.wizard-step-dot.done{ color:var(--text); }
+.wizard-step-dot.done .num{ background:var(--amber-soft); color:var(--amber-deep); }
+.wizard-panel{ display:none; }
+.wizard-panel.active{ display:block; }
+.wizard-nav{ display:flex; gap:12px; margin-top:30px; align-items:center; }
+.wizard-skip{ font-size:12.5px; color:var(--muted); text-decoration:underline; cursor:pointer; background:none; border:none; padding:0; }
+.template-offer-card{
+  border:1px solid var(--paper-line); background:var(--paper-2); padding:22px; text-align:left;
+}
 
 .readiness-score{ display:flex; align-items:center; gap:28px; flex-wrap:wrap; }
 .score-circle{
@@ -704,6 +981,15 @@ form.advisory .full{ grid-column: 1 / -1; }
 .info-block ol li{ counter-increment:item; }
 .info-block ol li::before{ content: counter(item) "."; position:absolute; left:0; color:var(--amber-deep); font-family:var(--mono); font-size:12px; }
 .info-block ul li::before{ content:"—"; position:absolute; left:0; color:var(--amber-deep); }
+
+/* Project Attributes grid on project.html (#attrsBlock/#attrsGrid) — one
+   labeled item per optional project attribute (beneficiaries, budget,
+   duration, priority, technical criticality, complexity), shown together
+   instead of packed into a single meta line. See renderAttrs() there. */
+.attrs-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:16px 24px; }
+.attr-item{ display:flex; flex-direction:column; gap:4px; }
+.attr-item-label{ font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--amber-deep); }
+.attr-item-value{ font-size:14.5px; color:var(--text); }
 
 .dim-bars{ display:flex; flex-direction:column; gap:14px; margin-top:26px; }
 .dim-bar{ display:grid; grid-template-columns: 200px 1fr; gap:16px; align-items:center; }
