@@ -1,9 +1,14 @@
 {
   "name": "ina-platform-api",
   "private": true,
-  "description": "Dependencies for the Vercel serverless functions under api/. Not published; the static site itself (index.html, app/, assets/) has zero dependencies and needs no build step.",
+  "description": "Dependencies for the Vercel serverless functions under api/, and for local-server.js — an optional, fully local way to run the same site + AI endpoints on your own machine (no Vercel involved) against a local model via Ollama. The static site itself (index.html, app/, assets/) needs no build step either way. See 'Running everything locally, without Vercel' in PLATFORM_SETUP.md.",
+  "scripts": {
+    "local": "node local-server.js"
+  },
   "dependencies": {
     "pdf-parse": "2.4.5",
-    "@aws-sdk/client-bedrock-runtime": "^3.1095.0"
+    "@aws-sdk/client-bedrock-runtime": "^3.1095.0",
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5"
   }
 }
