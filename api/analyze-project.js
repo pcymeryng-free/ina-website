@@ -166,27 +166,30 @@ const SYSTEM_PROMPT = `You are the analysis engine behind two of INA's (Internat
 
 You will be given a project's name, type, country and description, and possibly supporting documents. Assess honestly based only on the evidence provided — if information for a dimension is missing or unclear, score it conservatively low and say so in the rationale rather than assuming strength. Do not inflate scores. Be specific and reference concrete details from the project description in your rationales wherever possible, rather than generic boilerplate.
 
+INA's platform serves both Spanish- and English-speaking users, so every rationale/action/summary field below must be written TWICE — once in Spanish (the "_es" field) and once in English (the "_en" field). Write natural, idiomatic prose in each language (not a literal word-for-word translation of one from the other), but keep the underlying assessment identical in both: the same scores, the same priorities, the same recommended mechanisms.
+
 Respond with ONLY a single valid JSON object — no markdown code fences, no commentary before or after — matching exactly this shape:
 
 {
   "overall_score": <integer 0-100>,
   "dimensions": {
-    "legal_regulatory": {"score": <0-100>, "rationale": "<1-2 sentences, specific to this project>"},
-    "technical_maturity": {"score": <0-100>, "rationale": "<...>"},
-    "financial_robustness": {"score": <0-100>, "rationale": "<...>"},
-    "sponsor_capacity": {"score": <0-100>, "rationale": "<...>"},
-    "market_demand": {"score": <0-100>, "rationale": "<...>"},
-    "environmental_social": {"score": <0-100>, "rationale": "<...>"},
-    "risk_mitigation": {"score": <0-100>, "rationale": "<...>"},
-    "governance_reporting": {"score": <0-100>, "rationale": "<...>"}
+    "legal_regulatory": {"score": <0-100>, "rationale_es": "<1-2 sentences, specific to this project, in Spanish>", "rationale_en": "<same content, in English>"},
+    "technical_maturity": {"score": <0-100>, "rationale_es": "<...>", "rationale_en": "<...>"},
+    "financial_robustness": {"score": <0-100>, "rationale_es": "<...>", "rationale_en": "<...>"},
+    "sponsor_capacity": {"score": <0-100>, "rationale_es": "<...>", "rationale_en": "<...>"},
+    "market_demand": {"score": <0-100>, "rationale_es": "<...>", "rationale_en": "<...>"},
+    "environmental_social": {"score": <0-100>, "rationale_es": "<...>", "rationale_en": "<...>"},
+    "risk_mitigation": {"score": <0-100>, "rationale_es": "<...>", "rationale_en": "<...>"},
+    "governance_reporting": {"score": <0-100>, "rationale_es": "<...>", "rationale_en": "<...>"}
   },
   "gap_roadmap": [
-    {"priority": "high|medium|low", "action": "<specific, actionable next step>"}
+    {"priority": "high|medium|low", "action_es": "<specific, actionable next step, in Spanish>", "action_en": "<same content, in English>"}
   ],
   "financing_recommendations": [
-    {"mechanism": "<one of the mechanisms listed above, verbatim>", "rationale": "<why it fits this specific project>"}
+    {"mechanism": "<one of the mechanisms listed above, verbatim — this field is not translated>", "rationale_es": "<why it fits this specific project, in Spanish>", "rationale_en": "<same content, in English>"}
   ],
-  "summary": "<2-3 sentence executive summary of overall readiness and the single most important next step>"
+  "summary_es": "<2-3 sentence executive summary of overall readiness and the single most important next step, in Spanish>",
+  "summary_en": "<same content, in English>"
 }
 
 overall_score must be the weighted average of the 8 dimension scores (equal weighting is fine unless the project profile clearly warrants otherwise). gap_roadmap should have 3-6 items ordered by priority. financing_recommendations should have 2-4 items, each mechanism used at most once.`;
@@ -301,7 +304,8 @@ function buildMockAnalysis(project) {
     sum += score;
     dimensions[key] = {
       score,
-      rationale: `[SIMULATED — no model was called] Placeholder rationale for ${key.replace(/_/g, ' ')}.`,
+      rationale_es: `[SIMULADO — no se llamó a ningún modelo] Justificación de ejemplo para ${key.replace(/_/g, ' ')}.`,
+      rationale_en: `[SIMULATED — no model was called] Placeholder rationale for ${key.replace(/_/g, ' ')}.`,
     };
   });
   const overallScore = Math.round(sum / DIMENSION_KEYS.length);
@@ -313,23 +317,27 @@ function buildMockAnalysis(project) {
     .slice(0, 3);
   const gapRoadmap = lowestThree.map((d, i) => ({
     priority: i === 0 ? 'high' : i === 1 ? 'medium' : 'low',
-    action: `[SIMULATED] Example next step for ${d.key.replace(/_/g, ' ')} — not a real recommendation.`,
+    action_es: `[SIMULADO] Próximo paso de ejemplo para ${d.key.replace(/_/g, ' ')} — no es una recomendación real.`,
+    action_en: `[SIMULATED] Example next step for ${d.key.replace(/_/g, ' ')} — not a real recommendation.`,
   }));
 
   const shuffledMechanisms = [...FINANCING_MECHANISMS].sort(() => Math.random() - 0.5);
   const financingRecommendations = shuffledMechanisms.slice(0, 2).map((mechanism) => ({
     mechanism,
-    rationale: '[SIMULATED] Example financing mechanism — not a real recommendation.',
+    rationale_es: '[SIMULADO] Mecanismo de financiamiento de ejemplo — no es una recomendación real.',
+    rationale_en: '[SIMULATED] Example financing mechanism — not a real recommendation.',
   }));
 
-  const summary = `⚠️ SIMULATED RESULT — no AI model was called (LLM_PROVIDER=bedrock-mock). This is placeholder data for trying out the "${project.name}" submission flow, not a real assessment of this project. Set LLM_PROVIDER to 'anthropic' or 'bedrock' for a real analysis.`;
+  const summaryEs = `⚠️ RESULTADO SIMULADO — no se llamó a ningún modelo de IA (LLM_PROVIDER=bedrock-mock). Estos son datos de prueba para probar el flujo de carga de "${project.name}", no una evaluación real de este proyecto. Configurá LLM_PROVIDER como 'anthropic' o 'bedrock' para un análisis real.`;
+  const summaryEn = `⚠️ SIMULATED RESULT — no AI model was called (LLM_PROVIDER=bedrock-mock). This is placeholder data for trying out the "${project.name}" submission flow, not a real assessment of this project. Set LLM_PROVIDER to 'anthropic' or 'bedrock' for a real analysis.`;
 
   return JSON.stringify({
     overall_score: overallScore,
     dimensions,
     gap_roadmap: gapRoadmap,
     financing_recommendations: financingRecommendations,
-    summary,
+    summary_es: summaryEs,
+    summary_en: summaryEn,
   });
 }
 
@@ -741,13 +749,23 @@ async function handler(req, res) {
       return json(res, 502, { error: 'Could not parse analysis output', raw: rawText.slice(0, 2000) });
     }
 
-    // Normalize / validate before persisting.
+    // Normalize / validate before persisting. Every text field comes in a
+    // bilingual pair (_es/_en) since the SYSTEM_PROMPT above asks the model
+    // for both at once — see migration_v40_bilingual_analysis.sql. dimensions/
+    // gap_roadmap/financing_recommendations/summary (unsuffixed) are always
+    // the Spanish version, matching every other row already on this
+    // platform; the *_en variables are the English translation, persisted
+    // to framework_analysis's _en columns so app/project.html can show
+    // either one depending on the UI language (see
+    // INAPlatform.localizeAnalysis() in assets/platform.js).
     const dimensions = {};
+    const dimensionsEn = {};
     let sum = 0;
     DIMENSION_KEYS.forEach((key) => {
       const entry = (parsed.dimensions || {})[key] || {};
       const score = clampScore(entry.score);
-      dimensions[key] = { score, rationale: String(entry.rationale || '').slice(0, 500) };
+      dimensions[key] = { score, rationale: String(entry.rationale_es || '').slice(0, 500) };
+      dimensionsEn[key] = { score, rationale: String(entry.rationale_en || '').slice(0, 500) };
       sum += score;
     });
     const overallScore = parsed.overall_score != null
@@ -755,21 +773,28 @@ async function handler(req, res) {
       : Math.round(sum / DIMENSION_KEYS.length);
     const stage = stageForScore(overallScore);
 
-    const gapRoadmap = Array.isArray(parsed.gap_roadmap)
-      ? parsed.gap_roadmap.slice(0, 6).map((it) => ({
-          priority: ['high', 'medium', 'low'].includes((it.priority || '').toLowerCase()) ? it.priority.toLowerCase() : 'medium',
-          action: String(it.action || '').slice(0, 300),
-        }))
-      : [];
+    const gapRoadmapSource = Array.isArray(parsed.gap_roadmap) ? parsed.gap_roadmap.slice(0, 6) : [];
+    const gapRoadmap = gapRoadmapSource.map((it) => ({
+      priority: ['high', 'medium', 'low'].includes((it.priority || '').toLowerCase()) ? it.priority.toLowerCase() : 'medium',
+      action: String(it.action_es || '').slice(0, 300),
+    }));
+    const gapRoadmapEn = gapRoadmapSource.map((it) => ({
+      priority: ['high', 'medium', 'low'].includes((it.priority || '').toLowerCase()) ? it.priority.toLowerCase() : 'medium',
+      action: String(it.action_en || '').slice(0, 300),
+    }));
 
-    const financingRecommendations = Array.isArray(parsed.financing_recommendations)
-      ? parsed.financing_recommendations.slice(0, 4).map((it) => ({
-          mechanism: FINANCING_MECHANISMS.includes(it.mechanism) ? it.mechanism : String(it.mechanism || '').slice(0, 80),
-          rationale: String(it.rationale || '').slice(0, 400),
-        }))
-      : [];
+    const financingSource = Array.isArray(parsed.financing_recommendations) ? parsed.financing_recommendations.slice(0, 4) : [];
+    const financingRecommendations = financingSource.map((it) => ({
+      mechanism: FINANCING_MECHANISMS.includes(it.mechanism) ? it.mechanism : String(it.mechanism || '').slice(0, 80),
+      rationale: String(it.rationale_es || '').slice(0, 400),
+    }));
+    const financingRecommendationsEn = financingSource.map((it) => ({
+      mechanism: FINANCING_MECHANISMS.includes(it.mechanism) ? it.mechanism : String(it.mechanism || '').slice(0, 80),
+      rationale: String(it.rationale_en || '').slice(0, 400),
+    }));
 
-    const summary = String(parsed.summary || '').slice(0, 800);
+    const summary = String(parsed.summary_es || '').slice(0, 800);
+    const summaryEn = String(parsed.summary_en || '').slice(0, 800);
 
     await supabaseRest('/framework_analysis', {
       method: 'POST',
@@ -782,6 +807,10 @@ async function handler(req, res) {
         gap_roadmap: gapRoadmap,
         financing_recommendations: financingRecommendations,
         summary,
+        dimensions_en: dimensionsEn,
+        gap_roadmap_en: gapRoadmapEn,
+        financing_recommendations_en: financingRecommendationsEn,
+        summary_en: summaryEn,
         raw_model_output: rawText.slice(0, 10000),
       },
       serviceKey: SUPABASE_SERVICE_ROLE_KEY,
