@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Roadmaps — INA Platform" data-i18n-es="Hojas de ruta — Plataforma INA">Roadmaps — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Regulator-defined checklists of administrative and regulatory procedures for a project." data-i18n-es="Checklists definidos por entes reguladores de hojas de ruta administrativas y regulatorias de un proyecto." content="Regulator-defined checklists of administrative and regulatory procedures for a project.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/app.css?v=7">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="roadmap-templates.html" class="active" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="platform-header reveal">
+      <div>
+        <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+        <h1 class="h-section" style="margin-top:14px;"><span data-i18n="rm.title">Roadmaps</span></h1>
+        <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="rm.lede">A reusable checklist of the administrative and regulatory procedures a Roadmap needs to work through — each step naming the public and/or private entity involved. Define a model here, then start a Roadmap from it (with or without a project) using "New Roadmap".</span></p>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="roadmap-instance.html" class="btn ghost" id="newInstanceBtn"><span data-i18n="rmi.form.new">New Roadmap</span></a>
+        <a href="new-roadmap-template.html" class="btn amber" id="createTemplateBtn"><span data-i18n="rm.form.create">Create Model</span></a>
+      </div>
+    </div>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="templatesBody" style="display:none; margin-top:24px;">
+      <div id="templateList" style="display:flex; flex-direction:column; gap:14px;"></div>
+
+      <div class="empty-state" id="emptyState" style="display:none; margin-top:18px;">
+        <div class="ei"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.5"/></svg></div>
+        <p><span data-i18n="rm.empty">No roadmap models yet — create one above.</span></p>
+      </div>
+    </div>
+
+    <!-- Every Roadmap instance ever started, whether or not it's linked to
+         a project — a Roadmap is often the step that comes BEFORE a
+         project exists, so it wouldn't otherwise show up anywhere (a
+         linked one also appears on its project's own "Roadmaps"
+         section; this is the only place an unlinked one is reachable
+         again after creation). -->
+    <div id="instancesBody" style="display:none; margin-top:48px;">
+      <h3 style="font-size:16px;"><span data-i18n="rmi.list.title">Roadmap Instances</span></h3>
+      <div id="instanceList" style="display:flex; flex-direction:column; gap:10px; margin-top:14px;"></div>
+      <div class="empty-state" id="instancesEmptyState" style="display:none; margin-top:18px;">
+        <div class="ei"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.5"/></svg></div>
+        <p><span data-i18n="rmi.list.empty">No roadmap instances started yet.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=40"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=46"></script>
+<script src="/assets/script.js?v=12"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const newLang = btn.getAttribute('data-lang');
+      document.documentElement.setAttribute('lang', newLang);
+      lang = newLang;
+      if (allTemplates.length) renderList();
+      if (allInstances.length) renderInstanceList();
+    });
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  // Not const — same stale-language-capture fix as programs.html/
+  // dashboard.html: this page renders template rows in plain JS (type
+  // badge, step count, edit/delete tooltips), none of which carry
+  // [data-i18n], so the lang-btn listener above needs a live variable to
+  // re-render against.
+  let lang = INAPlatform.currentLang();
+
+  let allTemplates = [];
+  let stepCounts = new Map();
+  let currentIsAdmin = false;
+  let allInstances = [];
+
+  function renderInstanceList() {
+    const list = document.getElementById('instanceList');
+    list.innerHTML = '';
+    document.getElementById('instancesEmptyState').style.display = allInstances.length ? 'none' : 'block';
+
+    allInstances.forEach((g) => {
+      const statusClass = g.status === 'completed' ? 'completed' : g.status === 'abandoned' ? 'blocked' : 'in_progress';
+      const projectTag = g.projects && g.projects.name
+        ? `<span class="type-tag">${g.projects.name}</span>`
+        : `<span class="type-tag">${lang === 'es' ? 'Sin proyecto asociado' : 'No project linked'}</span>`;
+      const row = document.createElement('a');
+      row.href = `roadmap-instance.html?id=${g.id}`;
+      row.className = 'roadmap-row';
+      row.style.display = 'block';
+      row.style.textDecoration = 'none';
+      row.style.color = 'inherit';
+      row.innerHTML = `
+        <div class="roadmap-row-head">
+          <strong style="font-size:13.5px; flex:1 1 auto;">${g.name}</strong>
+          <span class="status-pill roadmap-status-${statusClass}">${INAPlatform.roadmapInstanceStatusLabel(g.status)}</span>
+        </div>
+        <div class="roadmap-row-meta">
+          <span>${g.performing_entity_name} <span class="type-tag" style="margin-left:4px;">${INAPlatform.entityTypeLabel(g.performing_entity_type)}</span></span>
+          ${projectTag}
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function renderList() {
+    const list = document.getElementById('templateList');
+    list.innerHTML = '';
+    document.getElementById('emptyState').style.display = allTemplates.length ? 'none' : 'block';
+
+    allTemplates.forEach((t) => {
+      const count = stepCounts.get(t.id) || 0;
+      const countLabel = lang === 'es'
+        ? `${count} ${count === 1 ? 'paso' : 'pasos'}`
+        : `${count} ${count === 1 ? 'step' : 'steps'}`;
+      const typeTag = t.project_type
+        ? `<span class="type-tag">${INAPlatform.projectTypeLabel(t.project_type)}</span>`
+        : `<span class="type-tag">${lang === 'es' ? 'Cualquier tipo de proyecto' : 'Any project type'}</span>`;
+      const entityTag = t.allowed_entity_type
+        ? `<span class="type-tag">${INAPlatform.entityTypeLabel(t.allowed_entity_type)}</span>`
+        : `<span class="type-tag">${lang === 'es' ? 'Cualquier tipo de entidad' : 'Any entity type'}</span>`;
+
+      const row = document.createElement('div');
+      row.className = 'info-block';
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div style="min-width:0;">
+            <h4 style="margin-bottom:4px;">${t.name}</h4>
+            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;">${typeTag}${entityTag}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span class="fsu-pts">${countLabel}</span>
+            <div class="icon-action-group">
+              <a href="new-roadmap-template.html?id=${t.id}" class="icon-btn" title="${lang === 'es' ? 'Editar modelo' : 'Edit model'}">✎</a>
+              <button type="button" class="icon-btn icon-btn-delete" data-delete="${t.id}" title="${lang === 'es' ? 'Eliminar modelo' : 'Delete model'}">🗑</button>
+            </div>
+          </div>
+        </div>
+        ${t.description ? `<p style="margin-top:12px; font-size:13.5px; color:var(--muted); white-space:pre-wrap;">${t.description}</p>` : ''}
+      `;
+      list.appendChild(row);
+    });
+
+    list.querySelectorAll('[data-delete]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const t = allTemplates.find((x) => x.id === btn.getAttribute('data-delete'));
+        if (t) deleteTemplate(t);
+      });
+    });
+  }
+
+  async function deleteTemplate(t) {
+    const msg = lang === 'es'
+      ? `¿Está seguro que desea eliminar definitivamente el modelo "${t.name}"? Sus pasos se eliminan también. Los proyectos que ya cargaron hojas de ruta a partir de este modelo NO se ven afectados — sus hojas de ruta ya cargadas quedan intactas.`
+      : `Are you sure you want to permanently delete the model "${t.name}"? Its steps are deleted too. Projects that already loaded roadmaps from this model are NOT affected — their already-loaded checklist stays intact.`;
+    if (!confirm(msg)) return;
+    try {
+      await INAPlatform.deleteRoadmapTemplate(t.id);
+      allTemplates = allTemplates.filter((x) => x.id !== t.id);
+      renderList();
+    } catch (err) {
+      alert(lang === 'es'
+        ? `No se pudo eliminar el modelo: ${err.message || err}`
+        : `Couldn't delete the model: ${err.message || err}`);
+    }
+  }
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    let viewerProfile = null;
+    try {
+      viewerProfile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(viewerProfile.full_name);
+      document.getElementById('appUserName').textContent = viewerProfile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      currentIsAdmin = INAPlatform.isAdmin(viewerProfile);
+      if (currentIsAdmin) document.getElementById('adminNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    // Advisor/admin only, end to end — RLS (roadmap_templates_select_
+    // advisor_or_admin) would return an empty list to anyone else anyway,
+    // but redirecting is clearer than showing a confusing "no templates"
+    // page to a standard user who followed a stray link here.
+    if (!INAPlatform.canManageRoadmaps(viewerProfile)) {
+      location.href = 'dashboard.html';
+      return;
+    }
+    document.getElementById('roadmapsNavLink').style.display = 'inline';
+
+    try {
+      allTemplates = await INAPlatform.listRoadmapTemplates();
+      const counts = await Promise.all(allTemplates.map((t) => INAPlatform.listRoadmapTemplateSteps(t.id)));
+      stepCounts = new Map(allTemplates.map((t, i) => [t.id, counts[i].length]));
+    } catch (e) {
+      allTemplates = [];
+    }
+
+    try {
+      allInstances = await INAPlatform.listAllRoadmapInstances();
+    } catch (e) {
+      allInstances = [];
+    }
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('templatesBody').style.display = 'block';
+    document.getElementById('instancesBody').style.display = 'block';
+    renderList();
+    renderInstanceList();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

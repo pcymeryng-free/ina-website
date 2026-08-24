@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=3">
-<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/app.css?v=7">
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -20,8 +20,8 @@
     </a>
     <nav class="app-nav">
       <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
-      <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
       <a href="programs.html" class="active"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
       <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
     </nav>
     <div class="app-header-actions">
@@ -45,7 +45,7 @@
         <h1 class="h-section" style="margin-top:14px;"><span data-i18n="prog.title">Programs</span></h1>
         <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="prog.lede">A Program groups several related projects under one umbrella — like Chubut's "Hub Digital Patagónico," which bundled a submarine cable, a backbone and last-mile builds as separate, independently financed projects presented by the same organization.</span></p>
       </div>
-      <a href="new-program.html" class="btn amber"><span data-i18n="prog.form.create">Create Program</span></a>
+      <a href="new-program.html" class="btn amber" id="createProgramBtn" style="display:none;"><span data-i18n="prog.form.create">Create Program</span></a>
     </div>
 
     <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
@@ -67,9 +67,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=4"></script>
+<script src="/assets/i18n.js?v=40"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=9"></script>
+<script src="/assets/platform.js?v=46"></script>
 <script src="/assets/script.js?v=12"></script>
 <script>
 (function () {
@@ -107,9 +107,15 @@
   let allProjects = [];
   let currentUserId = null;
   let currentIsAdmin = false;
+  // programId -> Set of project ids, combining the "umbrella" program_id
+  // field on projects with the newer many-to-many project_programs
+  // applications (a project can apply to a financing Program like FSU or
+  // BID without belonging to it as its umbrella program) — see
+  // supabase/migration_v21_program_funding_stage_and_applications.sql.
+  let programProjectIds = new Map();
 
   function projectCount(programId) {
-    return allProjects.filter((p) => p.program_id === programId).length;
+    return (programProjectIds.get(programId) || new Set()).size;
   }
 
   /* A Program's displayed "types" prefer the owner's declared list
@@ -153,7 +159,7 @@
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
           <div style="min-width:0;">
             <h4 style="margin-bottom:4px;">${pg.name}</h4>
-            <p style="font-size:13px; color:var(--muted);">${pg.organization} <span class="type-tag" style="margin-left:4px;">${INAPlatform.programOrgTypeLabel(pg.organization_type)}</span></p>
+            <p style="font-size:13px; color:var(--muted);">${pg.organization} <span class="type-tag" style="margin-left:4px;">${INAPlatform.programOrgTypeLabel(pg.organization_type)}</span> <span class="type-tag funding-stage-tag funding-stage-${pg.funding_stage || 'financing'}" style="margin-left:4px;">${INAPlatform.programFundingStageLabel(pg.funding_stage || 'financing')}</span>${pg.financing_entity ? ` <span class="type-tag financing-entity-tag${INAPlatform.isFsuFinancingEntity(pg.financing_entity) ? ' financing-entity-fsu' : ''}" style="margin-left:4px;" title="${lang === 'es' ? 'Entidad financiadora' : 'Financing entity'}">${lang === 'es' ? 'Financia' : 'Finances'}: ${pg.financing_entity}</span>` : ''}</p>
           </div>
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <span class="fsu-pts">${countLabel}</span>
@@ -218,12 +224,34 @@
       document.getElementById('appUser').style.display = 'flex';
       currentIsAdmin = INAPlatform.isAdmin(profile);
       if (currentIsAdmin) document.getElementById('adminNavLink').style.display = 'inline';
+      if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+      // Creating a Program is advisor/admin-only (see
+      // supabase/migration_v19_program_permissions.sql) — every user still
+      // sees the full list below and can associate a project with any of
+      // them, just can't create one.
+      if (INAPlatform.canManagePrograms(profile)) {
+        document.getElementById('createProgramBtn').style.display = 'inline-flex';
+      }
     } catch (e) { /* non-critical */ }
 
     [allPrograms, allProjects] = await Promise.all([
       INAPlatform.listPrograms(),
       INAPlatform.listProjects(),
     ]);
+
+    // Build the umbrella (program_id) + applications (project_programs)
+    // combined index used by projectCount() above.
+    programProjectIds = new Map();
+    const addLink = (programId, projectId) => {
+      if (!programId || !projectId) return;
+      if (!programProjectIds.has(programId)) programProjectIds.set(programId, new Set());
+      programProjectIds.get(programId).add(projectId);
+    };
+    allProjects.forEach((p) => addLink(p.program_id, p.id));
+    try {
+      const appsMap = await INAPlatform.listProjectProgramsForProjects(allProjects.map((p) => p.id));
+      appsMap.forEach((rows, projectId) => rows.forEach((row) => addLink(row.program_id, projectId)));
+    } catch (e) { /* non-critical — umbrella-only counts still show */ }
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('programsBody').style.display = 'block';

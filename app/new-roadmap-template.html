@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="New Roadmap Model — INA Platform" data-i18n-es="Nuevo Modelo de Hoja de Ruta — Plataforma INA">New Roadmap Model — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Create or edit a roadmap model on the INA Platform." data-i18n-es="Creá o editá un modelo de hoja de ruta en la Plataforma INA." content="Create or edit a roadmap model on the INA Platform.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/app.css?v=7">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="roadmap-templates.html" class="active" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="roadmap-templates.html"><span data-i18n="rm.title">Roadmaps</span></a><span>/</span><span id="crumbLabel"><span data-i18n="rm.form.new">New Model</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;" id="pageTitle"><span data-i18n="rm.form.new">New Roadmap Model</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="rm.form.lede">Define the reusable checklist — each step is one administrative/regulatory procedure, naming a responsible entity and, optionally, any other entities involved. Steps can be reordered, edited or removed at any time; changes here don't retroactively affect projects that already loaded this model.</span></p>
+
+    <!-- Shown/populated by JS only when editing an existing template that
+         another advisor/admin currently has locked (see acquireEditLock()
+         below and migration_v31_edit_locks.sql). -->
+    <div id="editLockBanner" class="lock-banner" style="display:none; max-width:720px;"></div>
+
+    <form id="templateForm" style="max-width:720px; margin-top:36px;">
+      <div class="field" style="margin-top:0;"><label for="rtName"><span data-i18n="rm.f.name">Model name</span></label><input id="rtName" type="text" required></div>
+      <div class="field" style="margin-top:18px;">
+        <label for="rtType"><span data-i18n="rm.f.type">Applies to project type</span></label>
+        <select id="rtType"></select>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="rm.f.type.help">Leave as "Any project type" for a generic checklist reusable across types — or scope it to one, e.g. Early Warning System.</span></p>
+      </div>
+      <div class="field" style="margin-top:18px;"><label for="rtDesc"><span data-i18n="rm.f.desc">Description (optional)</span></label>
+        <textarea id="rtDesc" style="min-height:70px;"></textarea>
+      </div>
+      <div class="field" style="margin-top:18px;">
+        <label for="rtAllowedEntity"><span data-i18n="rm.f.allowedEntity">Entity type allowed to perform it</span></label>
+        <select id="rtAllowedEntity"></select>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="rm.f.allowedEntity.help">Leave as "Any entity type" if any organization can run this checklist — or restrict it, e.g. Alerta Temprana is regulator-only.</span></p>
+      </div>
+
+      <div class="field" style="margin-top:30px;">
+        <label><span data-i18n="rm.f.steps">Steps</span></label>
+        <div id="stepsList" style="margin-top:12px; display:flex; flex-direction:column; gap:14px;"></div>
+        <button type="button" class="btn ghost small" id="addStepBtn" style="margin-top:14px;"><span data-i18n="rm.f.addStep">+ Add step</span></button>
+      </div>
+
+      <button type="submit" class="btn amber" style="margin-top:30px;" id="rtSubmit"><span data-i18n="rm.form.create">Create Model</span></button>
+      <p class="contact-note" id="rtNote" style="margin-top:14px; min-height:18px;"></p>
+    </form>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=40"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=46"></script>
+<script src="/assets/script.js?v=12"></script>
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const editId = params.get('id');
+  const isEdit = !!editId;
+
+  // See the matching comment in new-project.html — set only when this tab
+  // actually holds the edit lock, stops the 60s heartbeat that renews it.
+  let stopEditLockHeartbeat = null;
+
+  // Set alongside showEditLockBanner() below, whenever the lock is held by
+  // someone else — lets the lang-btn listener re-render the banner text in
+  // the new language too. Without this, renderTypeOptions/
+  // renderAllowedEntityOptions/renderSteps all correctly re-translate on a
+  // language switch, but the banner (built once, as a plain string, not
+  // through [data-i18n]) stayed frozen in whichever language was active
+  // when the lock was first detected — this was the "some texts don't
+  // translate" report, since it's the one piece of edit-mode UI the
+  // existing lang-btn listener (below) didn't already know to re-render.
+  let lastLockResult = null;
+
+  function showEditLockBanner(lockResult) {
+    const lang2 = INAPlatform.currentLang();
+    const banner = document.getElementById('editLockBanner');
+    const who = lockResult.locked_by_name
+      ? (lang2 === 'es' ? `Lo está editando ${lockResult.locked_by_name}` : `Currently being edited by ${lockResult.locked_by_name}`)
+      : (lang2 === 'es' ? 'Otra persona está editando este modelo en este momento' : 'Someone else is currently editing this model');
+    const since = lockResult.locked_at
+      ? new Date(lockResult.locked_at).toLocaleTimeString(lang2 === 'es' ? 'es-AR' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    const sinceText = since ? ` ${lang2 === 'es' ? `desde las ${since}` : `since ${since}`}` : '';
+    const readOnlyText = lang2 === 'es'
+      ? ' El formulario quedará en modo solo lectura hasta que se libere.'
+      : ' The form is read-only until it becomes available.';
+    banner.textContent = `${who}${sinceText}.${readOnlyText}`;
+    banner.style.display = 'flex';
+    form.querySelectorAll('input, select, textarea, button').forEach((el) => {
+      if (el.id !== 'signOutBtn') el.disabled = true;
+    });
+  }
+
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  // Not const — this page renders the step-editor rows and the type/entity
+  // dropdown option text in plain JS (none of it carries [data-i18n]), same
+  // stale-language-capture fix as the other Roadmap pages: the lang-btn
+  // listener below needs a live variable to re-render against.
+  let lang = INAPlatform.currentLang();
+
+  const typeSelect = document.getElementById('rtType');
+  function renderTypeOptions(selected) {
+    const prev = selected !== undefined ? selected : typeSelect.value;
+    typeSelect.innerHTML = '';
+    const anyOpt = document.createElement('option');
+    anyOpt.value = '';
+    anyOpt.textContent = lang === 'es' ? '— Cualquier tipo de proyecto —' : '— Any project type —';
+    typeSelect.appendChild(anyOpt);
+    INAPlatform.PROJECT_TYPES.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t[lang] || t.en;
+      typeSelect.appendChild(opt);
+    });
+    typeSelect.value = prev || '';
+  }
+  renderTypeOptions('');
+
+  const allowedEntitySelect = document.getElementById('rtAllowedEntity');
+  function renderAllowedEntityOptions(selected) {
+    const prev = selected !== undefined ? selected : allowedEntitySelect.value;
+    allowedEntitySelect.innerHTML = '';
+    const anyOpt = document.createElement('option');
+    anyOpt.value = '';
+    anyOpt.textContent = lang === 'es' ? '— Cualquier tipo de entidad —' : '— Any entity type —';
+    allowedEntitySelect.appendChild(anyOpt);
+    INAPlatform.ENTITY_TYPES.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t[lang] || t.en;
+      allowedEntitySelect.appendChild(opt);
+    });
+    allowedEntitySelect.value = prev || '';
+  }
+  renderAllowedEntityOptions('');
+
+  // renderSteps() is declared further down (function declarations are
+  // hoisted), but this listener is only ever invoked on a later click, by
+  // which point everything below has already run once — safe either way.
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      lang = btn.getAttribute('data-lang');
+      document.documentElement.setAttribute('lang', lang);
+      renderTypeOptions();
+      renderAllowedEntityOptions();
+      renderSteps();
+      if (lastLockResult) showEditLockBanner(lastLockResult);
+    });
+  });
+
+  // In-memory ordered list of steps — { title, description, entityName,
+  // entityType, required, expectedResult, involvedEntities } — rendered as
+  // editable rows below and saved wholesale via
+  // INAPlatform.replaceRoadmapTemplateSteps() on submit (same "just
+  // overwrite" simplicity as new-program.html's types checkboxes, rather
+  // than diffing individual step edits). expectedResult ("resultado
+  // esperado") is shown by the roadmap-instance.html sequential tracker
+  // when the user is deciding whether to advance past this step.
+  // entityName/entityType are the ONE entity responsible for driving this
+  // step; involvedEntities (see migration_v29_gestion_step_entities.sql) is
+  // a free-form list of the OTHER entities that also participate in it —
+  // e.g. a spectrum-authorization step might be the applicant's
+  // responsibility but involve the regulator, a mobile operator, and civil
+  // protection all at once.
+  let steps = [];
+
+  // Minimal HTML-escaper for values interpolated into the step-row template
+  // string below (chip labels, step title's re-quoted attribute already had
+  // its own inline .replace() — this one's for the new involved-entities
+  // chips, which render as element text content built via string
+  // interpolation rather than the DOM API).
+  function escapeHtml(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderSteps() {
+    const list = document.getElementById('stepsList');
+    list.innerHTML = '';
+    steps.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'roadmap-step-row';
+      row.innerHTML = `
+        <div class="roadmap-step-row-head">
+          <span class="roadmap-step-num">${i + 1}</span>
+          <input type="text" class="rt-step-title" placeholder="${lang === 'es' ? 'Título del paso (obligatorio)' : 'Step title (required)'}" value="${s.title ? s.title.replace(/"/g, '&quot;') : ''}">
+          <div class="roadmap-step-row-actions">
+            <button type="button" class="icon-btn" data-move-up="${i}" title="${lang === 'es' ? 'Subir' : 'Move up'}" ${i === 0 ? 'disabled' : ''}>↑</button>
+            <button type="button" class="icon-btn" data-move-down="${i}" title="${lang === 'es' ? 'Bajar' : 'Move down'}" ${i === steps.length - 1 ? 'disabled' : ''}>↓</button>
+            <button type="button" class="icon-btn icon-btn-delete" data-remove="${i}" title="${lang === 'es' ? 'Quitar' : 'Remove'}">🗑</button>
+          </div>
+        </div>
+        <textarea class="rt-step-desc" placeholder="${lang === 'es' ? 'Descripción (opcional)' : 'Description (optional)'}" style="min-height:50px; margin-top:8px;">${s.description || ''}</textarea>
+        <textarea class="rt-step-expected" placeholder="${lang === 'es' ? 'Resultado esperado (opcional) — qué confirma que este paso está terminado' : 'Expected result (optional) — what confirms this step is done'}" style="min-height:44px; margin-top:8px;">${s.expectedResult || ''}</textarea>
+        <div class="roadmap-step-row-fields">
+          <input type="text" class="rt-step-entity" placeholder="${lang === 'es' ? 'Entidad responsable (opcional)' : 'Responsible entity (optional)'}" value="${s.entityName ? s.entityName.replace(/"/g, '&quot;') : ''}">
+          <select class="rt-step-entity-type" title="${lang === 'es' ? 'Tipo de la entidad responsable' : 'Responsible entity’s type'}"></select>
+          <label class="chk-pill" style="margin:0;"><input type="checkbox" class="rt-step-required" ${s.required !== false ? 'checked' : ''}><span data-i18n="rm.f.required">Required</span></label>
+        </div>
+        <div class="roadmap-step-involved" style="margin-top:12px;">
+          <label style="font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);">${lang === 'es' ? 'Entidades involucradas (opcional, además de la responsable)' : 'Involved entities (optional, besides the responsible one)'}</label>
+          <div class="entity-chip-list" data-chip-list>
+            ${(s.involvedEntities || []).map((name, ci) => `<span class="entity-chip">${escapeHtml(name)}<button type="button" class="entity-chip-remove" data-remove-entity="${ci}" aria-label="${lang === 'es' ? 'Quitar' : 'Remove'}">&times;</button></span>`).join('')}
+          </div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <input type="text" class="rt-step-involved-input" placeholder="${lang === 'es' ? 'Nombre de la entidad + Enter' : 'Entity name + Enter'}" style="flex:1 1 auto;">
+            <button type="button" class="btn ghost small rt-step-involved-add">${lang === 'es' ? '+ Agregar' : '+ Add'}</button>
+          </div>
+        </div>
+      `;
+      const entityTypeSelect = row.querySelector('.rt-step-entity-type');
+      INAPlatform.ROADMAP_ENTITY_TYPES.forEach((et) => {
+        const opt = document.createElement('option');
+        opt.value = et.value;
+        opt.textContent = et[lang] || et.en;
+        if ((s.entityType || 'public') === et.value) opt.selected = true;
+        entityTypeSelect.appendChild(opt);
+      });
+
+      row.querySelector('.rt-step-title').addEventListener('input', (e) => { steps[i].title = e.target.value; });
+      row.querySelector('.rt-step-desc').addEventListener('input', (e) => { steps[i].description = e.target.value; });
+      row.querySelector('.rt-step-expected').addEventListener('input', (e) => { steps[i].expectedResult = e.target.value; });
+      row.querySelector('.rt-step-entity').addEventListener('input', (e) => { steps[i].entityName = e.target.value; });
+      entityTypeSelect.addEventListener('change', (e) => { steps[i].entityType = e.target.value; });
+      row.querySelector('.rt-step-required').addEventListener('change', (e) => { steps[i].required = e.target.checked; });
+
+      // Involved entities — a small chip/tag list, separate from the single
+      // responsible entity above. Adding/removing re-renders the whole
+      // steps list (same pattern as the move-up/move-down/remove-step
+      // buttons below) rather than patching the DOM in place, since the
+      // list of chips itself needs to grow/shrink.
+      const involvedInput = row.querySelector('.rt-step-involved-input');
+      function addInvolvedEntity() {
+        const name = involvedInput.value.trim();
+        if (!name) return;
+        if (!Array.isArray(steps[i].involvedEntities)) steps[i].involvedEntities = [];
+        steps[i].involvedEntities.push(name);
+        renderSteps();
+      }
+      row.querySelector('.rt-step-involved-add').addEventListener('click', addInvolvedEntity);
+      involvedInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); addInvolvedEntity(); }
+      });
+      row.querySelectorAll('[data-remove-entity]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          steps[i].involvedEntities.splice(Number(btn.getAttribute('data-remove-entity')), 1);
+          renderSteps();
+        });
+      });
+
+      list.appendChild(row);
+    });
+
+    list.querySelectorAll('[data-remove]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        steps.splice(Number(btn.getAttribute('data-remove')), 1);
+        renderSteps();
+      });
+    });
+    list.querySelectorAll('[data-move-up]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const i = Number(btn.getAttribute('data-move-up'));
+        if (i > 0) { [steps[i - 1], steps[i]] = [steps[i], steps[i - 1]]; renderSteps(); }
+      });
+    });
+    list.querySelectorAll('[data-move-down]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const i = Number(btn.getAttribute('data-move-down'));
+        if (i < steps.length - 1) { [steps[i + 1], steps[i]] = [steps[i], steps[i + 1]]; renderSteps(); }
+      });
+    });
+  }
+
+  document.getElementById('addStepBtn').addEventListener('click', () => {
+    steps.push({ title: '', description: '', entityName: '', entityType: 'public', required: true, expectedResult: '', involvedEntities: [] });
+    renderSteps();
+  });
+
+  if (isEdit) {
+    document.getElementById('pageTitle').innerHTML = '<span data-i18n="rm.form.edit">Edit Roadmap Model</span>';
+    document.getElementById('crumbLabel').innerHTML = '<span data-i18n="rm.form.edit">Edit Model</span>';
+    document.getElementById('rtSubmit').innerHTML = '<span data-i18n="rm.form.save">Save Changes</span>';
+  }
+
+  const form = document.getElementById('templateForm');
+  const note = document.getElementById('rtNote');
+  const submitBtn = document.getElementById('rtSubmit');
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      note.textContent = 'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    let viewerProfile = null;
+    try {
+      viewerProfile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(viewerProfile.full_name);
+      document.getElementById('appUserName').textContent = viewerProfile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      if (INAPlatform.isAdmin(viewerProfile)) document.getElementById('adminNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    // Advisor/admin only, both creating and editing — any advisor/admin can
+    // edit any template (RLS: roadmap_templates_update_advisor_or_admin),
+    // not just the one who created it, since templates are a shared
+    // regulatory resource. A standard user landing here is sent away
+    // entirely rather than seeing a form they can't submit.
+    if (!INAPlatform.canManageRoadmaps(viewerProfile)) {
+      location.href = 'dashboard.html';
+      return;
+    }
+    document.getElementById('roadmapsNavLink').style.display = 'inline';
+
+    if (isEdit) {
+      let template;
+      try {
+        template = await INAPlatform.getRoadmapTemplate(editId);
+      } catch (e) {
+        location.href = 'roadmap-templates.html';
+        return;
+      }
+
+      // See the matching comment in new-project.html — fields still get
+      // populated below regardless of the lock outcome. Templates are a
+      // shared resource any advisor/admin can normally edit (no per-record
+      // ownership check above), which is exactly why the lock matters here.
+      let lockResult;
+      try {
+        lockResult = await INAPlatform.acquireEditLock('roadmapTemplate', editId);
+      } catch (e) {
+        lockResult = { acquired: true, locked_by: null, locked_by_name: null, locked_at: null };
+      }
+
+      document.getElementById('rtName').value = template.name || '';
+      document.getElementById('rtDesc').value = template.description || '';
+      renderTypeOptions(template.project_type || '');
+      renderAllowedEntityOptions(template.allowed_entity_type || '');
+
+      try {
+        const existingSteps = await INAPlatform.listRoadmapTemplateSteps(editId);
+        steps = existingSteps.map((s) => ({
+          title: s.title,
+          description: s.description || '',
+          entityName: s.entity_name || '',
+          entityType: s.entity_type || 'public',
+          required: s.required !== false,
+          expectedResult: s.expected_result || '',
+          involvedEntities: Array.isArray(s.involved_entities) ? s.involved_entities : [],
+        }));
+      } catch (e) { steps = []; }
+      renderSteps();
+
+      if (lockResult.acquired) {
+        stopEditLockHeartbeat = INAPlatform.startEditLockHeartbeat('roadmapTemplate', editId);
+      } else {
+        lastLockResult = lockResult;
+        showEditLockBanner(lockResult);
+      }
+    } else {
+      // A brand-new template starts with one blank step so the form
+      // doesn't look empty/broken — easy enough to remove if unwanted.
+      steps = [{ title: '', description: '', entityName: '', entityType: 'public', required: true, expectedResult: '', involvedEntities: [] }];
+      renderSteps();
+    }
+  }
+  init();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    note.textContent = '';
+    const name = document.getElementById('rtName').value.trim();
+    if (!name) {
+      note.textContent = lang === 'es' ? 'Ingresá un nombre para el modelo.' : 'Enter a name for the model.';
+      return;
+    }
+    submitBtn.disabled = true;
+    note.textContent = lang === 'es' ? 'Guardando…' : 'Saving…';
+
+    const payload = {
+      name,
+      projectType: typeSelect.value,
+      description: document.getElementById('rtDesc').value,
+      allowedEntityType: allowedEntitySelect.value,
+    };
+
+    try {
+      const template = isEdit
+        ? await INAPlatform.updateRoadmapTemplate(editId, payload)
+        : await INAPlatform.createRoadmapTemplate(payload);
+
+      await INAPlatform.replaceRoadmapTemplateSteps(template.id, steps);
+
+      if (stopEditLockHeartbeat) {
+        stopEditLockHeartbeat();
+        stopEditLockHeartbeat = null;
+        try { await INAPlatform.releaseEditLock('roadmapTemplate', editId); } catch (e) { /* non-critical */ }
+      }
+
+      location.href = 'roadmap-templates.html';
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar el modelo.' : "Couldn't save the model.");
+      submitBtn.disabled = false;
+    }
+  });
+
+  // Best-effort release on tab close / navigate-away without saving — see
+  // the matching comment in new-project.html for why this isn't guaranteed
+  // and why the 5-minute server-side auto-expiry is the real safety net.
+  window.addEventListener('beforeunload', () => {
+    if (stopEditLockHeartbeat) {
+      INAPlatform.releaseEditLock('roadmapTemplate', editId);
+    }
+  });
+})();
+</script>
+</body>
+</html>

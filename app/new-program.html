@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=3">
-<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/app.css?v=7">
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -20,8 +20,8 @@
     </a>
     <nav class="app-nav">
       <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
-      <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
       <a href="programs.html" class="active"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
       <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
     </nav>
     <div class="app-header-actions">
@@ -44,6 +44,11 @@
     <h1 class="h-section" style="margin-top:14px;" id="pageTitle"><span data-i18n="prog.form.new">New Program</span></h1>
     <p class="lede" style="margin-top:10px; max-width:640px;" id="pageLede"><span data-i18n="prog.lede">A Program groups several related projects under one umbrella — like Chubut's "Hub Digital Patagónico," which bundled a submarine cable, a backbone and last-mile builds as separate, independently financed projects presented by the same organization.</span></p>
 
+    <!-- Shown/populated by JS only when editing an existing program that
+         someone else currently has locked (see acquireEditLock() below and
+         migration_v31_edit_locks.sql). -->
+    <div id="editLockBanner" class="lock-banner" style="display:none; max-width:640px;"></div>
+
     <form id="programForm" style="max-width:640px; margin-top:36px;">
       <div class="field" style="margin-top:0;"><label for="pgName"><span data-i18n="prog.f.name">Program name</span></label><input id="pgName" type="text" required></div>
       <div class="field" style="margin-top:18px;"><label for="pgOrg"><span data-i18n="prog.f.org">Presenting organization</span></label><input id="pgOrg" type="text" required></div>
@@ -51,10 +56,33 @@
         <label><span data-i18n="prog.f.orgType">Organization type</span></label>
         <div class="chk-group" id="orgTypeOptions"></div>
       </div>
+      <!-- Financing entity — see migration_v36_program_financing_entity.sql.
+           Distinct from "Presenting organization" above (the proponent,
+           e.g. a cooperative) — this is who actually puts up the money
+           (e.g. "BID", "CAF", "Banco de la Nación Argentina"). For
+           programs tied to the Universal Service Fund, the agreed
+           convention is the exact value "ENACOM-FSU" — that's what lets
+           app/project.html group these together with a project's own FSU
+           financing fields in one block. -->
+      <div class="field" style="margin-top:18px;">
+        <label for="pgFinancingEntity"><span data-i18n="prog.f.financingEntity">Financing entity (optional)</span></label>
+        <input id="pgFinancingEntity" type="text" placeholder="BID, CAF, Banco Nación, ENACOM-FSU…">
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.financingEntity.help">The institution that actually finances this program — not the presenting organization above. For Universal Service Fund programs, use exactly "ENACOM-FSU" so it groups correctly on the project's Financing tab.</span></p>
+      </div>
+      <div class="field" style="margin-top:18px;">
+        <label><span data-i18n="prog.f.fundingStage">What does this program fund?</span></label>
+        <div class="chk-group" id="fundingStageOptions"></div>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.fundingStage.help">"Project financing" (default) funds the project's implementation, like FSU or a multilateral loan. "Project preparation" funds elaborating/structuring the project itself before it's finished — e.g. a USTDA feasibility-study grant.</span></p>
+      </div>
       <div class="field" style="margin-top:18px;">
         <label><span data-i18n="prog.f.types">Program type(s)</span></label>
         <div class="chk-group" id="programTypesOptions"></div>
         <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.types.help">Select every infrastructure type this program is expected to cover — a Program can span several, unlike an individual project.</span></p>
+      </div>
+      <div class="field" style="margin-top:18px;">
+        <label for="pgTemplate"><span data-i18n="prog.f.template">Program template (optional)</span></label>
+        <select id="pgTemplate"></select>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.template.help">If this program follows a standardized ENACOM financing line (e.g. a debt-instrument line under a Universal Service Fund program), pick its template — anyone submitting a project under this program then gets a guided, standardized form to apply.</span></p>
       </div>
       <div class="field" style="margin-top:18px;"><label for="pgDesc"><span data-i18n="prog.f.desc">Description (optional)</span></label>
         <textarea id="pgDesc" style="min-height:80px;"></textarea>
@@ -87,15 +115,39 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=4"></script>
+<script src="/assets/i18n.js?v=40"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=9"></script>
+<script src="/assets/platform.js?v=46"></script>
 <script src="/assets/script.js?v=12"></script>
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
   const editId = params.get('id');
   const isEdit = !!editId;
+
+  // See the matching comment in new-project.html — set only when this tab
+  // actually holds the edit lock, stops the 60s heartbeat that renews it.
+  let stopEditLockHeartbeat = null;
+
+  function showEditLockBanner(lockResult) {
+    const lang = INAPlatform.currentLang();
+    const banner = document.getElementById('editLockBanner');
+    const who = lockResult.locked_by_name
+      ? (lang === 'es' ? `Lo está editando ${lockResult.locked_by_name}` : `Currently being edited by ${lockResult.locked_by_name}`)
+      : (lang === 'es' ? 'Otra persona está editando este programa en este momento' : 'Someone else is currently editing this program');
+    const since = lockResult.locked_at
+      ? new Date(lockResult.locked_at).toLocaleTimeString(lang === 'es' ? 'es-AR' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    const sinceText = since ? ` ${lang === 'es' ? `desde las ${since}` : `since ${since}`}` : '';
+    const readOnlyText = lang === 'es'
+      ? ' El formulario quedará en modo solo lectura hasta que se libere.'
+      : ' The form is read-only until it becomes available.';
+    banner.textContent = `${who}${sinceText}.${readOnlyText}`;
+    banner.style.display = 'flex';
+    form.querySelectorAll('input, select, textarea, button').forEach((el) => {
+      if (el.id !== 'signOutBtn') el.disabled = true;
+    });
+  }
 
   const signOutBtn = document.getElementById('signOutBtn');
   signOutBtn.addEventListener('click', async (e) => {
@@ -122,6 +174,22 @@
   }
   renderOrgTypeOptions();
 
+  /* Funding stage — 'financing' (default) funds the project's
+     implementation; 'preparation' funds elaborating the project itself
+     (e.g. a USTDA feasibility-study grant). See
+     supabase/migration_v21_program_funding_stage_and_applications.sql. */
+  const FUNDING_STAGES = ['financing', 'preparation'];
+  function renderFundingStageOptions(selected) {
+    const el = document.getElementById('fundingStageOptions');
+    el.innerHTML = FUNDING_STAGES.map((v, i) => `
+      <label class="chk-pill">
+        <input type="radio" name="fundingStage" value="${v}" ${(selected ? v === selected : i === 0) ? 'checked' : ''}>
+        <span>${INAPlatform.programFundingStageLabel(v)}</span>
+      </label>
+    `).join('');
+  }
+  renderFundingStageOptions();
+
   /* Declared program types — checkboxes from the same catalog as
      projects.project_type. A Program can have several checked, unlike a
      project's single required type. See supabase/migration_v11_program_types.sql. */
@@ -143,6 +211,27 @@
     if (e.target.checked) typesChecked.add(e.target.value);
     else typesChecked.delete(e.target.value);
   });
+
+  /* Optional program-level guided-form template — see PROGRAM_TEMPLATES /
+     PROGRAM_TEMPLATE_OPTIONS in assets/platform.js. A short curated list
+     (not free text), with a "None" option first. */
+  function renderProgramTemplateOptions(selected) {
+    const sel = document.getElementById('pgTemplate');
+    const prev = selected !== undefined ? selected : sel.value;
+    sel.innerHTML = '';
+    const noneOpt = document.createElement('option');
+    noneOpt.value = '';
+    noneOpt.textContent = lang === 'es' ? '— Ninguno / general —' : '— None / general —';
+    sel.appendChild(noneOpt);
+    INAPlatform.PROGRAM_TEMPLATE_OPTIONS.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t[lang] || t.en;
+      sel.appendChild(opt);
+    });
+    sel.value = prev || '';
+  }
+  renderProgramTemplateOptions('');
 
   if (isEdit) {
     document.getElementById('pageTitle').innerHTML = '<span data-i18n="prog.form.edit">Edit Program</span>';
@@ -257,13 +346,26 @@
     const session = await INAPlatform.requireAuth();
     if (!session) return;
 
+    let viewerProfile = null;
     try {
-      const profile = await INAPlatform.getProfile(session.user.id);
-      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
-      document.getElementById('appUserName').textContent = profile.full_name || '';
+      viewerProfile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(viewerProfile.full_name);
+      document.getElementById('appUserName').textContent = viewerProfile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
-      if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
+      if (INAPlatform.isAdmin(viewerProfile)) document.getElementById('adminNavLink').style.display = 'inline';
+      if (INAPlatform.canManageRoadmaps(viewerProfile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
     } catch (e) { /* non-critical */ }
+
+    // Creating a NEW program is advisor/admin-only (see
+    // supabase/migration_v19_program_permissions.sql) — a standard user
+    // landing here directly gets sent back to the list instead of filling
+    // out the whole form only to hit a permission error on submit. Editing
+    // an EXISTING program a user already owns is unaffected — that stays
+    // owner-only, handled further down.
+    if (!isEdit && !INAPlatform.canManagePrograms(viewerProfile)) {
+      location.href = 'programs.html';
+      return;
+    }
 
     if (isEdit) {
       let program;
@@ -280,17 +382,36 @@
         location.href = 'programs.html';
         return;
       }
+
+      // See the matching comment in new-project.html — fields still get
+      // populated below regardless of the lock outcome.
+      let lockResult;
+      try {
+        lockResult = await INAPlatform.acquireEditLock('program', editId);
+      } catch (e) {
+        lockResult = { acquired: true, locked_by: null, locked_by_name: null, locked_at: null };
+      }
+
       document.getElementById('pgName').value = program.name || '';
       document.getElementById('pgOrg').value = program.organization || '';
+      document.getElementById('pgFinancingEntity').value = program.financing_entity || '';
       document.getElementById('pgDesc').value = program.description || '';
       renderOrgTypeOptions(program.organization_type);
+      renderFundingStageOptions(program.funding_stage || 'financing');
       typesChecked = new Set(program.types || []);
       renderProgramTypeOptions();
+      renderProgramTemplateOptions(program.template_key || '');
 
       try {
         existingPgDocs = (await INAPlatform.listProgramDocuments(editId)) || [];
         renderExistingPgDocs();
       } catch (e) { /* non-critical */ }
+
+      if (lockResult.acquired) {
+        stopEditLockHeartbeat = INAPlatform.startEditLockHeartbeat('program', editId);
+      } else {
+        showEditLockBanner(lockResult);
+      }
     }
   }
   init();
@@ -308,9 +429,12 @@
     const payload = {
       name: document.getElementById('pgName').value,
       organization: document.getElementById('pgOrg').value,
+      financingEntity: document.getElementById('pgFinancingEntity').value,
       organizationType: (new FormData(form)).get('orgType') || 'public',
+      fundingStage: (new FormData(form)).get('fundingStage') || 'financing',
       types: Array.from(typesChecked),
       description: document.getElementById('pgDesc').value,
+      templateKey: document.getElementById('pgTemplate').value,
     };
 
     try {
@@ -322,10 +446,25 @@
         await INAPlatform.uploadProgramDocument(program.id, file);
       }
 
+      if (stopEditLockHeartbeat) {
+        stopEditLockHeartbeat();
+        stopEditLockHeartbeat = null;
+        try { await INAPlatform.releaseEditLock('program', editId); } catch (e) { /* non-critical */ }
+      }
+
       location.href = 'programs.html';
     } catch (err) {
       note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar el programa.' : "Couldn't save the program.");
       submitBtn.disabled = false;
+    }
+  });
+
+  // Best-effort release on tab close / navigate-away without saving — see
+  // the matching comment in new-project.html for why this isn't guaranteed
+  // and why the 5-minute server-side auto-expiry is the real safety net.
+  window.addEventListener('beforeunload', () => {
+    if (stopEditLockHeartbeat) {
+      INAPlatform.releaseEditLock('program', editId);
     }
   });
 })();

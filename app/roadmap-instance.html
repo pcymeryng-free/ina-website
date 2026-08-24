@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Roadmap — INA Platform" data-i18n-es="Hoja de Ruta — Plataforma INA">Roadmap — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Start and track a Roadmap — a sequential checklist run against a specific project by a specific entity." data-i18n-es="Dá de alta y seguí una Hoja de Ruta — un checklist secuencial ejecutado sobre un proyecto por una entidad específica." content="Start and track a Roadmap.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/app.css?v=7">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="roadmap-templates.html"><span data-i18n="rm.title">Roadmaps</span></a><span>/</span><span id="crumbLabel"><span data-i18n="rmi.form.new">New Roadmap</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;" id="pageTitle"><span data-i18n="rmi.form.new">New Roadmap</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;" id="pageLede"><span data-i18n="rmi.form.lede">A Roadmap doesn't need a project to exist yet — it's often the step that comes before one. Pick the entity actually carrying it out and which checklist applies (optionally linking an existing project). Once started, the steps show up one at a time — you decide whether to advance past each one.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px; display:none;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <!-- ---------- Setup form (create mode) ---------- -->
+    <form id="setupForm" style="max-width:640px; margin-top:36px;">
+      <div class="field" style="margin-top:0;">
+        <label for="riEntityName"><span data-i18n="rmi.f.entityName">Entity performing this roadmap</span></label>
+        <input id="riEntityName" type="text" required>
+      </div>
+      <div class="field" style="margin-top:18px;">
+        <label for="riEntityType"><span data-i18n="rmi.f.entityType">Entity type</span></label>
+        <select id="riEntityType" required></select>
+      </div>
+      <div class="field" style="margin-top:18px;">
+        <label for="riTemplate"><span data-i18n="rmi.f.template">Roadmap (checklist)</span></label>
+        <select id="riTemplate" required></select>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;" id="riTemplateHelp"><span data-i18n="rmi.f.template.help">Shows models that match the performing entity's type (and this project's type, if you link one below).</span></p>
+      </div>
+      <div class="field" style="margin-top:18px;">
+        <label for="riProject"><span data-i18n="rmi.f.project">Link to an existing project (optional)</span></label>
+        <select id="riProject"></select>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="rmi.f.project.help">Leave blank if this Roadmap comes before the project exists yet — you can always come back and manage it from here.</span></p>
+      </div>
+      <div class="field" style="margin-top:18px;">
+        <label for="riName"><span data-i18n="rmi.f.name">Name for this instance</span></label>
+        <input id="riName" type="text" required>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="rmi.f.name.help">Defaults to the checklist's name — rename it if you'll run this same checklist more than once on the project (e.g. per region).</span></p>
+      </div>
+
+      <button type="submit" class="btn amber" style="margin-top:26px;" id="riSubmit"><span data-i18n="rmi.f.start">Start Roadmap</span></button>
+      <p class="contact-note" id="riNote" style="margin-top:14px; min-height:18px;"></p>
+    </form>
+
+    <!-- ---------- Tracker (view/advance mode) ---------- -->
+    <div id="trackerBody" style="display:none; margin-top:36px; max-width:720px;">
+      <div class="info-block" style="margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div style="min-width:0;">
+            <h4 style="margin-bottom:4px;" id="trkName"></h4>
+            <p style="font-size:13px; color:var(--muted); margin-top:4px;"><a id="trkProjectLink" href="#"></a></p>
+            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;" id="trkTags"></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="fsu-pts" id="trkProgress"></span>
+            <button type="button" class="icon-btn icon-btn-delete" id="deleteInstanceBtn" title=""><span>🗑</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div id="stepsTracker" style="display:flex; flex-direction:column; gap:14px;"></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=40"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=46"></script>
+<script src="/assets/script.js?v=12"></script>
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const instanceId = params.get('id');
+  const preselectProjectId = params.get('project');
+
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  // Not const — this page renders the tracker's step cards and setup form
+  // options in plain JS (none carry [data-i18n]), same stale-language-
+  // capture fix as programs.html/roadmap-templates.html.
+  let lang = INAPlatform.currentLang();
+
+  let currentProfile = null;
+  let canManage = false;
+  let projectsCache = [];
+  let templatesCache = [];
+  let currentInstance = null;
+  let currentSteps = [];
+  let currentProject = null;
+
+  const projectSelect = document.getElementById('riProject');
+  const entityTypeSelect = document.getElementById('riEntityType');
+  const templateSelect = document.getElementById('riTemplate');
+  const nameInput = document.getElementById('riName');
+
+  // Starts on a blank option on purpose — without it, the select defaulted
+  // to whichever entity type happened to be first in the list and
+  // immediately filtered the template dropdown down to just that type,
+  // which looked like "no templates available" the moment the page loaded.
+  function renderEntityTypeOptions() {
+    const selected = entityTypeSelect.value;
+    entityTypeSelect.innerHTML = '';
+    const blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = lang === 'es' ? '— Elegí un tipo de entidad —' : '— Choose an entity type —';
+    entityTypeSelect.appendChild(blank);
+    INAPlatform.ENTITY_TYPES.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t[lang] || t.en;
+      entityTypeSelect.appendChild(opt);
+    });
+    if (selected) entityTypeSelect.value = selected;
+  }
+
+  function renderProjectOptions() {
+    const selected = projectSelect.value;
+    projectSelect.innerHTML = '';
+    const blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = lang === 'es' ? '— Sin proyecto asociado —' : '— No project linked —';
+    projectSelect.appendChild(blank);
+    projectsCache.forEach((p) => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      projectSelect.appendChild(opt);
+    });
+    if (selected) projectSelect.value = selected;
+  }
+
+  // Filters progressively as the user fills in the form — nothing is
+  // filtered out until a value is actually chosen: entity type (the
+  // primary filter — a Roadmap doesn't require a project) narrows to
+  // templates whose allowed_entity_type matches or is unrestricted; if a
+  // project is also linked, that further narrows to templates whose
+  // project_type matches or is generic/null.
+  function renderTemplateOptions() {
+    const selected = templateSelect.value;
+    const project = projectsCache.find((p) => p.id === projectSelect.value);
+    const entityType = entityTypeSelect.value;
+    let matches = templatesCache;
+    if (project) matches = INAPlatform.roadmapTemplatesForProjectType(matches, project.project_type);
+    if (entityType) matches = INAPlatform.roadmapTemplatesForEntityType(matches, entityType);
+
+    templateSelect.innerHTML = '';
+    const blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = matches.length
+      ? (lang === 'es' ? '— Elegí una hoja de ruta —' : '— Choose a roadmap —')
+      : (lang === 'es' ? '— Ninguna hoja de ruta disponible para esta combinación —' : '— No roadmap available for this combination —');
+    templateSelect.appendChild(blank);
+    matches.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.name;
+      templateSelect.appendChild(opt);
+    });
+    if (selected && matches.some((t) => t.id === selected)) templateSelect.value = selected;
+  }
+
+  templateSelect.addEventListener('change', () => {
+    const t = templatesCache.find((x) => x.id === templateSelect.value);
+    if (t && !nameInput.value.trim()) nameInput.value = t.name;
+  });
+  projectSelect.addEventListener('change', renderTemplateOptions);
+  entityTypeSelect.addEventListener('change', renderTemplateOptions);
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      lang = btn.getAttribute('data-lang');
+      document.documentElement.setAttribute('lang', lang);
+      renderEntityTypeOptions();
+      renderProjectOptions();
+      renderTemplateOptions();
+      if (currentInstance) renderTracker();
+    });
+  });
+
+  /* ---------- Tracker rendering ---------- */
+
+  function entityTag(type) {
+    return `<span class="type-tag">${INAPlatform.entityTypeLabel(type)}</span>`;
+  }
+
+  // A step names ONE responsible entity (entity_name/entity_type) plus,
+  // optionally, several other entities that also participate in it
+  // (involved_entities — see migration_v29_gestion_step_entities.sql).
+  // Returns an array of plain-text "Label: value" strings so each caller
+  // can lay them out however fits (flex-gapped spans in the done meta row,
+  // a single "·"-joined line in the current-step paragraph).
+  function stepEntityParts(step) {
+    const parts = [];
+    if (step.entity_name) parts.push(`${lang === 'es' ? 'Responsable' : 'Responsible'}: ${step.entity_name}`);
+    if (Array.isArray(step.involved_entities) && step.involved_entities.length) {
+      parts.push(`${lang === 'es' ? 'Involucradas' : 'Involved'}: ${step.involved_entities.join(', ')}`);
+    }
+    return parts;
+  }
+
+  function stepCard(step, idx) {
+    const isDone = step.status === 'completed' || step.status === 'skipped';
+    const isCurrent = idx === currentInstance.current_step_index && currentInstance.status === 'in_progress';
+    const isLocked = !isDone && !isCurrent;
+
+    const card = document.createElement('div');
+    card.className = 'roadmap-row';
+    if (isCurrent) card.style.borderColor = 'var(--amber)';
+    if (isLocked) card.style.opacity = '.55';
+
+    const statusPill = `<span class="status-pill roadmap-status-${step.status === 'skipped' ? 'blocked' : step.status}">${INAPlatform.roadmapInstanceStepStatusLabel(step.status)}</span>`;
+
+    let body = `
+      <div class="roadmap-row-head">
+        <span class="roadmap-step-num">${idx + 1}</span>
+        <strong style="font-size:13.5px; flex:1 1 auto;">${step.title}</strong>
+        ${statusPill}
+      </div>
+    `;
+
+    if (isDone) {
+      body += `
+        ${step.decision_note ? `<p style="font-size:12.5px; color:var(--muted); margin-top:8px; white-space:pre-wrap;">${step.decision_note}</p>` : ''}
+        <div class="roadmap-row-meta">
+          ${stepEntityParts(step).map((t) => `<span>${t}</span>`).join('')}
+          ${step.completed_at ? `<span>${lang === 'es' ? 'Resuelto' : 'Resolved'}: ${new Date(step.completed_at).toLocaleDateString()}</span>` : ''}
+        </div>
+      `;
+    } else if (isCurrent) {
+      const entityParts = stepEntityParts(step);
+      body += `
+        ${step.description ? `<p style="font-size:13px; margin-top:8px; white-space:pre-wrap;">${step.description}</p>` : ''}
+        ${step.expected_result ? `<p style="font-size:12.5px; color:var(--amber-deep); margin-top:8px;"><strong>${lang === 'es' ? 'Resultado esperado' : 'Expected result'}:</strong> ${step.expected_result}</p>` : ''}
+        ${entityParts.length ? `<p style="font-size:12px; color:var(--muted); margin-top:6px;">${entityParts.join(' · ')}</p>` : ''}
+      `;
+      if (canManage) {
+        body += `
+          <textarea class="cur-note" placeholder="${lang === 'es' ? 'Nota (opcional)' : 'Note (optional)'}" style="min-height:44px; margin-top:10px;"></textarea>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+            <button type="button" class="btn amber small" data-advance="${step.id}"><span>${lang === 'es' ? 'Avanzar al siguiente paso' : 'Advance to next step'}</span></button>
+            ${!step.required ? `<button type="button" class="btn ghost small" data-skip="${step.id}"><span>${lang === 'es' ? 'Omitir y avanzar' : 'Skip and advance'}</span></button>` : ''}
+            <button type="button" class="btn ghost small" data-block="${step.id}"><span>${lang === 'es' ? 'Marcar bloqueado (no avanzar)' : 'Mark blocked (don’t advance)'}</span></button>
+          </div>
+        `;
+      }
+    } else {
+      body += `<p style="font-size:12px; color:var(--muted); margin-top:6px;">${lang === 'es' ? 'Se habilita al completar el paso anterior.' : 'Unlocks once the previous step is resolved.'}</p>`;
+    }
+
+    card.innerHTML = body;
+
+    if (isCurrent && canManage) {
+      const note = () => card.querySelector('.cur-note').value.trim();
+      const advBtn = card.querySelector('[data-advance]');
+      if (advBtn) advBtn.addEventListener('click', () => runDecision(step.id, 'completed', true, note()));
+      const skipBtn = card.querySelector('[data-skip]');
+      if (skipBtn) skipBtn.addEventListener('click', () => runDecision(step.id, 'skipped', true, note()));
+      const blockBtn = card.querySelector('[data-block]');
+      if (blockBtn) blockBtn.addEventListener('click', () => runDecision(step.id, 'blocked', false, note()));
+    }
+
+    return card;
+  }
+
+  async function runDecision(stepId, status, advance, decisionNote) {
+    try {
+      currentInstance = await INAPlatform.advanceRoadmapInstanceStep(currentInstance.id, { stepId, status, advance, decisionNote });
+      currentSteps = await INAPlatform.listRoadmapInstanceSteps(currentInstance.id);
+      renderTracker();
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo guardar: ' : "Couldn't save: ") + (err.message || err));
+    }
+  }
+
+  function renderTracker() {
+    document.getElementById('trkName').textContent = currentInstance.name;
+    const link = document.getElementById('trkProjectLink');
+    if (currentProject) {
+      link.textContent = currentProject.name;
+      link.href = `project.html?id=${currentProject.id}`;
+    } else {
+      link.textContent = lang === 'es' ? 'Sin proyecto asociado' : 'No project linked';
+      link.removeAttribute('href');
+    }
+
+    const doneCount = currentSteps.filter((s) => s.status === 'completed' || s.status === 'skipped').length;
+    document.getElementById('trkProgress').textContent = currentInstance.status === 'completed'
+      ? (lang === 'es' ? 'Completada' : 'Completed')
+      : `${lang === 'es' ? 'Paso' : 'Step'} ${Math.min(currentInstance.current_step_index + 1, currentSteps.length)} ${lang === 'es' ? 'de' : 'of'} ${currentSteps.length}`;
+
+    document.getElementById('trkTags').innerHTML = `
+      ${entityTag(currentInstance.performing_entity_type)}
+      <span class="type-tag">${currentInstance.performing_entity_name}</span>
+      <span class="status-pill roadmap-status-${currentInstance.status === 'completed' ? 'completed' : currentInstance.status === 'abandoned' ? 'blocked' : 'in_progress'}">${INAPlatform.roadmapInstanceStatusLabel(currentInstance.status)}</span>
+    `;
+
+    const deleteBtn = document.getElementById('deleteInstanceBtn');
+    deleteBtn.title = lang === 'es' ? 'Eliminar hoja de ruta' : 'Delete roadmap';
+    deleteBtn.style.display = canManage ? 'inline-flex' : 'none';
+
+    const tracker = document.getElementById('stepsTracker');
+    tracker.innerHTML = '';
+    currentSteps
+      .slice()
+      .sort((a, b) => a.step_order - b.step_order)
+      .forEach((s, i) => tracker.appendChild(stepCard(s, i)));
+  }
+
+  document.getElementById('deleteInstanceBtn').addEventListener('click', async () => {
+    const msg = lang === 'es' ? '¿Eliminar esta hoja de ruta y todo su progreso?' : 'Delete this roadmap and all its progress?';
+    if (!confirm(msg)) return;
+    try {
+      await INAPlatform.deleteRoadmapInstance(currentInstance.id);
+      location.href = currentProject ? `project.html?id=${currentProject.id}` : 'roadmap-templates.html';
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo eliminar: ' : "Couldn't delete: ") + (err.message || err));
+    }
+  });
+
+  async function loadTracker(id) {
+    currentInstance = await INAPlatform.getRoadmapInstance(id);
+    currentSteps = await INAPlatform.listRoadmapInstanceSteps(id);
+    currentProject = null;
+    if (currentInstance.project_id) {
+      try {
+        currentProject = await INAPlatform.getProject(currentInstance.project_id);
+      } catch (e) { currentProject = null; }
+    }
+
+    document.getElementById('crumbLabel').textContent = currentInstance.name;
+    document.getElementById('pageTitle').innerHTML = currentInstance.name;
+    document.getElementById('pageLede').style.display = 'none';
+    document.getElementById('setupForm').style.display = 'none';
+    document.getElementById('trackerBody').style.display = 'block';
+    renderTracker();
+  }
+
+  document.getElementById('setupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('riNote');
+    note.textContent = '';
+    const projectId = projectSelect.value || null;
+    const performingEntityName = document.getElementById('riEntityName').value.trim();
+    const performingEntityType = entityTypeSelect.value;
+    const templateId = templateSelect.value;
+    const name = nameInput.value.trim();
+    if (!performingEntityName || !performingEntityType || !templateId || !name) {
+      note.textContent = lang === 'es' ? 'Completá todos los campos.' : 'Fill in every field.';
+      return;
+    }
+    const submitBtn = document.getElementById('riSubmit');
+    submitBtn.disabled = true;
+    note.textContent = lang === 'es' ? 'Creando…' : 'Creating…';
+    try {
+      const instance = await INAPlatform.createRoadmapInstance({ projectId, templateId, name, performingEntityName, performingEntityType });
+      history.replaceState(null, '', `roadmap-instance.html?id=${instance.id}`);
+      await loadTracker(instance.id);
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo crear la hoja de ruta.' : "Couldn't create the roadmap.");
+      submitBtn.disabled = false;
+    }
+  });
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('riNote').textContent = 'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    try {
+      currentProfile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(currentProfile.full_name);
+      document.getElementById('appUserName').textContent = currentProfile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      if (INAPlatform.isAdmin(currentProfile)) document.getElementById('adminNavLink').style.display = 'inline';
+      canManage = INAPlatform.canManageRoadmaps(currentProfile);
+      if (canManage) document.getElementById('roadmapsNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    if (instanceId) {
+      // View/track an existing instance — reachable by anyone who can see
+      // the underlying project (RLS: roadmap_instances_select_own_or_advisor
+      // mirrors project_roadmaps' "owner read-only, advisor/admin manage").
+      document.getElementById('loadingState').style.display = 'block';
+      try {
+        await loadTracker(instanceId);
+      } catch (e) {
+        location.href = 'dashboard.html';
+        return;
+      }
+      document.getElementById('loadingState').style.display = 'none';
+      return;
+    }
+
+    // Create mode is advisor/admin only — same gate as roadmap-templates.html
+    // and new-roadmap-template.html; a standard user is sent away rather
+    // than shown a form whose submit would be rejected by RLS anyway.
+    if (!canManage) {
+      location.href = 'dashboard.html';
+      return;
+    }
+
+    renderEntityTypeOptions();
+
+    try {
+      [projectsCache, templatesCache] = await Promise.all([
+        INAPlatform.listProjects(),
+        INAPlatform.listRoadmapTemplates(),
+      ]);
+    } catch (e) {
+      projectsCache = [];
+      templatesCache = [];
+    }
+    renderProjectOptions();
+    if (preselectProjectId && projectsCache.some((p) => p.id === preselectProjectId)) {
+      projectSelect.value = preselectProjectId;
+    }
+    renderTemplateOptions();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

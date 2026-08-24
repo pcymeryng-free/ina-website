@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=3">
-<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/app.css?v=7">
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -19,10 +19,32 @@
       <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
     </a>
     <nav class="app-nav">
-      <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
-      <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
-      <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
-      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+      <div class="menu nav-menu" id="navProjectMenu">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="navProjectMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="nav.project">Project</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="navProjectMenuPanel">
+          <a href="new-project.html" class="menu-item"><span data-i18n="pd.newProject">New Project</span></a>
+          <a href="#" id="navEditLink" class="menu-item" style="display:none;"><span data-i18n="pd.editProject">Edit</span></a>
+          <button type="button" id="navDownloadPdfBtn" class="menu-item"><span data-i18n="pd.downloadPdf">Download PDF</span></button>
+          <button type="button" id="navPromoteBtn" class="menu-item" style="display:none;"></button>
+          <button type="button" id="navDemoteBtn" class="menu-item" style="display:none;"></button>
+          <button type="button" id="navReturnToNotAnalyzedBtn" class="menu-item" style="display:none;"><span data-i18n="wf.returnToNotAnalyzed">Return to Not Analyzed</span></button>
+          <button type="button" id="navDeleteLink" class="menu-item" style="display:none;"><span data-i18n="pd.deleteProject">Delete</span></button>
+          <a href="dashboard.html" class="menu-item"><span data-i18n="pd.close">Close</span></a>
+        </div>
+      </div>
+      <div class="menu nav-menu" id="navAnalysisMenu">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="navAnalysisMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="wf.actions.analysis">Analysis</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="navAnalysisMenuPanel">
+          <a href="#" id="navFsuLink" class="menu-item" style="display:none;"><span data-i18n="fsu.cta">FSU Scoring</span></a>
+          <a href="#" id="navAssessLink" class="menu-item" style="display:none;"><span data-i18n="assess.cta">Self-Assessment</span></a>
+          <button type="button" id="navAiAnalysisBtn" class="menu-item" style="display:none;"><span id="navAiAnalysisBtnLabel" data-i18n="pd.startAnalysis">AI Analysis</span></button>
+        </div>
+      </div>
+      <a href="#" class="nav-menu-trigger" id="navHelpLink"><span data-i18n="nav.help">Help</span></a>
     </nav>
     <div class="app-header-actions">
       <div class="lang-switch" aria-label="Language">
@@ -44,6 +66,19 @@
     <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="pd.loading">Loading project…</span></div>
 
     <div id="projectContent" style="display:none;">
+      <div class="page-menu-row">
+        <div class="menu" id="analysisMenu">
+          <button type="button" class="btn ghost small menu-trigger tint-amber" id="analysisMenuBtn" aria-haspopup="true" aria-expanded="false">
+            <span data-i18n="wf.actions.analysis">Analysis</span><span class="menu-caret">▾</span>
+          </button>
+          <div class="menu-panel" id="analysisMenuPanel">
+            <a href="#" id="fsuLink" class="menu-item" style="display:none;"><span data-i18n="fsu.cta">FSU Scoring</span></a>
+            <a href="#" id="assessLink" class="menu-item" style="display:none;"><span data-i18n="assess.cta">Self-Assessment</span></a>
+            <button type="button" id="aiAnalysisBtn" class="menu-item" style="display:none;"><span id="aiAnalysisBtnLabel" data-i18n="pd.startAnalysis">AI Analysis</span></button>
+          </div>
+        </div>
+      </div>
+
       <div id="advisorNote" class="advisor-banner" style="display:none; margin-bottom:24px;">
         <span data-i18n="pd.viewingAsAdvisor">You're viewing this project as an advisor — submitted by another user. Editing and re-running analysis are only available to the project owner.</span>
       </div>
@@ -55,28 +90,52 @@
           <p class="who" id="pmeta"></p>
           <p class="who" id="ownerInfo" style="display:none;"></p>
         </div>
-        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-          <a href="#" id="fsuLink" class="btn ghost small" style="display:none;"><span data-i18n="fsu.cta">FSU Scoring</span></a>
-          <a href="#" id="assessLink" class="btn ghost small" style="display:none;"><span data-i18n="assess.cta">Self-Assessment</span></a>
-          <a href="#" id="editLink" class="btn ghost small" style="display:none;"><span data-i18n="pd.editProject">Edit Project</span></a>
-          <button type="button" id="deleteLink" class="btn ghost small" style="display:none; color:#a13a3a; border-color:#d99;"><span data-i18n="pd.deleteProject">Delete Project</span></button>
+        <div class="header-controls">
+          <div class="menu" id="actionsMenu">
+            <button type="button" class="btn ghost small menu-trigger" id="actionsMenuBtn" aria-haspopup="true" aria-expanded="false">
+              <span data-i18n="pd.actions">Actions</span><span class="menu-caret">▾</span>
+            </button>
+            <div class="menu-panel" id="actionsMenuPanel">
+              <button type="button" id="downloadPdfBtn" class="menu-item"><span data-i18n="pd.downloadPdf">Download PDF</span></button>
+              <a href="#" id="editLink" class="menu-item" style="display:none;"><span data-i18n="pd.editProject">Edit</span></a>
+              <button type="button" id="promoteBtn" class="menu-item" style="display:none;"></button>
+              <button type="button" id="demoteBtn" class="menu-item" style="display:none;"></button>
+              <button type="button" id="returnToNotAnalyzedBtn" class="menu-item" style="display:none;"><span data-i18n="wf.returnToNotAnalyzed">Return to Not Analyzed</span></button>
+              <button type="button" id="deleteLink" class="menu-item" style="display:none;"><span data-i18n="pd.deleteProject">Delete</span></button>
+              <a href="dashboard.html" class="menu-item"><span data-i18n="pd.close">Close</span></a>
+            </div>
+          </div>
           <span class="status-pill" id="statusPill" style="font-size:12px; padding:8px 16px;"></span>
         </div>
       </div>
 
-      <div id="workflowBlock" class="info-block" style="margin-top:0; display:none;">
-        <h4><span data-i18n="wf.title">Project Workflow</span></h4>
+      <div id="workflowBlock" class="info-block" style="margin-top:0;">
+        <h4><span data-i18n="wf.title">Workflow</span></h4>
         <div class="wf-stepper" id="wfStepper"></div>
-        <div class="wf-advisor-row">
+        <div class="wf-advisor-row" id="wfAdvisorRow" style="display:none;">
           <p id="wfAdvisorText"></p>
           <div class="wf-actions" id="wfActions" style="display:none;"></div>
         </div>
         <div class="wf-history" id="wfHistory" style="display:none;"></div>
       </div>
 
+      <!-- Project Attributes — every optional attribute the project can
+           carry (country/program/generating entity plus the migration_v33/
+           v34 fields: beneficiaries, budget, duration, priority, technical
+           criticality, complexity), each as its own labeled item so nothing
+           gets buried inside a single truncated meta line. FSU amount/scope
+           keep their own dedicated block below (fsuAttrBlock) since that one
+           already has its own heading/framing. Populated by renderAttrs()
+           below; any attribute that isn't set on the project is simply
+           omitted, same convention as the rest of the page. -->
+      <div id="attrsBlock" class="info-block" style="margin-top:24px;">
+        <h4><span data-i18n="pd.attrs.title">Project Attributes</span></h4>
+        <div class="attrs-grid" id="attrsGrid"></div>
+      </div>
+
       <div class="info-block" style="margin-top:24px;">
-        <h4><span data-i18n="pd.description">Project Description</span></h4>
-        <p id="pdesc" style="font-size:14px; color:var(--muted); white-space:pre-wrap;"></p>
+        <h4><span data-i18n="pd.description">Description</span></h4>
+        <p id="pdesc" style="font-size:13.5px; color:var(--muted); white-space:pre-wrap; max-height:130px; overflow-y:auto; padding-right:8px;"></p>
       </div>
 
       <div id="fsuBlock" style="margin-top:24px; display:none;">
@@ -100,12 +159,130 @@
         <div id="docsList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
       </div>
 
+      <!-- Financing Programs — a project can apply to a Program that funds
+           ELABORATING it (e.g. USTDA), and separately to one or more
+           Programs that finance the project itself (e.g. FSU + BID
+           together). Independent of the "umbrella" program tag shown in
+           the header meta line above. See
+           supabase/migration_v21_program_funding_stage_and_applications.sql. -->
+      <div id="programsBlock" class="info-block" style="margin-top:24px;">
+        <h4><span data-i18n="pd.programs.title">Financing Programs</span></h4>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pd.programs.help">Apply this project to funding for elaborating it (e.g. USTDA), and to one or more programs financing the project itself (e.g. FSU, BID).</span></p>
+
+        <!-- Financing mix coverage summary — migration_v35_financing_mix.sql.
+             FSU % + every financing-stage Program's % (below) + the "other
+             source" % (otherFinancingBlock above), added up against 100%.
+             Populated by renderFinancingCoverage(); hidden until at least
+             one share is actually set (a brand-new project with nothing
+             filled in yet has nothing meaningful to sum). -->
+        <div id="financingCoverage" style="margin-top:14px; padding:12px 16px; border-radius:10px; background:var(--paper-2); display:none;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <span id="financingCoverageText" style="font-size:13px; font-weight:600;"></span>
+            <span id="financingCoverageBreakdown" style="font-size:12px; color:var(--muted);"></span>
+          </div>
+          <div style="margin-top:8px; height:6px; background:var(--paper-line); border-radius:100px; overflow:hidden;">
+            <div id="financingCoverageBar" style="height:100%; background:var(--amber); border-radius:100px; transition:width .2s ease;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <h5 class="h-card" style="font-size:13px;"><span data-i18n="pd.programs.preparation">Project preparation funding</span></h5>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <select id="preparationProgramPicker" style="display:none;"></select>
+              <button type="button" class="btn ghost small" id="addPreparationProgramBtn" style="display:none;"><span data-i18n="pd.programs.apply">Apply to program</span></button>
+            </div>
+          </div>
+          <div id="preparationProgramsList" style="margin-top:10px; display:flex; flex-direction:column; gap:10px;"></div>
+          <p id="preparationProgramsEmpty" style="font-size:13px; color:var(--muted); margin-top:8px;"><span data-i18n="pd.programs.preparation.empty">Not applied to any project-preparation funding yet.</span></p>
+        </div>
+
+        <div style="margin-top:22px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <h5 class="h-card" style="font-size:13px;"><span data-i18n="pd.programs.financing">Project financing</span></h5>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <select id="financingProgramPicker" style="display:none;"></select>
+              <button type="button" class="btn ghost small" id="addFinancingProgramBtn" style="display:none;"><span data-i18n="pd.programs.apply">Apply to program</span></button>
+            </div>
+          </div>
+
+          <!-- FSU group — see migration_v36_program_financing_entity.sql.
+               Combines the project's own direct FSU fields (fsu_amount/
+               fsu_scope/fsu_percentage, populated in renderProject()) with
+               any Program application whose financing_entity matches
+               "ENACOM-FSU" (INAPlatform.isFsuFinancingEntity(), applied in
+               renderProgramApplications()) — everything FSU-related lives
+               in one visual block, per Pablo's request to group them. -->
+          <div id="fsuFinancingGroup" class="financing-group" style="margin-top:16px;">
+            <h6 class="financing-group-title"><span data-i18n="pd.fsuAttr.title">Universal Service Fund (FSU)</span></h6>
+            <div id="fsuAttrBlock" style="display:none;">
+              <p id="fsuAttrAmount" style="font-size:14px; color:var(--ink); display:none;"></p>
+              <p id="fsuAttrAmountUsd" style="font-size:14px; color:var(--ink); display:none;"></p>
+              <p id="fsuAttrPercentage" style="font-size:14px; color:var(--ink); display:none;"></p>
+              <p id="fsuAttrScope" style="font-size:14px; color:var(--muted); white-space:pre-wrap; margin-top:4px; display:none;"></p>
+            </div>
+            <div id="fsuProgramsList" style="margin-top:8px; display:flex; flex-direction:column; gap:10px;"></div>
+            <p id="fsuFinancingEmpty" style="font-size:13px; color:var(--muted); margin-top:8px;"><span data-i18n="pd.programs.fsuGroup.empty">No FSU financing registered for this project yet.</span></p>
+          </div>
+
+          <!-- "Other financing sources" group — every financing-stage
+               Program application that isn't FSU-linked, plus the
+               project's own "other financing" fields
+               (other_financing_percentage/other_financing_notes, see
+               migration_v35_financing_mix.sql). -->
+          <div id="otherFinancingGroup" class="financing-group" style="margin-top:14px;">
+            <h6 class="financing-group-title"><span data-i18n="pd.otherFinancing.title">Other Financing Source</span></h6>
+            <div id="otherFinancingBlock" style="display:none;">
+              <p id="otherFinancingAmount" style="font-size:14px; color:var(--ink); display:none;"></p>
+              <p id="otherFinancingPercentage" style="font-size:14px; color:var(--ink); display:none;"></p>
+              <p id="otherFinancingNotesText" style="font-size:14px; color:var(--muted); white-space:pre-wrap; margin-top:4px; display:none;"></p>
+            </div>
+            <div id="otherProgramsList" style="margin-top:8px; display:flex; flex-direction:column; gap:10px;"></div>
+            <p id="otherFinancingEmpty" style="font-size:13px; color:var(--muted); margin-top:8px;"><span data-i18n="pd.programs.otherGroup.empty">No other financing sources registered for this project yet.</span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Roadmaps — a regulator-defined checklist of administrative and
+           regulatory procedures this project needs to work through, each
+           naming the public and/or private entity involved (see
+           supabase/migration_v27_gestion_instances.sql and
+           app/roadmap-instance.html, where a roadmap_instance is started
+           and worked through step by step). Any advisor/admin can start a
+           new roadmap on this project and advance its steps; the project
+           owner sees the list read-only (canManageRoadmaps() below gates
+           every editable control — the server-side RLS enforces the same
+           bar regardless of what the UI shows). -->
+      <div id="roadmapsBlock" class="info-block" style="margin-top:24px; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div>
+            <h4><span data-i18n="pd.roadmaps.title">Roadmaps</span></h4>
+            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pd.roadmaps.help">Administrative and regulatory procedures this project needs to work through, one at a time — each run by a specific entity against a specific checklist.</span></p>
+          </div>
+          <a id="newRoadmapInstanceBtn" href="#" class="btn ghost small" style="display:none; flex:0 0 auto;"><span data-i18n="rmi.form.new">New Roadmap</span></a>
+        </div>
+
+        <div id="roadmapInstancesList" style="margin-top:14px; display:flex; flex-direction:column; gap:10px;"></div>
+
+        <p id="roadmapsEmpty" style="font-size:13px; color:var(--muted); margin-top:8px; display:none;"><span data-i18n="pd.roadmaps.empty">No roadmaps started yet for this project.</span></p>
+      </div>
+
+      <!-- Shown for a project that's never been analyzed (freshly created,
+           or just edited — updateProject() resets status to 'submitted'
+           and clears readiness_stage). Analysis is no longer triggered
+           automatically on submit; the owner runs it manually here. -->
+      <div id="notAnalyzedBlock" style="margin-top:40px; display:none;">
+        <div class="analysis-pending">
+          <p style="font-size:14.5px;"><span data-i18n="pd.notAnalyzed">This project hasn&rsquo;t been analyzed yet.</span></p>
+          <p style="margin-top:8px; font-size:12.5px; color:var(--muted);"><span data-i18n="pd.notAnalyzed.help">Run the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade; whenever you&rsquo;re ready — it usually takes under a minute.</span></p>
+        </div>
+      </div>
+
       <div id="pendingBlock" style="margin-top:40px; display:none;">
         <div class="analysis-pending">
           <div class="spinner"></div>
           <p style="font-size:14.5px;"><span data-i18n="pd.analyzing">Applying the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade;…</span></p>
           <p style="margin-top:8px; font-size:12.5px; color:var(--muted);"><span data-i18n="pd.analyzing.wait">This usually takes under a minute. This page will update automatically.</span></p>
-          <button class="btn ghost small" id="retryBtn" style="margin-top:20px; display:none;"><span data-i18n="pd.retry">Retry Analysis</span></button>
         </div>
       </div>
 
@@ -129,6 +306,14 @@
             </div>
           </div>
 
+          <!-- Advisor-only nudge: shown when this analysis's score-derived
+               stage differs from the project's actual workflow stage
+               (projects.readiness_stage) — a pure suggestion, never applied
+               automatically (see the "AI Analysis at any stage" note in
+               PLATFORM_SETUP.md). The advisor acts on it with the existing
+               Promote/Demote actions in the Analysis/Actions menus. -->
+          <div id="stageSuggestionNotice" style="display:none; margin-top:20px; padding:12px 16px; border:1px solid var(--amber-deep); border-radius:10px; background:var(--paper-2); font-size:13px;"></div>
+
           <div class="dim-grid" id="dimGrid"></div>
         </div>
 
@@ -148,7 +333,6 @@
       <div id="errorBlock" style="margin-top:40px; display:none;">
         <div class="analysis-pending" style="border-color:#d99;">
           <p style="font-size:14.5px; color:#a13a3a;" id="errorText"><span data-i18n="pd.error">The analysis couldn't be completed.</span></p>
-          <button class="btn ghost small" id="retryBtnError" style="margin-top:16px;"><span data-i18n="pd.retry">Retry Analysis</span></button>
         </div>
       </div>
     </div>
@@ -161,9 +345,10 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=4"></script>
+<script src="/assets/i18n.js?v=40"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=9"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="/assets/platform.js?v=46"></script>
 <script src="/assets/script.js?v=12"></script>
 <script>
 (function () {
@@ -172,6 +357,97 @@
     e.preventDefault();
     await INAPlatform.signOut();
     location.href = 'login.html';
+  });
+
+  // Available to any viewer (owner or advisor) — nothing in the exported
+  // PDF isn't already visible on this page. generateProjectPdf() is
+  // defined further down, once currentProject/currentAnalysis/currentFsu
+  // exist; it no-ops safely if clicked before the project has loaded.
+  // Wired on both the body "Actions" menu's button and its nav-header
+  // twin (#navDownloadPdfBtn) — same action, two entry points.
+  ['downloadPdfBtn', 'navDownloadPdfBtn'].forEach((id) => {
+    document.getElementById(id).addEventListener('click', () => generateProjectPdf());
+  });
+
+  // The Análisis IA control covers all three trigger states (start /
+  // retry / disabled-while-analyzing) — see setAiAnalysisBtn() below,
+  // which toggles both the body button and its nav twin's label/class/
+  // disabled state together. A plain listener here is enough since
+  // runAnalysisAndPoll() is a no-op click target only when the button is
+  // actually shown and enabled.
+  ['aiAnalysisBtn', 'navAiAnalysisBtn'].forEach((id) => {
+    document.getElementById(id).addEventListener('click', () => {
+      if (!document.getElementById(id).disabled) runAnalysisAndPoll();
+    });
+  });
+
+  // "Help" is a placeholder in the nav for now — no destination yet, so
+  // just keep the "#" href from actually jumping the page anywhere.
+  document.getElementById('navHelpLink').addEventListener('click', (e) => e.preventDefault());
+
+  // Actions / Analysis dropdown menus in the header — plain show/hide via
+  // an "open" class on the .menu wrapper (CSS handles the panel's
+  // position/visibility). Opening one closes the other; clicking anywhere
+  // outside, pressing Escape, or clicking a menu item closes whichever is
+  // open.
+  //
+  // #actionsMenu's panel is right-aligned in CSS (right:0; left:auto —
+  // see assets/app.css) so it normally hugs the right edge of the
+  // "Acciones" button, which usually sits near the right edge of the
+  // header row. But .platform-header can wrap onto two lines (long
+  // project name/type/meta text pushes header-controls onto its own row),
+  // and when it does, header-controls — and the Acciones button with it —
+  // lands at the LEFT edge of the page instead. The panel's fixed
+  // right:0 CSS then anchors it to that now-left-positioned button and
+  // expands another ~210px further left, pushing it half (or fully) off
+  // the left edge of the browser window — this is the "menu cortado del
+  // lado izquierdo" bug. Rather than guess a breakpoint (the wrap point
+  // depends on the project's name/type/meta text length, not the viewport
+  // width alone), just measure where the panel actually lands each time
+  // it opens and nudge it back on-screen with a transform if it doesn't
+  // fit — cheap, and correct regardless of which menu or how the header
+  // happens to be laid out at that moment.
+  function keepMenuPanelOnScreen(menu) {
+    const panel = menu.querySelector('.menu-panel');
+    if (!panel) return;
+    panel.style.transform = '';
+    const rect = panel.getBoundingClientRect();
+    const margin = 10;
+    let shift = 0;
+    if (rect.left < margin) {
+      shift = margin - rect.left;
+    } else if (rect.right > window.innerWidth - margin) {
+      shift = (window.innerWidth - margin) - rect.right;
+    }
+    if (shift) panel.style.transform = `translateX(${shift}px)`;
+  }
+
+  const menus = Array.from(document.querySelectorAll('.menu'));
+  function closeMenus(except) {
+    menus.forEach((m) => {
+      if (m === except) return;
+      m.classList.remove('open');
+      const trigger = m.querySelector('.menu-trigger');
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    });
+  }
+  menus.forEach((menu) => {
+    const trigger = menu.querySelector('.menu-trigger');
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = !menu.classList.contains('open');
+      closeMenus();
+      menu.classList.toggle('open', willOpen);
+      trigger.setAttribute('aria-expanded', String(willOpen));
+      if (willOpen) keepMenuPanelOnScreen(menu);
+    });
+    menu.querySelectorAll('.menu-item').forEach((item) => {
+      item.addEventListener('click', () => closeMenus());
+    });
+  });
+  document.addEventListener('click', () => closeMenus());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMenus();
   });
 
   // assets/i18n.js's applyLang() only re-translates elements tagged
@@ -197,8 +473,11 @@
     btn.addEventListener('click', () => {
       document.documentElement.setAttribute('lang', btn.getAttribute('data-lang'));
       if (currentProject) renderProject(currentProject);
+      if (currentProject) renderWorkflowActionsMenu(currentProject);
       if (currentAnalysis) renderAnalysis(currentAnalysis);
       if (currentDocs) renderDocs(currentDocs);
+      if (currentProject) renderProgramApplications();
+      if (currentRoadmaps.length || (currentProfile && INAPlatform.canManageRoadmaps(currentProfile))) renderRoadmaps();
     });
   });
 
@@ -210,6 +489,25 @@
   const projectId = params.get('id');
   let pollTimer = null;
   let isOwner = true;
+  // The advisor currently assigned to this project (via the "Take" action
+  // in the workflow block, see INAPlatform.takeProject()/take_project()) —
+  // an assigned advisor can run the AI Analysis on the project they've
+  // taken, same as the owner can. Set alongside isOwner once the project
+  // loads; see setAiAnalysisBtn() below and api/analyze-project.js's
+  // matching server-side check.
+  let isAssignedAdvisor = false;
+  // Whether AI Analysis can be run at all right now. The OWNER still needs
+  // the project to have already left Not Analyzed (readiness_stage set via
+  // their own self-assessment first — a brand new project only offers
+  // Self-Assessment until they run it once). An assigned ADVISOR, or any
+  // ADMIN (profiles.role === 'admin', regardless of whether they've
+  // "taken" this specific project), has no such restriction — either can
+  // run AI Analysis at any stage, including before any self-assessment
+  // exists, since for them it's a decision-support tool rather than the
+  // thing that starts the pipeline (see the matching server-side exemption
+  // in api/analyze-project.js and PLATFORM_SETUP.md's "AI Analysis at any
+  // stage (advisor/admin)" note).
+  let canRunAnalysis = false;
   let pollStartedAt = null;
   const POLL_TIMEOUT_MS = 90000; // give up and show a retry-able error after ~90s
 
@@ -221,6 +519,18 @@
   let currentDocs = null;
   let currentProfile = null; // the VIEWER's own profile (role/id), not the project owner's
   let currentWorkflowEvents = [];
+  let currentFsu = null; // set when an FSU score exists — see the FSU block below and generateProjectPdf()
+  // Every Program this project has applied to (project_programs, each with
+  // its Program embedded) and every Program on the platform (for the
+  // "Apply to program" pickers) — see the Financing Programs block below
+  // and supabase/migration_v21_program_funding_stage_and_applications.sql.
+  let currentProjectPrograms = [];
+  let allProgramsForApply = [];
+  // This project's "Roadmaps" checklist (project_roadmaps rows) and every
+  // roadmap_templates entry matching its project_type (or generic/any-type
+  // templates) — see the Roadmaps block below and
+  // supabase/migration_v26_gestion_templates.sql.
+  let currentRoadmaps = [];
 
   function renderProject(p) {
     currentProject = p;
@@ -228,12 +538,96 @@
     document.getElementById('ptypeLabel').textContent = INAPlatform.projectTypeLabel(p.project_type);
     document.getElementById('pname').textContent = p.name;
     const lang = INAPlatform.currentLang();
-    const beneficiariesText = p.beneficiary_count != null
-      ? ` · ${p.beneficiary_count.toLocaleString(lang === 'es' ? 'es-AR' : 'en-US')} ${lang === 'es' ? 'beneficiarios' : 'beneficiaries'}`
-      : '';
     const programText = p.programs && p.programs.name ? ` · ${p.programs.name}` : '';
-    document.getElementById('pmeta').textContent = INAPlatform.countryLabel(p.country) + beneficiariesText + programText;
+    const entityText = p.generating_entity_name
+      ? ` · ${p.generating_entity_name}${p.generating_entity_type ? ` (${INAPlatform.entityTypeLabel(p.generating_entity_type)})` : ''}`
+      : '';
+    // Kept short — just country/program/entity, a quick "where/who" line
+    // next to the name. Everything else (beneficiaries, budget, duration,
+    // priority, technical criticality, complexity) now lives in the
+    // Project Attributes grid below (renderAttrs()) instead of being
+    // squeezed into this single line, so nothing gets truncated or missed.
+    document.getElementById('pmeta').textContent = INAPlatform.countryLabel(p.country) + programText + entityText;
     document.getElementById('pdesc').textContent = p.description;
+    renderAttrs(p);
+
+    // FSU amount/scope/percentage block — see
+    // migration_v33_project_attributes.sql and
+    // migration_v35_financing_mix.sql (fsu_percentage).
+    const fsuAttrBlock = document.getElementById('fsuAttrBlock');
+    const fsuAttrAmount = document.getElementById('fsuAttrAmount');
+    const fsuAttrAmountUsd = document.getElementById('fsuAttrAmountUsd');
+    const fsuAttrPercentage = document.getElementById('fsuAttrPercentage');
+    const fsuAttrScope = document.getElementById('fsuAttrScope');
+    const hasFsuAmount = p.fsu_amount != null;
+    const hasFsuAmountUsd = p.fsu_amount_usd != null;
+    const hasFsuPercentage = p.fsu_percentage != null;
+    const hasFsuScope = !!p.fsu_scope;
+    fsuAttrBlock.style.display = (hasFsuAmount || hasFsuAmountUsd || hasFsuPercentage || hasFsuScope) ? 'block' : 'none';
+    if (hasFsuAmount) {
+      fsuAttrAmount.textContent = (lang === 'es' ? 'Monto solicitado: ' : 'Amount requested: ')
+        + 'ARS ' + Number(p.fsu_amount).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
+      fsuAttrAmount.style.display = 'block';
+    } else {
+      fsuAttrAmount.style.display = 'none';
+    }
+    // USD twin of the FSU amount above, plus the ARS-equivalent computed
+    // from exchange_rate (display-only) — see migration_v38_usd_amounts.sql.
+    if (hasFsuAmountUsd) {
+      let text = (lang === 'es' ? 'Monto solicitado (USD): ' : 'Amount requested (USD): ')
+        + INAPlatform.formatCurrencyUSD(p.fsu_amount_usd);
+      const arsEquiv = INAPlatform.usdToArs(p.fsu_amount_usd, p.exchange_rate);
+      if (arsEquiv != null) {
+        text += ` (${lang === 'es' ? 'equiv.' : 'equiv.'} ${INAPlatform.formatCurrency(arsEquiv)})`;
+      }
+      fsuAttrAmountUsd.textContent = text;
+      fsuAttrAmountUsd.style.display = 'block';
+    } else {
+      fsuAttrAmountUsd.style.display = 'none';
+    }
+    if (hasFsuPercentage) {
+      fsuAttrPercentage.textContent = (lang === 'es' ? 'Cubre: ' : 'Covers: ') + `${p.fsu_percentage}% ` + (lang === 'es' ? 'del presupuesto total' : 'of the total budget');
+      fsuAttrPercentage.style.display = 'block';
+    } else {
+      fsuAttrPercentage.style.display = 'none';
+    }
+    if (hasFsuScope) {
+      fsuAttrScope.textContent = p.fsu_scope;
+      fsuAttrScope.style.display = 'block';
+    } else {
+      fsuAttrScope.style.display = 'none';
+    }
+
+    // "Other financing source" block — migration_v35_financing_mix.sql +
+    // migration_v37_financing_amounts.sql (other_financing_amount).
+    const otherFinancingBlock = document.getElementById('otherFinancingBlock');
+    const otherFinancingAmountEl = document.getElementById('otherFinancingAmount');
+    const otherFinancingPercentage = document.getElementById('otherFinancingPercentage');
+    const otherFinancingNotesText = document.getElementById('otherFinancingNotesText');
+    const hasOtherAmount = p.other_financing_amount != null;
+    const hasOtherPct = p.other_financing_percentage != null;
+    const hasOtherNotes = !!p.other_financing_notes;
+    otherFinancingBlock.style.display = (hasOtherAmount || hasOtherPct || hasOtherNotes) ? 'block' : 'none';
+    if (hasOtherAmount) {
+      otherFinancingAmountEl.textContent = (lang === 'es' ? 'Monto: ' : 'Amount: ')
+        + 'ARS ' + Number(p.other_financing_amount).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
+      otherFinancingAmountEl.style.display = 'block';
+    } else {
+      otherFinancingAmountEl.style.display = 'none';
+    }
+    if (hasOtherPct) {
+      otherFinancingPercentage.textContent = (lang === 'es' ? 'Cubre: ' : 'Covers: ') + `${p.other_financing_percentage}% ` + (lang === 'es' ? 'del presupuesto total' : 'of the total budget');
+      otherFinancingPercentage.style.display = 'block';
+    } else {
+      otherFinancingPercentage.style.display = 'none';
+    }
+    if (hasOtherNotes) {
+      otherFinancingNotesText.textContent = p.other_financing_notes;
+      otherFinancingNotesText.style.display = 'block';
+    } else {
+      otherFinancingNotesText.style.display = 'none';
+    }
+
     const pill = document.getElementById('statusPill');
     pill.textContent = INAPlatform.effectiveStatusLabel(p);
     pill.className = `status-pill ${INAPlatform.effectiveStatusClass(p)}`;
@@ -247,6 +641,79 @@
     renderWorkflow(p);
   }
 
+  // Project Attributes grid — see the #attrsBlock markup above. Builds one
+  // labeled item per attribute the project actually has set (beneficiaries,
+  // budget, duration, priority, technical criticality, complexity — the
+  // migration_v33/v34 fields), skipping anything unset. FSU amount/scope
+  // are deliberately NOT duplicated here since #fsuAttrBlock already shows
+  // them with their own heading right below.
+  function renderAttrs(p) {
+    const lang = INAPlatform.currentLang();
+    const items = [];
+
+    if (p.beneficiary_count != null) {
+      items.push([
+        lang === 'es' ? 'Beneficiarios' : 'Beneficiaries',
+        p.beneficiary_count.toLocaleString(lang === 'es' ? 'es-AR' : 'en-US'),
+      ]);
+    }
+    const budget = INAPlatform.formatCurrency(p.budget_amount);
+    if (budget) {
+      items.push([lang === 'es' ? 'Presupuesto total' : 'Total budget', budget]);
+    }
+    // USD twin of the budget above, plus the ARS-equivalent computed from
+    // exchange_rate (display-only — never written to budget_amount) — see
+    // migration_v38_usd_amounts.sql.
+    const budgetUsd = INAPlatform.formatCurrencyUSD(p.budget_amount_usd);
+    if (budgetUsd) {
+      items.push([lang === 'es' ? 'Presupuesto total (USD)' : 'Total budget (USD)', budgetUsd]);
+      const arsEquiv = INAPlatform.usdToArs(p.budget_amount_usd, p.exchange_rate);
+      if (arsEquiv != null) {
+        items.push([
+          lang === 'es' ? 'Equivalente en ARS (calculado)' : 'ARS equivalent (calculated)',
+          INAPlatform.formatCurrency(arsEquiv),
+        ]);
+      }
+    }
+    if (p.exchange_rate != null) {
+      const rateLabel = lang === 'es' ? 'Tipo de cambio usado' : 'Exchange rate used';
+      const rateValue = `1 USD = ${Number(p.exchange_rate).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US')} ARS`
+        + (p.exchange_rate_date ? ` (${p.exchange_rate_date})` : '');
+      items.push([rateLabel, rateValue]);
+    }
+    const duration = INAPlatform.formatDuration(p.duration_value, p.duration_unit);
+    if (duration) {
+      items.push([lang === 'es' ? 'Duración' : 'Duration', duration]);
+    }
+    if (p.priority) {
+      items.push([lang === 'es' ? 'Prioridad' : 'Priority', INAPlatform.priorityLabel(p.priority)]);
+    }
+    if (p.technical_criticality) {
+      items.push([
+        lang === 'es' ? 'Criticidad técnica' : 'Technical criticality',
+        INAPlatform.technicalCriticalityLabel(p.technical_criticality),
+      ]);
+    }
+    if (p.complexity) {
+      items.push([lang === 'es' ? 'Complejidad' : 'Complexity', INAPlatform.complexityLabel(p.complexity)]);
+    }
+
+    const block = document.getElementById('attrsBlock');
+    const grid = document.getElementById('attrsGrid');
+    if (!items.length) {
+      block.style.display = 'none';
+      grid.innerHTML = '';
+      return;
+    }
+    block.style.display = 'block';
+    grid.innerHTML = items.map(([label, value]) => `
+      <div class="attr-item">
+        <div class="attr-item-label">${escapeHtml(label)}</div>
+        <div class="attr-item-value">${escapeHtml(value)}</div>
+      </div>
+    `).join('');
+  }
+
   /* ---------- Project workflow (stepper + take/advance + history) ----------
      Reuses the 4 Investment Readiness Index™ stages (readiness_stage) as
      the workflow's states — see supabase/migration_v12_workflow.sql. Shown
@@ -254,34 +721,96 @@
      advisors/admins, since only they can call the underlying RPCs. */
   function renderWorkflow(p) {
     const block = document.getElementById('workflowBlock');
-    // Only a project that's actually reached the analysis pipeline has a
-    // meaningful workflow to show — a brand-new project still being
-    // filled out (status === 'submitted' with no analysis yet) has
-    // nothing to step through.
-    if (p.status !== 'completed' && p.status !== 'analyzing' && !p.readiness_stage) {
-      block.style.display = 'none';
-      return;
-    }
+    // The stepper itself is always visible — even for a brand-new,
+    // never-analyzed project — so the viewer can see at a glance where a
+    // project should end up. A project only has a "meaningful" workflow
+    // (assigned advisor / take-advance actions / history) once it's
+    // actually entered the analysis pipeline.
     block.style.display = 'block';
+    const pipelineEntered = p.status === 'completed' || p.status === 'analyzing' || !!p.readiness_stage;
 
     const lang = INAPlatform.currentLang();
-    const current = p.readiness_stage || INAPlatform.STAGE_ORDER[0];
-    const currentIdx = INAPlatform.STAGE_ORDER.indexOf(current);
+    const currentIdx = p.readiness_stage ? 1 + INAPlatform.STAGE_ORDER.indexOf(p.readiness_stage) : 0;
 
-    // Stepper
+    // Computed early (normally built inside the "Actions" section further
+    // down) so the stepper loop below can decide whether to draw clickable
+    // arrows on the two line segments touching the current step — same
+    // gating, same underlying RPCs as the Actions-menu items
+    // (renderWorkflowActionsMenu), just a second, faster entry point onto
+    // the diagram itself so an advisor doesn't have to open that menu.
+    const viewerIsAdvisor = currentProfile && (INAPlatform.isAdvisor(currentProfile) || INAPlatform.isAdmin(currentProfile));
+    const stepperNextStage = viewerIsAdvisor ? INAPlatform.nextWorkflowStage(p) : null;
+    const stepperPrevStage = viewerIsAdvisor ? INAPlatform.prevWorkflowStage(p) : null;
+    const stepperCanReturn = viewerIsAdvisor && INAPlatform.canReturnToNotAnalyzed(p);
+
+    // Stepper — leading pseudo-step for "Not analyzed" (0), then the 4
+    // Investment Readiness Index™ stages (1-4).
     const stepper = document.getElementById('wfStepper');
     stepper.innerHTML = '';
-    INAPlatform.STAGE_ORDER.forEach((stage, i) => {
+    const notAnalyzedLabel = lang === 'es' ? 'No Analizado' : 'Not Analyzed';
+    const steps = [notAnalyzedLabel, ...INAPlatform.STAGE_ORDER.map(s => INAPlatform.stageLabel(s))];
+    steps.forEach((label, i) => {
       const step = document.createElement('div');
       const state = i < currentIdx ? 'done' : (i === currentIdx ? 'current' : '');
-      step.className = `wf-step ${state}`;
+      const isAnalyzing = i === 0 && i === currentIdx && p.status === 'analyzing';
+      step.className = `wf-step ${state}${isAnalyzing ? ' analyzing' : ''}`;
       step.innerHTML = `
         <div class="wf-step-line"></div>
         <div class="wf-step-dot">${i < currentIdx ? '✓' : i + 1}</div>
-        <div class="wf-step-label">${INAPlatform.stageLabel(stage)}</div>
+        <div class="wf-step-label">${label}</div>
       `;
+
+      // The line segment feeding INTO this step (from the previous one) —
+      // clickable to demote/return only when this IS the current step
+      // (i.e. the segment right behind where the project sits today).
+      if (i === currentIdx && i > 0 && (stepperCanReturn || stepperPrevStage)) {
+        const arrow = document.createElement('button');
+        arrow.type = 'button';
+        arrow.className = 'wf-step-arrow wf-step-arrow-back';
+        arrow.innerHTML = '‹';
+        const targetLabel = stepperCanReturn ? notAnalyzedLabel : INAPlatform.stageLabel(stepperPrevStage);
+        arrow.title = lang === 'es' ? `Degradar a ${targetLabel}` : `Demote to ${targetLabel}`;
+        arrow.setAttribute('aria-label', arrow.title);
+        arrow.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (stepperCanReturn) handleReturnToNotAnalyzed();
+          else handleDemote(stepperPrevStage);
+        });
+        step.appendChild(arrow);
+      }
+
+      // The line segment feeding INTO the NEXT step — clickable to promote
+      // only when this step is one past the current one (the segment
+      // right ahead of where the project sits today).
+      if (i === currentIdx + 1 && stepperNextStage) {
+        const arrow = document.createElement('button');
+        arrow.type = 'button';
+        arrow.className = 'wf-step-arrow wf-step-arrow-fwd';
+        arrow.innerHTML = '›';
+        arrow.title = lang === 'es'
+          ? `Promover a ${INAPlatform.stageLabel(stepperNextStage)}`
+          : `Promote to ${INAPlatform.stageLabel(stepperNextStage)}`;
+        arrow.setAttribute('aria-label', arrow.title);
+        arrow.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handlePromote(stepperNextStage);
+        });
+        step.appendChild(arrow);
+      }
+
       stepper.appendChild(step);
     });
+
+    // Advisor row + take/advance actions + history — only once the
+    // project has actually entered the analysis pipeline.
+    const advisorRow = document.getElementById('wfAdvisorRow');
+    if (!pipelineEntered) {
+      advisorRow.style.display = 'none';
+      document.getElementById('wfHistory').style.display = 'none';
+      document.getElementById('wfHistory').innerHTML = '';
+      return;
+    }
+    advisorRow.style.display = 'flex';
 
     // Assigned advisor
     const advisorText = document.getElementById('wfAdvisorText');
@@ -294,10 +823,14 @@
 
     // Actions — advisors/admins only, and only advisors can act at all
     // (owners just watch the workflow progress on their own project).
+    // Just "Take project" here now — promoting/demoting/returning to Not
+    // Analyzed moved into the Actions menu (renderWorkflowActionsMenu,
+    // per migration_v20_workflow_promote_demote.sql / Pablo's spec that
+    // those live in "el menú de acciones").
     const actions = document.getElementById('wfActions');
     actions.innerHTML = '';
     actions.style.display = 'none';
-    const viewerIsAdvisor = currentProfile && (INAPlatform.isAdvisor(currentProfile) || INAPlatform.isAdmin(currentProfile));
+    // viewerIsAdvisor computed earlier, above the stepper loop.
     if (viewerIsAdvisor) {
       actions.style.display = 'flex';
       const takeBtn = document.createElement('button');
@@ -316,39 +849,26 @@
         }
       });
       actions.appendChild(takeBtn);
-
-      const nextStage = INAPlatform.nextWorkflowStage(p);
-      if (nextStage) {
-        const advanceBtn = document.createElement('button');
-        advanceBtn.type = 'button';
-        advanceBtn.className = 'btn amber small';
-        advanceBtn.textContent = (lang === 'es' ? 'Avanzar a ' : 'Advance to ') + INAPlatform.stageLabel(nextStage);
-        advanceBtn.addEventListener('click', async () => {
-          const confirmMsg = lang === 'es'
-            ? `¿Avanzar este proyecto a "${INAPlatform.stageLabel(nextStage)}"?`
-            : `Advance this project to "${INAPlatform.stageLabel(nextStage)}"?`;
-          if (!confirm(confirmMsg)) return;
-          advanceBtn.disabled = true;
-          try {
-            await INAPlatform.advanceProjectWorkflow(p.id);
-            await refreshProjectAndWorkflow();
-          } catch (e) {
-            alert(e.message || (lang === 'es' ? 'No se pudo avanzar el proyecto.' : 'Could not advance the project.'));
-          } finally {
-            advanceBtn.disabled = false;
-          }
-        });
-        actions.appendChild(advanceBtn);
-      } else {
-        const doneLabel = document.createElement('span');
-        doneLabel.style.cssText = 'font-size:12.5px; color:var(--muted);';
-        doneLabel.textContent = lang === 'es' ? 'Ya está en la etapa final.' : 'Already at the final stage.';
-        actions.appendChild(doneLabel);
-      }
     }
 
     // History
     renderWorkflowHistory();
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+
+  // Rank used only to tell a promotion apart from a demotion/return when
+  // rendering history — 'Not Analyzed' (or a null from_stage, shouldn't
+  // happen post-v20 but handled defensively) sorts before every real
+  // stage, so a Not Analyzed → Concept Stage row and its exact reverse
+  // both phrase correctly.
+  function stageRank(stage) {
+    if (!stage || stage === 'Not Analyzed') return -1;
+    return INAPlatform.STAGE_ORDER.indexOf(stage);
   }
 
   function renderWorkflowHistory() {
@@ -369,10 +889,123 @@
       const dateStr = new Date(ev.created_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' });
       const fromLabel = ev.from_stage ? INAPlatform.stageLabel(ev.from_stage) : (lang === 'es' ? 'Inicio' : 'Start');
       const toLabel = INAPlatform.stageLabel(ev.to_stage);
-      row.innerHTML = lang === 'es'
-        ? `<b>${advisorName}</b> avanzó de ${fromLabel} a ${toLabel} · ${dateStr}`
-        : `<b>${advisorName}</b> advanced from ${fromLabel} to ${toLabel} · ${dateStr}`;
+      const promoted = stageRank(ev.to_stage) > stageRank(ev.from_stage);
+      let verb;
+      if (ev.to_stage === 'Not Analyzed') {
+        verb = lang === 'es' ? 'devolvió el proyecto a' : 'returned the project to';
+      } else if (promoted) {
+        verb = lang === 'es' ? 'promovió de' : 'promoted from';
+      } else {
+        verb = lang === 'es' ? 'degradó de' : 'demoted from';
+      }
+      const fromToText = ev.to_stage === 'Not Analyzed'
+        ? toLabel
+        : (lang === 'es' ? `${fromLabel} a ${toLabel}` : `${fromLabel} to ${toLabel}`);
+      row.innerHTML = `<b>${escapeHtml(advisorName)}</b> ${verb} ${fromToText} · ${dateStr}`
+        + (ev.note ? `<div class="wf-history-note">${escapeHtml(ev.note)}</div>` : '');
       wrap.appendChild(row);
+    });
+  }
+
+  // Promote/Demote/Return-to-Not-Analyzed live in the Actions menu (body +
+  // nav-header twin), not inline in the workflow block — per spec. Visible
+  // to advisors/admins only, gated by INAPlatform.nextWorkflowStage/
+  // prevWorkflowStage/canReturnToNotAnalyzed, which already encode which
+  // transitions are legal from the project's current stage (see
+  // migration_v20_workflow_promote_demote.sql). Each collects a mandatory
+  // comment via prompt() — there's no rich-modal infrastructure on this
+  // page, so this matches the existing native-dialog pattern (confirm()
+  // for delete) rather than introducing a new one for just this.
+  function promptForNote(question) {
+    const note = prompt(question);
+    if (note === null) return null; // cancelled
+    const trimmed = note.trim();
+    if (!trimmed) {
+      alert(INAPlatform.currentLang() === 'es'
+        ? 'El comentario es obligatorio.'
+        : 'A comment is required.');
+      return undefined; // signal "invalid, but not a cancel" to the caller
+    }
+    return trimmed;
+  }
+
+  async function handlePromote(nextStage) {
+    const lang = INAPlatform.currentLang();
+    const note = promptForNote(lang === 'es'
+      ? `Motivo para promover el proyecto a "${INAPlatform.stageLabel(nextStage)}":`
+      : `Reason for promoting the project to "${INAPlatform.stageLabel(nextStage)}":`);
+    if (!note) return;
+    try {
+      await INAPlatform.promoteProjectWorkflow(currentProject.id, note);
+      location.reload();
+    } catch (e) {
+      alert(e.message || (lang === 'es' ? 'No se pudo promover el proyecto.' : 'Could not promote the project.'));
+    }
+  }
+
+  async function handleDemote(prevStage) {
+    const lang = INAPlatform.currentLang();
+    const note = promptForNote(lang === 'es'
+      ? `Motivo para degradar el proyecto a "${INAPlatform.stageLabel(prevStage)}":`
+      : `Reason for demoting the project to "${INAPlatform.stageLabel(prevStage)}":`);
+    if (!note) return;
+    try {
+      await INAPlatform.demoteProjectWorkflow(currentProject.id, note);
+      location.reload();
+    } catch (e) {
+      alert(e.message || (lang === 'es' ? 'No se pudo degradar el proyecto.' : 'Could not demote the project.'));
+    }
+  }
+
+  async function handleReturnToNotAnalyzed() {
+    const lang = INAPlatform.currentLang();
+    const note = promptForNote(lang === 'es'
+      ? 'Motivo para devolver este proyecto a "No Analizado" (vuelve a manos del usuario que lo creó):'
+      : 'Reason for returning this project to "Not Analyzed" (goes back to the user who created it):');
+    if (!note) return;
+    try {
+      await INAPlatform.returnProjectToNotAnalyzed(currentProject.id, note);
+      location.reload();
+    } catch (e) {
+      alert(e.message || (lang === 'es' ? 'No se pudo devolver el proyecto.' : 'Could not return the project.'));
+    }
+  }
+
+  function renderWorkflowActionsMenu(p) {
+    const lang = INAPlatform.currentLang();
+    const viewerIsAdvisor = currentProfile && (INAPlatform.isAdvisor(currentProfile) || INAPlatform.isAdmin(currentProfile));
+
+    const nextStage = viewerIsAdvisor ? INAPlatform.nextWorkflowStage(p) : null;
+    ['promoteBtn', 'navPromoteBtn'].forEach((id) => {
+      const btn = document.getElementById(id);
+      if (nextStage) {
+        btn.style.display = 'flex';
+        btn.textContent = (lang === 'es' ? 'Promover a ' : 'Promote to ') + INAPlatform.stageLabel(nextStage);
+        btn.onclick = () => handlePromote(nextStage);
+      } else {
+        btn.style.display = 'none';
+        btn.onclick = null;
+      }
+    });
+
+    const prevStage = viewerIsAdvisor ? INAPlatform.prevWorkflowStage(p) : null;
+    ['demoteBtn', 'navDemoteBtn'].forEach((id) => {
+      const btn = document.getElementById(id);
+      if (prevStage) {
+        btn.style.display = 'flex';
+        btn.textContent = (lang === 'es' ? 'Degradar a ' : 'Demote to ') + INAPlatform.stageLabel(prevStage);
+        btn.onclick = () => handleDemote(prevStage);
+      } else {
+        btn.style.display = 'none';
+        btn.onclick = null;
+      }
+    });
+
+    const canReturn = viewerIsAdvisor && INAPlatform.canReturnToNotAnalyzed(p);
+    ['returnToNotAnalyzedBtn', 'navReturnToNotAnalyzedBtn'].forEach((id) => {
+      const btn = document.getElementById(id);
+      btn.style.display = canReturn ? 'flex' : 'none';
+      btn.onclick = canReturn ? handleReturnToNotAnalyzed : null;
     });
   }
 
@@ -383,6 +1016,7 @@
     ]);
     currentWorkflowEvents = events;
     renderProject(project);
+    renderWorkflowActionsMenu(project);
   }
 
   // Grouped by document_type (technical / financial / administrative /
@@ -444,9 +1078,40 @@
       } catch (e) { /* malformed/legacy raw_model_output — fall back to the stored fields */ }
     }
 
+    // AI Analysis (source='ai') results have no client-side recompute path
+    // like the one above — dimensions/gap_roadmap/financing_recommendations/
+    // summary are freeform model output, saved once. localizeAnalysis()
+    // swaps in the _en columns when the UI is in English and they exist
+    // (migration_v40_bilingual_analysis.sql), falling back to the Spanish
+    // fields otherwise. For a manual result this is a no-op — data already
+    // has no _en columns to look at, so every field falls back to the value
+    // computeManualAssessment() just produced in the right language.
+    data = INAPlatform.localizeAnalysis(data, INAPlatform.currentLang());
+
     document.getElementById('pendingBlock').style.display = 'none';
     document.getElementById('errorBlock').style.display = 'none';
+    document.getElementById('notAnalyzedBlock').style.display = 'none';
     document.getElementById('resultsBlock').style.display = 'block';
+    // Bug fix (UU1): this used to unconditionally hide the AI Analysis
+    // button whenever ANY analysis was being rendered — but a
+    // Self-Assessment (source='manual') isn't an AI analysis, it's what
+    // MOVES the project out of Not Analyzed and is exactly what's
+    // supposed to unlock the real AI Analysis button. That first fix only
+    // went halfway though: it kept force-hiding the button once a REAL AI
+    // analysis (source='ai') was already showing, on the old assumption
+    // that AI Analysis only ever ran once per project. That assumption
+    // broke once advisors/admins got the ability to (re-)run AI Analysis
+    // at any stage as a decision-support tool (see canRunAnalysis and "AI
+    // Analysis at any stage" in PLATFORM_SETUP.md) — a project already at
+    // Advanced/Investment Ready almost certainly already has a source='ai'
+    // row on screen, and hiding the button there specifically defeated
+    // the whole point of that feature (this is what surfaced it: an admin
+    // could re-run on a project still in Concept Stage but not on one
+    // already promoted to Advanced Structuring). Always request 'start'
+    // now — setAiAnalysisBtn() already does the actual gating via
+    // canRunAnalysis, so this line no longer needs its own opinion about
+    // when re-running should be allowed.
+    setAiAnalysisBtn('start');
 
     document.getElementById('scoreNum').textContent = data.overall_score != null ? data.overall_score : '–';
     document.getElementById('stageLabel').textContent = INAPlatform.stageLabel(data.stage);
@@ -457,6 +1122,28 @@
     sourceBadge.textContent = a.source === 'manual'
       ? (lang === 'es' ? 'Autoevaluación' : 'Self-Assessed')
       : (lang === 'es' ? 'Análisis por IA' : 'AI Analysis');
+
+    // Advisor-only stage suggestion (see #stageSuggestionNotice markup
+    // above): this analysis's score-derived `data.stage` is purely
+    // informational — projects.readiness_stage (the project's real
+    // workflow stage) only ever moves via explicit Promote/Demote/Return
+    // actions (see renderWorkflow() below and migration_v20_workflow_
+    // promote_demote.sql). When the two disagree, nudge the advisor with a
+    // plain-text notice rather than auto-applying anything; they act on it
+    // with the existing Promote/Demote controls if they agree.
+    const stageNotice = document.getElementById('stageSuggestionNotice');
+    const viewerIsAdvisorForNotice = currentProfile && (INAPlatform.isAdvisor(currentProfile) || INAPlatform.isAdmin(currentProfile));
+    const actualStage = currentProject ? currentProject.readiness_stage : null;
+    if (viewerIsAdvisorForNotice && data.stage && actualStage && data.stage !== actualStage) {
+      const suggestedLabel = INAPlatform.stageLabel(data.stage);
+      const actualLabel = INAPlatform.stageLabel(actualStage);
+      stageNotice.innerHTML = lang === 'es'
+        ? `<b>Sugerencia de la IA:</b> según este puntaje, el proyecto correspondería a <b>${suggestedLabel}</b> — actualmente está en <b>${actualLabel}</b>. Es solo una sugerencia; si estás de acuerdo, usá Promover/Degradar en el menú Acciones para ajustarlo.`
+        : `<b>AI suggestion:</b> based on this score, the project would correspond to <b>${suggestedLabel}</b> — it's currently at <b>${actualLabel}</b>. This is only a suggestion; if you agree, use Promote/Demote in the Actions menu to adjust it.`;
+      stageNotice.style.display = 'block';
+    } else {
+      stageNotice.style.display = 'none';
+    }
 
     const dimGrid = document.getElementById('dimGrid');
     dimGrid.innerHTML = '';
@@ -503,12 +1190,23 @@
   function showPending() {
     document.getElementById('resultsBlock').style.display = 'none';
     document.getElementById('errorBlock').style.display = 'none';
+    document.getElementById('notAnalyzedBlock').style.display = 'none';
     document.getElementById('pendingBlock').style.display = 'block';
+    setAiAnalysisBtn('analyzing');
+  }
+
+  function showNotAnalyzed() {
+    document.getElementById('resultsBlock').style.display = 'none';
+    document.getElementById('errorBlock').style.display = 'none';
+    document.getElementById('pendingBlock').style.display = 'none';
+    document.getElementById('notAnalyzedBlock').style.display = 'block';
+    setAiAnalysisBtn('start');
   }
 
   function showError(isTimeout) {
     document.getElementById('pendingBlock').style.display = 'none';
     document.getElementById('resultsBlock').style.display = 'none';
+    document.getElementById('notAnalyzedBlock').style.display = 'none';
     document.getElementById('errorBlock').style.display = 'block';
     const errorText = document.getElementById('errorText');
     const lang = INAPlatform.currentLang();
@@ -517,7 +1215,420 @@
     } else {
       errorText.innerHTML = '<span data-i18n="pd.error">The analysis couldn\'t be completed.</span>';
     }
+    setAiAnalysisBtn('retry');
     if (typeof applyLang === 'function') applyLang(lang);
+  }
+
+  // Single control for the Analysis group's "Análisis IA" button — its
+  // label/style/enabled-state reflect the project's current analysis
+  // status, replacing what used to be three separate buttons scattered
+  // across the notAnalyzed/pending/error panels further down the page.
+  // The owner can trigger analysis once the project has left Not Analyzed
+  // (their own self-assessment first); the advisor currently assigned to
+  // the project (having "taken" it — see isAssignedAdvisor above), or any
+  // admin at all (no "take" required — see isAdminForAnalysis in init()),
+  // can trigger it at ANY stage, including while still Not Analyzed — all
+  // gated by canRunAnalysis (set in init()) and enforced again
+  // server-side in api/analyze-project.js. It stays hidden for a
+  // non-admin advisor just browsing who hasn't taken this specific
+  // project, and for the owner while the project is still Not Analyzed
+  // (Self-Assessment is the only action offered to them then).
+  function setAiAnalysisBtn(state) {
+    // Drives both the body "Analysis" menu's button and its nav-header
+    // twin (#navAiAnalysisBtn) together — same state, same behavior.
+    const pairs = [
+      ['aiAnalysisBtn', 'aiAnalysisBtnLabel'],
+      ['navAiAnalysisBtn', 'navAiAnalysisBtnLabel'],
+    ];
+    pairs.forEach(([btnId, labelId]) => {
+      const btn = document.getElementById(btnId);
+      if (!canRunAnalysis || state === 'hidden') {
+        btn.style.display = 'none';
+        return;
+      }
+      const label = document.getElementById(labelId);
+      btn.style.display = 'flex';
+      btn.disabled = state === 'analyzing';
+      btn.className = 'menu-item';
+      label.setAttribute('data-i18n', state === 'start' ? 'pd.startAnalysis' : state === 'analyzing' ? 'pd.analyzing.short' : 'pd.retry');
+    });
+    if (typeof applyLang === 'function') applyLang(INAPlatform.currentLang());
+  }
+
+  // ---------------------------------------------------------------------
+  // PDF export — client-side only (jsPDF via CDN, loaded above), so it
+  // works straight off whatever's already been fetched for this page
+  // (currentProject/currentAnalysis/currentFsu). No server involvement:
+  // anyone who can view this project page (owner or advisor) can export
+  // it, since nothing in the PDF isn't already visible on screen.
+  // Mirrors the brand look used in the Manual de Usuario PDF (navy header
+  // band, amber accents) — see build_manual.py for the same palette.
+  function generateProjectPdf() {
+    if (!currentProject || !window.jspdf) return;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const lang = INAPlatform.currentLang();
+    const PAGE_W = doc.internal.pageSize.getWidth();
+    const PAGE_H = doc.internal.pageSize.getHeight();
+    const MARGIN = 54;
+    const NAVY = [11, 21, 38];
+    const AMBER = [217, 146, 46];
+    const AMBER_DEEP = [185, 116, 28];
+    const MUTED = [91, 102, 112];
+    const TEXT = [20, 20, 20];
+    const LINE = [221, 216, 206];
+
+    let y = 90;
+    let pageNum = 1;
+
+    function addHeaderBand() {
+      doc.setFillColor(NAVY[0], NAVY[1], NAVY[2]);
+      doc.rect(0, 0, PAGE_W, 64, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255);
+      doc.text('INA Platform', MARGIN, 40);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(AMBER[0], AMBER[1], AMBER[2]);
+      doc.text(lang === 'es' ? 'INFORME DE PROYECTO' : 'PROJECT REPORT', PAGE_W - MARGIN, 40, { align: 'right' });
+    }
+
+    function addFooter() {
+      doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
+      doc.setLineWidth(0.5);
+      doc.line(MARGIN, PAGE_H - 40, PAGE_W - MARGIN, PAGE_H - 40);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.text('international-network-advisors.com', MARGIN, PAGE_H - 26);
+      doc.text(String(pageNum), PAGE_W - MARGIN, PAGE_H - 26, { align: 'right' });
+    }
+
+    function newPage() {
+      addFooter();
+      doc.addPage();
+      pageNum += 1;
+      addHeaderBand();
+      y = 90;
+    }
+
+    function ensureSpace(h) {
+      if (y + h > PAGE_H - 56) newPage();
+    }
+
+    function h2(text) {
+      ensureSpace(30);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12.5);
+      doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
+      doc.text(text, MARGIN, y);
+      y += 18;
+    }
+
+    function h3(text) {
+      ensureSpace(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.8);
+      doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+      doc.text(text, MARGIN, y);
+      y += 13;
+    }
+
+    function bodyText(text) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+      const lines = doc.splitTextToSize(text || '', PAGE_W - MARGIN * 2);
+      lines.forEach((line) => {
+        ensureSpace(14);
+        doc.text(line, MARGIN, y);
+        y += 13;
+      });
+      y += 6;
+    }
+
+    // Indented bullet line (documents, workflow history, self-assessment
+    // questions) — same body-text sizing but hanging off a left indent so
+    // it reads as a sub-item under the h3 above it, without needing a full
+    // table layout for what's usually 2-4 short lines.
+    function bulletText(text, indent) {
+      const ind = indent || 12;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+      const lines = doc.splitTextToSize(text || '', PAGE_W - MARGIN * 2 - ind);
+      lines.forEach((line, i) => {
+        ensureSpace(13);
+        doc.text((i === 0 ? '•  ' : '   ') + line, MARGIN + ind, y);
+        y += 12;
+      });
+    }
+
+    // Maps an FSU criterion key (see INAPlatform.FSU_CRITERIA_META) to the
+    // raw input(s) that produced its score — same values entered in
+    // app/fsu-scoring.html's form, read back off the saved fsu_scoring row.
+    function fsuInputText(key, fsu) {
+      const na = lang === 'es' ? '—' : '—';
+      switch (key) {
+        case 'score_penetracion': {
+          const hogares = fsu.total_hogares != null ? fsu.total_hogares : na;
+          const accesos = fsu.accesos_fibra != null ? fsu.accesos_fibra : na;
+          const pct = fsu.penetracion_pct != null ? `${fsu.penetracion_pct}%` : na;
+          return lang === 'es'
+            ? `Total de hogares: ${hogares} · Accesos de fibra actuales: ${accesos} · Penetración calculada: ${pct}`
+            : `Total households: ${hogares} · Current fiber accesses: ${accesos} · Calculated penetration: ${pct}`;
+        }
+        case 'score_modelo_negocio':
+          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_MODELO_NEGOCIO_OPTIONS, fsu.modelo_negocio) || na;
+        case 'score_tecnologia':
+          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_TECNOLOGIA_OPTIONS, fsu.tecnologia) || na;
+        case 'score_velocidad': {
+          const v1 = fsu.velocidad_actual_mbps != null ? fsu.velocidad_actual_mbps : na;
+          const v2 = fsu.velocidad_propuesta_mbps != null ? fsu.velocidad_propuesta_mbps : na;
+          const pct = fsu.mejora_velocidad_pct != null ? `${fsu.mejora_velocidad_pct}%` : na;
+          return lang === 'es'
+            ? `Velocidad media actual: ${v1} Mbps · Velocidad propuesta: ${v2} Mbps · Mejora calculada: ${pct}`
+            : `Current average speed: ${v1} Mbps · Proposed speed: ${v2} Mbps · Calculated uplift: ${pct}`;
+        }
+        case 'score_salto_tecnologico':
+          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_SALTO_TECNOLOGICO_OPTIONS, fsu.salto_tecnologico) || na;
+        case 'score_densidad':
+          return (lang === 'es' ? 'Población de la localidad: ' : 'Locality population: ') + (fsu.poblacion_localidad != null ? fsu.poblacion_localidad : na);
+        case 'score_capacidad_tecnica':
+          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_CAPACIDAD_TECNICA_OPTIONS, fsu.anos_capacidad_tecnica) || na;
+        default:
+          return '';
+      }
+    }
+
+    addHeaderBand();
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(17);
+    doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+    doc.splitTextToSize(currentProject.name || '', PAGE_W - MARGIN * 2).forEach((line) => {
+      ensureSpace(20);
+      doc.text(line, MARGIN, y);
+      y += 20;
+    });
+
+    const beneficiariesText = currentProject.beneficiary_count != null
+      ? ` · ${currentProject.beneficiary_count.toLocaleString(lang === 'es' ? 'es-AR' : 'en-US')} ${lang === 'es' ? 'beneficiarios' : 'beneficiaries'}`
+      : '';
+    const programText = currentProject.programs && currentProject.programs.name ? ` · ${currentProject.programs.name}` : '';
+    const durationTextPdf = (() => {
+      const d = INAPlatform.formatDuration(currentProject.duration_value, currentProject.duration_unit);
+      return d ? ` · ${d}` : '';
+    })();
+    const priorityTextPdf = currentProject.priority ? ` · ${INAPlatform.priorityLabel(currentProject.priority)}` : '';
+    const criticalityTextPdf = currentProject.technical_criticality ? ` · ${INAPlatform.technicalCriticalityLabel(currentProject.technical_criticality)}` : '';
+    const budgetTextPdf = (() => {
+      const b = INAPlatform.formatCurrency(currentProject.budget_amount);
+      return b ? ` · ${b}` : '';
+    })();
+    const complexityTextPdf = currentProject.complexity ? ` · ${INAPlatform.complexityLabel(currentProject.complexity)}` : '';
+    const metaLine = `${INAPlatform.projectTypeLabel(currentProject.project_type)} · ${INAPlatform.countryLabel(currentProject.country)}${beneficiariesText}${programText}${budgetTextPdf}${durationTextPdf}${priorityTextPdf}${criticalityTextPdf}${complexityTextPdf}`;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text(metaLine, MARGIN, y);
+    y += 14;
+    const createdText = currentProject.created_at
+      ? new Date(currentProject.created_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : '';
+    doc.text(`${lang === 'es' ? 'Estado' : 'Status'}: ${INAPlatform.effectiveStatusLabel(currentProject)}${createdText ? ` · ${lang === 'es' ? 'Creado' : 'Created'}: ${createdText}` : ''}`, MARGIN, y);
+    y += 10;
+    doc.setDrawColor(AMBER[0], AMBER[1], AMBER[2]);
+    doc.setLineWidth(1.2);
+    doc.line(MARGIN, y + 4, PAGE_W - MARGIN, y + 4);
+    y += 28;
+
+    h2(lang === 'es' ? 'Descripción del proyecto' : 'Project description');
+    bodyText(currentProject.description);
+
+    // ---- Supporting documents — same 4 categories as project.html's
+    // docsBlock, just listed by filename instead of a downloadable list. ----
+    if (currentDocs && currentDocs.length) {
+      h2(lang === 'es' ? 'Documentos adjuntos' : 'Supporting documents');
+      INAPlatform.DOCUMENT_TYPES.forEach((t) => {
+        const inCategory = currentDocs.filter((d) => (d.document_type || 'other') === t.value);
+        if (!inCategory.length) return;
+        h3(INAPlatform.documentTypeLabel(t.value));
+        inCategory.forEach((d) => bulletText(d.file_name));
+        y += 4;
+      });
+    }
+
+    // ---- Workflow — mirrors project.html's workflowBlock (stepper +
+    // assigned advisor + history), text-only here. Only shown once the
+    // project has actually entered the pipeline, same gating condition
+    // renderWorkflow() uses on-screen. ----
+    if (currentProject.status === 'completed' || currentProject.status === 'analyzing' || currentProject.readiness_stage) {
+      h2(lang === 'es' ? 'Flujo de trabajo' : 'Project workflow');
+      const stage = currentProject.readiness_stage || INAPlatform.STAGE_ORDER[0];
+      bodyText((lang === 'es' ? 'Etapa actual: ' : 'Current stage: ') + INAPlatform.stageLabel(stage));
+      const advisor = currentProject.assigned_advisor;
+      if (advisor && advisor.full_name) {
+        bodyText((lang === 'es' ? 'Asesor asignado: ' : 'Assigned advisor: ') + advisor.full_name);
+      }
+      if (currentWorkflowEvents && currentWorkflowEvents.length) {
+        h3(lang === 'es' ? 'Historial' : 'History');
+        [...currentWorkflowEvents].reverse().forEach((ev) => {
+          const advisorName = (ev.advisor && ev.advisor.full_name) || (lang === 'es' ? 'Asesor' : 'Advisor');
+          const dateStr = new Date(ev.created_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+          const fromLabel = ev.from_stage ? INAPlatform.stageLabel(ev.from_stage) : (lang === 'es' ? 'Inicio' : 'Start');
+          const toLabel = INAPlatform.stageLabel(ev.to_stage);
+          bulletText(lang === 'es'
+            ? `${advisorName}: ${fromLabel} → ${toLabel} · ${dateStr}`
+            : `${advisorName}: ${fromLabel} → ${toLabel} · ${dateStr}`);
+        });
+        y += 4;
+      }
+    }
+
+    // ---- FSU Scoring — full per-criterion breakdown (input(s) entered +
+    // points awarded out of that criterion's cap), not just the total, so
+    // the PDF shows exactly how the 0-100 score was built up. Mirrors
+    // app/fsu-scoring.html's live breakdown + INAPlatform.FSU_CRITERIA_META
+    // (the same 7-criterion, bilingual-labeled table the manual publishes). ----
+    if (currentFsu) {
+      h2('FSU Scoring — Res. ENACOM 359/2025');
+      INAPlatform.FSU_CRITERIA_META.forEach((c) => {
+        ensureSpace(24);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+        doc.text(INAPlatform.fsuCriterionLabel(c.key), MARGIN, y);
+        doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
+        doc.text(`${currentFsu[c.key]} / ${c.max}`, PAGE_W - MARGIN, y, { align: 'right' });
+        y += 12;
+        bulletText(fsuInputText(c.key, currentFsu), 8);
+        y += 4;
+      });
+      ensureSpace(22);
+      doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
+      doc.setLineWidth(0.5);
+      doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+      y += 16;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+      doc.text(lang === 'es' ? 'Puntaje Total FSU' : 'Total FSU Score', MARGIN, y);
+      doc.text(`${currentFsu.score_total} / 100`, PAGE_W - MARGIN, y, { align: 'right' });
+      y += 24;
+    }
+
+    if (currentAnalysis) {
+      let data = currentAnalysis;
+      let manualAnswers = null;
+      if (currentAnalysis.source === 'manual' && currentAnalysis.raw_model_output) {
+        try {
+          manualAnswers = JSON.parse(currentAnalysis.raw_model_output);
+          const recomputed = INAPlatform.computeManualAssessment(
+            currentProject.project_type,
+            manualAnswers,
+            { beneficiaryCount: currentProject.beneficiary_count }
+          );
+          data = Object.assign({}, currentAnalysis, recomputed);
+        } catch (e) { /* fall back to the stored fields */ }
+      }
+      // Same bilingual fallback as renderAnalysis() — see
+      // migration_v40_bilingual_analysis.sql and
+      // INAPlatform.localizeAnalysis(). No-op for a manual result (already
+      // recomputed in the right language above).
+      data = INAPlatform.localizeAnalysis(data, lang);
+
+      h2('Investment Readiness Index™');
+      ensureSpace(26);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+      doc.text(String(data.overall_score != null ? data.overall_score : '–') + ' / 100', MARGIN, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
+      doc.text(INAPlatform.stageLabel(data.stage) || '', MARGIN + 95, y);
+      y += 22;
+      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text(data.source === 'manual' ? (lang === 'es' ? 'Fuente: Autoevaluación' : 'Source: Self-Assessed') : (lang === 'es' ? 'Fuente: Análisis por IA' : 'Source: AI Analysis'), MARGIN, y);
+      y += 14;
+      bodyText(data.summary);
+
+      const dims = data.dimensions || {};
+      const orderedKeys = [
+        ...INAPlatform.DIMENSION_ORDER.filter((k) => k in dims),
+        ...Object.keys(dims).filter((k) => !INAPlatform.DIMENSION_ORDER.includes(k)),
+      ];
+      orderedKeys.forEach((key) => {
+        const entry = dims[key];
+        const score = entry && typeof entry.score === 'number' ? entry.score : 0;
+        ensureSpace(16);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+        const label = doc.splitTextToSize(INAPlatform.dimensionLabel(key) || '', 165)[0] || '';
+        doc.text(label, MARGIN, y + 5);
+        const barX = MARGIN + 175;
+        const barW = PAGE_W - MARGIN - barX - 30;
+        doc.setFillColor(230, 230, 224);
+        doc.rect(barX, y - 2, barW, 7, 'F');
+        doc.setFillColor(AMBER[0], AMBER[1], AMBER[2]);
+        doc.rect(barX, y - 2, barW * (Math.max(0, Math.min(100, score)) / 100), 7, 'F');
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.text(String(score), barX + barW + 8, y + 5);
+        y += 16;
+      });
+      y += 8;
+
+      // ---- Self-Assessment item detail — only when the analysis came from
+      // the manual questionnaire (app/assessment.html): shows each of the
+      // 3 Likert statements per dimension alongside the 1-5 value the user
+      // actually gave it, not just the rolled-up dimension score above. ----
+      if (manualAnswers) {
+        h2(lang === 'es' ? 'Detalle de la Autoevaluación' : 'Self-Assessment Detail');
+        const qset = INAPlatform.assessmentQuestionSet(currentProject.project_type);
+        qset.forEach(({ key, questions }) => {
+          const vals = manualAnswers[key] || [];
+          const dimScore = dims[key] && typeof dims[key].score === 'number' ? dims[key].score : null;
+          h3(`${INAPlatform.dimensionLabel(key)}${dimScore != null ? '  —  ' + dimScore + '/100' : ''}`);
+          questions.forEach((q, i) => {
+            const qText = (q[lang] || q.en);
+            const val = vals[i] != null ? vals[i] : '–';
+            bulletText(`${val}/5 — ${qText}`);
+          });
+          y += 4;
+        });
+      }
+
+      h2(lang === 'es' ? 'Hoja de ruta de brechas' : 'Gap roadmap');
+      (data.gap_roadmap || []).forEach((item) => {
+        bodyText(`[${INAPlatform.priorityLabel(item.priority)}] ${item.action}`);
+      });
+
+      h2(lang === 'es' ? 'Recomendaciones — Multilateral Finance Navigator™' : 'Multilateral Finance Navigator™ recommendations');
+      (data.financing_recommendations || []).forEach((item) => {
+        ensureSpace(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+        doc.text(INAPlatform.financeMechanismLabel(item.mechanism) || '', MARGIN, y);
+        y += 13;
+        bodyText(item.rationale);
+      });
+    } else {
+      h2(lang === 'es' ? 'Análisis' : 'Analysis');
+      bodyText(lang === 'es'
+        ? 'Este proyecto todavía no fue analizado con el Investment Readiness Index™.'
+        : "This project hasn't been analyzed with the Investment Readiness Index™ yet.");
+    }
+
+    addFooter();
+
+    const safeName = (currentProject.name || 'project').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'project';
+    doc.save(`INA_${safeName}.pdf`);
   }
 
   async function runAnalysisAndPoll() {
@@ -534,7 +1645,6 @@
 
     if (pollStartedAt && Date.now() - pollStartedAt > POLL_TIMEOUT_MS) {
       showError(true);
-      if (isOwner) document.getElementById('retryBtnError').style.display = 'inline-flex';
       return;
     }
 
@@ -555,6 +1665,330 @@
     }
   }
 
+  /* ---------- Financing Programs (multi-program apply) ----------
+     See supabase/migration_v21_program_funding_stage_and_applications.sql.
+     currentProjectPrograms holds this project's applications (each row's
+     .programs is the embedded Program — name/template_key/funding_stage);
+     allProgramsForApply holds every Program on the platform, used to
+     populate the "Apply to program" pickers below (excluding Programs
+     already applied to). Available to owner or assigned advisor only —
+     same gate as editing the project itself. */
+  function renderProgramApplicationRow(row) {
+    const lang = INAPlatform.currentLang();
+    const pg = row.programs || {};
+    const canManage = isOwner || isAssignedAdvisor;
+    const appliedDate = row.applied_at
+      ? new Date(row.applied_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US')
+      : '';
+    // A program with a template_key can always be (re)opened to fill in or
+    // edit its guided intake — including when the application was created
+    // elsewhere without answers yet (e.g. new-project.html's "Project
+    // financing program(s)" checkboxes, which just record the association).
+    // applyToProgram() is an upsert (unique(project_id, program_id)), so
+    // reopening an already-applied program here safely overwrites its
+    // existing answers rather than duplicating the row.
+    const hasTemplate = canManage && pg.template_key && INAPlatform.programTemplateFor(pg.template_key);
+    const fillHref = hasTemplate
+      ? `project-template.html?mode=apply&project=${encodeURIComponent(projectId)}&program=${encodeURIComponent(row.program_id)}&ptpl=${encodeURIComponent(pg.template_key)}`
+      : '#';
+    // Financing mix (migration_v35_financing_mix.sql +
+    // migration_v37_financing_amounts.sql): only financing-stage
+    // applications get a "% del presupuesto" / "Monto" control — a
+    // preparation-stage one (e.g. USTDA) funds elaborating the project, not
+    // a share of its implementation cost, so neither field is ever
+    // meaningful there and the inputs are simply not rendered for those
+    // rows. Either field can be filled in, independently — same convention
+    // as the project-level FSU amount/%.
+    const isFinancingStage = pg.funding_stage !== 'preparation';
+    const pct = row.financing_percentage != null ? row.financing_percentage : '';
+    const amt = row.financing_amount != null ? row.financing_amount : '';
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:12px 14px; border:1px solid var(--paper-line); border-radius:10px;';
+    div.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div style="min-width:0;">
+          <strong style="font-size:13.5px;">${pg.name || ''}</strong>
+          <p style="font-size:12px; color:var(--muted); margin-top:2px;">${appliedDate}</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          ${hasTemplate ? `<a href="${fillHref}" class="btn ghost small" style="padding:6px 12px;">${row.notes ? (lang === 'es' ? 'Editar template' : 'Edit template') : (lang === 'es' ? 'Completar template' : 'Fill template')}</a>` : ''}
+          ${canManage ? `<button type="button" class="icon-btn icon-btn-delete" data-remove-program="${row.program_id}" title="${lang === 'es' ? 'Quitar aplicación' : 'Remove application'}">🗑</button>` : ''}
+        </div>
+      </div>
+      ${row.notes ? `<p style="font-size:12.5px; color:var(--muted); margin-top:8px; white-space:pre-wrap;">${row.notes}</p>` : ''}
+      ${isFinancingStage ? `
+      <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--paper-line); flex-wrap:wrap;">
+        <label style="font-size:12px; color:var(--muted);">${lang === 'es' ? '% del presupuesto' : '% of budget'}</label>
+        <input type="number" min="0" max="100" step="1" value="${pct}" data-pct-input="${row.program_id}" style="width:64px; padding:5px 8px; font-size:12.5px;" ${canManage ? '' : 'disabled'}>
+        <label style="font-size:12px; color:var(--muted);">${lang === 'es' ? 'Monto (ARS)' : 'Amount (ARS)'}</label>
+        <input type="number" min="0" step="1" value="${amt}" data-amt-input="${row.program_id}" style="width:120px; padding:5px 8px; font-size:12.5px;" ${canManage ? '' : 'disabled'}>
+        ${canManage ? `<button type="button" class="btn ghost small" data-financing-save="${row.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Guardar' : 'Save'}</button>` : ''}
+        <span data-financing-status="${row.program_id}" style="font-size:11.5px; color:var(--muted);"></span>
+      </div>` : ''}
+    `;
+    return div;
+  }
+
+  function renderProgramApplications() {
+    const prepList = document.getElementById('preparationProgramsList');
+    const fsuList = document.getElementById('fsuProgramsList');
+    const otherList = document.getElementById('otherProgramsList');
+    prepList.innerHTML = '';
+    fsuList.innerHTML = '';
+    otherList.innerHTML = '';
+
+    const prepRows = currentProjectPrograms.filter((r) => r.programs && r.programs.funding_stage === 'preparation');
+    const finRows = currentProjectPrograms.filter((r) => !r.programs || r.programs.funding_stage !== 'preparation');
+    // Split financing-stage applications into the FSU group vs everything
+    // else — see migration_v36_program_financing_entity.sql and
+    // INAPlatform.isFsuFinancingEntity(). Grouped alongside the project's
+    // own FSU/other-source fields (populated in renderProject(), same
+    // #fsuAttrBlock/#otherFinancingBlock ids, now nested inside the two
+    // group containers in the markup above).
+    const fsuRows = finRows.filter((r) => INAPlatform.isFsuFinancingEntity(r.programs && r.programs.financing_entity));
+    const otherRows = finRows.filter((r) => !INAPlatform.isFsuFinancingEntity(r.programs && r.programs.financing_entity));
+
+    prepRows.forEach((r) => prepList.appendChild(renderProgramApplicationRow(r)));
+    fsuRows.forEach((r) => fsuList.appendChild(renderProgramApplicationRow(r)));
+    otherRows.forEach((r) => otherList.appendChild(renderProgramApplicationRow(r)));
+
+    document.getElementById('preparationProgramsEmpty').style.display = prepRows.length ? 'none' : 'block';
+    // A group's "empty" note only shows when it truly has nothing — no
+    // program rows AND no project-level field set (fsuAttrBlock/
+    // otherFinancingBlock already toggle their own display in
+    // renderProject(), which always runs before this function).
+    const fsuAttrVisible = document.getElementById('fsuAttrBlock').style.display !== 'none';
+    const otherAttrVisible = document.getElementById('otherFinancingBlock').style.display !== 'none';
+    document.getElementById('fsuFinancingEmpty').style.display = (fsuRows.length || fsuAttrVisible) ? 'none' : 'block';
+    document.getElementById('otherFinancingEmpty').style.display = (otherRows.length || otherAttrVisible) ? 'none' : 'block';
+
+    [prepList, fsuList, otherList].forEach((list) => {
+      list.querySelectorAll('[data-remove-program]').forEach((btn) => {
+        btn.addEventListener('click', () => removeProgramApplication(btn.getAttribute('data-remove-program')));
+      });
+    });
+
+    // Financing mix (migration_v35_financing_mix.sql +
+    // migration_v37_financing_amounts.sql): wire each financing-stage
+    // row's combined "% del presupuesto" / "Monto" Save button (now split
+    // across the FSU/Other lists).
+    [fsuList, otherList].forEach((list) => {
+      list.querySelectorAll('[data-financing-save]').forEach((btn) => {
+        btn.addEventListener('click', () => saveFinancing(btn.getAttribute('data-financing-save')));
+      });
+    });
+
+    updateApplyPickers();
+    renderFinancingCoverage();
+  }
+
+  // Saves whatever's currently in a program application row's % and Monto
+  // inputs — both are sent together on every click (rather than only the
+  // one that changed), so clearing a field to blank and clicking Save does
+  // clear it on the server, unlike the "only touch what's explicitly
+  // passed" pattern used by applyToProgram()/reconcileProgramApplications()
+  // in new-project.html. That distinction is deliberate: this is an
+  // explicit, single-purpose Save click on a fully visible pair of inputs,
+  // so "what you see is what gets saved" is the more intuitive behavior
+  // here.
+  async function saveFinancing(programId) {
+    const lang = INAPlatform.currentLang();
+    const pctInput = document.querySelector(`[data-pct-input="${programId}"]`);
+    const amtInput = document.querySelector(`[data-amt-input="${programId}"]`);
+    const status = document.querySelector(`[data-financing-status="${programId}"]`);
+    if (!pctInput && !amtInput) return;
+    try {
+      const updated = await INAPlatform.updateProjectProgramFinancing(projectId, programId, {
+        percentage: pctInput ? pctInput.value : undefined,
+        amount: amtInput ? amtInput.value : undefined,
+      });
+      const idx = currentProjectPrograms.findIndex((r) => r.program_id === programId);
+      if (idx !== -1) currentProjectPrograms[idx] = updated;
+      if (status) {
+        status.textContent = lang === 'es' ? 'Guardado ✓' : 'Saved ✓';
+        setTimeout(() => { status.textContent = ''; }, 2500);
+      }
+      renderFinancingCoverage();
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo guardar el financiamiento: ' : "Couldn't save the financing: ") + (err.message || err));
+    }
+  }
+
+  // Financing mix coverage summary — migration_v35_financing_mix.sql. Sums
+  // the FSU's share, every financing-stage Program's saved share, and the
+  // "other source" share, then shows a small bar + text against 100%. See
+  // #financingCoverage in the markup above and
+  // INAPlatform.computeFinancingCoverage() in assets/platform.js (single
+  // source of truth for the arithmetic, also usable elsewhere later).
+  function renderFinancingCoverage() {
+    if (!currentProject) return;
+    const lang = INAPlatform.currentLang();
+    const wrap = document.getElementById('financingCoverage');
+    const { fsuPct, otherPct, programShares, totalPct } = INAPlatform.computeFinancingCoverage(currentProject, currentProjectPrograms);
+
+    // Nothing to show until at least one share is actually set — a brand
+    // new project with an empty financing mix shouldn't display "0% of
+    // budget covered" as if that were meaningful data.
+    const hasAnyShare = fsuPct > 0 || otherPct > 0 || programShares.length > 0;
+    if (!hasAnyShare) {
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = 'block';
+
+    const text = document.getElementById('financingCoverageText');
+    const breakdown = document.getElementById('financingCoverageBreakdown');
+    const bar = document.getElementById('financingCoverageBar');
+
+    const pctStr = `${totalPct}%`;
+    if (totalPct > 100) {
+      text.textContent = lang === 'es' ? `⚠ ${pctStr} del presupuesto asignado — supera el 100%` : `⚠ ${pctStr} of budget assigned — exceeds 100%`;
+      text.style.color = '#a13a3a';
+    } else if (totalPct === 100) {
+      text.textContent = lang === 'es' ? `${pctStr} del presupuesto cubierto` : `${pctStr} of budget covered`;
+      text.style.color = 'var(--ink)';
+    } else {
+      text.textContent = lang === 'es' ? `${pctStr} del presupuesto cubierto — resta ${100 - totalPct}%` : `${pctStr} of budget covered — ${100 - totalPct}% remaining`;
+      text.style.color = 'var(--ink)';
+    }
+
+    const parts = [];
+    if (fsuPct > 0) parts.push(`FSU ${fsuPct}%`);
+    programShares.forEach((s) => parts.push(`${s.name} ${s.pct}%`));
+    if (otherPct > 0) parts.push((lang === 'es' ? 'Otra fuente' : 'Other') + ` ${otherPct}%`);
+    breakdown.textContent = parts.join(' · ');
+
+    bar.style.width = `${Math.min(totalPct, 100)}%`;
+    bar.style.background = totalPct > 100 ? '#a13a3a' : 'var(--amber)';
+  }
+
+  function updateApplyPickers() {
+    const lang = INAPlatform.currentLang();
+    const canManage = isOwner || isAssignedAdvisor;
+    const appliedIds = new Set(currentProjectPrograms.map((r) => r.program_id));
+    ['preparation', 'financing'].forEach((stage) => {
+      const picker = document.getElementById(stage === 'preparation' ? 'preparationProgramPicker' : 'financingProgramPicker');
+      const addBtn = document.getElementById(stage === 'preparation' ? 'addPreparationProgramBtn' : 'addFinancingProgramBtn');
+      const available = allProgramsForApply.filter((pg) => (pg.funding_stage || 'financing') === stage && !appliedIds.has(pg.id));
+      picker.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = lang === 'es' ? '— Elegí un programa —' : '— Choose a program —';
+      picker.appendChild(placeholder);
+      available.forEach((pg) => {
+        const opt = document.createElement('option');
+        opt.value = pg.id;
+        opt.textContent = pg.name;
+        picker.appendChild(opt);
+      });
+      picker.style.display = 'none';
+      addBtn.style.display = canManage && available.length ? 'inline-flex' : 'none';
+    });
+  }
+
+  async function removeProgramApplication(programId) {
+    const lang = INAPlatform.currentLang();
+    const msg = lang === 'es'
+      ? '¿Quitar la aplicación a este programa? Si había respuestas de un template guardadas, se pierden.'
+      : "Remove the application to this program? Any saved template answers will be lost.";
+    if (!confirm(msg)) return;
+    try {
+      await INAPlatform.removeProjectProgram(projectId, programId);
+      currentProjectPrograms = currentProjectPrograms.filter((r) => r.program_id !== programId);
+      renderProgramApplications();
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo quitar la aplicación: ' : "Couldn't remove the application: ") + (err.message || err));
+    }
+  }
+
+  async function applyProgramFromPicker(programId) {
+    const program = allProgramsForApply.find((pg) => pg.id === programId);
+    if (!program) return;
+    // A Program with a registered template (see PROGRAM_TEMPLATES in
+    // assets/platform.js) hands off to project-template.html's "apply
+    // mode" for a guided intake form; it saves the application itself and
+    // redirects back here. A Program with no template is just a plain
+    // association — apply directly and re-render in place.
+    if (program.template_key && INAPlatform.programTemplateFor(program.template_key)) {
+      location.href = `project-template.html?mode=apply&project=${encodeURIComponent(projectId)}&program=${encodeURIComponent(program.id)}&ptpl=${encodeURIComponent(program.template_key)}`;
+      return;
+    }
+    try {
+      const row = await INAPlatform.applyToProgram(projectId, programId, {});
+      currentProjectPrograms.push(row);
+      renderProgramApplications();
+    } catch (err) {
+      const lang = INAPlatform.currentLang();
+      alert((lang === 'es' ? 'No se pudo aplicar al programa: ' : "Couldn't apply to the program: ") + (err.message || err));
+    }
+  }
+
+  ['preparation', 'financing'].forEach((stage) => {
+    const addBtn = document.getElementById(stage === 'preparation' ? 'addPreparationProgramBtn' : 'addFinancingProgramBtn');
+    const picker = document.getElementById(stage === 'preparation' ? 'preparationProgramPicker' : 'financingProgramPicker');
+    addBtn.addEventListener('click', () => {
+      const showing = picker.style.display !== 'none';
+      picker.style.display = showing ? 'none' : 'inline-block';
+      if (!showing) picker.focus();
+    });
+    picker.addEventListener('change', () => {
+      const val = picker.value;
+      picker.style.display = 'none';
+      if (val) applyProgramFromPicker(val);
+    });
+  });
+
+  /* ---------- Roadmaps ---------- */
+  // canManageRoadmaps() is advisor/admin-only (not owner, not even
+  // "assigned advisor only" — ANY advisor/admin can start/advance ANY
+  // project's roadmaps, same "any advisor can act on any X" bar as
+  // take_project(), see supabase/migration_v27_gestion_instances.sql) —
+  // the "New Roadmap" link and every per-instance action are gated on it,
+  // matching the RLS that would reject the write anyway if this were
+  // somehow bypassed. The instance list itself renders in read-only form
+  // (name, entity, progress) for the project owner too — full step-by-step
+  // editing happens on app/roadmap-instance.html.
+
+  function renderRoadmapInstanceRow(g) {
+    const lang = INAPlatform.currentLang();
+    const row = document.createElement('a');
+    row.href = `roadmap-instance.html?id=${g.id}`;
+    row.className = 'roadmap-row';
+    row.style.display = 'block';
+    row.style.textDecoration = 'none';
+    row.style.color = 'inherit';
+    const statusClass = g.status === 'completed' ? 'completed' : g.status === 'abandoned' ? 'blocked' : 'in_progress';
+    row.innerHTML = `
+      <div class="roadmap-row-head">
+        <strong style="font-size:13.5px; flex:1 1 auto;">${g.name}</strong>
+        <span class="status-pill roadmap-status-${statusClass}">${INAPlatform.roadmapInstanceStatusLabel(g.status)}</span>
+      </div>
+      <div class="roadmap-row-meta">
+        <span>${g.performing_entity_name} <span class="type-tag" style="margin-left:4px;">${INAPlatform.entityTypeLabel(g.performing_entity_type)}</span></span>
+      </div>
+    `;
+    return row;
+  }
+
+  function renderRoadmaps() {
+    const canManage = currentProfile && INAPlatform.canManageRoadmaps(currentProfile);
+    const list = document.getElementById('roadmapInstancesList');
+    list.innerHTML = '';
+    currentRoadmaps
+      .slice()
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .forEach((g) => list.appendChild(renderRoadmapInstanceRow(g)));
+
+    document.getElementById('roadmapsEmpty').style.display = currentRoadmaps.length ? 'none' : 'block';
+    const newBtn = document.getElementById('newRoadmapInstanceBtn');
+    if (canManage) {
+      newBtn.style.display = 'inline-flex';
+      newBtn.href = `roadmap-instance.html?project=${projectId}`;
+    } else {
+      newBtn.style.display = 'none';
+    }
+  }
+
   async function init() {
     if (!projectId) { location.href = 'dashboard.html'; return; }
     if (!INAPlatform.isConfigured()) {
@@ -571,7 +2005,6 @@
       document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
       document.getElementById('appUserName').textContent = profile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
-      if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
     } catch (e) { /* non-critical */ }
 
     let project;
@@ -590,24 +2023,80 @@
     } catch (e) { currentWorkflowEvents = []; /* non-critical — workflow block just shows no history */ }
 
     isOwner = project.user_id === session.user.id;
+    isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === session.user.id;
+    // Owner: gated on readiness_stage (must self-assess first). Assigned
+    // advisor, or any admin (regardless of assignment — an admin
+    // shouldn't have to "Take project" first just to run a read): always
+    // allowed, any stage — see the comment on canRunAnalysis's declaration
+    // above and the matching server-side check in api/analyze-project.js.
+    const isAdminForAnalysis = currentProfile && INAPlatform.isAdmin(currentProfile);
+    canRunAnalysis = (isOwner && !!project.readiness_stage) || isAssignedAdvisor || isAdminForAnalysis;
+
+    // Guarded rather than called inline below: if an older cached copy of
+    // assets/platform.js (no isFsuScoringEligible yet) is ever served
+    // alongside a newer project.html, this must not throw and blank out
+    // the whole page — it should just fail closed (no FSU tab) instead.
+    let fsuEligible = false;
+    try { fsuEligible = INAPlatform.isFsuScoringEligible(project); } catch (e) { fsuEligible = false; }
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('projectContent').style.display = 'block';
 
-    if (isOwner) {
-      const editLink = document.getElementById('editLink');
-      editLink.href = `new-project.html?id=${projectId}`;
-      editLink.style.display = 'inline-flex';
-      const assessLink = document.getElementById('assessLink');
-      assessLink.href = `assessment.html?id=${projectId}`;
-      assessLink.style.display = 'inline-flex';
-      if (project.project_type === INAPlatform.FSU_SCORING_ELIGIBLE_TYPE) {
-        const fsuLink = document.getElementById('fsuLink');
-        fsuLink.href = `fsu-scoring.html?id=${projectId}`;
-        fsuLink.style.display = 'inline-flex';
+    // Both the body "Actions"/"Analysis" menus and their nav-header twins
+    // (navEditLink, navAssessLink, navFsuLink, navDeleteLink) get the
+    // exact same href/visibility/behavior — two entry points, one state.
+    // Editing/FSU Scoring are available to the owner AND to the advisor
+    // who has taken this specific project (isAssignedAdvisor — see
+    // migration_v19_advisor_edit_taken_project.sql for the matching RLS
+    // change); Self-Assessment stays owner-only (see the matching guard in
+    // app/assessment.html — it's what moves a project out of Not Analyzed,
+    // an explicitly user-side action per migration_v20). An advisor just
+    // browsing who hasn't taken it stays read-only (advisorNote below).
+    if (isOwner || isAssignedAdvisor) {
+      const editHref = `new-project.html?id=${projectId}`;
+      ['editLink', 'navEditLink'].forEach((id) => {
+        const el = document.getElementById(id);
+        el.href = editHref;
+        el.style.display = 'flex';
+      });
+      if (fsuEligible) {
+        const fsuHref = `fsu-scoring.html?id=${projectId}`;
+        ['fsuLink', 'navFsuLink'].forEach((id) => {
+          const el = document.getElementById(id);
+          el.href = fsuHref;
+          el.style.display = 'flex';
+        });
       }
     } else {
-      document.getElementById('advisorNote').style.display = 'flex';
+      // Text is misleading for an admin viewer specifically: editing is
+      // still owner/assigned-advisor-only (unchanged, matches the block
+      // above), but AI Analysis is NOT restricted for an admin (see
+      // isAdminForAnalysis below) — so the default "editing and
+      // re-running analysis are only available to the owner" copy would
+      // overclaim for them. Swap in an admin-accurate sentence rather
+      // than relying on the static data-i18n text in that case.
+      const noteEl = document.getElementById('advisorNote');
+      if (isAdminForAnalysis) {
+        const noteSpan = noteEl.querySelector('span');
+        if (noteSpan) {
+          noteSpan.removeAttribute('data-i18n');
+          noteSpan.textContent = INAPlatform.currentLang() === 'es'
+            ? 'Estás viendo este proyecto como admin — fue enviado por otro usuario. Podés correr el AI Análisis directamente; editar el proyecto solo está disponible para el propietario o un asesor que lo haya tomado.'
+            : "You're viewing this project as an admin — submitted by another user. You can run AI Analysis on it directly; editing is only available to the owner or an advisor who has taken it.";
+        }
+      }
+      noteEl.style.display = 'flex';
+    }
+
+    // Self-Assessment — owner-only, independent of the isOwner||
+    // isAssignedAdvisor block above (see comment there).
+    if (isOwner) {
+      const assessHref = `assessment.html?id=${projectId}`;
+      ['assessLink', 'navAssessLink'].forEach((id) => {
+        const el = document.getElementById(id);
+        el.href = assessHref;
+        el.style.display = 'flex';
+      });
     }
 
     // Delete — owner or admin only (enforced again server-side by RLS, see
@@ -615,14 +2104,15 @@
     const isAdminViewer = currentProfile && INAPlatform.isAdmin(currentProfile);
     if (isOwner || isAdminViewer) {
       const deleteLink = document.getElementById('deleteLink');
-      deleteLink.style.display = 'inline-flex';
-      deleteLink.addEventListener('click', async () => {
+      const navDeleteLink = document.getElementById('navDeleteLink');
+      deleteLink.style.display = navDeleteLink.style.display = 'flex';
+      const handleDelete = async () => {
         const lang2 = INAPlatform.currentLang();
         const msg = lang2 === 'es'
           ? `¿Está seguro que desea eliminar definitivamente el proyecto "${project.name}"? Esta acción no se puede deshacer — se borran también sus documentos y análisis.`
           : `Are you sure you want to permanently delete the project "${project.name}"? This can't be undone — its documents and analysis will be deleted too.`;
         if (!confirm(msg)) return;
-        deleteLink.disabled = true;
+        deleteLink.disabled = navDeleteLink.disabled = true;
         try {
           await INAPlatform.deleteProject(projectId);
           location.href = 'dashboard.html';
@@ -630,21 +2120,26 @@
           alert(lang2 === 'es'
             ? `No se pudo eliminar el proyecto: ${err.message || err}`
             : `Couldn't delete the project: ${err.message || err}`);
-          deleteLink.disabled = false;
+          deleteLink.disabled = navDeleteLink.disabled = false;
         }
-      });
+      };
+      deleteLink.addEventListener('click', handleDelete);
+      navDeleteLink.addEventListener('click', handleDelete);
     }
 
     // FSU Scoring block — shown for any viewer (owner or advisor) as long
-    // as the project type is eligible AND a score has actually been saved;
-    // getFsuScoring() returns null (not an error) when none exists yet.
-    if (project.project_type === INAPlatform.FSU_SCORING_ELIGIBLE_TYPE) {
+    // as the project is FSU-eligible (fiber_backbone_last_mile type, or
+    // applying under a FATIC Program — see INAPlatform.isFsuScoringEligible)
+    // AND a score has actually been saved; getFsuScoring() returns null
+    // (not an error) when none exists yet.
+    if (fsuEligible) {
       try {
         const fsu = await INAPlatform.getFsuScoring(projectId);
         if (fsu) {
+          currentFsu = fsu;
           document.getElementById('fsuBlockScore').textContent = fsu.score_total;
           document.getElementById('fsuBlock').style.display = 'block';
-          if (isOwner) {
+          if (isOwner || isAssignedAdvisor) {
             const editLink = document.getElementById('fsuBlockEditLink');
             editLink.href = `fsu-scoring.html?id=${projectId}`;
             editLink.style.display = 'inline-flex';
@@ -654,14 +2149,29 @@
     }
 
     renderProject(project);
+    renderWorkflowActionsMenu(project);
     currentDocs = docs;
     renderDocs(docs);
 
-    // Retrying/re-running analysis is owner-only — the serverless function
-    // rejects it for anyone else, and advisors are only meant to view.
-    if (isOwner) {
-      document.getElementById('retryBtn').addEventListener('click', runAnalysisAndPoll);
-      document.getElementById('retryBtnError').addEventListener('click', runAnalysisAndPoll);
+    try {
+      [allProgramsForApply, currentProjectPrograms] = await Promise.all([
+        INAPlatform.listPrograms(),
+        INAPlatform.listProjectPrograms(projectId),
+      ]);
+    } catch (e) { allProgramsForApply = []; currentProjectPrograms = []; /* non-critical — block just shows empty */ }
+    renderProgramApplications();
+
+    // Roadmaps — visible to the owner read-only once at least one
+    // instance exists; visible to an advisor/admin always (even empty),
+    // since only they can start a new instance in the first place. See
+    // canManageRoadmaps() and supabase/migration_v27_gestion_instances.sql.
+    try {
+      currentRoadmaps = await INAPlatform.listRoadmapInstances(projectId);
+    } catch (e) { currentRoadmaps = []; /* non-critical — block just shows empty */ }
+    const viewerCanManageRoadmaps = currentProfile && INAPlatform.canManageRoadmaps(currentProfile);
+    if (currentRoadmaps.length || viewerCanManageRoadmaps) {
+      document.getElementById('roadmapsBlock').style.display = 'block';
+      renderRoadmaps();
     }
 
     if (project.status === 'completed') {
@@ -670,17 +2180,25 @@
     }
     if (project.status === 'error') {
       showError(false);
-      if (isOwner) document.getElementById('retryBtnError').style.display = 'inline-flex';
       return;
     }
-    showPending();
-    if (isOwner) document.getElementById('retryBtn').style.display = 'inline-flex';
-    // Anchor the timeout window to when the project last changed status
-    // (not just page load) so reloading a genuinely-stuck page doesn't
-    // reset the clock and poll forever.
-    const lastUpdated = project.updated_at ? new Date(project.updated_at).getTime() : Date.now();
-    pollStartedAt = Math.min(Date.now(), lastUpdated);
-    poll();
+    if (project.status === 'analyzing') {
+      // Analysis is already running (triggered manually, possibly from
+      // another tab/session) — keep polling for it to finish.
+      showPending();
+      // Anchor the timeout window to when the project last changed status
+      // (not just page load) so reloading a genuinely-stuck page doesn't
+      // reset the clock and poll forever.
+      const lastUpdated = project.updated_at ? new Date(project.updated_at).getTime() : Date.now();
+      pollStartedAt = Math.min(Date.now(), lastUpdated);
+      poll();
+      return;
+    }
+    // status === 'submitted' — a brand-new project, or one that was just
+    // edited (updateProject() resets status/readiness_stage) — and no
+    // analysis has ever run for it. No auto-trigger; the owner starts it
+    // manually from here whenever they're ready.
+    showNotAnalyzed();
   }
 
   init().catch((e) => {

@@ -8,13 +8,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=3">
-<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/app.css?v=7">
 </head>
 <body class="app-body">
 <header class="app-header app-header--auth">
   <div class="app-header-inner">
-    <a href="/index.html" class="app-logo">
+    <a href="index.html" class="app-logo">
       <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
       <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
     </a>
@@ -22,7 +22,6 @@
       <div class="lang-switch" aria-label="Language">
         <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
       </div>
-      <a href="/index.html" class="app-back-link"><span data-i18n="app.backToSite">&larr; INA website</span></a>
     </div>
   </div>
 </header>
@@ -42,27 +41,41 @@
     </div>
     <div class="auth-screen-form">
       <div class="auth-card reveal">
-        <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
-        <h1 class="h-section" style="margin-top:14px; font-size:26px;"><span data-i18n="auth.register.title">Create your account</span></h1>
-        <p class="lede" style="margin-top:10px; font-size:14.5px;"><span data-i18n="auth.register.lede">Submit projects for Investment Readiness Index&trade; scoring and Multilateral Finance Navigator&trade; recommendations.</span></p>
+        <div id="formState">
+          <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+          <h1 class="h-section" style="margin-top:14px; font-size:26px;"><span data-i18n="auth.register.title">Create your account</span></h1>
+          <p class="lede" style="margin-top:10px; font-size:14.5px;"><span data-i18n="auth.register.lede">Submit projects for Investment Readiness Index&trade; scoring and Multilateral Finance Navigator&trade; recommendations.</span></p>
 
-        <form id="registerForm" style="margin-top:28px;">
-          <div class="field"><label for="fullName"><span data-i18n="auth.f.name">Full name</span></label><input id="fullName" type="text" required></div>
-          <div class="field" style="margin-top:18px;"><label for="organization"><span data-i18n="contact.f.org">Organization</span></label><input id="organization" type="text" required></div>
-          <div class="field" style="margin-top:18px;"><label for="roleType"><span data-i18n="contact.f.type">You are a</span></label>
-            <select id="roleType"></select>
-          </div>
-          <div class="field" style="margin-top:18px;"><label for="email"><span data-i18n="contact.f.email">Email</span></label><input id="email" type="email" required></div>
-          <div class="field" style="margin-top:18px;"><label for="password"><span data-i18n="auth.f.password">Password</span></label><input id="password" type="password" minlength="8" required></div>
+          <form id="registerForm" style="margin-top:28px;">
+            <div class="field"><label for="fullName"><span data-i18n="auth.f.name">Full name</span></label><input id="fullName" type="text" required></div>
+            <div class="field" style="margin-top:18px;"><label for="organization"><span data-i18n="contact.f.org">Organization</span></label><input id="organization" type="text" required></div>
+            <div class="field" style="margin-top:18px;"><label for="roleType"><span data-i18n="contact.f.type">You are a</span></label>
+              <select id="roleType"></select>
+            </div>
+            <div class="field" style="margin-top:18px;"><label for="email"><span data-i18n="contact.f.email">Email</span></label><input id="email" type="email" required></div>
+            <div class="field" style="margin-top:18px;"><label for="password"><span data-i18n="auth.f.password">Password</span></label><input id="password" type="password" minlength="8" required></div>
 
-          <button type="submit" class="btn amber" style="margin-top:26px; width:100%; justify-content:center;"><span data-i18n="auth.register.submit">Create Account</span></button>
-          <p class="contact-note" id="registerNote" style="margin-top:14px; min-height:18px;"></p>
-        </form>
+            <button type="submit" class="btn amber" style="margin-top:26px; width:100%; justify-content:center;"><span data-i18n="auth.register.submit">Create Account</span></button>
+            <p class="contact-note" id="registerNote" style="margin-top:14px; min-height:18px;"></p>
+          </form>
 
-        <p style="margin-top:24px; font-size:13.5px; color:var(--muted);">
-          <span data-i18n="auth.haveAccount">Already have an account?</span>
-          <a href="login.html" style="color:var(--amber-deep);"><span data-i18n="auth.signIn">Sign in</span></a>
-        </p>
+          <p style="margin-top:24px; font-size:13.5px; color:var(--muted);">
+            <span data-i18n="auth.haveAccount">Already have an account?</span>
+            <a href="login.html" style="color:var(--amber-deep);"><span data-i18n="auth.signIn">Sign in</span></a>
+          </p>
+        </div>
+
+        <!-- Shown instead of redirecting to dashboard.html when Supabase's
+             "Confirm email" setting is on and signUp() returns no session —
+             the account exists but is unusable until the emailed link is
+             clicked (see INAPlatform.signUp()'s emailRedirectTo and
+             app/email-confirmed.html). -->
+        <div id="checkEmailState" style="display:none;">
+          <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+          <h1 class="h-section" style="margin-top:14px; font-size:26px;"><span data-i18n="auth.register.checkEmail.title">Check your email</span></h1>
+          <p class="lede" style="margin-top:10px; font-size:14.5px;"><span data-i18n="auth.register.checkEmail.lede">We sent a confirmation link to the address you entered. Click it to activate your account, then sign in below.</span></p>
+          <a href="login.html" class="btn amber" style="margin-top:22px; width:100%; justify-content:center;"><span data-i18n="auth.signIn">Sign in</span></a>
+        </div>
       </div>
     </div>
   </section>
@@ -70,12 +83,11 @@
 <footer class="app-footer">
   <div class="app-footer-inner">
     <span>&copy; 2026 INA Platform</span>
-    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=4"></script>
+<script src="/assets/i18n.js?v=40"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=9"></script>
+<script src="/assets/platform.js?v=46"></script>
 <script src="/assets/script.js?v=12"></script>
 <script>
 (function () {
@@ -107,16 +119,40 @@
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     try {
-      await INAPlatform.signUp({
+      const data = await INAPlatform.signUp({
         email: document.getElementById('email').value,
         password: document.getElementById('password').value,
         fullName: document.getElementById('fullName').value,
         organization: document.getElementById('organization').value,
         roleType: document.getElementById('roleType').value,
       });
-      location.href = 'dashboard.html';
+      // With Supabase's "Confirm email" setting on, signUp() creates the
+      // account but returns no session until the emailed link is clicked —
+      // show the "check your email" state instead of bouncing into the app.
+      // With that setting off, a session comes back immediately and the
+      // original behavior (straight into the dashboard) is unchanged.
+      if (data && data.session) {
+        location.href = 'dashboard.html';
+      } else {
+        document.getElementById('formState').style.display = 'none';
+        document.getElementById('checkEmailState').style.display = 'block';
+      }
     } catch (err) {
-      note.textContent = err.message || 'Something went wrong.';
+      // Normalized by INAPlatform.signUp() — covers both the case where
+      // Supabase rejects the duplicate outright (Confirm email off) and the
+      // case where it silently "succeeds" with an empty identities array
+      // (Confirm email on, Supabase's anti-enumeration behavior). Either
+      // way, the person gets the same clear message here instead of a raw
+      // Supabase error string or, worse, being silently sent to "check your
+      // email" for an account that isn't theirs.
+      if (err.code === 'email_already_registered') {
+        const lang = INAPlatform.currentLang();
+        note.textContent = lang === 'es'
+          ? 'Ya existe una cuenta con ese email. Iniciá sesión, o usá "¿Olvidaste tu contraseña?" si no la recordás.'
+          : 'An account with that email already exists. Sign in, or use "Forgot password?" if you don’t remember it.';
+      } else {
+        note.textContent = err.message || 'Something went wrong.';
+      }
       submitBtn.disabled = false;
     }
   });

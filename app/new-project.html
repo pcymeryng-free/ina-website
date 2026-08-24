@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=3">
-<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/app.css?v=7">
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -20,8 +20,8 @@
     </a>
     <nav class="app-nav">
       <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
-      <a href="new-project.html" class="active"><span data-i18n="dash.newProject">Submit New Project</span></a>
       <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
       <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
     </nav>
     <div class="app-header-actions">
@@ -44,92 +44,418 @@
     <h1 class="h-section" style="margin-top:14px;" id="pageTitle"><span data-i18n="np.title">Submit New Project</span></h1>
     <p class="lede" style="margin-top:10px; max-width:640px;" id="pageLede"><span data-i18n="np.lede">Tell us about the project. Once submitted, INA applies the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade; to generate a scored analysis with financing recommendations.</span></p>
 
+    <!-- Shown/populated by JS only when editing an existing project that
+         someone else currently has locked (see acquireEditLock() below and
+         migration_v31_edit_locks.sql). Hidden by default — most page loads
+         are either "create new" or an uncontested edit. -->
+    <div id="editLockBanner" class="lock-banner" style="display:none; max-width:640px;"></div>
+
     <form id="projectForm" style="max-width:640px; margin-top:36px;">
-      <div class="field"><label for="pname"><span data-i18n="np.f.name">Project name</span></label><input id="pname" type="text" required></div>
 
-      <div class="field" style="margin-top:18px;"><label for="ptype"><span data-i18n="np.f.type">Project type</span></label>
-        <select id="ptype" required></select>
+      <!-- Same 4-section interface for creating AND editing a project — one
+           .wizard-panel visible at a time: 1) project (name/type/entity/
+           description/program/country/beneficiaries — everything about the
+           project that ISN'T financing), 2) documents, 3) financing
+           (preparation funding + execution/financing programs, kept
+           separate from each other and from every other project
+           attribute), 4) optional guided-template/AI-autofill offer + final
+           submit. The section names above (#wizardSteps) are directly
+           clickable to jump to any of the 4 sections — see canJumpTo() and
+           the wizard-step-dot click handler further down. When creating a
+           brand-new project, section 1's "Continue" is what actually
+           creates the project record (so section 2's document uploads have
+           a real id to attach to, and so the other sections/section-names
+           become reachable at all); when editing, the project already
+           exists from the start, so every section is reachable immediately.
+           A creation session interrupted partway through (closed tab, etc.)
+           resumes exactly where it left off, since the project already
+           exists and the URL already carries its real ?id=. -->
+      <div class="wizard-steps" id="wizardSteps">
+        <span class="wizard-step-dot" data-step-dot="1"><span class="num">1</span><span data-i18n="np.wizard.step1">Project</span></span>
+        <span class="wizard-step-dot" data-step-dot="2"><span class="num">2</span><span data-i18n="np.wizard.step2">Attached documents</span></span>
+        <span class="wizard-step-dot" data-step-dot="3"><span class="num">3</span><span data-i18n="np.wizard.step3">Financing</span></span>
+        <span class="wizard-step-dot" data-step-dot="4"><span class="num">4</span><span data-i18n="np.wizard.step4">Templates</span></span>
       </div>
 
-      <div class="field" style="margin-top:18px;">
-        <label for="pprogram"><span data-i18n="np.f.program">Program (optional)</span></label>
-        <select id="pprogram"></select>
-        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.program.help">Group this project under a Program if it's part of a broader initiative with several independently-financed projects.</span> <a href="new-program.html" target="_blank"><span data-i18n="np.f.program.create">Create a new program &rarr;</span></a></p>
-      </div>
+      <!-- STEP 1 — everything about the project itself that isn't
+           financing: name, type, presenting entity, description, umbrella
+           Program (organizational grouping, not a funding source — see the
+           note on step 3 below), country, beneficiaries. "Continue" creates
+           the project record with all of these already filled in, so step
+           2's document uploads have a real project id to attach to. -->
+      <div class="wizard-panel" data-step="1">
+        <div class="field"><label for="pname"><span data-i18n="np.f.name">Project name</span></label><input id="pname" type="text" required></div>
 
-      <div class="field" style="margin-top:18px;"><label for="pcountry"><span data-i18n="np.f.country">Country</span></label>
-        <select id="pcountry" required></select>
-      </div>
-
-      <div class="field" style="margin-top:18px;"><label for="pbeneficiaries"><span data-i18n="np.f.beneficiaries">Beneficiaries reached (households, optional)</span></label><input id="pbeneficiaries" type="number" min="0" step="1"></div>
-      <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.beneficiaries.help">For last-mile/universal-access projects — the number of households, businesses or public establishments the project reaches. Strengthens the case for Universal Service Fund financing.</span></p>
-
-      <div class="field" style="margin-top:18px;"><label for="pdesc"><span data-i18n="np.f.desc">Project description</span></label>
-        <textarea id="pdesc" required style="min-height:160px;" placeholder=""></textarea>
-      </div>
-      <p style="font-size:12.5px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.desc.help">Include what you know: sector, size/scale, sponsor type, current stage, financing sources considered, key risks. The more detail, the more accurate the analysis.</span></p>
-
-      <div id="existingDocsBlock" style="margin-top:26px; display:none;">
-        <label><span data-i18n="np.f.docs.existing">Already uploaded</span></label>
-        <div id="existingDocsList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
-      </div>
-
-      <!-- Four separate, independently-optional upload zones instead of one
-           flat list — see supabase/migration_v15_document_categories.sql.
-           The technical, financial and administrative documents are all
-           eventually needed for evaluation, but none are required to submit
-           the project; "Other attachments" catches anything that doesn't
-           fit the first three. Each zone is driven generically by the JS
-           below via its [data-category] attribute rather than four
-           hand-wired copies. -->
-      <div class="field" style="margin-top:26px;">
-        <label><span data-i18n="np.f.docs.section">Supporting documents</span></label>
-        <p style="font-size:12px; color:var(--muted); margin-top:4px;"><span data-i18n="np.f.docs.section.help">Nothing here is required to submit — attach what you have now and add the rest later from the Edit screen. All three categories below are used during evaluation.</span></p>
-
-        <div class="doc-upload-group" data-category="technical" style="margin-top:18px;">
-          <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.technical">Technical folder</span></label>
-          <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.technical.help">Engineering studies, technical specifications, route/site surveys, network diagrams.</span></p>
-          <div class="upload-drop" data-dropzone style="margin-top:8px;">
-            <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
-            <input type="file" data-fileinput multiple style="display:none;">
-          </div>
-          <div class="upload-list" data-uploadlist></div>
+        <div class="field" style="margin-top:18px;"><label for="ptype"><span data-i18n="np.f.type">Project type</span></label>
+          <select id="ptype" required></select>
         </div>
 
-        <div class="doc-upload-group" data-category="financial" style="margin-top:20px;">
-          <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.financial">Financial &amp; economic documentation</span></label>
-          <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.financial.help">Financial model, cost estimates, revenue projections, funding sources considered.</span></p>
-          <div class="upload-drop" data-dropzone style="margin-top:8px;">
-            <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
-            <input type="file" data-fileinput multiple style="display:none;">
-          </div>
-          <div class="upload-list" data-uploadlist></div>
+        <!-- Who submitted/generated this project and what kind of
+             organization they are — see migration_v27_gestion_instances.sql.
+             Both optional; also used to suggest matching Roadmap templates
+             whose allowed_entity_type matches generatingEntityType. -->
+        <div class="field" style="margin-top:18px;"><label for="pEntityName"><span data-i18n="np.f.entityName">Generating entity (optional)</span></label><input id="pEntityName" type="text"></div>
+        <div class="field" style="margin-top:18px;">
+          <label for="pEntityType"><span data-i18n="np.f.entityType">Entity type</span></label>
+          <select id="pEntityType"></select>
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.entityType.help">The organization submitting this project — regulator, government, ISP, manufacturer, integrator, etc.</span></p>
         </div>
 
-        <div class="doc-upload-group" data-category="administrative" style="margin-top:20px;">
-          <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.administrative">Administrative documentation</span></label>
-          <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.administrative.help">Legal/corporate documents, permits, licenses, regulatory filings.</span></p>
-          <div class="upload-drop" data-dropzone style="margin-top:8px;">
-            <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
-            <input type="file" data-fileinput multiple style="display:none;">
-          </div>
-          <div class="upload-list" data-uploadlist></div>
+        <div class="field" style="margin-top:18px;"><label for="pdesc"><span data-i18n="np.f.desc">Project description</span></label>
+          <textarea id="pdesc" required style="min-height:160px;" placeholder=""></textarea>
+        </div>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.desc.help">Include what you know: sector, size/scale, sponsor type, current stage, financing sources considered, key risks. The more detail, the more accurate the analysis.</span></p>
+
+        <!-- Umbrella Program — organizational grouping (e.g. Chubut's "Hub
+             Digital Patagónico"), NOT itself a funding source, so it lives
+             here with the project's other non-financing attributes rather
+             than in the Financing section (step 3) below. -->
+        <div class="field" style="margin-top:18px;">
+          <label for="pprogram"><span data-i18n="np.f.program">Program (optional)</span></label>
+          <select id="pprogram"></select>
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.program.help">Group this project under a Program if it's part of a broader initiative with several independently-financed projects.</span> <a href="new-program.html" target="_blank" id="createProgramLink" style="display:none;"><span data-i18n="np.f.program.create">Create a new program &rarr;</span></a></p>
+          <!-- If this Program has its own guided template, it's filled in
+               from the Templates section (4), not here — see
+               updateProgramTemplateBtnVisibility() and the
+               programTemplateOfferCard in step 4 below. -->
         </div>
 
-        <div class="doc-upload-group" data-category="other" style="margin-top:20px;">
-          <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.other">Other attachments</span></label>
-          <div class="upload-drop" data-dropzone style="margin-top:8px;">
-            <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
-            <input type="file" data-fileinput multiple style="display:none;">
+        <div class="field" style="margin-top:18px;"><label for="pcountry"><span data-i18n="np.f.country">Country</span></label>
+          <select id="pcountry" required></select>
+        </div>
+
+        <div class="field" style="margin-top:18px;"><label for="pbeneficiaries"><span data-i18n="np.f.beneficiaries">Beneficiaries reached (households, optional)</span></label><input id="pbeneficiaries" type="number" min="0" step="1"></div>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.beneficiaries.help">For last-mile/universal-access projects — the number of households, businesses or public establishments the project reaches. Strengthens the case for Universal Service Fund financing.</span></p>
+
+        <!-- Total project budget — see
+             migration_v34_project_budget_complexity.sql. Distinct from the
+             FSU amount field in the Financing section (step 3) below: this
+             is the project's total estimated cost regardless of financing
+             source; FSU amount is specifically the slice requested from the
+             Universal Service Fund mechanism. -->
+        <div class="field" style="margin-top:18px;">
+          <label for="pBudgetAmount"><span data-i18n="np.f.budget">Total estimated budget (ARS, optional)</span></label>
+          <input id="pBudgetAmount" type="number" min="0" step="1">
+        </div>
+
+        <!-- USD twin of the budget above, plus the shared exchange rate —
+             see migration_v38_usd_amounts.sql. Many source documents
+             (pliegos, carpetas técnicas, planillas de seguimiento) quote
+             figures in dollars; loading that figure here avoids guessing
+             an ARS conversion. exchange_rate is shared with the FSU USD
+             amount in the Financing section (step 3) below — load it once
+             and INA computes an ARS-equivalent for both on project.html. -->
+        <div class="field" style="margin-top:18px;">
+          <label for="pBudgetAmountUsd"><span data-i18n="np.f.budgetUsd">Total estimated budget (USD, optional)</span></label>
+          <input id="pBudgetAmountUsd" type="number" min="0" step="1">
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.budgetUsd.help">Independent of the ARS figure above — fill in either, or both, if the source document quotes dollars.</span></p>
+        </div>
+        <div class="field" style="margin-top:18px;">
+          <label for="pExchangeRate"><span data-i18n="np.f.exchangeRate">Exchange rate used (ARS per USD, optional)</span></label>
+          <input id="pExchangeRate" type="number" min="0" step="0.01">
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.exchangeRate.help">Shared by the budget and FSU dollar amounts on this project — used only to show an ARS-equivalent, never written into the ARS fields automatically.</span></p>
+        </div>
+        <div class="field" style="margin-top:18px;">
+          <label for="pExchangeRateDate"><span data-i18n="np.f.exchangeRateDate">Exchange rate date (optional)</span></label>
+          <input id="pExchangeRateDate" type="date">
+        </div>
+
+        <!-- Estimated duration (value + unit), priority, technical
+             criticality and complexity — see
+             migration_v33_project_attributes.sql and
+             migration_v34_project_budget_complexity.sql. All optional;
+             priority/criticality/complexity reuse the same low/medium/high
+             scale (PRIORITY_LABELS/CRITICALITY_LABELS/COMPLEXITY_LABELS)
+             for vocabulary consistency, rendered via separate label
+             dictionaries so they read distinctly when shown together —
+             priority is management urgency, criticality is the impact of a
+             technical failure, complexity is the project's intrinsic
+             difficulty/entanglement. -->
+        <div class="field" style="margin-top:18px;">
+          <label for="pDurationValue"><span data-i18n="np.f.duration">Estimated duration (optional)</span></label>
+          <div style="display:flex; gap:10px;">
+            <input id="pDurationValue" type="number" min="1" step="1" style="flex:1;">
+            <select id="pDurationUnit" style="flex:1;"></select>
           </div>
-          <div class="upload-list" data-uploadlist></div>
+        </div>
+
+        <div class="field" style="margin-top:18px;">
+          <label for="pPriority"><span data-i18n="np.f.priority">Priority (optional)</span></label>
+          <select id="pPriority"></select>
+        </div>
+
+        <div class="field" style="margin-top:18px;">
+          <label for="pTechnicalCriticality"><span data-i18n="np.f.technicalCriticality">Technical criticality (optional)</span></label>
+          <select id="pTechnicalCriticality"></select>
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.technicalCriticality.help">The impact of a technical failure or delay — a different axis from priority above (which is about management urgency).</span></p>
+        </div>
+
+        <div class="field" style="margin-top:18px;">
+          <label for="pComplexity"><span data-i18n="np.f.complexity">Complexity (optional)</span></label>
+          <select id="pComplexity"></select>
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.complexity.help">The project's intrinsic difficulty — moving parts, interdependencies, unproven technology. A different axis from priority and technical criticality above.</span></p>
+        </div>
+
+        <p id="step1Note" class="contact-note" style="margin-top:14px; min-height:18px;"></p>
+        <div class="wizard-nav">
+          <button type="button" class="btn amber" id="step1NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <!-- Edit-mode only — see the .cancel-edit-btn reveal in the isEdit
+               block below and the shared click handler further down (stops
+               the edit lock's heartbeat, releases it, then leaves without
+               saving). Hidden here because a brand-new project has nothing
+               saved yet to "cancel" out of — closing the tab is enough. -->
+          <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
         </div>
       </div>
 
-      <p id="editNote" style="font-size:12.5px; color:var(--amber-deep); margin-top:18px; display:none;"><span data-i18n="np.edit.reanalyze">Saving changes will re-run the Investment Readiness Index&trade; analysis against the updated description.</span></p>
+      <!-- STEP 2 — documents. Seven separate, independently-optional upload
+           zones — see supabase/migration_v24_document_categories_expand.sql
+           and DOCUMENT_TYPES in assets/platform.js. Each zone uploads
+           immediately on file-select/drop (rather than staging in memory
+           until final submit, as before) so the project's real documents
+           exist by step 4, where the AI agent can scan them. Driven
+           generically by the JS below via each group's [data-category]
+           attribute rather than seven hand-wired copies. -->
+      <div class="wizard-panel" data-step="2">
+        <div id="existingDocsBlock" style="display:none;">
+          <label><span data-i18n="np.f.docs.existing">Already uploaded</span></label>
+          <div id="existingDocsList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
+        </div>
 
-      <button type="submit" class="btn amber" style="margin-top:30px;" id="submitBtn"><span data-i18n="np.submit">Submit for Analysis</span></button>
-      <p class="contact-note" id="formNote" style="margin-top:14px; min-height:18px;"></p>
+        <div class="field" style="margin-top:26px;">
+          <label><span data-i18n="np.f.docs.section">Supporting documents</span></label>
+          <p style="font-size:12px; color:var(--muted); margin-top:4px;"><span data-i18n="np.f.docs.section.help">Nothing here is required to submit — attach what you have now and add the rest later. Files upload immediately and are used during evaluation.</span></p>
+
+          <div class="doc-upload-group" data-category="technical" style="margin-top:18px;">
+            <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.technical">Technical description</span></label>
+            <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.technical.help">Engineering studies, technical specifications, route/site surveys, network diagrams.</span></p>
+            <div class="upload-drop" data-dropzone style="margin-top:8px;">
+              <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+              <input type="file" data-fileinput multiple style="display:none;">
+            </div>
+            <p class="upload-status" data-uploadstatus></p>
+          </div>
+
+          <div class="doc-upload-group" data-category="economic" style="margin-top:20px;">
+            <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.economic">Economic documentation</span></label>
+            <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.economic.help">Market analysis, demand studies, economic feasibility, cost-benefit analysis.</span></p>
+            <div class="upload-drop" data-dropzone style="margin-top:8px;">
+              <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+              <input type="file" data-fileinput multiple style="display:none;">
+            </div>
+            <p class="upload-status" data-uploadstatus></p>
+          </div>
+
+          <div class="doc-upload-group" data-category="financial" style="margin-top:20px;">
+            <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.financial">Financial documentation</span></label>
+            <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.financial.help">Financial model, cost estimates, revenue projections, funding sources considered.</span></p>
+            <div class="upload-drop" data-dropzone style="margin-top:8px;">
+              <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+              <input type="file" data-fileinput multiple style="display:none;">
+            </div>
+            <p class="upload-status" data-uploadstatus></p>
+          </div>
+
+          <div class="doc-upload-group" data-category="bylaws" style="margin-top:20px;">
+            <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.bylaws">Bylaws / corporate charter</span></label>
+            <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.bylaws.help">Corporate bylaws, articles of incorporation, governance documents.</span></p>
+            <div class="upload-drop" data-dropzone style="margin-top:8px;">
+              <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+              <input type="file" data-fileinput multiple style="display:none;">
+            </div>
+            <p class="upload-status" data-uploadstatus></p>
+          </div>
+
+          <div class="doc-upload-group" data-category="administrative" style="margin-top:20px;">
+            <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.administrative">Administrative documentation</span></label>
+            <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.administrative.help">Legal/corporate documents, permits, regulatory filings.</span></p>
+            <div class="upload-drop" data-dropzone style="margin-top:8px;">
+              <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+              <input type="file" data-fileinput multiple style="display:none;">
+            </div>
+            <p class="upload-status" data-uploadstatus></p>
+          </div>
+
+          <div class="doc-upload-group" data-category="licenses" style="margin-top:20px;">
+            <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.licenses">Licenses</span></label>
+            <p style="font-size:12px; color:var(--muted); margin-top:2px;"><span data-i18n="doc.type.licenses.help">Spectrum licenses, operating permits, regulatory authorizations.</span></p>
+            <div class="upload-drop" data-dropzone style="margin-top:8px;">
+              <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+              <input type="file" data-fileinput multiple style="display:none;">
+            </div>
+            <p class="upload-status" data-uploadstatus></p>
+          </div>
+
+          <div class="doc-upload-group" data-category="other" style="margin-top:20px;">
+            <label style="font-size:13px; font-weight:500;"><span data-i18n="doc.type.other">Other</span></label>
+            <div class="upload-drop" data-dropzone style="margin-top:8px;">
+              <span data-i18n="np.f.docs.drop">Click to choose files, or drag and drop</span>
+              <input type="file" data-fileinput multiple style="display:none;">
+            </div>
+            <p class="upload-status" data-uploadstatus></p>
+          </div>
+        </div>
+
+        <div class="wizard-nav">
+          <button type="button" class="btn ghost" id="step2BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
+          <button type="button" class="btn amber" id="step2NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
+        </div>
+      </div>
+
+      <!-- STEP 3 — Financing, and only financing: which program(s) fund
+           this project's PREPARATION (elaborating/structuring it before
+           it's finished, e.g. a USTDA feasibility-study grant) vs. which
+           program(s) fund its EXECUTION (implementation, e.g. CAF + BID
+           each covering a share) — deliberately kept as two clearly
+           separated groups, never merged into one list. Neither is the
+           umbrella "Program" field (that's organizational, not a funding
+           source — see step 1 above). Saved as project_programs rows right
+           after the project is created/updated — see
+           reconcileProgramApplications() below and
+           supabase/migration_v21_program_funding_stage_and_applications.sql. -->
+      <div class="wizard-panel" data-step="3">
+        <div>
+          <h5 class="h-card" style="font-size:13px;"><span data-i18n="pd.programs.preparation">Project preparation funding</span></h5>
+          <div class="field" style="margin-top:10px;">
+            <label for="pPrepProgram"><span data-i18n="np.f.prepProgram">Project preparation funding (optional)</span></label>
+            <select id="pPrepProgram"></select>
+            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.prepProgram.help">A program that funds elaborating/structuring this project itself before it's finished — e.g. a USTDA feasibility-study grant.</span></p>
+            <!-- Its guided template (if any) is filled in from the
+                 Templates section (4), via prepTemplateOfferCard. -->
+          </div>
+        </div>
+
+        <div style="margin-top:32px; padding-top:28px; border-top:1px solid var(--paper-line);">
+          <h5 class="h-card" style="font-size:13px;"><span data-i18n="pd.programs.financing">Project financing</span></h5>
+          <div class="field" style="margin-top:10px;">
+            <label><span data-i18n="np.f.financingPrograms">Project financing program(s) (optional)</span></label>
+            <div class="chk-group" id="financingProgramsOptions"></div>
+            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.financingPrograms.help">Select every program financing this project, if more than one — e.g. CAF and BID each funding a share of it.</span></p>
+            <p style="font-size:12px; color:var(--muted); margin-top:4px;"><span data-i18n="np.f.financingPrograms.amountHelp">For each selected program, enter its share as a % of the total budget, an amount in ARS, or both.</span></p>
+          </div>
+        </div>
+
+        <!-- Universal Service Fund (FSU) amount/scope — distinct from the
+             umbrella-program checkboxes above and from
+             shared_field_answers.monto_total_solicitado (a guided template's
+             total project budget). This is specifically what's being
+             requested from the FSU as one financing mechanism among several
+             — see migration_v33_project_attributes.sql and
+             USF_SUGGESTION/isFsuScoringEligible in assets/platform.js. -->
+        <div style="margin-top:32px; padding-top:28px; border-top:1px solid var(--paper-line);">
+          <h5 class="h-card" style="font-size:13px;"><span data-i18n="np.f.fsuSection">Universal Service Fund (FSU)</span></h5>
+          <div class="field" style="margin-top:10px;">
+            <label for="pFsuAmount"><span data-i18n="np.f.fsuAmount">FSU amount requested (ARS, optional)</span></label>
+            <input id="pFsuAmount" type="number" min="0" step="1">
+          </div>
+          <!-- USD twin — see migration_v38_usd_amounts.sql. Shares the
+               exchange rate entered in the budget section (step 1) above. -->
+          <div class="field" style="margin-top:18px;">
+            <label for="pFsuAmountUsd"><span data-i18n="np.f.fsuAmountUsd">FSU amount requested (USD, optional)</span></label>
+            <input id="pFsuAmountUsd" type="number" min="0" step="1">
+          </div>
+          <div class="field" style="margin-top:18px;">
+            <label for="pFsuScope"><span data-i18n="np.f.fsuScope">FSU scope (optional)</span></label>
+            <textarea id="pFsuScope" style="min-height:80px;" placeholder=""></textarea>
+            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.fsuScope.help">What the FSU financing would cover — localities, households, services.</span></p>
+          </div>
+          <!-- Financing mix (migration_v35_financing_mix.sql): what SHARE
+               of the total budget the FSU would cover — a project can be
+               financed by FSU + one or more other sources, each covering a
+               percentage, together not exceeding 100%. fsu_scope above
+               already describes WHAT part/stage FSU covers in words (often
+               "a first stage"); this is the same idea expressed as a
+               number, so the mix can be checked against 100% on
+               project.html. -->
+          <div class="field" style="margin-top:18px;">
+            <label for="pFsuPercentage"><span data-i18n="np.f.fsuPercentage">FSU share of total budget (%, optional)</span></label>
+            <input id="pFsuPercentage" type="number" min="0" max="100" step="1">
+            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.fsuPercentage.help">What percentage of the total budget the FSU would cover — e.g. 40 if it funds a first stage worth 40% of the project.</span></p>
+          </div>
+        </div>
+
+        <!-- Financing mix, continued: the remainder covered by a source
+             that isn't the FSU and isn't a Program registered on the
+             platform — own funds, a one-off credit line, etc. See
+             migration_v35_financing_mix.sql. Each registered financing
+             Program's own share is entered next to its checkbox above
+             instead (financingProgramsPercentages). -->
+        <div style="margin-top:32px; padding-top:28px; border-top:1px solid var(--paper-line);">
+          <h5 class="h-card" style="font-size:13px;"><span data-i18n="np.f.otherFinancingSection">Other financing source</span></h5>
+          <p style="font-size:12px; color:var(--muted); margin-top:4px;"><span data-i18n="np.f.otherFinancingSection.help">For any remaining share not covered by the FSU or a Program registered above — e.g. the proponent's own funds, or a credit line not modeled as a Program.</span></p>
+          <div class="field" style="margin-top:14px;">
+            <label for="pOtherFinancingPercentage"><span data-i18n="np.f.otherFinancingPercentage">Share of total budget (%, optional)</span></label>
+            <input id="pOtherFinancingPercentage" type="number" min="0" max="100" step="1">
+          </div>
+          <!-- Same share, as an absolute amount instead of a % — see
+               migration_v37_financing_amounts.sql. Independent of the %
+               field above (fill in either, or both), same convention as
+               the FSU amount/% pair above. -->
+          <div class="field" style="margin-top:18px;">
+            <label for="pOtherFinancingAmount"><span data-i18n="np.f.otherFinancingAmount">Amount (ARS, optional)</span></label>
+            <input id="pOtherFinancingAmount" type="number" min="0" step="1">
+          </div>
+          <div class="field" style="margin-top:18px;">
+            <label for="pOtherFinancingNotes"><span data-i18n="np.f.otherFinancingNotes">Source description (optional)</span></label>
+            <textarea id="pOtherFinancingNotes" style="min-height:60px;" placeholder=""></textarea>
+            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.otherFinancingNotes.help">E.g. "Own funds from the Cooperative" or "Banco Nación credit line, not a registered Program."</span></p>
+          </div>
+        </div>
+
+        <div class="wizard-nav">
+          <button type="button" class="btn ghost" id="step3BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
+          <button type="button" class="btn amber" id="step3NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
+        </div>
+      </div>
+
+      <!-- STEP 4 — optional guided template + AI document autofill, and the
+           real submit button. "Fill using template" hands off to
+           project-template.html, which (the project already exists by this
+           point) exposes its own "Autocomplete from documents" button
+           reading whatever was uploaded in step 2. Submitting here always
+           saves via updateProject() (the project record already exists from
+           step 1 in create mode, or from the original ?id= when editing) —
+           see the submit handler below. -->
+      <div class="wizard-panel" data-step="4">
+        <div class="template-offer-card" id="templateOfferCard" style="display:none;">
+          <p style="font-size:14px; margin:0 0 6px;"><span data-i18n="np.wizard.step3.lede">This project type has a guided template. Fill it in manually, or — if you uploaded documents earlier — let INA's AI agent scan them and prefill it automatically.</span></p>
+          <p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;"><span data-i18n="np.f.templateForType">Corresponds to the project type:</span> <strong id="templateOfferTypeName"></strong></p>
+          <button type="button" id="useTemplateBtn" class="btn ghost small"><span data-i18n="np.f.useTemplate">Fill using template</span></button>
+        </div>
+        <!-- Shown instead of templateOfferCard when the selected project
+             type has no registered template. -->
+        <p id="templateOfferEmpty" style="display:none; font-size:13.5px; color:var(--muted);"><span data-i18n="np.wizard.step3.empty">This project type doesn't have a guided template — there's nothing to fill in here.</span></p>
+
+        <!-- Shown only when the Program picked in the Project section
+             (pprogram) has its own guided template — see
+             updateProgramTemplateBtnVisibility() below. -->
+        <div class="template-offer-card" id="programTemplateOfferCard" style="display:none; margin-top:16px;">
+          <p style="font-size:14px; margin:0 0 6px;"><span data-i18n="np.wizard.step4.program.lede">The Program selected in the Project section has its own guided template.</span></p>
+          <p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;"><span data-i18n="np.f.templateForProgram">Corresponds to the financing program:</span> <strong id="programTemplateOfferName"></strong></p>
+          <button type="button" id="useProgramTemplateBtn" class="btn ghost small"><span data-i18n="np.f.useProgramTemplate">Fill using this program's template</span></button>
+        </div>
+
+        <!-- Shown only when the preparation-funding program picked in
+             Financing (pPrepProgram) has its own guided template — see
+             updatePrepProgramTemplateBtnVisibility() below. -->
+        <div class="template-offer-card" id="prepTemplateOfferCard" style="display:none; margin-top:16px;">
+          <p style="font-size:14px; margin:0 0 6px;"><span data-i18n="np.wizard.step4.prep.lede">The project preparation funding program selected in Financing has its own guided template.</span></p>
+          <p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;"><span data-i18n="np.f.templateForPrepProgram">Corresponds to the project-preparation funding program:</span> <strong id="prepTemplateOfferName"></strong></p>
+          <button type="button" id="usePrepProgramTemplateBtn" class="btn ghost small"><span data-i18n="np.f.useProgramTemplate">Fill using this program's template</span></button>
+          <p id="prepTemplateFilledNote" style="display:none; font-size:12px; color:var(--amber-deep); margin-top:8px;"><span data-i18n="np.f.prepTemplateFilled">✓ Template filled in — it will be saved when you submit.</span></p>
+        </div>
+
+        <p id="editNote" style="font-size:12.5px; color:var(--amber-deep); margin-top:18px; display:none;"><span data-i18n="np.edit.reanalyze">Saving changes clears the current analysis — run the Investment Readiness Index&trade; again manually from the project page afterwards.</span></p>
+
+        <div class="wizard-nav">
+          <button type="button" class="btn ghost" id="step4BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
+          <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
+        </div>
+        <button type="submit" class="btn amber" style="margin-top:14px;" id="submitBtn"><span data-i18n="np.submit">Submit for Analysis</span></button>
+        <p class="contact-note" id="formNote" style="margin-top:14px; min-height:18px;"></p>
+      </div>
     </form>
   </div>
 </section>
@@ -140,15 +466,63 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=4"></script>
+<script src="/assets/i18n.js?v=40"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=9"></script>
+<script src="/assets/platform.js?v=46"></script>
 <script src="/assets/script.js?v=12"></script>
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
   const editId = params.get('id');
   const isEdit = !!editId;
+  // The project this form is currently attached to — starts as editId (may
+  // be null for a brand-new project) and gets set once the wizard's step 1
+  // creates the record (see step1NextBtn below). Every downstream feature
+  // that used to check `isEdit ? editId : ...` (template hand-off return
+  // URLs, the final submit's create-vs-update branch) checks this instead,
+  // since by the time those are reachable in wizard mode the project
+  // already exists too — only the very first step (name+type, before
+  // anything is created) is genuinely isEdit-vs-not.
+  let activeProjectId = editId || null;
+
+  // Set only when this tab actually holds the edit lock on an existing
+  // project (see the isEdit block in init() below) — calling this stops
+  // the 60s heartbeat that renews it. Left null for brand-new projects
+  // (nothing to lock yet — the record doesn't exist until step 1 saves it)
+  // and for a project someone else is already editing (never acquired).
+  let stopEditLockHeartbeat = null;
+
+  // Set alongside showEditLockBanner() below, whenever the lock is held by
+  // someone else — lets the lang-btn listener re-render the banner text in
+  // the new language too. Without this, the rest of the page correctly
+  // re-translates on a language switch but the banner (built once, as a
+  // plain string, not through [data-i18n]) stayed frozen in whichever
+  // language was active when the lock was first detected.
+  let lastLockResult = null;
+
+  // Disables every control inside #projectForm and shows a banner naming
+  // who's editing (falls back to a generic message if RLS hid their name —
+  // see the profiles RLS note in migration_v31_edit_locks.sql). Called only
+  // when acquireEditLock() reports the lock is held by someone else.
+  function showEditLockBanner(lockResult) {
+    const lang = INAPlatform.currentLang();
+    const banner = document.getElementById('editLockBanner');
+    const who = lockResult.locked_by_name
+      ? (lang === 'es' ? `Lo está editando ${lockResult.locked_by_name}` : `Currently being edited by ${lockResult.locked_by_name}`)
+      : (lang === 'es' ? 'Otra persona está editando este proyecto en este momento' : 'Someone else is currently editing this project');
+    const since = lockResult.locked_at
+      ? new Date(lockResult.locked_at).toLocaleTimeString(lang === 'es' ? 'es-AR' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    const sinceText = since ? ` ${lang === 'es' ? `desde las ${since}` : `since ${since}`}` : '';
+    const readOnlyText = lang === 'es'
+      ? ' El formulario quedará en modo solo lectura hasta que se libere.'
+      : ' The form is read-only until it becomes available.';
+    banner.textContent = `${who}${sinceText}.${readOnlyText}`;
+    banner.style.display = 'flex';
+    form.querySelectorAll('input, select, textarea, button').forEach((el) => {
+      if (el.id !== 'signOutBtn') el.disabled = true;
+    });
+  }
 
   const signOutBtn = document.getElementById('signOutBtn');
   signOutBtn.addEventListener('click', async (e) => {
@@ -216,26 +590,102 @@
   }
   renderCountryOptions();
 
+  // Same idea for the generating-entity-type <select> — see
+  // migration_v27_gestion_instances.sql. Optional, so a blank first option
+  // is always present.
+  const entityTypeSelect = document.getElementById('pEntityType');
+  function renderEntityTypeOptions() {
+    const selected = entityTypeSelect.value;
+    entityTypeSelect.innerHTML = '';
+    const blankOpt = document.createElement('option');
+    blankOpt.value = '';
+    blankOpt.textContent = lang === 'es' ? '— Sin especificar —' : '— Not specified —';
+    entityTypeSelect.appendChild(blankOpt);
+    INAPlatform.ENTITY_TYPES.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t[lang] || t.en;
+      entityTypeSelect.appendChild(opt);
+    });
+    if (selected) entityTypeSelect.value = selected;
+  }
+  renderEntityTypeOptions();
+
+  // Duration unit / priority / technical criticality <select>s — same
+  // "blank option first, since all 3 are optional" pattern as
+  // renderEntityTypeOptions() above. See migration_v33_project_attributes.sql.
+  const durationUnitSelect = document.getElementById('pDurationUnit');
+  function renderDurationUnitOptions() {
+    const selected = durationUnitSelect.value;
+    durationUnitSelect.innerHTML = '';
+    const blankOpt = document.createElement('option');
+    blankOpt.value = '';
+    blankOpt.textContent = lang === 'es' ? '— Unidad —' : '— Unit —';
+    durationUnitSelect.appendChild(blankOpt);
+    ['days', 'months'].forEach((u) => {
+      const opt = document.createElement('option');
+      opt.value = u;
+      opt.textContent = INAPlatform.DURATION_UNIT_LABELS[u][lang] || INAPlatform.DURATION_UNIT_LABELS[u].en;
+      durationUnitSelect.appendChild(opt);
+    });
+    if (selected) durationUnitSelect.value = selected;
+  }
+  renderDurationUnitOptions();
+
+  const prioritySelect = document.getElementById('pPriority');
+  const criticalitySelect = document.getElementById('pTechnicalCriticality');
+  // Shared by both selects — same low/medium/high keys, different label
+  // dictionary per select (PRIORITY_LABELS vs CRITICALITY_LABELS) so they
+  // read distinctly even though the underlying scale is identical.
+  function renderTierOptions(selectEl, labelDict) {
+    const selected = selectEl.value;
+    selectEl.innerHTML = '';
+    const blankOpt = document.createElement('option');
+    blankOpt.value = '';
+    blankOpt.textContent = lang === 'es' ? '— Sin especificar —' : '— Not specified —';
+    selectEl.appendChild(blankOpt);
+    ['low', 'medium', 'high'].forEach((tier) => {
+      const opt = document.createElement('option');
+      opt.value = tier;
+      opt.textContent = labelDict[tier][lang] || labelDict[tier].en;
+      selectEl.appendChild(opt);
+    });
+    if (selected) selectEl.value = selected;
+  }
+  function renderPriorityOptions() { renderTierOptions(prioritySelect, INAPlatform.PRIORITY_LABELS); }
+  function renderCriticalityOptions() { renderTierOptions(criticalitySelect, INAPlatform.CRITICALITY_LABELS); }
+  renderPriorityOptions();
+  renderCriticalityOptions();
+
+  const complexitySelect = document.getElementById('pComplexity');
+  function renderComplexityOptions() { renderTierOptions(complexitySelect, INAPlatform.COMPLEXITY_LABELS); }
+  renderComplexityOptions();
+
   /* Programs are optional and fetched async (RLS-scoped to the user's own
      programs, or every program for an advisor) — populated once on init(),
-     ahead of the edit-mode prefill below if this is an edit. */
+     ahead of the edit-mode prefill below if this is an edit. Cached in full
+     (not just id/name) so updateProgramTemplateBtnVisibility() below can
+     look up the selected program's template_key without a second round
+     trip. */
+  let programsCache = [];
   async function loadPrograms() {
     const sel = document.getElementById('pprogram');
-    let programs = [];
     try {
-      programs = await INAPlatform.listPrograms();
-    } catch (e) { /* non-critical — field just stays empty */ }
+      programsCache = await INAPlatform.listPrograms();
+    } catch (e) { programsCache = []; /* non-critical — field just stays empty */ }
     sel.innerHTML = '';
     const noneOpt = document.createElement('option');
     noneOpt.value = '';
     noneOpt.textContent = lang === 'es' ? 'Sin programa' : 'No program';
     sel.appendChild(noneOpt);
-    programs.forEach((pg) => {
+    programsCache.forEach((pg) => {
       const opt = document.createElement('option');
       opt.value = pg.id;
       opt.textContent = pg.name;
       sel.appendChild(opt);
     });
+    renderPrepProgramOptions('');
+    renderFinancingProgramOptions();
   }
 
   // Program *names* are user-entered data, not translated — only the "No
@@ -245,6 +695,171 @@
     if (sel.options.length && sel.options[0].value === '') {
       sel.options[0].textContent = lang === 'es' ? 'Sin programa' : 'No program';
     }
+    const prepSel = document.getElementById('pPrepProgram');
+    if (prepSel.options.length && prepSel.options[0].value === '') {
+      prepSel.options[0].textContent = lang === 'es' ? 'Sin financiamiento de elaboración' : 'No preparation funding';
+    }
+  }
+
+  /* Which program(s) actually FUND this project — separate from the
+     "Program" umbrella field above. Preparation funding (e.g. USTDA) is
+     single-select, since normally only one entity funds elaborating a
+     project; project financing (e.g. CAF + BID together) is multi-select,
+     since more than one program can each cover a share. Both are backed by
+     project_programs, applied/reconciled on submit — see
+     reconcileProgramApplications() below. */
+  let financingProgramsChecked = new Set();
+  // Financing mix (migration_v35_financing_mix.sql): % of the project's
+  // total budget each checked financing-stage Program covers — keyed by
+  // program id, only meaningful/shown for programs currently checked in
+  // financingProgramsChecked above. Applied via applyToProgram's
+  // financingPercentage option in reconcileProgramApplications() on
+  // submit. FSU's own share is a separate project-level field (pFsuPercentage
+  // below), not part of this map.
+  let financingProgramsPercentages = new Map();
+  // Same share, as an absolute amount (ARS) instead of a % — see
+  // migration_v37_financing_amounts.sql. Independent of
+  // financingProgramsPercentages above; a checked program can have either,
+  // both, or neither filled in.
+  let financingProgramsAmounts = new Map();
+  // Existing applications when editing a project (fetched in init() below)
+  // — used both to pre-select the fields above and, on submit, to diff
+  // against what's now selected so reconcileProgramApplications() only
+  // adds/removes what actually changed, preserving any template answers
+  // already saved on an application that's still checked.
+  let existingProjectPrograms = [];
+
+  // Set by restoreTemplateDraftIfAny() below when the user has just come
+  // back from filling in the preparation program's guided template (see
+  // usePrepProgramTemplateBtn below) — carries the answers through to
+  // reconcileProgramApplications() on submit, since project-template.html
+  // in this "prep" mode saves nothing itself (unlike apply mode on
+  // project.html, there's no project id yet for a brand-new project to
+  // attach a project_programs row to).
+  let pendingPrepTemplateProgramId = null;
+  let pendingPrepTemplateAnswers = null;
+  let pendingPrepTemplateCompiled = '';
+
+  function renderPrepProgramOptions(selected) {
+    const sel = document.getElementById('pPrepProgram');
+    const prev = selected !== undefined ? selected : sel.value;
+    sel.innerHTML = '';
+    const noneOpt = document.createElement('option');
+    noneOpt.value = '';
+    noneOpt.textContent = lang === 'es' ? 'Sin financiamiento de elaboración' : 'No preparation funding';
+    sel.appendChild(noneOpt);
+    programsCache
+      .filter((pg) => pg.funding_stage === 'preparation')
+      .forEach((pg) => {
+        const opt = document.createElement('option');
+        opt.value = pg.id;
+        opt.textContent = pg.name;
+        sel.appendChild(opt);
+      });
+    sel.value = prev || '';
+  }
+
+  function renderFinancingProgramOptions() {
+    const el = document.getElementById('financingProgramsOptions');
+    const financing = programsCache.filter((pg) => (pg.funding_stage || 'financing') === 'financing');
+    const pctLabel = lang === 'es' ? '% del presupuesto' : '% of budget';
+    const amtLabel = lang === 'es' ? 'Monto (ARS)' : 'Amount (ARS)';
+    el.innerHTML = financing.map((pg) => {
+      const checked = financingProgramsChecked.has(pg.id);
+      const pct = financingProgramsPercentages.has(pg.id) ? financingProgramsPercentages.get(pg.id) : '';
+      const amt = financingProgramsAmounts.has(pg.id) ? financingProgramsAmounts.get(pg.id) : '';
+      // Both number inputs are SIBLINGs of the <label>, not nested inside
+      // it — nesting them would make clicks inside a number field also
+      // toggle the checkbox (implicit label activation), which is exactly
+      // the kind of thing that's aggravating to debug in a checkbox list.
+      return `
+      <div class="chk-pill-row" style="display:inline-flex; align-items:center; gap:6px;">
+        <label class="chk-pill">
+          <input type="checkbox" value="${pg.id}" ${checked ? 'checked' : ''}>
+          <span>${pg.name}</span>
+        </label>
+        ${checked ? `<input type="number" min="0" max="100" step="1" value="${pct}" data-pct-for="${pg.id}" placeholder="${pctLabel}" title="${pctLabel}" style="width:60px; padding:6px 8px; font-size:12px;">` : ''}
+        ${checked ? `<input type="number" min="0" step="1" value="${amt}" data-amt-for="${pg.id}" placeholder="${amtLabel}" title="${amtLabel}" style="width:110px; padding:6px 8px; font-size:12px;">` : ''}
+      </div>`;
+    }).join('');
+    el.querySelectorAll('[data-pct-for]').forEach((inp) => {
+      inp.addEventListener('change', () => {
+        const id = inp.getAttribute('data-pct-for');
+        if (inp.value === '') financingProgramsPercentages.delete(id);
+        else financingProgramsPercentages.set(id, inp.value);
+      });
+    });
+    el.querySelectorAll('[data-amt-for]').forEach((inp) => {
+      inp.addEventListener('change', () => {
+        const id = inp.getAttribute('data-amt-for');
+        if (inp.value === '') financingProgramsAmounts.delete(id);
+        else financingProgramsAmounts.set(id, inp.value);
+      });
+    });
+  }
+  document.getElementById('financingProgramsOptions').addEventListener('change', (e) => {
+    if (e.target.type !== 'checkbox') return;
+    if (e.target.checked) financingProgramsChecked.add(e.target.value);
+    else {
+      financingProgramsChecked.delete(e.target.value);
+      financingProgramsPercentages.delete(e.target.value);
+      financingProgramsAmounts.delete(e.target.value);
+    }
+    renderFinancingProgramOptions();
+  });
+
+  // Applies/withdraws applications so project_programs matches what's
+  // selected above — called right after the project is created/updated
+  // (needs a real project id). Diffs against existingProjectPrograms
+  // (empty for a brand-new project) so an application that's still
+  // selected is left untouched (any template answers already filled in
+  // from project.html survive), rather than blindly re-applying everyone.
+  // Every call is independently try/caught — a failure here shouldn't
+  // block the project itself from having saved successfully.
+  async function reconcileProgramApplications(projectId) {
+    const desired = new Set();
+    const prepId = document.getElementById('pPrepProgram').value;
+    if (prepId) desired.add(prepId);
+    financingProgramsChecked.forEach((id) => desired.add(id));
+
+    const existingIds = new Set(existingProjectPrograms.map((r) => r.program_id));
+
+    for (const id of existingIds) {
+      if (!desired.has(id)) {
+        try { await INAPlatform.removeProjectProgram(projectId, id); } catch (e) { /* non-critical */ }
+      }
+    }
+    for (const id of desired) {
+      // The preparation program's template was just filled in above
+      // (pendingPrepTemplateProgramId matches) — attach those answers
+      // whether this is a brand-new application or one that already
+      // existed (applyToProgram() upserts), so re-filling the template on
+      // an edit also saves the update.
+      const hasFreshAnswers = pendingPrepTemplateProgramId && pendingPrepTemplateProgramId === id && pendingPrepTemplateAnswers;
+      const isNew = !existingIds.has(id);
+      // Financing mix (migration_v35_financing_mix.sql +
+      // migration_v37_financing_amounts.sql) — the % and/or amount entered
+      // next to a checked financing-program checkbox above, if any. Only
+      // ever set for entries in financingProgramsChecked/
+      // financingProgramsPercentages/financingProgramsAmounts; the single
+      // preparation-funding pick (pPrepProgram) never has either.
+      const pct = financingProgramsPercentages.has(id) ? financingProgramsPercentages.get(id) : undefined;
+      const amt = financingProgramsAmounts.has(id) ? financingProgramsAmounts.get(id) : undefined;
+      if (isNew || hasFreshAnswers) {
+        const payload = hasFreshAnswers
+          ? { templateAnswers: pendingPrepTemplateAnswers, notes: pendingPrepTemplateCompiled }
+          : {};
+        if (pct !== undefined) payload.financingPercentage = pct;
+        if (amt !== undefined) payload.financingAmount = amt;
+        try { await INAPlatform.applyToProgram(projectId, id, payload); } catch (e) { /* non-critical */ }
+      } else if (pct !== undefined || amt !== undefined) {
+        // Already applied and nothing else about it changed here — just
+        // update the share via the dedicated method so template_answers/
+        // notes already saved on this application (e.g. from project.html)
+        // aren't touched.
+        try { await INAPlatform.updateProjectProgramFinancing(projectId, id, { percentage: pct, amount: amt }); } catch (e) { /* non-critical */ }
+      }
+    }
   }
 
   document.querySelectorAll('.lang-btn').forEach((btn) => {
@@ -252,73 +867,372 @@
       lang = btn.getAttribute('data-lang');
       renderTypeOptions();
       renderCountryOptions();
+      renderEntityTypeOptions();
+      renderDurationUnitOptions();
+      renderPriorityOptions();
+      renderCriticalityOptions();
+      renderComplexityOptions();
       updateProgramPlaceholderLang();
       renderExistingDocs();
+      updateTemplateBtnVisibility();
+      renderFinancingProgramOptions();
+      if (lastLockResult) showEditLockBanner(lastLockResult);
     });
   });
 
+  // "Fill using template" — only shown for project types that have a
+  // guided template registered in INAPlatform.PROJECT_TEMPLATES (currently
+  // just Datacenter). Re-checked on every type change and language switch
+  // since renderTypeOptions() rebuilds the <select> from scratch.
+  const useTemplateBtn = document.getElementById('useTemplateBtn');
+  const templateOfferCard = document.getElementById('templateOfferCard');
+  const templateOfferEmpty = document.getElementById('templateOfferEmpty');
+  const templateOfferTypeName = document.getElementById('templateOfferTypeName');
+  function updateTemplateBtnVisibility() {
+    const hasTemplate = !!INAPlatform.projectTemplateFor(typeSelect.value);
+    useTemplateBtn.style.display = hasTemplate ? 'inline-flex' : 'none';
+    // templateOfferCard wraps useTemplateBtn inside step 4 — hidden
+    // entirely (not just the button) when this project type has no
+    // registered template; templateOfferEmpty shows instead.
+    if (templateOfferCard) templateOfferCard.style.display = hasTemplate ? 'block' : 'none';
+    if (templateOfferEmpty) templateOfferEmpty.style.display = hasTemplate ? 'none' : 'block';
+    // Names the exact project type this card's template belongs to — the
+    // card can otherwise be ambiguous once the Program/prep-program cards
+    // sit right below it with their own "Fill using template" buttons.
+    if (templateOfferTypeName) templateOfferTypeName.textContent = hasTemplate ? INAPlatform.projectTypeLabel(typeSelect.value) : '';
+  }
+  typeSelect.addEventListener('change', updateTemplateBtnVisibility);
+  updateTemplateBtnVisibility();
+
+  // "Fill using this program's template" — a second, independent template
+  // entry point (see PROGRAM_TEMPLATES in assets/platform.js): shown only
+  // when the selected Program was tagged with a template_key that resolves
+  // to a registered program template (e.g. ENACOM's Mercado de Capitales
+  // financing line). Unlike the project-type template above, setting
+  // pprogram.value programmatically (edit-mode prefill, draft restore)
+  // doesn't fire 'change', so every place that sets it also calls this
+  // directly rather than relying solely on the listener.
+  const programSelect = document.getElementById('pprogram');
+  const prepProgramSelect = document.getElementById('pPrepProgram');
+  const useProgramTemplateBtn = document.getElementById('useProgramTemplateBtn');
+  const programTemplateOfferCard = document.getElementById('programTemplateOfferCard');
+  const programTemplateOfferName = document.getElementById('programTemplateOfferName');
+  // programTemplateOfferCard lives in the Templates section (4) — it only
+  // shows up once the Program picked in the Project section (section 1)
+  // actually has a registered template, so section 4 always reflects
+  // whatever was just selected in section 1.
+  function updateProgramTemplateBtnVisibility() {
+    const program = programsCache.find((pg) => pg.id === programSelect.value);
+    const template = program && program.template_key ? INAPlatform.programTemplateFor(program.template_key) : null;
+    useProgramTemplateBtn.style.display = template ? 'inline-flex' : 'none';
+    if (programTemplateOfferCard) programTemplateOfferCard.style.display = template ? 'block' : 'none';
+    // Names the exact Program this card's template belongs to (plain text,
+    // as entered on new-program.html — not translated).
+    if (programTemplateOfferName) programTemplateOfferName.textContent = template && program ? program.name : '';
+  }
+  programSelect.addEventListener('change', updateProgramTemplateBtnVisibility);
+
+  // Saves whatever's currently in the form (so it isn't lost) into
+  // sessionStorage, then hands off to app/project-template.html for the
+  // selected project type. See restoreTemplateDraftIfAny() below for the
+  // other half of this round trip.
+  useTemplateBtn.addEventListener('click', () => {
+    const draft = {
+      name: document.getElementById('pname').value,
+      projectType: typeSelect.value,
+      programId: document.getElementById('pprogram').value,
+      country: countrySelect.value,
+      beneficiaries: document.getElementById('pbeneficiaries').value,
+      description: document.getElementById('pdesc').value,
+      entityName: document.getElementById('pEntityName').value,
+      entityType: entityTypeSelect.value,
+      durationValue: document.getElementById('pDurationValue').value,
+      durationUnit: durationUnitSelect.value,
+      priority: prioritySelect.value,
+      technicalCriticality: criticalitySelect.value,
+      fsuAmount: document.getElementById('pFsuAmount').value,
+      fsuAmountUsd: document.getElementById('pFsuAmountUsd').value,
+      fsuScope: document.getElementById('pFsuScope').value,
+      fsuPercentage: document.getElementById('pFsuPercentage').value,
+      budgetAmount: document.getElementById('pBudgetAmount').value,
+      budgetAmountUsd: document.getElementById('pBudgetAmountUsd').value,
+      exchangeRate: document.getElementById('pExchangeRate').value,
+      exchangeRateDate: document.getElementById('pExchangeRateDate').value,
+      complexity: complexitySelect.value,
+      otherFinancingPercentage: document.getElementById('pOtherFinancingPercentage').value,
+      otherFinancingAmount: document.getElementById('pOtherFinancingAmount').value,
+      otherFinancingNotes: document.getElementById('pOtherFinancingNotes').value,
+    };
+    sessionStorage.setItem('inaTemplateDraft', JSON.stringify(draft));
+    sessionStorage.setItem('inaTemplateReturnUrl', activeProjectId ? `new-project.html?id=${activeProjectId}` : 'new-project.html');
+    // &project=<id> once the project record exists (always true by the time
+    // this button is reachable — either from wizard step 1 having already
+    // created it, or from editing an existing one) — lets
+    // project-template.html's "Autocomplete from documents" button read
+    // this project's already-uploaded documents and shared-answer pool.
+    const projectParam = activeProjectId ? `&project=${encodeURIComponent(activeProjectId)}` : '';
+    location.href = `project-template.html?type=${encodeURIComponent(draft.projectType)}${projectParam}`;
+  });
+
+  // Same draft-save round trip as useTemplateBtn above, but hands off to
+  // the selected Program's template (?ptpl=) instead of the project type's
+  // (?type=) — see project-template.html, which resolves either.
+  useProgramTemplateBtn.addEventListener('click', () => {
+    const program = programsCache.find((pg) => pg.id === programSelect.value);
+    if (!program || !program.template_key) return;
+    const draft = {
+      name: document.getElementById('pname').value,
+      projectType: typeSelect.value,
+      programId: programSelect.value,
+      country: countrySelect.value,
+      beneficiaries: document.getElementById('pbeneficiaries').value,
+      description: document.getElementById('pdesc').value,
+      entityName: document.getElementById('pEntityName').value,
+      entityType: entityTypeSelect.value,
+      durationValue: document.getElementById('pDurationValue').value,
+      durationUnit: durationUnitSelect.value,
+      priority: prioritySelect.value,
+      technicalCriticality: criticalitySelect.value,
+      fsuAmount: document.getElementById('pFsuAmount').value,
+      fsuAmountUsd: document.getElementById('pFsuAmountUsd').value,
+      fsuScope: document.getElementById('pFsuScope').value,
+      fsuPercentage: document.getElementById('pFsuPercentage').value,
+      budgetAmount: document.getElementById('pBudgetAmount').value,
+      budgetAmountUsd: document.getElementById('pBudgetAmountUsd').value,
+      exchangeRate: document.getElementById('pExchangeRate').value,
+      exchangeRateDate: document.getElementById('pExchangeRateDate').value,
+      complexity: complexitySelect.value,
+      otherFinancingPercentage: document.getElementById('pOtherFinancingPercentage').value,
+      otherFinancingAmount: document.getElementById('pOtherFinancingAmount').value,
+      otherFinancingNotes: document.getElementById('pOtherFinancingNotes').value,
+    };
+    sessionStorage.setItem('inaTemplateDraft', JSON.stringify(draft));
+    sessionStorage.setItem('inaTemplateReturnUrl', activeProjectId ? `new-project.html?id=${activeProjectId}` : 'new-project.html');
+    const projectParam = activeProjectId ? `&project=${encodeURIComponent(activeProjectId)}` : '';
+    location.href = `project-template.html?ptpl=${encodeURIComponent(program.template_key)}${projectParam}`;
+  });
+
+  // "Fill using this program's template" for the preparation-funding
+  // selector above — same draft-save round trip as useProgramTemplateBtn,
+  // but with ?prep=1 added: project-template.html saves the answers under
+  // separate sessionStorage keys instead of compiling them into the
+  // project's description (a preparation-funding application's answers
+  // belong on its own project_programs row, not blended into the general
+  // project description) — see restoreTemplateDraftIfAny() below, which
+  // reads them back into pendingPrepTemplateAnswers for
+  // reconcileProgramApplications() to attach on submit.
+  const usePrepProgramTemplateBtn = document.getElementById('usePrepProgramTemplateBtn');
+  const prepTemplateOfferCard = document.getElementById('prepTemplateOfferCard');
+  const prepTemplateOfferName = document.getElementById('prepTemplateOfferName');
+  // prepTemplateOfferCard lives in the Templates section (4) too — same
+  // idea as programTemplateOfferCard above, but for the preparation-funding
+  // program picked in Financing (section 3).
+  function updatePrepProgramTemplateBtnVisibility() {
+    const program = programsCache.find((pg) => pg.id === prepProgramSelect.value);
+    const template = program && program.template_key ? INAPlatform.programTemplateFor(program.template_key) : null;
+    usePrepProgramTemplateBtn.style.display = template ? 'inline-flex' : 'none';
+    if (prepTemplateOfferCard) prepTemplateOfferCard.style.display = template ? 'block' : 'none';
+    // Names the exact preparation-funding Program this card's template
+    // belongs to (plain text, as entered on new-program.html).
+    if (prepTemplateOfferName) prepTemplateOfferName.textContent = template && program ? program.name : '';
+  }
+  prepProgramSelect.addEventListener('change', () => {
+    updatePrepProgramTemplateBtnVisibility();
+    // Selecting a different preparation program invalidates any
+    // just-filled answers that were for the previous one.
+    if (pendingPrepTemplateProgramId && pendingPrepTemplateProgramId !== prepProgramSelect.value) {
+      pendingPrepTemplateProgramId = null;
+      pendingPrepTemplateAnswers = null;
+      pendingPrepTemplateCompiled = '';
+      document.getElementById('prepTemplateFilledNote').style.display = 'none';
+    }
+  });
+
+  usePrepProgramTemplateBtn.addEventListener('click', () => {
+    const program = programsCache.find((pg) => pg.id === prepProgramSelect.value);
+    if (!program || !program.template_key) return;
+    const draft = {
+      name: document.getElementById('pname').value,
+      projectType: typeSelect.value,
+      programId: document.getElementById('pprogram').value,
+      prepProgramId: prepProgramSelect.value,
+      financingProgramIds: Array.from(financingProgramsChecked),
+      country: countrySelect.value,
+      beneficiaries: document.getElementById('pbeneficiaries').value,
+      description: document.getElementById('pdesc').value,
+      entityName: document.getElementById('pEntityName').value,
+      entityType: entityTypeSelect.value,
+      durationValue: document.getElementById('pDurationValue').value,
+      durationUnit: durationUnitSelect.value,
+      priority: prioritySelect.value,
+      technicalCriticality: criticalitySelect.value,
+      fsuAmount: document.getElementById('pFsuAmount').value,
+      fsuAmountUsd: document.getElementById('pFsuAmountUsd').value,
+      fsuScope: document.getElementById('pFsuScope').value,
+      fsuPercentage: document.getElementById('pFsuPercentage').value,
+      budgetAmount: document.getElementById('pBudgetAmount').value,
+      budgetAmountUsd: document.getElementById('pBudgetAmountUsd').value,
+      exchangeRate: document.getElementById('pExchangeRate').value,
+      exchangeRateDate: document.getElementById('pExchangeRateDate').value,
+      complexity: complexitySelect.value,
+      otherFinancingPercentage: document.getElementById('pOtherFinancingPercentage').value,
+      otherFinancingAmount: document.getElementById('pOtherFinancingAmount').value,
+      otherFinancingNotes: document.getElementById('pOtherFinancingNotes').value,
+    };
+    sessionStorage.setItem('inaTemplateDraft', JSON.stringify(draft));
+    sessionStorage.setItem('inaTemplateReturnUrl', activeProjectId ? `new-project.html?id=${activeProjectId}` : 'new-project.html');
+    const projectParam = activeProjectId ? `&project=${encodeURIComponent(activeProjectId)}` : '';
+    location.href = `project-template.html?ptpl=${encodeURIComponent(program.template_key)}&prep=1${projectParam}`;
+  });
+
+  // Restores the draft saved above when this page is reloaded on the way
+  // back from project-template.html, and merges in the compiled
+  // description text it produced (appended after anything already typed,
+  // rather than overwriting it — the template is meant to add structure,
+  // not throw away notes). No-op on a normal page load, since neither
+  // sessionStorage key is set. Called from init(), after loadPrograms()
+  // and any edit-mode prefill so it always wins over whatever those set.
+  function restoreTemplateDraftIfAny() {
+    const draftRaw = sessionStorage.getItem('inaTemplateDraft');
+    if (draftRaw) {
+      try {
+        const draft = JSON.parse(draftRaw);
+        if (draft.name) document.getElementById('pname').value = draft.name;
+        if (draft.projectType) { typeSelect.value = draft.projectType; updateTemplateBtnVisibility(); }
+        if (draft.programId) { programSelect.value = draft.programId; updateProgramTemplateBtnVisibility(); }
+        if (draft.prepProgramId) { renderPrepProgramOptions(draft.prepProgramId); updatePrepProgramTemplateBtnVisibility(); }
+        if (draft.financingProgramIds) {
+          financingProgramsChecked = new Set(draft.financingProgramIds);
+          renderFinancingProgramOptions();
+        }
+        if (draft.country) {
+          countrySelect.value = draft.country;
+          if (countrySelect.value !== draft.country) {
+            const opt = document.createElement('option');
+            opt.value = draft.country;
+            opt.textContent = draft.country;
+            countrySelect.appendChild(opt);
+            countrySelect.value = draft.country;
+          }
+        }
+        if (draft.beneficiaries) document.getElementById('pbeneficiaries').value = draft.beneficiaries;
+        if (draft.description) document.getElementById('pdesc').value = draft.description;
+        if (draft.entityName) document.getElementById('pEntityName').value = draft.entityName;
+        if (draft.entityType) entityTypeSelect.value = draft.entityType;
+        if (draft.durationValue) document.getElementById('pDurationValue').value = draft.durationValue;
+        if (draft.durationUnit) durationUnitSelect.value = draft.durationUnit;
+        if (draft.priority) prioritySelect.value = draft.priority;
+        if (draft.technicalCriticality) criticalitySelect.value = draft.technicalCriticality;
+        if (draft.fsuAmount) document.getElementById('pFsuAmount').value = draft.fsuAmount;
+        if (draft.fsuAmountUsd) document.getElementById('pFsuAmountUsd').value = draft.fsuAmountUsd;
+        if (draft.fsuScope) document.getElementById('pFsuScope').value = draft.fsuScope;
+        if (draft.fsuPercentage) document.getElementById('pFsuPercentage').value = draft.fsuPercentage;
+        if (draft.budgetAmount) document.getElementById('pBudgetAmount').value = draft.budgetAmount;
+        if (draft.budgetAmountUsd) document.getElementById('pBudgetAmountUsd').value = draft.budgetAmountUsd;
+        if (draft.exchangeRate) document.getElementById('pExchangeRate').value = draft.exchangeRate;
+        if (draft.exchangeRateDate) document.getElementById('pExchangeRateDate').value = draft.exchangeRateDate;
+        if (draft.complexity) complexitySelect.value = draft.complexity;
+        if (draft.otherFinancingPercentage) document.getElementById('pOtherFinancingPercentage').value = draft.otherFinancingPercentage;
+        if (draft.otherFinancingAmount) document.getElementById('pOtherFinancingAmount').value = draft.otherFinancingAmount;
+        if (draft.otherFinancingNotes) document.getElementById('pOtherFinancingNotes').value = draft.otherFinancingNotes;
+      } catch (e) { /* ignore malformed draft */ }
+      sessionStorage.removeItem('inaTemplateDraft');
+    }
+
+    const compiled = sessionStorage.getItem('inaTemplateCompiledDescription');
+    if (compiled) {
+      const descEl = document.getElementById('pdesc');
+      const existing = descEl.value.trim();
+      descEl.value = existing ? `${existing}\n\n${compiled}` : compiled;
+      sessionStorage.removeItem('inaTemplateCompiledDescription');
+    }
+
+    // The preparation program's template (see usePrepProgramTemplateBtn
+    // above) — kept in memory rather than written into the form, since it
+    // belongs on that program's own project_programs application, not the
+    // project description. reconcileProgramApplications() attaches it on
+    // submit; the note below just confirms to the user that it's queued.
+    const prepCompiled = sessionStorage.getItem('inaPrepTemplateCompiled');
+    const prepAnswersRaw = sessionStorage.getItem('inaPrepTemplateAnswers');
+    if (prepCompiled || prepAnswersRaw) {
+      pendingPrepTemplateProgramId = prepProgramSelect.value;
+      pendingPrepTemplateCompiled = prepCompiled || '';
+      try { pendingPrepTemplateAnswers = prepAnswersRaw ? JSON.parse(prepAnswersRaw) : null; } catch (e) { pendingPrepTemplateAnswers = null; }
+      sessionStorage.removeItem('inaPrepTemplateCompiled');
+      sessionStorage.removeItem('inaPrepTemplateAnswers');
+      if (pendingPrepTemplateAnswers) {
+        document.getElementById('prepTemplateFilledNote').style.display = 'block';
+      }
+    }
+    sessionStorage.removeItem('inaTemplateReturnUrl');
+  }
+
+  // Editing an existing project uses the exact same 4-step, one-panel-at-a-
+  // time interface as creating one — the only differences are copy
+  // (title/lede/submit label below) and the fact that every section is
+  // freely reachable from the very first render, since the project (and
+  // therefore activeProjectId) already exists — see the wizard-step-dot
+  // click handler and goToStep() further down.
   if (isEdit) {
     document.getElementById('pageTitle').innerHTML = '<span data-i18n="np.edit.title">Edit Project</span>';
     document.getElementById('pageLede').innerHTML = '<span data-i18n="np.edit.lede">Update the project details below. INA will re-run the Investment Readiness Index&trade; analysis against your changes.</span>';
     document.getElementById('crumbLabel').innerHTML = '<span data-i18n="np.edit.title">Edit Project</span>';
     document.getElementById('submitBtn').innerHTML = '<span data-i18n="np.edit.submit">Save Changes</span>';
     document.getElementById('editNote').style.display = 'block';
+    // Cancel is edit-mode only — a brand-new project has no saved state to
+    // cancel out of yet (closing the tab is enough there); clearing the
+    // inline display:none lets .btn's own CSS display rule take over.
+    document.querySelectorAll('.cancel-edit-btn').forEach((btn) => { btn.style.display = ''; });
   }
 
-  // One pendingFiles[] array per document category (technical / financial /
-  // administrative / other), keyed off each .doc-upload-group's
-  // [data-category] — see DOCUMENT_TYPES in assets/platform.js. Wired
-  // generically here instead of four hand-copied dropzone handlers, since
-  // the markup for each of the four zones is identical apart from that
-  // attribute.
-  const pendingFilesByCategory = { technical: [], financial: [], administrative: [], other: [] };
-
+  // Documents now upload immediately on select/drop instead of staging in
+  // memory until final submit — this is what makes the step 4 AI
+  // autofill/template-scanning offer possible: the documents genuinely
+  // exist on the project by the time that step is reached. Requires a real
+  // project id, which is why wizard mode creates the project record at step
+  // 1 before step 2's upload zones ever become reachable; in edit mode
+  // activeProjectId (=editId) is already known from the start. Wired
+  // generically here off each .doc-upload-group's [data-category] — see
+  // DOCUMENT_TYPES in assets/platform.js — instead of seven hand-copied
+  // dropzone handlers.
   document.querySelectorAll('.doc-upload-group').forEach((group) => {
     const category = group.getAttribute('data-category');
     const dropZone = group.querySelector('[data-dropzone]');
     const fileInput = group.querySelector('[data-fileinput]');
-    const uploadList = group.querySelector('[data-uploadlist]');
+    const statusEl = group.querySelector('[data-uploadstatus]');
 
-    function renderFiles() {
-      uploadList.innerHTML = '';
-      pendingFilesByCategory[category].forEach((f, i) => {
-        const row = document.createElement('div');
-        row.className = 'uf';
-        row.innerHTML = `<span>${f.name}</span>`;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = '×';
-        btn.addEventListener('click', () => {
-          pendingFilesByCategory[category].splice(i, 1);
-          renderFiles();
-        });
-        row.appendChild(btn);
-        uploadList.appendChild(row);
-      });
+    async function handleFiles(fileList) {
+      const files = Array.from(fileList || []);
+      if (!files.length) return;
+      if (!activeProjectId) return; // shouldn't happen — zones only reachable once a project exists
+      for (const file of files) {
+        if (statusEl) statusEl.textContent = (lang === 'es' ? 'Subiendo ' : 'Uploading ') + file.name + '…';
+        try {
+          const doc = await INAPlatform.uploadDocument(activeProjectId, file, category);
+          existingDocs.push(doc);
+        } catch (err) {
+          alert((lang === 'es' ? 'No se pudo subir el archivo: ' : "Couldn't upload the file: ") + (err.message || err));
+        }
+      }
+      if (statusEl) statusEl.textContent = '';
+      renderExistingDocs();
     }
 
     dropZone.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', () => {
-      pendingFilesByCategory[category] = pendingFilesByCategory[category].concat(Array.from(fileInput.files));
-      fileInput.value = '';
-      renderFiles();
-    });
+    fileInput.addEventListener('change', () => { handleFiles(fileInput.files); fileInput.value = ''; });
     ['dragover', 'dragenter'].forEach((evt) =>
       dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); })
     );
     ['dragleave', 'drop'].forEach((evt) =>
       dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); })
     );
-    dropZone.addEventListener('drop', (e) => {
-      pendingFilesByCategory[category] = pendingFilesByCategory[category].concat(Array.from(e.dataTransfer.files));
-      renderFiles();
-    });
+    dropZone.addEventListener('drop', (e) => { handleFiles(e.dataTransfer.files); });
   });
 
-  // Already-uploaded documents (edit mode only) — populated by init() below,
-  // grouped by document_type same as the four upload zones above. Kept in
-  // this array (rather than re-fetching on every change) so a delete just
-  // splices the array and re-renders, no extra round trip.
+  // Uploaded documents — populated by init() below for edit mode, and
+  // pushed to directly as uploads succeed in either mode (see handleFiles()
+  // above). Kept in this array (rather than re-fetching on every change) so
+  // a delete just splices the array and re-renders, no extra round trip.
   let existingDocs = [];
 
   function renderExistingDocs() {
@@ -387,6 +1301,145 @@
   const note = document.getElementById('formNote');
   const submitBtn = document.getElementById('submitBtn');
 
+  // --- Wizard step navigation — identical in both create and edit mode:
+  //     one .wizard-panel visible at a time, with clickable section names
+  //     in #wizardSteps for direct access to any of the 4 sections. Moving
+  //     between sections never loses data: every field stays in the DOM
+  //     the whole time (sections are just shown/hidden), and the final
+  //     submit always re-reads current field values — so editing name/type
+  //     after leaving section 1, or documents after leaving section 2, is
+  //     picked up correctly whenever the user eventually reaches section 4
+  //     and submits. ---
+  let currentStep = 1;
+  // Which sections have actually been shown at least once — drives the
+  // 'done' checkmark styling only (see CSS); clickability itself is
+  // governed by canJumpTo() below, not by visited state, since the whole
+  // point here is letting the user reach any section directly.
+  const visitedSteps = new Set();
+  function goToStep(n) {
+    currentStep = n;
+    visitedSteps.add(n);
+    document.querySelectorAll('.wizard-panel').forEach((p) => {
+      p.classList.toggle('active', Number(p.getAttribute('data-step')) === n);
+    });
+    document.querySelectorAll('.wizard-step-dot').forEach((d) => {
+      const s = Number(d.getAttribute('data-step-dot'));
+      d.classList.toggle('active', s === n);
+      d.classList.toggle('done', visitedSteps.has(s) && s < n);
+    });
+    // Deliberately no scrolling here — switching sections keeps the page
+    // exactly where it is; the section indicator itself stays in view.
+  }
+
+  // Section 1 (name + type) is always reachable — it's just form fields.
+  // Sections 2-4 need a real project id to mean anything (documents upload
+  // against it, programs/description save to it) — in edit mode that's
+  // true from the very first render (activeProjectId = editId already);
+  // in create mode it only becomes true once section 1's "Continue" has
+  // created the record. This is the single rule behind both the clickable
+  // section names below and each section's own "Continue" button.
+  function canJumpTo(step) {
+    return step === 1 || !!activeProjectId;
+  }
+
+  // Set synchronously, not from inside the async init() below — otherwise
+  // the page would briefly show no active panel at all while init() awaits
+  // requireAuth().
+  goToStep(1);
+
+  // The section names in #wizardSteps double as direct navigation — click
+  // any of the 4 to jump straight there, forward or backward, in either
+  // mode (see canJumpTo() above for the one gating rule: section 1 is
+  // always fine, 2-4 need the project to already exist).
+  document.querySelectorAll('.wizard-step-dot').forEach((dot) => {
+    dot.addEventListener('click', () => {
+      const target = Number(dot.getAttribute('data-step-dot'));
+      if (target === currentStep || !canJumpTo(target)) return;
+      goToStep(target);
+    });
+  });
+
+  document.getElementById('step1NextBtn').addEventListener('click', async () => {
+    const name = document.getElementById('pname').value.trim();
+    const projectType = typeSelect.value;
+    const description = document.getElementById('pdesc').value.trim();
+    const noteEl = document.getElementById('step1Note');
+    noteEl.textContent = '';
+    if (!name) {
+      noteEl.textContent = lang === 'es' ? 'Ingresá el nombre del proyecto.' : 'Enter the project name.';
+      return;
+    }
+    if (!projectType) {
+      noteEl.textContent = lang === 'es' ? 'Elegí un tipo de proyecto.' : 'Choose a project type.';
+      return;
+    }
+    if (!description) {
+      noteEl.textContent = lang === 'es' ? 'Ingresá una descripción del proyecto.' : 'Enter a project description.';
+      return;
+    }
+    const country = countrySelect.value;
+    if (!country) {
+      noteEl.textContent = lang === 'es' ? 'Elegí un país.' : 'Choose a country.';
+      return;
+    }
+    if (activeProjectId) { goToStep(2); return; }
+    // First time through — create the project record with everything
+    // collected in this section (name/type/entity/description/program/
+    // country/beneficiaries — every non-financing project attribute) so
+    // step 2's document uploads have a real project id to attach to.
+    // Financing (preparation/execution programs) lives in step 3 and is
+    // reconciled separately on the final submit via
+    // reconcileProgramApplications() — see below.
+    const btn = document.getElementById('step1NextBtn');
+    btn.disabled = true;
+    noteEl.textContent = lang === 'es' ? 'Creando proyecto…' : 'Creating project…';
+    try {
+      const generatingEntityName = document.getElementById('pEntityName').value;
+      const generatingEntityType = entityTypeSelect.value;
+      const programId = document.getElementById('pprogram').value;
+      const beneficiaryCount = document.getElementById('pbeneficiaries').value;
+      const durationValue = document.getElementById('pDurationValue').value;
+      const durationUnit = durationUnitSelect.value;
+      const priority = prioritySelect.value;
+      const technicalCriticality = criticalitySelect.value;
+      const budgetAmount = document.getElementById('pBudgetAmount').value;
+      const budgetAmountUsd = document.getElementById('pBudgetAmountUsd').value;
+      const exchangeRate = document.getElementById('pExchangeRate').value;
+      const exchangeRateDate = document.getElementById('pExchangeRateDate').value;
+      const complexity = complexitySelect.value;
+      const project = await INAPlatform.createProject({ name, projectType, programId, country, description, beneficiaryCount, generatingEntityName, generatingEntityType, durationValue, durationUnit, priority, technicalCriticality, budgetAmount, budgetAmountUsd, exchangeRate, exchangeRateDate, complexity });
+      activeProjectId = project.id;
+      history.replaceState(null, '', `new-project.html?id=${project.id}`);
+      noteEl.textContent = '';
+      goToStep(2);
+    } catch (err) {
+      noteEl.textContent = err.message || (lang === 'es' ? 'Algo salió mal.' : 'Something went wrong.');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('step2BackBtn').addEventListener('click', () => goToStep(1));
+  document.getElementById('step2NextBtn').addEventListener('click', () => goToStep(3));
+
+  document.getElementById('step3BackBtn').addEventListener('click', () => goToStep(2));
+  document.getElementById('step3NextBtn').addEventListener('click', () => goToStep(4));
+
+  document.getElementById('step4BackBtn').addEventListener('click', () => goToStep(3));
+
+  // Pressing Enter inside a field on sections 1-3 would otherwise submit
+  // the form natively (section 4 contains required <select>/<textarea>
+  // fields that are hidden off-screen while that section isn't active,
+  // which browsers silently refuse to submit around) — block that
+  // everywhere except section 4, where the submit button actually lives.
+  // Applies in both create and edit mode now that both use the same
+  // one-section-at-a-time interface.
+  form.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && currentStep !== 4) {
+      e.preventDefault();
+    }
+  });
+
   async function init() {
     if (!INAPlatform.isConfigured()) return;
     const session = await INAPlatform.requireAuth();
@@ -398,6 +1451,14 @@
       document.getElementById('appUserName').textContent = profile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
       if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
+      if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+      // Creating a Program is advisor/admin-only (see
+      // supabase/migration_v19_program_permissions.sql) — a standard user
+      // can still pick any existing Program from the dropdown below, just
+      // can't jump into creating a new one from here.
+      if (INAPlatform.canManagePrograms(profile)) {
+        document.getElementById('createProgramLink').style.display = 'inline';
+      }
     } catch (e) { /* non-critical */ }
 
     await loadPrograms();
@@ -410,16 +1471,43 @@
         location.href = 'dashboard.html';
         return;
       }
-      // Editing is owner-only. An advisor (or anyone else) landing on this
-      // URL for a project they don't own gets sent to the read-only view
-      // instead — the update would be rejected by RLS anyway.
-      if (project.user_id !== session.user.id) {
+      // Editing is available to the owner, or to the advisor who has taken
+      // this project (assigned_advisor_id — see INAPlatform.takeProject()
+      // and migration_v19_advisor_edit_taken_project.sql for the matching
+      // RLS change). Anyone else landing on this URL gets sent to the
+      // read-only view instead — the update would be rejected by RLS anyway.
+      const canEdit = project.user_id === session.user.id
+        || (!!project.assigned_advisor_id && project.assigned_advisor_id === session.user.id);
+      if (!canEdit) {
         location.href = `project.html?id=${editId}`;
         return;
       }
+
+      // Try to claim the edit lock before populating the form — see
+      // migration_v31_edit_locks.sql. Fields still get populated below
+      // either way (a blocked user should see the real current data, just
+      // not be able to change it) — only the acquired/not-acquired outcome
+      // decides whether the form ends up read-only.
+      let lockResult;
+      try {
+        lockResult = await INAPlatform.acquireEditLock('project', editId);
+      } catch (e) {
+        // Fail open: if the lock RPC itself errors (e.g. migration_v31 not
+        // yet applied on an older deployment), don't block a legitimate
+        // edit over a lock-system glitch.
+        lockResult = { acquired: true, locked_by: null, locked_by_name: null, locked_at: null };
+      }
+
       document.getElementById('pname').value = project.name || '';
       document.getElementById('ptype').value = project.project_type || '';
+      // Setting .value programmatically doesn't fire 'change' — without
+      // this, the Templates section's project-type card kept showing
+      // whatever template matched the dropdown's default/first option
+      // (computed at initial page load, before the real saved type was
+      // known) instead of this project's actual type.
+      updateTemplateBtnVisibility();
       document.getElementById('pprogram').value = project.program_id || '';
+      updateProgramTemplateBtnVisibility();
       // Country used to be free text; if this project's stored value
       // doesn't match any option in the curated Americas list (older data,
       // or a typo predating this select), add it as an extra option rather
@@ -436,13 +1524,63 @@
         }
       }
       document.getElementById('pbeneficiaries').value = project.beneficiary_count != null ? project.beneficiary_count : '';
+      document.getElementById('pEntityName').value = project.generating_entity_name || '';
+      entityTypeSelect.value = project.generating_entity_type || '';
       document.getElementById('pdesc').value = project.description || '';
+      document.getElementById('pDurationValue').value = project.duration_value != null ? project.duration_value : '';
+      durationUnitSelect.value = project.duration_unit || '';
+      prioritySelect.value = project.priority || '';
+      criticalitySelect.value = project.technical_criticality || '';
+      document.getElementById('pFsuAmount').value = project.fsu_amount != null ? project.fsu_amount : '';
+      document.getElementById('pFsuAmountUsd').value = project.fsu_amount_usd != null ? project.fsu_amount_usd : '';
+      document.getElementById('pFsuScope').value = project.fsu_scope || '';
+      document.getElementById('pFsuPercentage').value = project.fsu_percentage != null ? project.fsu_percentage : '';
+      document.getElementById('pBudgetAmount').value = project.budget_amount != null ? project.budget_amount : '';
+      document.getElementById('pBudgetAmountUsd').value = project.budget_amount_usd != null ? project.budget_amount_usd : '';
+      document.getElementById('pExchangeRate').value = project.exchange_rate != null ? project.exchange_rate : '';
+      document.getElementById('pExchangeRateDate').value = project.exchange_rate_date || '';
+      complexitySelect.value = project.complexity || '';
+      document.getElementById('pOtherFinancingPercentage').value = project.other_financing_percentage != null ? project.other_financing_percentage : '';
+      document.getElementById('pOtherFinancingAmount').value = project.other_financing_amount != null ? project.other_financing_amount : '';
+      document.getElementById('pOtherFinancingNotes').value = project.other_financing_notes || '';
 
       try {
         existingDocs = (await INAPlatform.listDocuments(editId)) || [];
         renderExistingDocs();
       } catch (e) { /* non-critical */ }
+
+      try {
+        existingProjectPrograms = (await INAPlatform.listProjectPrograms(editId)) || [];
+      } catch (e) { existingProjectPrograms = []; /* non-critical */ }
+      const prepRow = existingProjectPrograms.find((r) => r.programs && r.programs.funding_stage === 'preparation');
+      renderPrepProgramOptions(prepRow ? prepRow.program_id : '');
+      updatePrepProgramTemplateBtnVisibility();
+      const financingRows = existingProjectPrograms.filter((r) => !r.programs || r.programs.funding_stage !== 'preparation');
+      financingProgramsChecked = new Set(financingRows.map((r) => r.program_id));
+      // Prefill each checked program's % from its saved financing_percentage
+      // (migration_v35_financing_mix.sql), if it has one.
+      financingProgramsPercentages = new Map(
+        financingRows
+          .filter((r) => r.financing_percentage != null)
+          .map((r) => [r.program_id, r.financing_percentage])
+      );
+      // Same prefill, for the amount alternative — migration_v37_financing_amounts.sql.
+      financingProgramsAmounts = new Map(
+        financingRows
+          .filter((r) => r.financing_amount != null)
+          .map((r) => [r.program_id, r.financing_amount])
+      );
+      renderFinancingProgramOptions();
+
+      if (lockResult.acquired) {
+        stopEditLockHeartbeat = INAPlatform.startEditLockHeartbeat('project', editId);
+      } else {
+        lastLockResult = lockResult;
+        showEditLockBanner(lockResult);
+      }
     }
+
+    restoreTemplateDraftIfAny();
   }
   init();
 
@@ -465,29 +1603,97 @@
         country: document.getElementById('pcountry').value,
         description: document.getElementById('pdesc').value,
         beneficiaryCount: document.getElementById('pbeneficiaries').value,
+        generatingEntityName: document.getElementById('pEntityName').value,
+        generatingEntityType: document.getElementById('pEntityType').value,
+        durationValue: document.getElementById('pDurationValue').value,
+        durationUnit: durationUnitSelect.value,
+        priority: prioritySelect.value,
+        technicalCriticality: criticalitySelect.value,
+        fsuAmount: document.getElementById('pFsuAmount').value,
+        fsuAmountUsd: document.getElementById('pFsuAmountUsd').value,
+        fsuScope: document.getElementById('pFsuScope').value,
+        fsuPercentage: document.getElementById('pFsuPercentage').value,
+        budgetAmount: document.getElementById('pBudgetAmount').value,
+        budgetAmountUsd: document.getElementById('pBudgetAmountUsd').value,
+        exchangeRate: document.getElementById('pExchangeRate').value,
+        exchangeRateDate: document.getElementById('pExchangeRateDate').value,
+        complexity: complexitySelect.value,
+        otherFinancingPercentage: document.getElementById('pOtherFinancingPercentage').value,
+        otherFinancingAmount: document.getElementById('pOtherFinancingAmount').value,
+        otherFinancingNotes: document.getElementById('pOtherFinancingNotes').value,
       };
 
-      const project = isEdit
-        ? await INAPlatform.updateProject(editId, payload)
-        : await INAPlatform.createProject(payload);
+      // The project record always already exists by the time this handler
+      // runs — either from wizard step 1 (activeProjectId set there) or
+      // from editing an existing one (activeProjectId = editId from the
+      // start) — so this is always a save-in-place, never a fresh insert.
+      // Documents were uploaded immediately back in step 2, so there's no
+      // pending-files loop left to run here.
+      const project = await INAPlatform.updateProject(activeProjectId, payload);
 
-      for (const category of Object.keys(pendingFilesByCategory)) {
-        for (const file of pendingFilesByCategory[category]) {
-          await INAPlatform.uploadDocument(project.id, file, category);
-        }
-      }
+      await reconcileProgramApplications(project.id);
 
       note.textContent = lang2 === 'es'
-        ? 'Proyecto enviado. Iniciando análisis…'
-        : 'Project submitted. Starting analysis…';
+        ? 'Proyecto enviado.'
+        : 'Project submitted.';
 
-      INAPlatform.requestAnalysis(project.id).catch(() => { /* surfaced on project page */ });
+      // The project is now saved for good — clear any per-template draft
+      // answers left over from project-template.html (inaTemplateAnswers:*,
+      // see the persistAnswers()/loadPersistedAnswers() there) so the next
+      // "Fill using template" on a *different* project starts blank instead
+      // of showing this project's leftover values.
+      Object.keys(sessionStorage)
+        .filter((k) => k.indexOf('inaTemplateAnswers:') === 0)
+        .forEach((k) => sessionStorage.removeItem(k));
 
+      // Release the edit lock on a successful save so the next editor
+      // doesn't have to wait out the full 5-minute auto-expiry — only
+      // relevant in edit mode; brand-new projects never held one.
+      if (stopEditLockHeartbeat) {
+        stopEditLockHeartbeat();
+        stopEditLockHeartbeat = null;
+        try { await INAPlatform.releaseEditLock('project', editId); } catch (e) { /* non-critical */ }
+      }
+
+      // Analysis is no longer triggered automatically — the owner runs it
+      // manually from the project page ("Análisis IA" button) whenever
+      // they're ready. See project.html's notAnalyzedBlock / startAnalysisBtn.
       location.href = `project.html?id=${project.id}`;
     } catch (err) {
       note.textContent = err.message || 'Something went wrong.';
       submitBtn.disabled = false;
     }
+  });
+
+  // Best-effort release when the tab/window closes without a successful
+  // save (browser back, closing the tab, navigating away). Not guaranteed
+  // to complete — sendBeacon-less fetch calls can be dropped mid-flight on
+  // unload — which is exactly why the lock also auto-expires after 5
+  // minutes server-side (see migration_v31_edit_locks.sql): this is a nice-
+  // to-have that frees the lock immediately in the common case, not the
+  // safety net itself.
+  window.addEventListener('beforeunload', () => {
+    if (stopEditLockHeartbeat) {
+      INAPlatform.releaseEditLock('project', editId);
+    }
+  });
+
+  // Cancel (edit mode only, one copy per wizard step — see the
+  // .cancel-edit-btn reveal in the isEdit block above). Nothing on the
+  // project record has actually changed yet at this point (editing the
+  // form doesn't touch the DB until submit), so there's no state to roll
+  // back — this just releases the lock a beat sooner than waiting on
+  // beforeunload, then leaves. Same "release, wait for it, then navigate"
+  // shape as the submit handler's success path, just without saving first.
+  document.querySelectorAll('.cancel-edit-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (stopEditLockHeartbeat) {
+        stopEditLockHeartbeat();
+        stopEditLockHeartbeat = null;
+        try { await INAPlatform.releaseEditLock('project', editId); } catch (e) { /* non-critical */ }
+      }
+      location.href = 'dashboard.html';
+    });
   });
 })();
 </script>

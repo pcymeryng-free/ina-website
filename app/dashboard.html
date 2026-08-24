@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=3">
-<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/app.css?v=7">
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -20,8 +20,8 @@
     </a>
     <nav class="app-nav">
       <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
-      <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
       <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
       <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
     </nav>
     <div class="app-header-actions">
@@ -89,7 +89,20 @@
         <button type="button" class="fclear" id="fClear"><span data-i18n="dash.filter.clear">Clear filters</span></button>
       </div>
 
-      <p class="filter-count" id="filterCount"></p>
+      <div class="filter-count-row">
+        <p class="filter-count" id="filterCount"></p>
+        <!-- List/Grid layout toggle — see viewMode/setViewMode() in the
+             script below. Persisted in localStorage so it sticks across
+             visits. -->
+        <div class="view-toggle" role="group" aria-label="View">
+          <button type="button" class="view-toggle-btn" data-view="list" title="List view">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <button type="button" class="view-toggle-btn" data-view="grid" title="Grid view">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+          </button>
+        </div>
+      </div>
 
       <div id="projectList" class="project-list"></div>
       <div id="noMatchState" class="empty-state" style="display:none;">
@@ -114,9 +127,10 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=4"></script>
+<script src="/assets/i18n.js?v=40"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=9"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="/assets/platform.js?v=46"></script>
 <script src="/assets/script.js?v=12"></script>
 <script>
 (function () {
@@ -154,7 +168,39 @@
   let allProjects = [];
   let currentUserId = null;
   let currentIsAdmin = false;
+  // project_id -> array of { program_id, programs: { name, funding_stage } }
+  // — every financing/preparation Program each visible project has applied
+  // to (project_programs), in ADDITION to the single "umbrella" program_id
+  // embedded on the project itself. Populated in init(); used by the
+  // Program filter and the row/tag rendering below. See
+  // supabase/migration_v21_program_funding_stage_and_applications.sql.
+  let programAppsByProject = new Map();
+  // project_id -> { manual: framework_analysis row|null, ai: framework_analysis row|null }
+  // — the newest Self-Assessment and newest AI Analysis for each visible
+  // project, fetched via INAPlatform.listAnalysesForProjects(). Populated
+  // in init(); used to render the score badges under each row's title.
+  let analysesByProject = new Map();
+  // project_id -> fsu_scoring row — only present for projects that have
+  // actually saved an FSU Scoring, whether or not they're still
+  // isFsuScoringEligible() today (project_type could have been edited
+  // since). Populated in init() via INAPlatform.listFsuScoringForProjects().
+  let fsuByProject = new Map();
   const lang = () => INAPlatform.currentLang();
+
+  // Compact bilingual labels for the three score badges — kept local
+  // (rather than assets/i18n.js's [data-i18n] tagging) because this whole
+  // row is already built in plain JS at render time, same as the stat
+  // strip labels above.
+  const SCORE_BADGE_LABELS = {
+    ai: { en: 'AI', es: 'IA' },
+    manual: { en: 'Self', es: 'Auto' },
+    fsu: { en: 'FSU', es: 'FSU' },
+  };
+  const SCORE_BADGE_TITLES = {
+    ai: { en: 'AI Analysis', es: 'Análisis por IA' },
+    manual: { en: 'Self-Assessment', es: 'Autoevaluación' },
+    fsu: { en: 'FSU Scoring (ENACOM Res. 359/2025)', es: 'FSU Scoring (Res. ENACOM 359/2025)' },
+  };
 
   const fStatus = document.getElementById('fStatus');
   const fType = document.getElementById('fType');
@@ -174,12 +220,52 @@
     submarine_cable: '<path d="M2 15c3-4 6 4 9 0s6-4 9 0"/><circle cx="4" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="20" cy="19" r="1" fill="currentColor" stroke="none"/>',
     fiber_backbone_last_mile: '<path d="M3 12c4-6 14-6 18 0M7 15c2.5-3 7.5-3 10 0M11 18c1-1 2-1 2 0"/>',
     fixed_wireless_access: '<path d="M4 10a12 12 0 0 1 16 0M7 13.5a8 8 0 0 1 10 0M10 17a4 4 0 0 1 4 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/>',
+    wholesale_neutral_network: '<circle cx="12" cy="12" r="2.2"/><path d="M12 9.8V5M12 14.2V19M9.8 12H5M14.2 12H19"/><circle cx="12" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="20" cy="12" r="1" fill="currentColor" stroke="none"/>',
     ai_datacenter: '<rect x="4" y="4" width="16" height="6" rx="1"/><rect x="4" y="14" width="16" height="6" rx="1"/><circle cx="7.5" cy="7" r=".6" fill="currentColor" stroke="none"/><circle cx="7.5" cy="17" r=".6" fill="currentColor" stroke="none"/>',
     satellite_constellation: '<rect x="9" y="9" width="6" height="6" rx="1" transform="rotate(20 12 12)"/><path d="M4 6l2 2M20 6l-2 2M4 18l2-2M20 18l-2-2"/>',
+    early_warning_system: '<path d="M12 4 21 19 3 19Z"/><path d="M12 10v4"/><circle cx="12" cy="16.3" r=".6" fill="currentColor" stroke="none"/>',
     other: '<path d="M4 7h6l2 2h8v10H4z"/>',
   };
   function typeIcon(type) {
     return TYPE_ICONS[type] || TYPE_ICONS.other;
+  }
+
+  // Renders the row of up to 3 small score badges (Self-Assessment, AI
+  // Analysis, FSU Scoring) under a project's name/type line. Any score
+  // that doesn't exist yet for this project (no self-assessment run, no AI
+  // analysis run, not FSU-eligible or never scored) is simply omitted —
+  // never shown as "0" or a placeholder, so an unanalyzed project's row
+  // just has no badges, same as it has no status other than "Submitted".
+  function scoreBadgesHtml(p) {
+    const l = lang();
+    const entry = analysesByProject.get(p.id) || {};
+    const fsu = fsuByProject.get(p.id);
+    const items = [];
+    if (entry.manual) {
+      items.push({ kind: 'manual', score: entry.manual.overall_score, stage: entry.manual.stage });
+    }
+    if (entry.ai) {
+      items.push({ kind: 'ai', score: entry.ai.overall_score, stage: entry.ai.stage });
+    }
+    if (fsu && fsu.score_total != null) {
+      items.push({ kind: 'fsu', score: fsu.score_total, stage: null });
+    }
+    if (!items.length) return '';
+    return `<div class="score-badges">${items.map((it) => {
+      const label = SCORE_BADGE_LABELS[it.kind][l];
+      const title = SCORE_BADGE_TITLES[it.kind][l] + (it.stage ? ` — ${INAPlatform.stageLabel(it.stage)}` : '');
+      // All three badges are 0-100 scores, so all three are colored by
+      // value using the same 4 bands (<=25 / <=50 / <=75 / >75) — reusing
+      // INAPlatform.scoreBandClass() instead of a flat color per source
+      // that said nothing about how the project actually scored. FSU
+      // Scoring is a different point matrix (ENACOM's own) than the
+      // Investment Readiness Index™ Self-Assessment/AI Analysis share, but
+      // both land on the same 0-100 scale, so the same bands read the same
+      // way at a glance; the "FSU" vs. "Auto"/"IA" label text is what tells
+      // them apart, not the color.
+      const band = INAPlatform.scoreBandClass(it.score);
+      return `<span class="score-badge ${it.kind} ${band}" title="${title}">${label} ${it.score != null ? it.score : '–'}<i>/100</i></span>`;
+    }).join('')}</div>`;
   }
 
   // Which color accent a project's left border / status gets, derived from
@@ -249,14 +335,21 @@
     optAllProgram.value = '';
     optAllProgram.textContent = allLabel;
     fProgram.appendChild(optAllProgram);
-    // Distinct programs actually present among the visible projects, from
-    // the embedded programs(name) — not a separate listPrograms() call, so
-    // the filter only ever offers options that can actually match something.
+    // Distinct programs actually present among the visible projects — both
+    // the "umbrella" program_id (embedded programs(name)) and every
+    // financing/preparation Program applied to via project_programs — not
+    // a separate listPrograms() call, so the filter only ever offers
+    // options that can actually match something.
     const seen = new Map();
     allProjects.forEach((p) => {
       if (p.program_id && p.programs && !seen.has(p.program_id)) {
         seen.set(p.program_id, p.programs.name);
       }
+      (programAppsByProject.get(p.id) || []).forEach((row) => {
+        if (row.program_id && row.programs && !seen.has(row.program_id)) {
+          seen.set(row.program_id, row.programs.name);
+        }
+      });
     });
     Array.from(seen.entries())
       .sort((a, b) => a[1].localeCompare(b[1]))
@@ -282,7 +375,11 @@
     return list.filter((p) => {
       if (status && INAPlatform.effectiveStatusValue(p) !== status) return false;
       if (type && p.project_type !== type) return false;
-      if (program && p.program_id !== program) return false;
+      if (program) {
+        const isUmbrella = p.program_id === program;
+        const hasApplied = (programAppsByProject.get(p.id) || []).some((row) => row.program_id === program);
+        if (!isUmbrella && !hasApplied) return false;
+      }
       const created = new Date(p.created_at);
       if (from && created < from) return false;
       if (to && created > to) return false;
@@ -297,6 +394,545 @@
     });
   }
 
+  // ---------------------------------------------------------------------
+  // PDF export — same report/branding as app/project.html's "Download
+  // PDF" button (see generateProjectPdf() there and PLATFORM_SETUP.md),
+  // just triggerable straight from the row here instead of having to open
+  // the project first. listProjects() (used to build allProjects) only
+  // returns the `projects` table columns — not the framework_analysis /
+  // fsu_scoring rows — so unlike project.html this fetches the analysis
+  // and FSU score on demand when the icon is clicked, via the same
+  // INAPlatform.getAnalysis()/getFsuScoring() calls project.html uses.
+  async function downloadProjectPdf(p, btnEl) {
+    if (!window.jspdf) return;
+    const original = btnEl.textContent;
+    btnEl.textContent = '…';
+    btnEl.disabled = true;
+    try {
+      let analysis = null;
+      if (p.status === 'completed') {
+        try { analysis = await INAPlatform.getAnalysis(p.id); } catch (e) { /* non-critical */ }
+      }
+      let fsu = null;
+      let fsuEligible = false;
+      try { fsuEligible = INAPlatform.isFsuScoringEligible(p); } catch (e) { fsuEligible = false; }
+      if (fsuEligible) {
+        try { fsu = await INAPlatform.getFsuScoring(p.id); } catch (e) { /* non-critical */ }
+      }
+      let docs = [];
+      try { docs = await INAPlatform.listDocuments(p.id); } catch (e) { /* non-critical */ }
+      let workflowEvents = [];
+      try { workflowEvents = await INAPlatform.getWorkflowEvents(p.id); } catch (e) { /* non-critical */ }
+      generateProjectPdf(p, analysis, fsu, docs, workflowEvents);
+    } catch (e) {
+      alert(lang() === 'es' ? 'No se pudo generar el PDF.' : 'Could not generate the PDF.');
+    } finally {
+      btnEl.disabled = false;
+      btnEl.textContent = original;
+    }
+  }
+
+  function generateProjectPdf(project, analysis, fsu, docs, workflowEvents) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const l = lang();
+    const PAGE_W = doc.internal.pageSize.getWidth();
+    const PAGE_H = doc.internal.pageSize.getHeight();
+    const MARGIN = 54;
+    const NAVY = [11, 21, 38];
+    const AMBER = [217, 146, 46];
+    const AMBER_DEEP = [185, 116, 28];
+    const MUTED = [91, 102, 112];
+    const TEXT = [20, 20, 20];
+    const LINE = [221, 216, 206];
+
+    let y = 90;
+    let pageNum = 1;
+
+    function addHeaderBand() {
+      doc.setFillColor(NAVY[0], NAVY[1], NAVY[2]);
+      doc.rect(0, 0, PAGE_W, 64, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255);
+      doc.text('INA Platform', MARGIN, 40);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(AMBER[0], AMBER[1], AMBER[2]);
+      doc.text(l === 'es' ? 'INFORME DE PROYECTO' : 'PROJECT REPORT', PAGE_W - MARGIN, 40, { align: 'right' });
+    }
+
+    function addFooter() {
+      doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
+      doc.setLineWidth(0.5);
+      doc.line(MARGIN, PAGE_H - 40, PAGE_W - MARGIN, PAGE_H - 40);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.text('international-network-advisors.com', MARGIN, PAGE_H - 26);
+      doc.text(String(pageNum), PAGE_W - MARGIN, PAGE_H - 26, { align: 'right' });
+    }
+
+    function newPage() {
+      addFooter();
+      doc.addPage();
+      pageNum += 1;
+      addHeaderBand();
+      y = 90;
+    }
+
+    function ensureSpace(h) {
+      if (y + h > PAGE_H - 56) newPage();
+    }
+
+    function h2(text) {
+      ensureSpace(30);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12.5);
+      doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
+      doc.text(text, MARGIN, y);
+      y += 18;
+    }
+
+    function h3(text) {
+      ensureSpace(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.8);
+      doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+      doc.text(text, MARGIN, y);
+      y += 13;
+    }
+
+    function bodyText(text) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+      const lines = doc.splitTextToSize(text || '', PAGE_W - MARGIN * 2);
+      lines.forEach((line) => {
+        ensureSpace(14);
+        doc.text(line, MARGIN, y);
+        y += 13;
+      });
+      y += 6;
+    }
+
+    function bulletText(text, indent) {
+      const ind = indent || 12;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+      const lines = doc.splitTextToSize(text || '', PAGE_W - MARGIN * 2 - ind);
+      lines.forEach((line, i) => {
+        ensureSpace(13);
+        doc.text((i === 0 ? '•  ' : '   ') + line, MARGIN + ind, y);
+        y += 12;
+      });
+    }
+
+    function fsuInputText(key, fsu2) {
+      const na = '—';
+      switch (key) {
+        case 'score_penetracion': {
+          const hogares = fsu2.total_hogares != null ? fsu2.total_hogares : na;
+          const accesos = fsu2.accesos_fibra != null ? fsu2.accesos_fibra : na;
+          const pct = fsu2.penetracion_pct != null ? `${fsu2.penetracion_pct}%` : na;
+          return l === 'es'
+            ? `Total de hogares: ${hogares} · Accesos de fibra actuales: ${accesos} · Penetración calculada: ${pct}`
+            : `Total households: ${hogares} · Current fiber accesses: ${accesos} · Calculated penetration: ${pct}`;
+        }
+        case 'score_modelo_negocio':
+          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_MODELO_NEGOCIO_OPTIONS, fsu2.modelo_negocio) || na;
+        case 'score_tecnologia':
+          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_TECNOLOGIA_OPTIONS, fsu2.tecnologia) || na;
+        case 'score_velocidad': {
+          const v1 = fsu2.velocidad_actual_mbps != null ? fsu2.velocidad_actual_mbps : na;
+          const v2 = fsu2.velocidad_propuesta_mbps != null ? fsu2.velocidad_propuesta_mbps : na;
+          const pct = fsu2.mejora_velocidad_pct != null ? `${fsu2.mejora_velocidad_pct}%` : na;
+          return l === 'es'
+            ? `Velocidad media actual: ${v1} Mbps · Velocidad propuesta: ${v2} Mbps · Mejora calculada: ${pct}`
+            : `Current average speed: ${v1} Mbps · Proposed speed: ${v2} Mbps · Calculated uplift: ${pct}`;
+        }
+        case 'score_salto_tecnologico':
+          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_SALTO_TECNOLOGICO_OPTIONS, fsu2.salto_tecnologico) || na;
+        case 'score_densidad':
+          return (l === 'es' ? 'Población de la localidad: ' : 'Locality population: ') + (fsu2.poblacion_localidad != null ? fsu2.poblacion_localidad : na);
+        case 'score_capacidad_tecnica':
+          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_CAPACIDAD_TECNICA_OPTIONS, fsu2.anos_capacidad_tecnica) || na;
+        default:
+          return '';
+      }
+    }
+
+    addHeaderBand();
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(17);
+    doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+    doc.splitTextToSize(project.name || '', PAGE_W - MARGIN * 2).forEach((line) => {
+      ensureSpace(20);
+      doc.text(line, MARGIN, y);
+      y += 20;
+    });
+
+    const beneficiariesText = project.beneficiary_count != null
+      ? ` · ${project.beneficiary_count.toLocaleString(l === 'es' ? 'es-AR' : 'en-US')} ${l === 'es' ? 'beneficiarios' : 'beneficiaries'}`
+      : '';
+    const programText = project.programs && project.programs.name ? ` · ${project.programs.name}` : '';
+    const metaLine = `${INAPlatform.projectTypeLabel(project.project_type)} · ${INAPlatform.countryLabel(project.country)}${beneficiariesText}${programText}`;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text(metaLine, MARGIN, y);
+    y += 14;
+    const createdText = project.created_at
+      ? new Date(project.created_at).toLocaleDateString(l === 'es' ? 'es-AR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : '';
+    doc.text(`${l === 'es' ? 'Estado' : 'Status'}: ${INAPlatform.effectiveStatusLabel(project)}${createdText ? ` · ${l === 'es' ? 'Creado' : 'Created'}: ${createdText}` : ''}`, MARGIN, y);
+    y += 10;
+    doc.setDrawColor(AMBER[0], AMBER[1], AMBER[2]);
+    doc.setLineWidth(1.2);
+    doc.line(MARGIN, y + 4, PAGE_W - MARGIN, y + 4);
+    y += 28;
+
+    h2(l === 'es' ? 'Descripción del proyecto' : 'Project description');
+    bodyText(project.description);
+
+    if (docs && docs.length) {
+      h2(l === 'es' ? 'Documentos adjuntos' : 'Supporting documents');
+      INAPlatform.DOCUMENT_TYPES.forEach((t) => {
+        const inCategory = docs.filter((d) => (d.document_type || 'other') === t.value);
+        if (!inCategory.length) return;
+        h3(INAPlatform.documentTypeLabel(t.value));
+        inCategory.forEach((d) => bulletText(d.file_name));
+        y += 4;
+      });
+    }
+
+    if (project.status === 'completed' || project.status === 'analyzing' || project.readiness_stage) {
+      h2(l === 'es' ? 'Flujo de trabajo' : 'Project workflow');
+      const stage = project.readiness_stage || INAPlatform.STAGE_ORDER[0];
+      bodyText((l === 'es' ? 'Etapa actual: ' : 'Current stage: ') + INAPlatform.stageLabel(stage));
+      const advisor = project.assigned_advisor;
+      if (advisor && advisor.full_name) {
+        bodyText((l === 'es' ? 'Asesor asignado: ' : 'Assigned advisor: ') + advisor.full_name);
+      }
+      if (workflowEvents && workflowEvents.length) {
+        h3(l === 'es' ? 'Historial' : 'History');
+        [...workflowEvents].reverse().forEach((ev) => {
+          const advisorName = (ev.advisor && ev.advisor.full_name) || (l === 'es' ? 'Asesor' : 'Advisor');
+          const dateStr = new Date(ev.created_at).toLocaleDateString(l === 'es' ? 'es-AR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+          const fromLabel = ev.from_stage ? INAPlatform.stageLabel(ev.from_stage) : (l === 'es' ? 'Inicio' : 'Start');
+          const toLabel = INAPlatform.stageLabel(ev.to_stage);
+          bulletText(`${advisorName}: ${fromLabel} → ${toLabel} · ${dateStr}`);
+        });
+        y += 4;
+      }
+    }
+
+    if (fsu) {
+      h2('FSU Scoring — Res. ENACOM 359/2025');
+      INAPlatform.FSU_CRITERIA_META.forEach((c) => {
+        ensureSpace(24);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+        doc.text(INAPlatform.fsuCriterionLabel(c.key), MARGIN, y);
+        doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
+        doc.text(`${fsu[c.key]} / ${c.max}`, PAGE_W - MARGIN, y, { align: 'right' });
+        y += 12;
+        bulletText(fsuInputText(c.key, fsu), 8);
+        y += 4;
+      });
+      ensureSpace(22);
+      doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
+      doc.setLineWidth(0.5);
+      doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+      y += 16;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+      doc.text(l === 'es' ? 'Puntaje Total FSU' : 'Total FSU Score', MARGIN, y);
+      doc.text(`${fsu.score_total} / 100`, PAGE_W - MARGIN, y, { align: 'right' });
+      y += 24;
+    }
+
+    if (analysis) {
+      let data = analysis;
+      let manualAnswers = null;
+      if (analysis.source === 'manual' && analysis.raw_model_output) {
+        try {
+          manualAnswers = JSON.parse(analysis.raw_model_output);
+          const recomputed = INAPlatform.computeManualAssessment(
+            project.project_type,
+            manualAnswers,
+            { beneficiaryCount: project.beneficiary_count }
+          );
+          data = Object.assign({}, analysis, recomputed);
+        } catch (e) { /* fall back to the stored fields */ }
+      }
+
+      h2('Investment Readiness Index™');
+      ensureSpace(26);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+      doc.text(String(data.overall_score != null ? data.overall_score : '–') + ' / 100', MARGIN, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
+      doc.text(INAPlatform.stageLabel(data.stage) || '', MARGIN + 95, y);
+      y += 22;
+      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text(data.source === 'manual' ? (l === 'es' ? 'Fuente: Autoevaluación' : 'Source: Self-Assessed') : (l === 'es' ? 'Fuente: Análisis por IA' : 'Source: AI Analysis'), MARGIN, y);
+      y += 14;
+      bodyText(data.summary);
+
+      const dims = data.dimensions || {};
+      const orderedKeys = [
+        ...INAPlatform.DIMENSION_ORDER.filter((k) => k in dims),
+        ...Object.keys(dims).filter((k) => !INAPlatform.DIMENSION_ORDER.includes(k)),
+      ];
+      orderedKeys.forEach((key) => {
+        const entry = dims[key];
+        const score = entry && typeof entry.score === 'number' ? entry.score : 0;
+        ensureSpace(16);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+        const label = doc.splitTextToSize(INAPlatform.dimensionLabel(key) || '', 165)[0] || '';
+        doc.text(label, MARGIN, y + 5);
+        const barX = MARGIN + 175;
+        const barW = PAGE_W - MARGIN - barX - 30;
+        doc.setFillColor(230, 230, 224);
+        doc.rect(barX, y - 2, barW, 7, 'F');
+        doc.setFillColor(AMBER[0], AMBER[1], AMBER[2]);
+        doc.rect(barX, y - 2, barW * (Math.max(0, Math.min(100, score)) / 100), 7, 'F');
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.text(String(score), barX + barW + 8, y + 5);
+        y += 16;
+      });
+      y += 8;
+
+      if (manualAnswers) {
+        h2(l === 'es' ? 'Detalle de la Autoevaluación' : 'Self-Assessment Detail');
+        const qset = INAPlatform.assessmentQuestionSet(project.project_type);
+        qset.forEach(({ key, questions }) => {
+          const vals = manualAnswers[key] || [];
+          const dimScore = dims[key] && typeof dims[key].score === 'number' ? dims[key].score : null;
+          h3(`${INAPlatform.dimensionLabel(key)}${dimScore != null ? '  —  ' + dimScore + '/100' : ''}`);
+          questions.forEach((q, i) => {
+            const qText = (q[l] || q.en);
+            const val = vals[i] != null ? vals[i] : '–';
+            bulletText(`${val}/5 — ${qText}`);
+          });
+          y += 4;
+        });
+      }
+
+      h2(l === 'es' ? 'Hoja de ruta de brechas' : 'Gap roadmap');
+      (data.gap_roadmap || []).forEach((item) => {
+        bodyText(`[${INAPlatform.priorityLabel(item.priority)}] ${item.action}`);
+      });
+
+      h2(l === 'es' ? 'Recomendaciones — Multilateral Finance Navigator™' : 'Multilateral Finance Navigator™ recommendations');
+      (data.financing_recommendations || []).forEach((item) => {
+        ensureSpace(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+        doc.text(INAPlatform.financeMechanismLabel(item.mechanism) || '', MARGIN, y);
+        y += 13;
+        bodyText(item.rationale);
+      });
+    } else {
+      h2(l === 'es' ? 'Análisis' : 'Analysis');
+      bodyText(l === 'es'
+        ? 'Este proyecto todavía no fue analizado con el Investment Readiness Index™.'
+        : "This project hasn't been analyzed with the Investment Readiness Index™ yet.");
+    }
+
+    addFooter();
+
+    const safeName = (project.name || 'project').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'project';
+    doc.save(`INA_${safeName}.pdf`);
+  }
+
+  // Compact line of small pills for the non-score project attributes the
+  // dashboard shows: budget, duration, priority, complexity, technical
+  // criticality (migration_v33_project_attributes.sql /
+  // migration_v34_project_budget_complexity.sql), plus the generating
+  // entity and the specific preparation/financing Programs a project has
+  // applied to (see JJJ1/NN1 migrations below). Shown under the score
+  // badges in both the list row and the grid card, so the two views carry
+  // the same information — only the layout differs. Same "omit entirely if
+  // unset" convention as scoreBadgesHtml(): any attribute that isn't set
+  // just isn't shown, never a placeholder. Priority, complexity and
+  // technical criticality get colored tier pills (reusing the
+  // low/medium/high band styling); everything else here is plain text
+  // since it isn't a 3-tier scale.
+  function attrTagsHtml(p) {
+    const l = lang();
+    const parts = [];
+    const budgetText = INAPlatform.formatCurrency(p.budget_amount);
+    if (budgetText) {
+      parts.push(`<span class="attr-tag">${l === 'es' ? 'Presupuesto' : 'Budget'}: ${budgetText}</span>`);
+    }
+    const durationText = INAPlatform.formatDuration(p.duration_value, p.duration_unit);
+    if (durationText) {
+      parts.push(`<span class="attr-tag">${l === 'es' ? 'Duración' : 'Duration'}: ${durationText}</span>`);
+    }
+    if (p.priority) {
+      parts.push(`<span class="attr-tag tier-pill tier-${p.priority}">${INAPlatform.priorityLabel(p.priority)}</span>`);
+    }
+    if (p.complexity) {
+      parts.push(`<span class="attr-tag tier-pill tier-${p.complexity}">${INAPlatform.complexityLabel(p.complexity)}</span>`);
+    }
+    if (p.technical_criticality) {
+      parts.push(`<span class="attr-tag tier-pill tier-${p.technical_criticality}">${INAPlatform.technicalCriticalityLabel(p.technical_criticality)}</span>`);
+    }
+    // Generating entity — see supabase/migration_v27_gestion_instances.sql
+    // (projects.generating_entity_name/type). The organization that
+    // submitted/originates the project, e.g. "ARSAT" or a cooperative
+    // name — distinct from the project's owner (the platform account that
+    // loaded it) and shown here since it's often what an advisor scans
+    // for first.
+    if (p.generating_entity_name) {
+      const typeSuffix = p.generating_entity_type ? ` (${INAPlatform.entityTypeLabel(p.generating_entity_type)})` : '';
+      parts.push(`<span class="attr-tag">${l === 'es' ? 'Entidad' : 'Entity'}: ${p.generating_entity_name}${typeSuffix}</span>`);
+    }
+    // Preparation-funding Program(s) (e.g. USTDA — funds ELABORATING the
+    // project) and financing Program(s) (FSU, BID, etc. — fund the
+    // project's implementation, plus the umbrella program_id) — split out
+    // from the single merged name list in programNamesFor() below so an
+    // advisor can tell the two roles apart at a glance instead of seeing
+    // one flat "· Program A, Program B" string. See
+    // supabase/migration_v21_program_funding_stage_and_applications.sql.
+    const prepNames = preparationProgramNamesFor(p);
+    if (prepNames.length) {
+      parts.push(`<span class="attr-tag">${l === 'es' ? 'Prog. preparación' : 'Prep. program'}: ${prepNames.join(', ')}</span>`);
+    }
+    const financingNames = financingProgramNamesFor(p);
+    if (financingNames.length) {
+      parts.push(`<span class="attr-tag">${l === 'es' ? 'Prog. financiación' : 'Financing program'}: ${financingNames.join(', ')}</span>`);
+    }
+    if (!parts.length) return '';
+    return `<div class="attr-tags">${parts.join('')}</div>`;
+  }
+
+  // Umbrella program (program_id) plus every financing/preparation Program
+  // applied to (project_programs) — deduplicated, since a project could in
+  // principle be its own umbrella AND have applied. Shared by both views.
+  function programNamesFor(p) {
+    const names = [];
+    if (p.programs && p.programs.name) names.push(p.programs.name);
+    (programAppsByProject.get(p.id) || []).forEach((row) => {
+      if (row.programs && row.programs.name && !names.includes(row.programs.name)) {
+        names.push(row.programs.name);
+      }
+    });
+    return names;
+  }
+
+  // Same project_programs rows as programNamesFor() above, but split by
+  // programs.funding_stage instead of merged into one list — used by
+  // attrTagsHtml() to show "Prog. preparación" / "Prog. financiación" as
+  // separate tags. The umbrella program_id isn't included here (it has no
+  // funding_stage of its own — it's a different relationship, see
+  // programNamesFor()); financingProgramNamesFor() intentionally does
+  // include it, though, since in practice it's almost always a financing
+  // Program (USTDA-style preparation programs are applied to via
+  // project_programs, not set as the umbrella).
+  function preparationProgramNamesFor(p) {
+    const names = [];
+    (programAppsByProject.get(p.id) || []).forEach((row) => {
+      if (row.programs && row.programs.funding_stage === 'preparation' && row.programs.name && !names.includes(row.programs.name)) {
+        names.push(row.programs.name);
+      }
+    });
+    return names;
+  }
+  function financingProgramNamesFor(p) {
+    const names = [];
+    if (p.programs && p.programs.name) names.push(p.programs.name);
+    (programAppsByProject.get(p.id) || []).forEach((row) => {
+      if (row.programs && row.programs.funding_stage !== 'preparation' && row.programs.name && !names.includes(row.programs.name)) {
+        names.push(row.programs.name);
+      }
+    });
+    return names;
+  }
+
+  // PDF + Edit + Delete grouped tightly together as one compact action
+  // group (see .icon-action-group / .icon-btn in assets/style.css) — shared
+  // by both the list row and the grid card so the two views offer exactly
+  // the same actions. PDF export is available to any viewer (owner or
+  // advisor) — nothing in it isn't already visible on the project's own
+  // page — so it's not gated on isOwner the way Edit/Delete are below.
+  function buildActions(p, isOwner, isAssignedAdvisor) {
+    const actions = document.createElement('div');
+    actions.className = 'icon-action-group';
+
+    const pdfEl = document.createElement('button');
+    pdfEl.type = 'button';
+    pdfEl.className = 'icon-btn';
+    pdfEl.title = lang() === 'es' ? 'Descargar PDF' : 'Download PDF';
+    pdfEl.textContent = '⬇';
+    pdfEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      downloadProjectPdf(p, pdfEl);
+    });
+    actions.appendChild(pdfEl);
+
+    const editEl = document.createElement('a');
+    editEl.className = 'icon-btn';
+    if (isOwner || isAssignedAdvisor) {
+      editEl.href = `new-project.html?id=${p.id}`;
+      editEl.title = lang() === 'es' ? 'Editar proyecto' : 'Edit project';
+      editEl.textContent = '✎';
+    } else {
+      editEl.href = `project.html?id=${p.id}`;
+      editEl.style.opacity = '0.35';
+      editEl.textContent = '→';
+    }
+    actions.appendChild(editEl);
+
+    // Delete — owner or admin only (enforced again server-side by RLS, see
+    // supabase/migration_v14_delete_policies.sql; this button is just
+    // UI-level gating on top of that).
+    if (isOwner || currentIsAdmin) {
+      const deleteEl = document.createElement('button');
+      deleteEl.type = 'button';
+      deleteEl.className = 'icon-btn icon-btn-delete';
+      deleteEl.title = lang() === 'es' ? 'Eliminar proyecto' : 'Delete project';
+      deleteEl.textContent = '🗑';
+      deleteEl.addEventListener('click', () => deleteProject(p));
+      actions.appendChild(deleteEl);
+    }
+    return actions;
+  }
+
+  // 'list' (default, dense rows — original layout) or 'grid' (cards, easier
+  // to scan visually across many projects at once). Persisted across visits
+  // via localStorage so a user's preferred layout sticks.
+  let viewMode = localStorage.getItem('inaDashboardViewMode') === 'grid' ? 'grid' : 'list';
+
+  function setViewMode(mode) {
+    viewMode = mode;
+    localStorage.setItem('inaDashboardViewMode', mode);
+    document.querySelectorAll('.view-toggle-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-view') === mode);
+    });
+    renderList();
+  }
+
+  // Dispatcher — every existing call site keeps calling renderList(), it
+  // just now renders as a list or a grid depending on viewMode. filtering/
+  // empty-state/count logic stays shared between both layouts; only the
+  // per-project element construction differs (renderListRows vs
+  // renderGridCards below).
   function renderList() {
     const filtered = applyFilters(allProjects);
     const list = document.getElementById('projectList');
@@ -304,6 +940,7 @@
     const count = document.getElementById('filterCount');
 
     list.innerHTML = '';
+    list.className = viewMode === 'grid' ? 'project-grid' : 'project-list';
 
     const countLabel = lang() === 'es'
       ? `${filtered.length} de ${allProjects.length} proyecto${allProjects.length === 1 ? '' : 's'}`
@@ -316,8 +953,16 @@
       return;
     }
     noMatch.style.display = 'none';
-    list.style.display = 'flex';
+    list.style.display = viewMode === 'grid' ? 'grid' : 'flex';
 
+    if (viewMode === 'grid') {
+      renderGridCards(filtered, list);
+    } else {
+      renderListRows(filtered, list);
+    }
+  }
+
+  function renderListRows(filtered, list) {
     filtered.forEach((p) => {
       const row = document.createElement('div');
       row.className = 'project-row';
@@ -327,6 +972,11 @@
       const ownerName = (p.profiles && p.profiles.full_name) || '—';
       const ownerOrg = (p.profiles && p.profiles.organization) || '';
       const isOwner = p.user_id === currentUserId;
+      // Advisor who has taken this project (assigned_advisor_id — see
+      // INAPlatform.takeProject() and
+      // migration_v19_advisor_edit_taken_project.sql) can also edit it,
+      // same as the owner — see the pencil icon below.
+      const isAssignedAdvisor = !!p.assigned_advisor_id && p.assigned_advisor_id === currentUserId;
       const statusClass = INAPlatform.effectiveStatusClass(p);
       const statusLabel = INAPlatform.effectiveStatusLabel(p);
 
@@ -338,12 +988,14 @@
       const beneficiariesText = p.beneficiary_count != null
         ? ` · ${p.beneficiary_count.toLocaleString(lang() === 'es' ? 'es-AR' : 'en-US')} ${lang() === 'es' ? 'beneficiarios' : 'beneficiaries'}`
         : '';
-      const programText = p.programs && p.programs.name ? ` · ${p.programs.name}` : '';
+      const programText = programNamesFor(p).length ? ` · ${programNamesFor(p).join(', ')}` : '';
       main.innerHTML = `
         <span class="ptype-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${typeIcon(p.project_type)}</svg></span>
         <span class="maintext">
           <div class="pname">${p.name}</div>
           <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${INAPlatform.countryLabel(p.country)}${beneficiariesText}${programText}</div>
+          ${scoreBadgesHtml(p)}
+          ${attrTagsHtml(p)}
         </span>
       `;
 
@@ -365,37 +1017,7 @@
       ownerEl.className = 'powner';
       ownerEl.innerHTML = `<span class="mini-avatar">${initials(ownerName === '—' ? '' : ownerName)}</span><span class="otext">${ownerName}${ownerOrg ? `<span class="oorg">${ownerOrg}</span>` : ''}</span>`;
 
-      // Edit + delete grouped tightly together as one compact action pair
-      // (see .icon-action-group / .icon-btn in assets/style.css) rather
-      // than scattered across separate columns.
-      const actions = document.createElement('div');
-      actions.className = 'icon-action-group';
-
-      const editEl = document.createElement('a');
-      editEl.className = 'icon-btn';
-      if (isOwner) {
-        editEl.href = `new-project.html?id=${p.id}`;
-        editEl.title = lang() === 'es' ? 'Editar proyecto' : 'Edit project';
-        editEl.textContent = '✎';
-      } else {
-        editEl.href = `project.html?id=${p.id}`;
-        editEl.style.opacity = '0.35';
-        editEl.textContent = '→';
-      }
-      actions.appendChild(editEl);
-
-      // Delete — owner or admin only (enforced again server-side by RLS,
-      // see supabase/migration_v14_delete_policies.sql; this button is
-      // just UI-level gating on top of that).
-      if (isOwner || currentIsAdmin) {
-        const deleteEl = document.createElement('button');
-        deleteEl.type = 'button';
-        deleteEl.className = 'icon-btn icon-btn-delete';
-        deleteEl.title = lang() === 'es' ? 'Eliminar proyecto' : 'Delete project';
-        deleteEl.textContent = '🗑';
-        deleteEl.addEventListener('click', () => deleteProject(p));
-        actions.appendChild(deleteEl);
-      }
+      const actions = buildActions(p, isOwner, isAssignedAdvisor);
 
       row.appendChild(main);
       row.appendChild(dateLink);
@@ -403,6 +1025,59 @@
       row.appendChild(ownerEl);
       row.appendChild(actions);
       list.appendChild(row);
+    });
+  }
+
+  // Grid/card layout — same data as the list row (name/type/country/
+  // beneficiaries/program, score badges, budget/duration/complexity/
+  // criticality tags, owner, date, actions), just arranged as a
+  // self-contained card instead of a wide row of columns. See
+  // .project-grid/.project-card in assets/style.css.
+  function renderGridCards(filtered, list) {
+    filtered.forEach((p) => {
+      const card = document.createElement('div');
+      card.className = 'project-card';
+      card.setAttribute('data-accent', accentFor(p));
+
+      const date = new Date(p.created_at).toLocaleDateString(lang() === 'es' ? 'es-AR' : 'en-US');
+      const ownerName = (p.profiles && p.profiles.full_name) || '—';
+      const isOwner = p.user_id === currentUserId;
+      const isAssignedAdvisor = !!p.assigned_advisor_id && p.assigned_advisor_id === currentUserId;
+      const statusClass = INAPlatform.effectiveStatusClass(p);
+      const statusLabel = INAPlatform.effectiveStatusLabel(p);
+      const beneficiariesText = p.beneficiary_count != null
+        ? ` · ${p.beneficiary_count.toLocaleString(lang() === 'es' ? 'es-AR' : 'en-US')} ${lang() === 'es' ? 'beneficiarios' : 'beneficiaries'}`
+        : '';
+      const programText = programNamesFor(p).length ? ` · ${programNamesFor(p).join(', ')}` : '';
+
+      const main = document.createElement('a');
+      main.href = `project.html?id=${p.id}`;
+      main.className = 'pc-main';
+      main.innerHTML = `
+        <div class="pc-head">
+          <span class="ptype-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${typeIcon(p.project_type)}</svg></span>
+          <span class="status-pill ${statusClass}">${statusLabel}</span>
+        </div>
+        <div class="pname">${p.name}</div>
+        <div class="pmeta">${INAPlatform.projectTypeLabel(p.project_type)} · ${INAPlatform.countryLabel(p.country)}${beneficiariesText}${programText}</div>
+        ${scoreBadgesHtml(p)}
+        ${attrTagsHtml(p)}
+      `;
+      card.appendChild(main);
+
+      const footer = document.createElement('a');
+      footer.href = `project.html?id=${p.id}`;
+      footer.className = 'pc-footer';
+      footer.innerHTML = `
+        <span class="mini-avatar">${initials(ownerName === '—' ? '' : ownerName)}</span>
+        <span class="pc-owner-name">${ownerName}</span>
+        <span class="pc-date">${date}</span>
+      `;
+      card.appendChild(footer);
+
+      card.appendChild(buildActions(p, isOwner, isAssignedAdvisor));
+
+      list.appendChild(card);
     });
   }
 
@@ -431,6 +1106,11 @@
 
   [fStatus, fType, fProgram, fFrom, fTo, fMinBeneficiaries].forEach((el) => el.addEventListener('change', renderList));
   fSearch.addEventListener('input', renderList);
+
+  document.querySelectorAll('.view-toggle-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.getAttribute('data-view') === viewMode);
+    btn.addEventListener('click', () => setViewMode(btn.getAttribute('data-view')));
+  });
 
   function clearFilters() {
     fStatus.value = '';
@@ -465,6 +1145,7 @@
       document.getElementById('appUser').style.display = 'flex';
       currentIsAdmin = INAPlatform.isAdmin(profile);
       if (currentIsAdmin) document.getElementById('adminNavLink').style.display = 'inline';
+      if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
       advisor = INAPlatform.isAdvisor(profile);
       if (advisor) document.getElementById('advisorBanner').style.display = 'flex';
     } catch (e) { /* profile not critical to show projects */ }
@@ -485,14 +1166,56 @@
       return;
     }
 
+    try {
+      programAppsByProject = await INAPlatform.listProjectProgramsForProjects(allProjects.map((p) => p.id));
+    } catch (e) { programAppsByProject = new Map(); /* non-critical — umbrella-only tags/filter still work */ }
+
+    // Both batched, both non-critical: a project row simply shows fewer
+    // score badges (or none) if either fetch fails, rather than blocking
+    // the whole grid from rendering — same resilience pattern as the
+    // program-applications fetch just above.
+    const projectIds = allProjects.map((p) => p.id);
+    try {
+      analysesByProject = await INAPlatform.listAnalysesForProjects(projectIds);
+    } catch (e) { analysesByProject = new Map(); }
+    try {
+      fsuByProject = await INAPlatform.listFsuScoringForProjects(projectIds);
+    } catch (e) { fsuByProject = new Map(); }
+
     renderStats();
     populateFilterOptions();
 
     // Coming from a "View Projects" link on programs.html
-    // (dashboard.html?program=<id>) — preset the filter if that program
-    // actually matches one of the options just populated.
+    // (dashboard.html?program=<id>) — preset the filter to that program.
     const presetProgram = new URLSearchParams(location.search).get('program');
-    if (presetProgram && Array.from(fProgram.options).some((o) => o.value === presetProgram)) {
+    if (presetProgram) {
+      const hasOption = Array.from(fProgram.options).some((o) => o.value === presetProgram);
+      if (!hasOption) {
+        // populateFilterOptions() above only lists programs that already
+        // have at least one project VISIBLE TO THIS VIEWER — so a program
+        // with zero currently-visible member projects (e.g. a standard
+        // user opening a program whose only projects belong to other
+        // users, invisible to them under projects' own owner/advisor/admin
+        // RLS — see supabase/migration_v19_program_permissions.sql, which
+        // only opened up visibility of PROGRAMS themselves, not individual
+        // projects) never gets an <option> here. Setting a <select>'s
+        // .value to something with no matching <option> is silently
+        // ignored by the browser, so without adding it explicitly, the
+        // filter below never actually applies and "View Projects" ends up
+        // showing every visible project instead of correctly showing only
+        // (or none of) this program's. Fetch the program's real name for
+        // the dropdown label — listPrograms()/getProgram() are visible to
+        // every signed-in user regardless of who created the program.
+        const opt = document.createElement('option');
+        opt.value = presetProgram;
+        try {
+          const pg = await INAPlatform.getProgram(presetProgram);
+          opt.textContent = pg.name;
+        } catch (e) {
+          opt.textContent = lang() === 'es' ? 'Programa seleccionado' : 'Selected program';
+        }
+        fProgram.appendChild(opt);
+      }
       fProgram.value = presetProgram;
     }
 

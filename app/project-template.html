@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Project Template — INA Platform" data-i18n-es="Template de Proyecto — Plataforma INA">Project Template — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Fill in a structured, project-type-specific template instead of writing a description from scratch." data-i18n-es="Complet&aacute; un template estructurado y espec&iacute;fico del tipo de proyecto en lugar de escribir la descripci&oacute;n desde cero." content="Fill in a structured, project-type-specific template instead of writing a description from scratch.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/app.css?v=7">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><a href="#" id="crumbBack"><span data-i18n="np.title">Submit New Project</span></a><span>/</span><span id="crumbTpl">…</span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;" id="tplTitle">…</h1>
+    <p class="lede" style="margin-top:10px; max-width:680px;" id="tplIntro"></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <form id="tplForm" style="max-width:820px; margin-top:30px; display:none;">
+      <div id="tplAutofillWrap" style="display:none; margin-bottom:22px;">
+        <button type="button" id="tplAutofillBtn" class="btn ghost small"><span data-i18n="pt.autofill">Autocomplete from documents</span></button>
+        <p id="tplAutofillHelp" style="font-size:12px; color:var(--muted); margin-top:8px; max-width:640px;"><span data-i18n="pt.autofill.help">Reads this project's uploaded documents (and anything already filled in on other templates for this project) to fill in what it can — only fields still blank are touched, so nothing already typed gets overwritten.</span></p>
+        <p id="tplAutofillStatus" style="font-size:12.5px; margin-top:8px; max-width:640px; display:none;"></p>
+      </div>
+      <div id="tmplSections"></div>
+
+      <div class="tmpl-section" id="tmplNotesWrap">
+        <h3 id="tmplNotesLabel"></h3>
+        <div class="field">
+          <textarea id="tmplNotes" style="min-height:110px;"></textarea>
+        </div>
+      </div>
+
+      <div style="margin-top:32px; display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
+        <button type="submit" class="btn amber" id="tplSubmit"><span data-i18n="pt.submit">Use this &amp; return to the project form</span></button>
+        <button type="button" class="btn ghost" id="tplPrintBtn"><span data-i18n="pt.print">Print / Save as PDF</span></button>
+        <a href="#" id="tplCancel" class="btn ghost"><span data-i18n="pt.cancel">Cancel &amp; go back</span></a>
+      </div>
+      <p id="tplHelp" style="font-size:12px; color:var(--muted); margin-top:14px; max-width:640px;"><span data-i18n="pt.help">Nothing here is saved yet — fill in what you know, then return to the project form. Everything gets compiled into the description field, which you can still edit by hand before submitting.</span></p>
+      <p style="font-size:12px; color:var(--muted); margin-top:6px; max-width:640px;"><span data-i18n="pt.print.help">Prints only what's filled in below, formatted as a clean document — handy for presenting a completed program template (e.g. USTDA) outside the platform. In the print dialog, choose "Save as PDF" as the destination to get a PDF file instead of printing on paper.</span></p>
+    </form>
+
+    <!-- Print-only rendering of the current answers — hidden on screen
+         (see .print-only in assets/style.css), built fresh from the live
+         form right before window.print() is called (see tplPrintBtn's
+         click handler below). Kept as a separate, purpose-built view
+         instead of just printing the on-screen form because the on-screen
+         layout (2-column grid, buttons, nav/header chrome) isn't meant to
+         be a physical document — this only includes the template's
+         title/intro and whatever fields/notes actually have a value,
+         exactly like compileTemplateAnswers() already does for the
+         description field, but rendered as a paginated, readable page
+         instead of a single text blob. -->
+    <div id="tplPrintView" class="print-only"></div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=40"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=46"></script>
+<script src="/assets/script.js?v=12"></script>
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const projectType = params.get('type');
+  // Alternative to ?type= — resolves a Program-level template (see
+  // PROGRAM_TEMPLATES in assets/platform.js) instead of a project-type one.
+  // new-project.html's "Fill using this program's template" button, and
+  // project.html's "Apply to program" picker (see below), are what set
+  // this; everything below is agnostic to which of the two produced
+  // `template`, since both are the same {title, intro, sections,
+  // notesField} shape.
+  const programTplKey = params.get('ptpl');
+
+  // "Apply mode" — reached from project.html's "Financing Programs"
+  // section (an ALREADY-CREATED project applying to a Program with a
+  // template_key, e.g. USTDA or FSU), as opposed to the normal flow from
+  // new-project.html (drafting a brand-new project's description). In this
+  // mode, submitting saves the answers onto that (project, program)
+  // application via INAPlatform.applyToProgram() — see
+  // supabase/migration_v21_program_funding_stage_and_applications.sql —
+  // instead of compiling them into sessionStorage for new-project.html to
+  // pick up. Requires ?mode=apply&project=<id>&program=<id>&ptpl=<key>.
+  const applyMode = params.get('mode') === 'apply';
+  const applyProjectId = params.get('project');
+  const applyProgramId = params.get('program');
+
+  // "Prep mode" — reached from new-project.html's "Project preparation
+  // funding" selector (?ptpl=<key>&prep=1), for a project that may not
+  // exist yet (brand-new submission, no id to attach a project_programs
+  // row to). Behaves like the normal draft round trip (same
+  // inaTemplateDraft/inaTemplateReturnUrl mechanism as the project-type
+  // and umbrella-Program templates), EXCEPT on submit the answers are
+  // written to their own sessionStorage keys (inaPrepTemplateAnswers/
+  // inaPrepTemplateCompiled) instead of inaTemplateCompiledDescription —
+  // they belong on the preparation program's own application, not blended
+  // into the project's free-text description. new-project.html reads them
+  // back and attaches them once the project (and a real id) exists — see
+  // reconcileProgramApplications() there.
+  const prepMode = params.get('prep') === '1';
+
+  // Known project id, in whichever mode supplies one — apply mode always
+  // has one (applyProjectId); the default/prep drafting flows only have one
+  // when new-project.html is editing an EXISTING project (it appends
+  // &project=<id> to the template URL in that case — see
+  // updateTemplateBtnVisibility()'s siblings there). Used purely to decide
+  // whether "Autocomplete from documents" has anything to read (a project
+  // that doesn't exist yet has no uploaded documents and no shared-answer
+  // pool) — it does NOT change which submit branch runs below.
+  const draftProjectId = params.get('project');
+  const contextProjectId = applyProjectId || draftProjectId || null;
+
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  // Where "Cancel"/"Use this & return" send the user back to — set once in
+  // init() below from sessionStorage (new-project.html writes this right
+  // before navigating here; see saveDraftAndGoToTemplate() there). Falls
+  // back to new-project.html if this page is opened directly/refreshed
+  // without that context.
+  let returnUrl = 'new-project.html';
+
+  const template = programTplKey
+    ? INAPlatform.programTemplateFor(programTplKey)
+    : (projectType ? INAPlatform.projectTemplateFor(projectType) : null);
+
+  // Persist whatever's been typed into this template across visits (open →
+  // cancel/submit → reopen), so the form doesn't come back blank the second
+  // time. Scoped to sessionStorage (same lifetime as inaTemplateDraft/
+  // inaTemplateReturnUrl below) and keyed per template so switching project
+  // type or program doesn't bleed one template's answers into another's.
+  const templateStorageKey = applyMode
+    ? 'inaTemplateAnswers:apply:' + applyProjectId + ':' + programTplKey
+    : prepMode
+      ? 'inaTemplateAnswers:prep:' + programTplKey
+      : 'inaTemplateAnswers:' + (programTplKey ? 'ptpl:' + programTplKey : 'type:' + projectType);
+
+  function loadPersistedAnswers() {
+    try {
+      const raw = sessionStorage.getItem(templateStorageKey);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+
+  function persistAnswers() {
+    try {
+      const data = {};
+      document.querySelectorAll('#tmplSections [data-field]').forEach((el) => {
+        data[el.getAttribute('data-field')] = el.value;
+      });
+      if (template.notesField) data[template.notesField.key] = document.getElementById('tmplNotes').value;
+      sessionStorage.setItem(templateStorageKey, JSON.stringify(data));
+    } catch (e) { /* storage unavailable — non-critical */ }
+  }
+
+  // Loaded once when the page opens; used as the fallback source for
+  // renderForm() the first time (before any [data-field] elements exist in
+  // the DOM). Once the form is built, later re-renders (e.g. language
+  // toggle) read straight from the live DOM instead, same as before. NOT a
+  // const — in apply mode, init() below may merge in the application's
+  // already-saved template_answers from the database (project_programs)
+  // when there's no local sessionStorage draft, so re-opening "Edit
+  // template" on a fresh browser/session still shows the previous answers
+  // instead of a blank form.
+  let persistedAnswers = loadPersistedAnswers();
+
+  // Re-renders the whole form in the current language, preserving whatever
+  // has already been typed/selected — same pattern as the stale-lang-capture
+  // fix used on new-project.html/assessment.html: this page builds every
+  // field in plain JS, none of it carries [data-i18n], so it needs its own
+  // .lang-btn listener rather than relying on assets/i18n.js's generic one.
+  function renderForm() {
+    const lang = INAPlatform.currentLang();
+    const fieldsExist = document.querySelectorAll('#tmplSections [data-field]').length > 0;
+    const saved = {};
+    if (fieldsExist) {
+      document.querySelectorAll('#tmplSections [data-field]').forEach((el) => {
+        saved[el.getAttribute('data-field')] = el.value;
+      });
+    } else {
+      Object.assign(saved, persistedAnswers);
+    }
+    const savedNotes = fieldsExist
+      ? document.getElementById('tmplNotes').value
+      : (persistedAnswers[(template.notesField && template.notesField.key) || ''] || '');
+
+    document.getElementById('tplTitle').textContent = template.title[lang] || template.title.en;
+    document.getElementById('tplIntro').textContent = template.intro[lang] || template.intro.en;
+    document.getElementById('crumbTpl').textContent = template.title[lang] || template.title.en;
+    const crumbBack = document.getElementById('crumbBack');
+    crumbBack.href = returnUrl;
+    if (applyMode) crumbBack.textContent = lang === 'es' ? 'Proyecto' : 'Project';
+    document.getElementById('tplCancel').href = returnUrl;
+
+    const container = document.getElementById('tmplSections');
+    container.innerHTML = '';
+    template.sections.forEach((section) => {
+      const secEl = document.createElement('div');
+      secEl.className = 'tmpl-section';
+      const h3 = document.createElement('h3');
+      h3.textContent = section.title[lang] || section.title.en;
+      secEl.appendChild(h3);
+
+      const fieldsWrap = document.createElement('div');
+      fieldsWrap.className = 'tmpl-fields';
+      section.fields.forEach((field) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'field';
+        const label = document.createElement('label');
+        label.textContent = field.label[lang] || field.label.en;
+        wrap.appendChild(label);
+
+        let input;
+        if (field.type === 'select') {
+          input = document.createElement('select');
+          const emptyOpt = document.createElement('option');
+          emptyOpt.value = '';
+          emptyOpt.textContent = lang === 'es' ? '— Seleccionar —' : '— Select —';
+          input.appendChild(emptyOpt);
+          (field.options || []).forEach((o) => {
+            const opt = document.createElement('option');
+            opt.value = o.value;
+            opt.textContent = o[lang] || o.en;
+            input.appendChild(opt);
+          });
+        } else if (field.type === 'textarea') {
+          // Full-width, taller field for narrative answers (e.g. the
+          // Investment Readiness Index dimensions on the submarine cable
+          // template) rather than the single-line text input used for
+          // short values like names, dates, capacities, etc.
+          input = document.createElement('textarea');
+          input.style.minHeight = '80px';
+          wrap.style.gridColumn = '1 / -1';
+          if (field.placeholder) input.placeholder = field.placeholder[lang] || field.placeholder.en;
+        } else {
+          input = document.createElement('input');
+          input.type = 'text';
+          if (field.placeholder) input.placeholder = field.placeholder[lang] || field.placeholder.en;
+        }
+        input.setAttribute('data-field', field.key);
+        if (saved[field.key] !== undefined) input.value = saved[field.key];
+        wrap.appendChild(input);
+        fieldsWrap.appendChild(wrap);
+      });
+      secEl.appendChild(fieldsWrap);
+      container.appendChild(secEl);
+    });
+
+    if (template.notesField) {
+      document.getElementById('tmplNotesLabel').textContent = template.notesField.label[lang] || template.notesField.label.en;
+      document.getElementById('tmplNotes').value = savedNotes;
+    }
+
+    // Apply mode saves straight onto the (project, program) application
+    // and returns to project.html, instead of compiling into
+    // sessionStorage for new-project.html — different enough action that
+    // the button/help copy call it out explicitly rather than reusing the
+    // pt.submit/pt.help i18n strings written for the drafting flow.
+    if (applyMode) {
+      document.getElementById('tplSubmit').textContent = lang === 'es' ? 'Guardar y aplicar al programa' : 'Save & apply to program';
+      document.getElementById('tplHelp').textContent = lang === 'es'
+        ? 'Se guarda directamente en tu aplicación a este programa — podés volver a editarla desde la ficha del proyecto cuando quieras.'
+        : 'This saves directly onto your application to this program — you can come back and edit it from the project page any time.';
+    }
+
+    // Only shown once a real project id is known (see contextProjectId
+    // above) — a brand-new project being created for the first time has no
+    // uploaded documents yet, so there's nothing to autocomplete from.
+    document.getElementById('tplAutofillWrap').style.display = contextProjectId ? 'block' : 'none';
+  }
+
+  function setAutofillStatus(text) {
+    const el = document.getElementById('tplAutofillStatus');
+    el.textContent = text;
+    el.style.display = text ? 'block' : 'none';
+  }
+
+  // Fills in ONLY currently-empty fields — never overwrites something the
+  // submitter already typed, whether that came from them or from a
+  // previous autofill run. Reads from the project's shared_field_answers
+  // pool first (facts already known from another template for this same
+  // project — free, no model call), then, for whatever's still missing,
+  // calls /api/extract-template-data.js against this project's uploaded
+  // documents — see INAPlatform.autofillTemplateAnswers() in platform.js.
+  async function runAutofill() {
+    if (!contextProjectId) return;
+    const btn = document.getElementById('tplAutofillBtn');
+    const lang = INAPlatform.currentLang();
+    btn.disabled = true;
+    setAutofillStatus(lang === 'es' ? 'Analizando los documentos del proyecto…' : 'Analyzing the project’s documents…');
+    try {
+      const result = await INAPlatform.autofillTemplateAnswers(contextProjectId, template);
+      let filledCount = 0;
+      Object.keys(result.answers || {}).forEach((key) => {
+        const el = document.querySelector('#tmplSections [data-field="' + CSS.escape(key) + '"]');
+        if (el && !el.value) { el.value = result.answers[key]; filledCount += 1; }
+      });
+      if (filledCount) persistAnswers();
+
+      const parts = [];
+      if (filledCount) {
+        parts.push(lang === 'es'
+          ? `✓ Se completaron ${filledCount} campo(s) — revisalos antes de continuar.`
+          : `✓ Filled in ${filledCount} field(s) — please review before continuing.`);
+      } else {
+        parts.push(lang === 'es'
+          ? 'No se encontró información adicional para completar campos vacíos.'
+          : 'No additional information was found to fill in blank fields.');
+      }
+      if ((result.skipped || []).length) {
+        parts.push(lang === 'es'
+          ? `(${result.skipped.length} adjunto(s) no se pudieron leer, ej. imágenes o escaneos.)`
+          : `(${result.skipped.length} attachment(s) couldn't be read, e.g. images or scans.)`);
+      }
+      setAutofillStatus(parts.join(' '));
+    } catch (err) {
+      setAutofillStatus((lang === 'es' ? 'No se pudo autocompletar: ' : "Couldn't autocomplete: ") + (err.message || err));
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  document.getElementById('tplAutofillBtn').addEventListener('click', runAutofill);
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.documentElement.setAttribute('lang', btn.getAttribute('data-lang'));
+      if (template) renderForm();
+    });
+  });
+
+  // Autosave on every keystroke/selection so the answers survive a
+  // Cancel-and-reopen, not just a successful submit.
+  document.getElementById('tplForm').addEventListener('input', () => {
+    if (template) persistAnswers();
+  });
+  document.getElementById('tplForm').addEventListener('change', () => {
+    if (template) persistAnswers();
+  });
+
+  function collectAnswers() {
+    const answers = {};
+    document.querySelectorAll('#tmplSections [data-field]').forEach((el) => {
+      if (el.value && el.value.trim()) answers[el.getAttribute('data-field')] = el.value.trim();
+    });
+    if (template.notesField) {
+      const notes = document.getElementById('tmplNotes').value;
+      if (notes && notes.trim()) answers[template.notesField.key] = notes.trim();
+    }
+    return answers;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Builds #tplPrintView's contents from whatever's currently filled in —
+  // same "only non-empty fields, resolve select values to their label"
+  // rules as compileTemplateAnswers(), but as formatted HTML (headings,
+  // paragraphs) instead of a single plain-text block, so it paginates
+  // properly when printed/saved as PDF instead of running together.
+  function renderPrintView() {
+    const lang = INAPlatform.currentLang();
+    const answers = collectAnswers();
+    let draftName = '';
+    try {
+      const draftRaw = sessionStorage.getItem('inaTemplateDraft');
+      if (draftRaw) draftName = JSON.parse(draftRaw).name || '';
+    } catch (e) { /* non-critical */ }
+
+    const parts = [];
+    parts.push(`<div class="p-header"><div class="p-brand">INA — International Network Advisors</div><div class="p-date">${new Date().toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US')}</div></div>`);
+    parts.push(`<h1>${escapeHtml(template.title[lang] || template.title.en)}</h1>`);
+    if (draftName) {
+      parts.push(`<p class="p-project">${lang === 'es' ? 'Proyecto' : 'Project'}: <strong>${escapeHtml(draftName)}</strong></p>`);
+    }
+
+    template.sections.forEach((section) => {
+      const fieldLines = [];
+      section.fields.forEach((field) => {
+        const raw = answers[field.key];
+        if (raw === undefined) return;
+        let value = raw;
+        if (field.type === 'select') {
+          const opt = (field.options || []).find((o) => o.value === raw);
+          value = opt ? (opt[lang] || opt.en) : raw;
+        }
+        fieldLines.push(`<div class="p-field"><span class="p-label">${escapeHtml(field.label[lang] || field.label.en)}:</span> <span class="p-value">${escapeHtml(value)}</span></div>`);
+      });
+      if (fieldLines.length) {
+        parts.push(`<h3>${escapeHtml(section.title[lang] || section.title.en)}</h3>`);
+        parts.push(fieldLines.join(''));
+      }
+    });
+
+    if (template.notesField && answers[template.notesField.key]) {
+      parts.push(`<h3>${escapeHtml(template.notesField.label[lang] || template.notesField.label.en)}</h3>`);
+      parts.push(`<div class="p-notes">${escapeHtml(answers[template.notesField.key])}</div>`);
+    }
+
+    document.getElementById('tplPrintView').innerHTML = parts.join('\n');
+  }
+
+  document.getElementById('tplPrintBtn').addEventListener('click', () => {
+    if (!template) return;
+    renderPrintView();
+    window.print();
+  });
+
+  document.getElementById('tplForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const answers = collectAnswers();
+    const compiled = INAPlatform.compileTemplateAnswers(template, answers);
+
+    // Best-effort — feeds the project's shared_field_answers pool so the
+    // NEXT template opened for this project (umbrella/prep/financing) can
+    // reuse these same facts instead of asking for them again. Never blocks
+    // navigation: a brand-new project being created for the first time has
+    // no id yet (contextProjectId is null) and simply skips this.
+    if (contextProjectId) {
+      try { await INAPlatform.mergeSharedFieldAnswers(contextProjectId, answers); } catch (e) { /* non-critical */ }
+    }
+
+    if (applyMode) {
+      const submitBtn = document.getElementById('tplSubmit');
+      submitBtn.disabled = true;
+      try {
+        await INAPlatform.applyToProgram(applyProjectId, applyProgramId, {
+          templateAnswers: answers,
+          notes: compiled,
+        });
+        try { sessionStorage.removeItem(templateStorageKey); } catch (e2) { /* non-critical */ }
+        location.href = returnUrl;
+      } catch (err) {
+        submitBtn.disabled = false;
+        const lang = INAPlatform.currentLang();
+        alert((lang === 'es' ? 'No se pudo guardar la aplicación: ' : "Couldn't save the application: ") + (err.message || err));
+      }
+      return;
+    }
+
+    if (prepMode) {
+      try {
+        sessionStorage.setItem('inaPrepTemplateAnswers', JSON.stringify(answers));
+        sessionStorage.setItem('inaPrepTemplateCompiled', compiled);
+      } catch (e2) { /* storage unavailable — non-critical, form just comes back empty */ }
+      try { sessionStorage.removeItem(templateStorageKey); } catch (e2) { /* non-critical */ }
+      location.href = returnUrl;
+      return;
+    }
+
+    sessionStorage.setItem('inaTemplateCompiledDescription', compiled);
+    location.href = returnUrl;
+  });
+
+  document.getElementById('tplCancel').addEventListener('click', (e) => {
+    e.preventDefault();
+    location.href = returnUrl;
+  });
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) return;
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
+      if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    returnUrl = applyMode
+      ? `project.html?id=${encodeURIComponent(applyProjectId)}`
+      : (sessionStorage.getItem('inaTemplateReturnUrl') || 'new-project.html');
+
+    if (!template || (applyMode && (!applyProjectId || !applyProgramId))) {
+      // No template registered for this project type/program (or the page
+      // was opened without valid params), nothing to fill in — just go back.
+      location.href = returnUrl;
+      return;
+    }
+
+    // Apply mode, no local draft: this could be a brand-new application
+    // (nothing to preload) or "Edit template" reopened on an application
+    // that already has answers saved in the database from a previous visit
+    // — fetch it so the form doesn't come back blank in the latter case.
+    if (applyMode && Object.keys(persistedAnswers).length === 0) {
+      try {
+        const rows = await INAPlatform.listProjectPrograms(applyProjectId);
+        const existing = (rows || []).find((r) => r.program_id === applyProgramId);
+        if (existing && existing.template_answers) {
+          persistedAnswers = existing.template_answers;
+        }
+      } catch (e) { /* non-critical — form just opens blank */ }
+    }
+
+    renderForm();
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('tplForm').style.display = 'block';
+  }
+  init();
+})();
+</script>
+</body>
+</html>

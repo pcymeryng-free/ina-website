@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=3">
-<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/app.css?v=7">
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -20,8 +20,8 @@
     </a>
     <nav class="app-nav">
       <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
-      <a href="new-project.html"><span data-i18n="dash.newProject">Submit New Project</span></a>
       <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
       <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
     </nav>
     <div class="app-header-actions">
@@ -128,9 +128,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=4"></script>
+<script src="/assets/i18n.js?v=40"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=9"></script>
+<script src="/assets/platform.js?v=46"></script>
 <script src="/assets/script.js?v=12"></script>
 <script>
 (function () {
@@ -278,14 +278,22 @@
       document.getElementById('appUserName').textContent = profile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
       if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
+      if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
     } catch (e) { /* non-critical */ }
 
     const project = await INAPlatform.getProject(projectId);
-    // FSU Scoring is owner-only (RLS would reject the insert/update anyway)
-    // and only applies to fiber-to-the-home / last-mile projects — the
-    // manual's criteria (GPON/XGS-PON, splitter ratios, fiber penetration)
-    // don't translate to other project types.
-    if (project.user_id !== session.user.id || project.project_type !== INAPlatform.FSU_SCORING_ELIGIBLE_TYPE) {
+    // FSU Scoring is available to the owner, or to the advisor who has
+    // taken this project (assigned_advisor_id — see
+    // migration_v19_advisor_edit_taken_project.sql for the matching RLS
+    // change on fsu_scoring's insert/update policies), and only applies to
+    // fiber-to-the-home / last-mile projects, or any project applying
+    // under a FATIC Program (Mercado de Capitales, TASU, or the general/
+    // equipment línea) — see INAPlatform.isFsuScoringEligible.
+    let fsuEligible = false;
+    try { fsuEligible = INAPlatform.isFsuScoringEligible(project); } catch (e) { fsuEligible = false; }
+    const canScore = project.user_id === session.user.id
+      || (!!project.assigned_advisor_id && project.assigned_advisor_id === session.user.id);
+    if (!canScore || !fsuEligible) {
       location.href = `project.html?id=${projectId}`;
       return;
     }
