@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Risk Matrix — INA Platform" data-i18n-es="Matriz de Riesgos — Plataforma INA">Risk Matrix — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Structured risk register for this project — probability, impact and mitigation tracking." data-i18n-es="Registro estructurado de riesgos del proyecto — seguimiento de probabilidad, impacto y mitigaci&oacute;n." content="Structured risk register for this project.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=19">
+<link rel="stylesheet" href="/assets/app.css?v=7">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><a href="#" id="crumbProject">…</a><span>/</span><span><span data-i18n="risk.title">Risk Matrix</span></span></div>
+    <span class="eyebrow"><span data-i18n="risk.kicker">Project Control &amp; Monitoring Framework™ — F7</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="risk.title">Risk Matrix</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="risk.lede">A structured risk register for this project — probability &times; impact scoring, mitigation measures and status tracking, separate from the freeform text inside the project's Analysis.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="riskBody" style="display:none; margin-top:24px;">
+
+      <div class="risk-summary" id="riskSummary" style="margin-bottom:28px;"></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0;"><span data-i18n="risk.list.title">Identified Risks</span></h3>
+        <button type="button" class="btn amber small" id="newRiskBtn"><span data-i18n="risk.new">+ New Risk</span></button>
+      </div>
+
+      <div id="riskTableWrap" style="overflow-x:auto;">
+        <table class="risk-table" id="riskTable">
+          <thead>
+            <tr>
+              <th data-i18n="risk.col.title">Risk</th>
+              <th data-i18n="risk.col.category">Category</th>
+              <th data-i18n="risk.col.score">Score</th>
+              <th data-i18n="risk.col.status">Status</th>
+              <th data-i18n="risk.col.owner">Owner Entity</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="riskTableBody"></tbody>
+        </table>
+        <p id="riskEmpty" style="display:none; color:var(--muted); font-size:13.5px; padding:20px 0;"><span data-i18n="risk.empty">No risks logged yet for this project.</span></p>
+      </div>
+
+      <div class="risk-form-overlay" id="riskFormOverlay" style="display:none;">
+        <div class="risk-form-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <h3 style="margin:0;" id="riskFormTitle"><span data-i18n="risk.new">+ New Risk</span></h3>
+            <button type="button" class="btn ghost small" id="closeRiskForm">&times;</button>
+          </div>
+          <form id="riskForm">
+            <div class="field"><label for="rTitle"><span data-i18n="risk.f.title">Risk title</span></label><input id="rTitle" type="text" required></div>
+            <div class="field"><label for="rDescription"><span data-i18n="risk.f.description">Description</span></label><textarea id="rDescription" rows="3"></textarea></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="field"><label for="rCategory"><span data-i18n="risk.f.category">Category</span></label><select id="rCategory"></select></div>
+              <div class="field"><label for="rStatus"><span data-i18n="risk.f.status">Status</span></label><select id="rStatus"></select></div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="field"><label for="rProbability"><span data-i18n="risk.f.probability">Probability (1–5)</span></label><select id="rProbability"></select></div>
+              <div class="field"><label for="rImpact"><span data-i18n="risk.f.impact">Impact (1–5)</span></label><select id="rImpact"></select></div>
+            </div>
+            <p style="font-size:13px; color:var(--muted); margin:4px 0 18px;"><span data-i18n="risk.f.scorePreview">Score:</span> <b id="rScorePreview">1</b>/25 — <span id="rBandPreview" class="risk-badge"></span></p>
+            <div class="field"><label for="rMitigation"><span data-i18n="risk.f.mitigation">Mitigation measures</span></label><textarea id="rMitigation" rows="3"></textarea></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="field"><label for="rOwnerEntity"><span data-i18n="risk.f.owner">Responsible entity</span></label><input id="rOwnerEntity" type="text"></div>
+              <div class="field"><label for="rTargetDate"><span data-i18n="risk.f.targetDate">Target resolution date</span></label><input id="rTargetDate" type="date"></div>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:20px; align-items:center;">
+              <button type="submit" class="btn amber" id="riskSubmitBtn"><span data-i18n="risk.save">Save Risk</span></button>
+              <button type="button" class="btn ghost" id="deleteRiskBtn" style="display:none;"><span data-i18n="risk.delete">Delete</span></button>
+              <p id="riskFormNote" class="contact-note" style="margin:0;"></p>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=41"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=47"></script>
+<script src="/assets/script.js?v=12"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  const params = new URLSearchParams(location.search);
+  const projectId = params.get('id');
+  let lang = INAPlatform.currentLang();
+  let risks = [];
+  let editingId = null;
+
+  function populateSelect(selectEl, options, valueKey) {
+    selectEl.innerHTML = options.map((opt) => `<option value="${opt[valueKey || 'value']}">${opt[lang] || opt.en}</option>`).join('');
+  }
+
+  function populateNumericSelect(selectEl) {
+    selectEl.innerHTML = [1, 2, 3, 4, 5].map((n) => `<option value="${n}">${n}</option>`).join('');
+  }
+
+  function renderSelects() {
+    populateSelect(document.getElementById('rCategory'), INAPlatform.RISK_CATEGORIES);
+    populateSelect(document.getElementById('rStatus'), INAPlatform.RISK_STATUS);
+    populateNumericSelect(document.getElementById('rProbability'));
+    populateNumericSelect(document.getElementById('rImpact'));
+  }
+
+  function updateScorePreview() {
+    const prob = Number(document.getElementById('rProbability').value) || 1;
+    const impact = Number(document.getElementById('rImpact').value) || 1;
+    const score = prob * impact;
+    document.getElementById('rScorePreview').textContent = score;
+    const band = INAPlatform.riskScoreBand(score);
+    const badge = document.getElementById('rBandPreview');
+    badge.textContent = INAPlatform.riskScoreBandLabel(score);
+    badge.className = `risk-badge band-${band}`;
+  }
+
+  function renderSummary() {
+    const summary = INAPlatform.riskMatrixSummary(risks);
+    const el = document.getElementById('riskSummary');
+    const bandLabels = { low: lang === 'es' ? 'Bajo' : 'Low', medium: lang === 'es' ? 'Medio' : 'Medium', high: lang === 'es' ? 'Alto' : 'High', critical: lang === 'es' ? 'Crítico' : 'Critical' };
+    el.innerHTML = ['low', 'medium', 'high', 'critical'].map((band) => `
+      <div class="risk-summary-card band-${band}">
+        <div class="risk-summary-count">${summary.counts[band] || 0}</div>
+        <div class="risk-summary-label">${bandLabels[band]}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('riskTableBody');
+    const empty = document.getElementById('riskEmpty');
+    const wrap = document.getElementById('riskTable');
+    if (!risks.length) {
+      wrap.style.display = 'none';
+      empty.style.display = 'block';
+      tbody.innerHTML = '';
+      return;
+    }
+    wrap.style.display = 'table';
+    empty.style.display = 'none';
+    tbody.innerHTML = risks.map((r) => {
+      const band = INAPlatform.riskScoreBand(r.risk_score);
+      return `
+        <tr data-id="${r.id}" class="risk-row">
+          <td>${r.title}</td>
+          <td>${INAPlatform.riskCategoryLabel(r.category)}</td>
+          <td><span class="risk-badge band-${band}">${r.risk_score} · ${INAPlatform.riskScoreBandLabel(r.risk_score)}</span></td>
+          <td>${INAPlatform.riskStatusLabel(r.status)}</td>
+          <td>${r.owner_entity_name || '—'}</td>
+          <td><button type="button" class="btn ghost small edit-risk-btn" data-id="${r.id}"><span data-i18n="risk.edit">Edit</span></button></td>
+        </tr>
+      `;
+    }).join('');
+    tbody.querySelectorAll('.edit-risk-btn').forEach((btn) => {
+      btn.addEventListener('click', () => openForm(btn.dataset.id));
+    });
+  }
+
+  function openForm(id) {
+    editingId = id || null;
+    const form = document.getElementById('riskForm');
+    form.reset();
+    document.getElementById('riskFormNote').textContent = '';
+    document.getElementById('deleteRiskBtn').style.display = editingId ? 'inline-block' : 'none';
+    document.getElementById('riskFormTitle').innerHTML = editingId
+      ? `<span data-i18n="risk.edit">Edit</span>`
+      : `<span data-i18n="risk.new">+ New Risk</span>`;
+    if (editingId) {
+      const r = risks.find((x) => x.id === editingId);
+      if (r) {
+        document.getElementById('rTitle').value = r.title || '';
+        document.getElementById('rDescription').value = r.description || '';
+        document.getElementById('rCategory').value = r.category || 'other';
+        document.getElementById('rStatus').value = r.status || 'open';
+        document.getElementById('rProbability').value = r.probability || 1;
+        document.getElementById('rImpact').value = r.impact || 1;
+        document.getElementById('rMitigation').value = r.mitigation_measures || '';
+        document.getElementById('rOwnerEntity').value = r.owner_entity_name || '';
+        document.getElementById('rTargetDate').value = r.target_resolution_date || '';
+      }
+    } else {
+      document.getElementById('rProbability').value = 1;
+      document.getElementById('rImpact').value = 1;
+      document.getElementById('rStatus').value = 'open';
+      document.getElementById('rCategory').value = 'other';
+    }
+    updateScorePreview();
+    document.getElementById('riskFormOverlay').style.display = 'flex';
+  }
+
+  function closeForm() {
+    document.getElementById('riskFormOverlay').style.display = 'none';
+    editingId = null;
+  }
+
+  document.getElementById('newRiskBtn').addEventListener('click', () => openForm(null));
+  document.getElementById('closeRiskForm').addEventListener('click', closeForm);
+  document.getElementById('rProbability').addEventListener('change', updateScorePreview);
+  document.getElementById('rImpact').addEventListener('change', updateScorePreview);
+
+  async function loadRisks() {
+    risks = await INAPlatform.listProjectRisks(projectId);
+    renderSummary();
+    renderTable();
+  }
+
+  document.getElementById('riskForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('riskFormNote');
+    note.textContent = '';
+    const submitBtn = document.getElementById('riskSubmitBtn');
+    submitBtn.disabled = true;
+    const payload = {
+      title: document.getElementById('rTitle').value.trim(),
+      description: document.getElementById('rDescription').value.trim(),
+      category: document.getElementById('rCategory').value,
+      status: document.getElementById('rStatus').value,
+      probability: Number(document.getElementById('rProbability').value),
+      impact: Number(document.getElementById('rImpact').value),
+      mitigationMeasures: document.getElementById('rMitigation').value.trim(),
+      ownerEntityName: document.getElementById('rOwnerEntity').value.trim(),
+      targetResolutionDate: document.getElementById('rTargetDate').value || null,
+    };
+    try {
+      if (editingId) {
+        await INAPlatform.updateProjectRisk(editingId, payload);
+      } else {
+        await INAPlatform.createProjectRisk(projectId, payload);
+      }
+      closeForm();
+      await loadRisks();
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar el riesgo.' : "Couldn't save the risk.");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('deleteRiskBtn').addEventListener('click', async () => {
+    if (!editingId) return;
+    const ok = confirm(lang === 'es' ? '¿Eliminar este riesgo?' : 'Delete this risk?');
+    if (!ok) return;
+    try {
+      await INAPlatform.deleteProjectRisk(editingId);
+      closeForm();
+      await loadRisks();
+    } catch (err) {
+      document.getElementById('riskFormNote').textContent = err.message || (lang === 'es' ? 'No se pudo eliminar.' : "Couldn't delete.");
+    }
+  });
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setTimeout(() => {
+        lang = INAPlatform.currentLang();
+        renderSelects();
+        updateScorePreview();
+        renderSummary();
+        renderTable();
+      }, 0);
+    });
+  });
+
+  async function init() {
+    if (!projectId) { location.href = 'dashboard.html'; return; }
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    let profile = null;
+    try {
+      profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
+      if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    // Advisor/admin only — see migration_v41_project_risks.sql. A project
+    // owner sees a read-only summary directly on project.html instead.
+    if (!profile || !INAPlatform.canManageRisks(profile)) {
+      location.href = `project.html?id=${projectId}`;
+      return;
+    }
+
+    const project = await INAPlatform.getProject(projectId);
+    const crumb = document.getElementById('crumbProject');
+    crumb.textContent = project.name;
+    crumb.href = `project.html?id=${projectId}`;
+
+    renderSelects();
+    await loadRisks();
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('riskBody').style.display = 'block';
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

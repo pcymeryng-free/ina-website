@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=18">
+<link rel="stylesheet" href="/assets/style.css?v=19">
 <link rel="stylesheet" href="/assets/app.css?v=7">
 </head>
 <body class="app-body">
@@ -42,7 +42,7 @@
     <div class="breadcrumb" style="margin-bottom:20px;"><a href="roadmap-templates.html"><span data-i18n="rm.title">Roadmaps</span></a><span>/</span><span id="crumbLabel"><span data-i18n="rm.form.new">New Model</span></span></div>
     <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
     <h1 class="h-section" style="margin-top:14px;" id="pageTitle"><span data-i18n="rm.form.new">New Roadmap Model</span></h1>
-    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="rm.form.lede">Define the reusable checklist — each step is one administrative/regulatory procedure, naming a responsible entity and, optionally, any other entities involved. Steps can be reordered, edited or removed at any time; changes here don't retroactively affect projects that already loaded this model.</span></p>
+    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="rm.form.lede">Define the reusable checklist — each step is one administrative/regulatory procedure, with a RACI role (Responsible / Accountable / Consulted / Informed) per entity involved. Steps can be reordered, edited or removed at any time; changes here don't retroactively affect projects that already loaded this model.</span></p>
 
     <!-- Shown/populated by JS only when editing an existing template that
          another advisor/admin currently has locked (see acquireEditLock()
@@ -83,9 +83,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=40"></script>
+<script src="/assets/i18n.js?v=41"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=46"></script>
+<script src="/assets/platform.js?v=47"></script>
 <script src="/assets/script.js?v=12"></script>
 <script>
 (function () {
@@ -195,20 +195,21 @@
     });
   });
 
-  // In-memory ordered list of steps — { title, description, entityName,
-  // entityType, required, expectedResult, involvedEntities } — rendered as
-  // editable rows below and saved wholesale via
-  // INAPlatform.replaceRoadmapTemplateSteps() on submit (same "just
-  // overwrite" simplicity as new-program.html's types checkboxes, rather
-  // than diffing individual step edits). expectedResult ("resultado
-  // esperado") is shown by the roadmap-instance.html sequential tracker
-  // when the user is deciding whether to advance past this step.
-  // entityName/entityType are the ONE entity responsible for driving this
-  // step; involvedEntities (see migration_v29_gestion_step_entities.sql) is
-  // a free-form list of the OTHER entities that also participate in it —
-  // e.g. a spectrum-authorization step might be the applicant's
-  // responsibility but involve the regulator, a mobile operator, and civil
-  // protection all at once.
+  // In-memory ordered list of steps — { title, description, entityType,
+  // required, expectedResult, raci } — rendered as editable rows below and
+  // saved wholesale via INAPlatform.replaceRoadmapTemplateSteps() on
+  // submit (same "just overwrite" simplicity as new-program.html's types
+  // checkboxes, rather than diffing individual step edits). expectedResult
+  // ("resultado esperado") is shown by the roadmap-instance.html
+  // sequential tracker when the user is deciding whether to advance past
+  // this step. entityType is the step's general public/private/mixed
+  // nature (unrelated to who's responsible for it). raci (see
+  // migration_v42_roadmap_raci.sql) is an array of
+  // { entityName, role: 'responsible'|'accountable'|'consulted'|'informed' }
+  // — replaces the old single entityName + free-form involvedEntities list
+  // with an explicit role per participating entity;
+  // replaceRoadmapTemplateSteps() derives entity_name/involved_entities
+  // from it automatically for backward compatibility.
   let steps = [];
 
   // Minimal HTML-escaper for values interpolated into the step-row template
@@ -239,19 +240,24 @@
         <textarea class="rt-step-desc" placeholder="${lang === 'es' ? 'Descripción (opcional)' : 'Description (optional)'}" style="min-height:50px; margin-top:8px;">${s.description || ''}</textarea>
         <textarea class="rt-step-expected" placeholder="${lang === 'es' ? 'Resultado esperado (opcional) — qué confirma que este paso está terminado' : 'Expected result (optional) — what confirms this step is done'}" style="min-height:44px; margin-top:8px;">${s.expectedResult || ''}</textarea>
         <div class="roadmap-step-row-fields">
-          <input type="text" class="rt-step-entity" placeholder="${lang === 'es' ? 'Entidad responsable (opcional)' : 'Responsible entity (optional)'}" value="${s.entityName ? s.entityName.replace(/"/g, '&quot;') : ''}">
-          <select class="rt-step-entity-type" title="${lang === 'es' ? 'Tipo de la entidad responsable' : 'Responsible entity’s type'}"></select>
+          <select class="rt-step-entity-type" title="${lang === 'es' ? 'Naturaleza del paso' : 'Nature of the step'}"></select>
           <label class="chk-pill" style="margin:0;"><input type="checkbox" class="rt-step-required" ${s.required !== false ? 'checked' : ''}><span data-i18n="rm.f.required">Required</span></label>
         </div>
-        <div class="roadmap-step-involved" style="margin-top:12px;">
-          <label style="font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);">${lang === 'es' ? 'Entidades involucradas (opcional, además de la responsable)' : 'Involved entities (optional, besides the responsible one)'}</label>
-          <div class="entity-chip-list" data-chip-list>
-            ${(s.involvedEntities || []).map((name, ci) => `<span class="entity-chip">${escapeHtml(name)}<button type="button" class="entity-chip-remove" data-remove-entity="${ci}" aria-label="${lang === 'es' ? 'Quitar' : 'Remove'}">&times;</button></span>`).join('')}
+        <div class="roadmap-step-raci" style="margin-top:12px;">
+          <label style="font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);">${lang === 'es' ? 'RACI — quién participa en este paso' : 'RACI — who is involved in this step'}</label>
+          <div class="raci-rows" data-raci-rows style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+            ${(s.raci || []).map((r, ri) => `
+              <div class="raci-row">
+                <input type="text" class="raci-entity-name" data-raci-idx="${ri}" placeholder="${lang === 'es' ? 'Nombre de la entidad' : 'Entity name'}" value="${escapeHtml(r.entityName)}">
+                <select class="raci-role" data-raci-idx="${ri}">
+                  ${INAPlatform.RACI_ROLES.map((role) => `<option value="${role.value}" ${r.role === role.value ? 'selected' : ''}>${role.letter} — ${role[lang] || role.en}</option>`).join('')}
+                </select>
+                <button type="button" class="icon-btn icon-btn-delete" data-raci-remove="${ri}" title="${lang === 'es' ? 'Quitar' : 'Remove'}">🗑</button>
+              </div>
+            `).join('')}
           </div>
-          <div style="display:flex; gap:6px; margin-top:8px;">
-            <input type="text" class="rt-step-involved-input" placeholder="${lang === 'es' ? 'Nombre de la entidad + Enter' : 'Entity name + Enter'}" style="flex:1 1 auto;">
-            <button type="button" class="btn ghost small rt-step-involved-add">${lang === 'es' ? '+ Agregar' : '+ Add'}</button>
-          </div>
+          <button type="button" class="btn ghost small rt-raci-add" style="margin-top:8px;">${lang === 'es' ? '+ Agregar entidad' : '+ Add entity'}</button>
+          <p class="raci-warning" data-raci-warning style="display:none; font-size:12px; color:var(--amber-deep); margin-top:6px;"></p>
         </div>
       `;
       const entityTypeSelect = row.querySelector('.rt-step-entity-type');
@@ -266,32 +272,57 @@
       row.querySelector('.rt-step-title').addEventListener('input', (e) => { steps[i].title = e.target.value; });
       row.querySelector('.rt-step-desc').addEventListener('input', (e) => { steps[i].description = e.target.value; });
       row.querySelector('.rt-step-expected').addEventListener('input', (e) => { steps[i].expectedResult = e.target.value; });
-      row.querySelector('.rt-step-entity').addEventListener('input', (e) => { steps[i].entityName = e.target.value; });
       entityTypeSelect.addEventListener('change', (e) => { steps[i].entityType = e.target.value; });
       row.querySelector('.rt-step-required').addEventListener('change', (e) => { steps[i].required = e.target.checked; });
 
-      // Involved entities — a small chip/tag list, separate from the single
-      // responsible entity above. Adding/removing re-renders the whole
-      // steps list (same pattern as the move-up/move-down/remove-step
-      // buttons below) rather than patching the DOM in place, since the
-      // list of chips itself needs to grow/shrink.
-      const involvedInput = row.querySelector('.rt-step-involved-input');
-      function addInvolvedEntity() {
-        const name = involvedInput.value.trim();
-        if (!name) return;
-        if (!Array.isArray(steps[i].involvedEntities)) steps[i].involvedEntities = [];
-        steps[i].involvedEntities.push(name);
-        renderSteps();
+      // RACI rows — see migration_v42_roadmap_raci.sql. Same
+      // re-render-the-whole-list-on-change pattern as the old involved-
+      // entities chips (simpler than patching the DOM in place for a list
+      // that grows/shrinks), except the entity-name <input> only commits
+      // its value on blur/Enter rather than every keystroke, so typing a
+      // name doesn't lose focus on each re-render.
+      function updateRaciWarning() {
+        const raci = steps[i].raci || [];
+        const accountableCount = raci.filter((r) => r.role === 'accountable').length;
+        const warning = row.querySelector('[data-raci-warning]');
+        if (!raci.length) {
+          warning.style.display = 'none';
+          return;
+        }
+        if (accountableCount === 0) {
+          warning.textContent = lang === 'es'
+            ? 'Convención RACI: falta designar un rol Aprobador (Accountable) para este paso.'
+            : 'RACI convention: this step is missing an Accountable role.';
+          warning.style.display = 'block';
+        } else if (accountableCount > 1) {
+          warning.textContent = lang === 'es'
+            ? 'Convención RACI: debería haber un único rol Aprobador (Accountable) por paso — hay ' + accountableCount + '.'
+            : `RACI convention: there should be exactly one Accountable per step — found ${accountableCount}.`;
+          warning.style.display = 'block';
+        } else {
+          warning.style.display = 'none';
+        }
       }
-      row.querySelector('.rt-step-involved-add').addEventListener('click', addInvolvedEntity);
-      involvedInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); addInvolvedEntity(); }
+      updateRaciWarning();
+
+      row.querySelectorAll('.raci-entity-name').forEach((input) => {
+        const ri = Number(input.getAttribute('data-raci-idx'));
+        input.addEventListener('change', (e) => { steps[i].raci[ri].entityName = e.target.value; });
       });
-      row.querySelectorAll('[data-remove-entity]').forEach((btn) => {
+      row.querySelectorAll('.raci-role').forEach((select) => {
+        const ri = Number(select.getAttribute('data-raci-idx'));
+        select.addEventListener('change', (e) => { steps[i].raci[ri].role = e.target.value; updateRaciWarning(); });
+      });
+      row.querySelectorAll('[data-raci-remove]').forEach((btn) => {
         btn.addEventListener('click', () => {
-          steps[i].involvedEntities.splice(Number(btn.getAttribute('data-remove-entity')), 1);
+          steps[i].raci.splice(Number(btn.getAttribute('data-raci-remove')), 1);
           renderSteps();
         });
+      });
+      row.querySelector('.rt-raci-add').addEventListener('click', () => {
+        if (!Array.isArray(steps[i].raci)) steps[i].raci = [];
+        steps[i].raci.push({ entityName: '', role: 'responsible' });
+        renderSteps();
       });
 
       list.appendChild(row);
@@ -318,7 +349,7 @@
   }
 
   document.getElementById('addStepBtn').addEventListener('click', () => {
-    steps.push({ title: '', description: '', entityName: '', entityType: 'public', required: true, expectedResult: '', involvedEntities: [] });
+    steps.push({ title: '', description: '', entityType: 'public', required: true, expectedResult: '', raci: [] });
     renderSteps();
   });
 
@@ -387,15 +418,34 @@
 
       try {
         const existingSteps = await INAPlatform.listRoadmapTemplateSteps(editId);
-        steps = existingSteps.map((s) => ({
-          title: s.title,
-          description: s.description || '',
-          entityName: s.entity_name || '',
-          entityType: s.entity_type || 'public',
-          required: s.required !== false,
-          expectedResult: s.expected_result || '',
-          involvedEntities: Array.isArray(s.involved_entities) ? s.involved_entities : [],
-        }));
+        // RACI rows for every step, one query — see migration_v42_roadmap_raci.sql.
+        let raciRows = [];
+        try { raciRows = await INAPlatform.listStepsRaci(existingSteps.map((s) => s.id)); } catch (e) { raciRows = []; }
+        const raciByStep = {};
+        raciRows.forEach((r) => {
+          (raciByStep[r.template_step_id] = raciByStep[r.template_step_id] || []).push({ entityName: r.entity_name, role: r.role });
+        });
+        steps = existingSteps.map((s) => {
+          // A step saved before migration_v42 (or never given a RACI
+          // breakdown) has no rows in raciByStep — fall back to deriving a
+          // reasonable starting RACI from its old entity_name/
+          // involved_entities fields (responsible / informed respectively)
+          // so the editor never opens empty for existing data.
+          let raci = raciByStep[s.id];
+          if (!raci || !raci.length) {
+            raci = [];
+            if (s.entity_name) raci.push({ entityName: s.entity_name, role: 'responsible' });
+            (s.involved_entities || []).forEach((name) => raci.push({ entityName: name, role: 'informed' }));
+          }
+          return {
+            title: s.title,
+            description: s.description || '',
+            entityType: s.entity_type || 'public',
+            required: s.required !== false,
+            expectedResult: s.expected_result || '',
+            raci,
+          };
+        });
       } catch (e) { steps = []; }
       renderSteps();
 
@@ -408,7 +458,7 @@
     } else {
       // A brand-new template starts with one blank step so the form
       // doesn't look empty/broken — easy enough to remove if unwanted.
-      steps = [{ title: '', description: '', entityName: '', entityType: 'public', required: true, expectedResult: '', involvedEntities: [] }];
+      steps = [{ title: '', description: '', entityType: 'public', required: true, expectedResult: '', raci: [] }];
       renderSteps();
     }
   }
