@@ -161,6 +161,80 @@ const ROADMAP_INSTANCE_STATUS = [
   { value: 'abandoned', en: 'Abandoned', es: 'Abandonada' },
 ];
 
+/* ---------- Risk Matrix (app/risk-matrix.html) ----------
+   See supabase/migration_v41_project_risks.sql. Item 1 of the "Mediano
+   plazo (3–9 meses)" horizon in INA_Project_Structuring_Framework_y_
+   Plataforma.pdf (section 9.3) — a structured risk register per project,
+   distinct from the freeform text already inside
+   framework_analysis.dimensions.risk_mitigation.rationale. Only advisor/
+   admin can write (enforced by RLS); the project owner has read-only
+   visibility on their own project's risks. */
+const RISK_CATEGORIES = [
+  { value: 'legal_regulatory', en: 'Legal & Regulatory', es: 'Legal y Regulatorio' },
+  { value: 'technical', en: 'Technical', es: 'Técnico' },
+  { value: 'financial', en: 'Financial', es: 'Financiero' },
+  { value: 'market_demand', en: 'Market & Demand', es: 'Mercado y Demanda' },
+  { value: 'environmental_social', en: 'Environmental & Social', es: 'Ambiental y Social' },
+  { value: 'governance', en: 'Governance', es: 'Gobernanza' },
+  { value: 'operational', en: 'Operational / Execution', es: 'Operativo / Ejecución' },
+  { value: 'political', en: 'Political / Country', es: 'Político / País' },
+  { value: 'other', en: 'Other', es: 'Otro' },
+];
+
+const RISK_STATUS = [
+  { value: 'open', en: 'Open', es: 'Abierto' },
+  { value: 'mitigating', en: 'Mitigating', es: 'En mitigación' },
+  { value: 'monitoring', en: 'Monitoring', es: 'En seguimiento' },
+  { value: 'closed', en: 'Closed', es: 'Cerrado' },
+];
+
+/* probability * impact, each 1-5, so risk_score ranges 1-25. Bands follow
+   the common 5x5 risk-matrix convention (roughly quartered, with the top
+   band narrower since it's meant to flag genuinely severe combinations —
+   e.g. 5x5, 4x4, 5x3 — rather than just "impact 5" alone). */
+const RISK_SCORE_BANDS = [
+  { value: 'low', max: 4, en: 'Low', es: 'Bajo' },
+  { value: 'medium', max: 9, en: 'Medium', es: 'Medio' },
+  { value: 'high', max: 15, en: 'High', es: 'Alto' },
+  { value: 'critical', max: 25, en: 'Critical', es: 'Crítico' },
+];
+
+function riskScoreBand(score) {
+  const band = RISK_SCORE_BANDS.find((b) => score <= b.max) || RISK_SCORE_BANDS[RISK_SCORE_BANDS.length - 1];
+  return band.value;
+}
+
+function riskScoreBandLabel(score, lang) {
+  const band = RISK_SCORE_BANDS.find((b) => score <= b.max) || RISK_SCORE_BANDS[RISK_SCORE_BANDS.length - 1];
+  return band[lang];
+}
+
+/* ---------- RACI (roadmap steps) ----------
+   See supabase/migration_v42_roadmap_raci.sql. Item 2 of the same
+   "Mediano plazo" horizon — replaces the single "responsible entity" +
+   free-form "involved entities" fields on each roadmap step
+   (roadmap_template_steps/roadmap_instance_steps) with an explicit
+   Responsible/Accountable/Consulted/Informed role per entity. entity_name/
+   entity_type/involved_entities are kept on those tables for backward
+   compatibility (older reads that don't know about RACI still see
+   something sensible) and are derived automatically from the RACI rows on
+   save — see replaceRoadmapTemplateSteps() below. */
+const RACI_ROLES = [
+  { value: 'responsible', letter: 'R', en: 'Responsible', es: 'Responsable' },
+  { value: 'accountable', letter: 'A', en: 'Accountable', es: 'Aprobador' },
+  { value: 'consulted', letter: 'C', en: 'Consulted', es: 'Consultado' },
+  { value: 'informed', letter: 'I', en: 'Informed', es: 'Informado' },
+];
+
+function raciRoleLabel(value, lang) {
+  return labelFor(RACI_ROLES, value, lang);
+}
+
+function raciRoleLetter(value) {
+  const entry = RACI_ROLES.find((r) => r.value === value);
+  return entry ? entry.letter : '?';
+}
+
 /* ---------- Project submission templates (app/project-template.html) ----------
    A structured, guided alternative to typing a project's description from
    scratch — for project types where INA/ENACOM maintains a standard
@@ -4019,6 +4093,15 @@ const INAPlatform = {
     return this.isAdvisor(profile) || this.isAdmin(profile);
   },
 
+  /* Same advisor-or-admin bar, for the Risk Matrix (see
+     supabase/migration_v41_project_risks.sql) — Pablo's explicit choice:
+     the project owner can see their own project's risks (read-only), but
+     only an advisor/admin can load/edit/delete them; enforced by RLS
+     regardless of what the UI hides. */
+  canManageRisks(profile) {
+    return this.isAdvisor(profile) || this.isAdmin(profile);
+  },
+
   platformRoleLabel(value) {
     const entry = PLATFORM_ROLE_LABELS[value];
     return entry ? entry[currentLang()] : value;
@@ -4038,6 +4121,16 @@ const INAPlatform = {
   roadmapInstanceStepStatusLabel(value) { return labelFor(ROADMAP_INSTANCE_STEP_STATUS, value, currentLang()); },
   ROADMAP_INSTANCE_STATUS,
   roadmapInstanceStatusLabel(value) { return labelFor(ROADMAP_INSTANCE_STATUS, value, currentLang()); },
+  RISK_CATEGORIES,
+  riskCategoryLabel(value) { return labelFor(RISK_CATEGORIES, value, currentLang()); },
+  RISK_STATUS,
+  riskStatusLabel(value) { return labelFor(RISK_STATUS, value, currentLang()); },
+  RISK_SCORE_BANDS,
+  riskScoreBand(score) { return riskScoreBand(score); },
+  riskScoreBandLabel(score) { return riskScoreBandLabel(score, currentLang()); },
+  RACI_ROLES,
+  raciRoleLabel(value) { return raciRoleLabel(value, currentLang()); },
+  raciRoleLetter(value) { return raciRoleLetter(value); },
   /* Guided project-submission templates (see PROJECT_TEMPLATES above).
      Returns undefined for project types without a template — callers use
      that to decide whether to show a "Fill using template" link. */
@@ -5400,39 +5493,99 @@ const INAPlatform = {
   /* Wholesale replace, same simplicity level as how a Program's `types`
      checkbox list is just overwritten on save rather than diffed — steps is
      an ordered array of { title, description, entityName, entityType,
-     required, expectedResult, involvedEntities }. expectedResult
+     required, expectedResult, involvedEntities, raci }. expectedResult
      ("resultado esperado") is shown by the roadmap_instances sequential
      tracker when the user is deciding whether to advance past a step.
-     entityName/entityType are the entity RESPONSIBLE for the step;
-     involvedEntities (array of free-form names, added by
-     migration_v29_gestion_step_entities.sql) are the other entities that
-     also participate in it. */
+
+     raci (see migration_v42_roadmap_raci.sql) is the new, richer way to
+     describe who does what on a step — an array of
+     { entityName, role: 'responsible'|'accountable'|'consulted'|'informed' }.
+     When a step has a non-empty raci array, entity_name/involved_entities
+     are DERIVED from it automatically (entity_name = the "responsible"
+     entities joined with ", "; involved_entities = every other entity on
+     the step) purely for backward compatibility with any rendering code
+     that still reads those two plain columns instead of the RACI table —
+     app/new-roadmap-template.html always sends raci going forward, so
+     entityName/involvedEntities passed alongside it are ignored. A step
+     with no raci array falls back to entityName/involvedEntities exactly
+     like before migration_v42 (older callers, if any, keep working). */
   async replaceRoadmapTemplateSteps(templateId, steps) {
     const { error: delErr } = await supabaseClient
       .from('roadmap_template_steps')
       .delete()
       .eq('template_id', templateId);
     if (delErr) throw delErr;
-    const rows = (steps || [])
-      .filter((s) => s.title && s.title.trim())
-      .map((s, i) => ({
+    const usable = (steps || []).filter((s) => s.title && s.title.trim());
+    if (!usable.length) return [];
+
+    const rows = usable.map((s, i) => {
+      const raci = Array.isArray(s.raci)
+        ? s.raci.filter((r) => r.entityName && r.entityName.trim()).map((r) => ({ entityName: r.entityName.trim(), role: r.role }))
+        : [];
+      let entityName = s.entityName ? s.entityName.trim() : null;
+      let involvedEntities = Array.isArray(s.involvedEntities)
+        ? s.involvedEntities.map((e) => (e || '').trim()).filter(Boolean)
+        : [];
+      if (raci.length) {
+        entityName = raci.filter((r) => r.role === 'responsible').map((r) => r.entityName).join(', ') || null;
+        involvedEntities = raci.filter((r) => r.role !== 'responsible').map((r) => r.entityName);
+      }
+      return {
         template_id: templateId,
         step_order: i,
         title: s.title.trim(),
         description: s.description ? s.description.trim() : null,
-        entity_name: s.entityName ? s.entityName.trim() : null,
+        entity_name: entityName,
         entity_type: s.entityType || 'public',
         required: s.required !== false,
         expected_result: s.expectedResult ? s.expectedResult.trim() : null,
-        involved_entities: Array.isArray(s.involvedEntities)
-          ? s.involvedEntities.map((e) => (e || '').trim()).filter(Boolean)
-          : [],
-      }));
-    if (!rows.length) return [];
+        involved_entities: involvedEntities,
+        _raci: raci,
+      };
+    });
+
     const { data, error } = await supabaseClient
       .from('roadmap_template_steps')
-      .insert(rows)
+      .insert(rows.map(({ _raci, ...row }) => row))
       .select();
+    if (error) throw error;
+
+    const raciRows = [];
+    data.forEach((savedStep, i) => {
+      rows[i]._raci.forEach((r) => {
+        raciRows.push({ template_step_id: savedStep.id, entity_name: r.entityName, role: r.role });
+      });
+    });
+    if (raciRows.length) {
+      const { error: raciErr } = await supabaseClient.from('roadmap_step_raci').insert(raciRows);
+      if (raciErr) throw raciErr;
+    }
+
+    return data;
+  },
+
+  /* All RACI rows for every step in stepIds, in one query — used to
+     pre-fill app/new-roadmap-template.html's editor when opening an
+     existing template, and grouped per step id by the caller. */
+  async listStepsRaci(stepIds) {
+    if (!stepIds || !stepIds.length) return [];
+    const { data, error } = await supabaseClient
+      .from('roadmap_step_raci')
+      .select('*')
+      .in('template_step_id', stepIds);
+    if (error) throw error;
+    return data;
+  },
+
+  /* Same idea for roadmap_instance_step_raci — used by
+     app/roadmap-instance.html and project.html's Roadmaps block to render
+     each step's R/A/C/I badges. */
+  async listInstanceStepsRaci(instanceStepIds) {
+    if (!instanceStepIds || !instanceStepIds.length) return [];
+    const { data, error } = await supabaseClient
+      .from('roadmap_instance_step_raci')
+      .select('*')
+      .in('instance_step_id', instanceStepIds);
     if (error) throw error;
     return data;
   },
@@ -5644,8 +5797,31 @@ const INAPlatform = {
           required: s.required,
           status: i === 0 ? 'in_progress' : 'pending',
         }));
-        const { error: stepsErr } = await supabaseClient.from('roadmap_instance_steps').insert(rows);
+        const { data: savedSteps, error: stepsErr } = await supabaseClient
+          .from('roadmap_instance_steps')
+          .insert(rows)
+          .select();
         if (stepsErr) throw stepsErr;
+
+        // Copy each template step's RACI rows onto its freshly-created
+        // instance step — see migration_v42_roadmap_raci.sql. One query for
+        // all steps' RACI rather than one per step.
+        const raciByTemplateStep = await this.listStepsRaci(templateSteps.map((s) => s.id));
+        if (raciByTemplateStep.length && savedSteps && savedSteps.length) {
+          const instanceStepByTemplateStepId = {};
+          savedSteps.forEach((is) => { instanceStepByTemplateStepId[is.template_step_id] = is.id; });
+          const raciRows = raciByTemplateStep
+            .map((r) => ({
+              instance_step_id: instanceStepByTemplateStepId[r.template_step_id],
+              entity_name: r.entity_name,
+              role: r.role,
+            }))
+            .filter((r) => r.instance_step_id);
+          if (raciRows.length) {
+            const { error: raciErr } = await supabaseClient.from('roadmap_instance_step_raci').insert(raciRows);
+            if (raciErr) throw raciErr;
+          }
+        }
       }
     }
     return instance;
@@ -5719,6 +5895,107 @@ const INAPlatform = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  /* ---------- Risk Matrix (app/risk-matrix.html) ----------
+     See supabase/migration_v41_project_risks.sql. Writes are advisor/
+     admin-only at the RLS level; canManageRisks() above is the matching
+     UI-side gate. The project owner can list/read their own project's
+     risks (read-only) via the same "select" RLS policy. */
+
+  async listProjectRisks(projectId) {
+    const { data, error } = await supabaseClient
+      .from('project_risks')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('risk_score', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  async getProjectRisk(id) {
+    const { data, error } = await supabaseClient
+      .from('project_risks')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async createProjectRisk(projectId, {
+    title, description, category, probability, impact,
+    mitigationMeasures, ownerEntityName, status, identifiedDate, targetResolutionDate,
+  }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('project_risks')
+      .insert({
+        project_id: projectId,
+        title,
+        description: description || null,
+        category: category || 'other',
+        probability,
+        impact,
+        mitigation_measures: mitigationMeasures || null,
+        owner_entity_name: ownerEntityName || null,
+        status: status || 'open',
+        identified_date: identifiedDate || new Date().toISOString().slice(0, 10),
+        target_resolution_date: targetResolutionDate || null,
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* patch may include any of: title, description, category, probability,
+     impact, mitigationMeasures, ownerEntityName, status,
+     targetResolutionDate. risk_score is a generated column (probability *
+     impact) — never sent here, Postgres recomputes it automatically
+     whenever probability/impact change. */
+  async updateProjectRisk(id, patch) {
+    const payload = { updated_at: new Date().toISOString() };
+    if (patch.title !== undefined) payload.title = patch.title;
+    if (patch.description !== undefined) payload.description = patch.description || null;
+    if (patch.category !== undefined) payload.category = patch.category || 'other';
+    if (patch.probability !== undefined) payload.probability = patch.probability;
+    if (patch.impact !== undefined) payload.impact = patch.impact;
+    if (patch.mitigationMeasures !== undefined) payload.mitigation_measures = patch.mitigationMeasures || null;
+    if (patch.ownerEntityName !== undefined) payload.owner_entity_name = patch.ownerEntityName || null;
+    if (patch.status !== undefined) payload.status = patch.status;
+    if (patch.targetResolutionDate !== undefined) payload.target_resolution_date = patch.targetResolutionDate || null;
+    const { data, error } = await supabaseClient
+      .from('project_risks')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteProjectRisk(id) {
+    const { error } = await supabaseClient
+      .from('project_risks')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  /* Small summary used by project.html's read-only Risk Matrix card:
+     counts per severity band + the single highest-scoring open risk. */
+  riskMatrixSummary(risks) {
+    const counts = { low: 0, medium: 0, high: 0, critical: 0 };
+    let topRisk = null;
+    (risks || []).forEach((r) => {
+      const band = riskScoreBand(r.risk_score);
+      counts[band] = (counts[band] || 0) + 1;
+      if (!topRisk || r.risk_score > topRisk.risk_score) topRisk = r;
+    });
+    return { counts, topRisk, total: (risks || []).length };
   },
 
   /* ---------- Framework analysis ---------- */
