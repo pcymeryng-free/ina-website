@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=19">
-<link rel="stylesheet" href="/assets/app.css?v=7">
+<link rel="stylesheet" href="/assets/style.css?v=21">
+<link rel="stylesheet" href="/assets/app.css?v=9">
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -19,10 +19,19 @@
       <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
     </a>
     <nav class="app-nav">
+      <a href="initiatives.html" id="navInitiativesLink"><span data-i18n="init.nav">Initiatives</span></a>
       <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
-      <a href="programs.html" class="active"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="financing-programs.html" id="navFinancingLink"><span data-i18n="progfin.nav">Financing</span></a>
       <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
-      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+        </div>
+      </div>
     </nav>
     <div class="app-header-actions">
       <div class="lang-switch" aria-label="Language">
@@ -39,10 +48,19 @@
 <main class="app-main">
 <section class="tight">
   <div class="wrap">
-    <div class="breadcrumb" style="margin-bottom:20px;"><a href="programs.html"><span data-i18n="prog.title">Programs</span></a><span>/</span><span id="crumbLabel"><span data-i18n="prog.form.new">New Program</span></span></div>
+    <!-- breadcrumb link/label + title/lede are all rewritten by JS at load
+         time (see applyRoleContext() below) depending on whether we're
+         creating a financing program (?role=financing), an initiative
+         (?role=umbrella — the query-param value is unchanged from before
+         this page's user-facing rename; it maps directly to
+         program_role='umbrella'), or editing an existing one — each of
+         those points back to a different list page (financing-programs.html
+         vs initiatives.html). The markup below is just the 'umbrella'/
+         no-param fallback shown before JS runs. -->
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="initiatives.html" id="crumbLink"><span data-i18n="init.title">Initiatives</span></a><span>/</span><span id="crumbLabel"><span data-i18n="init.form.new">New Initiative</span></span></div>
     <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
-    <h1 class="h-section" style="margin-top:14px;" id="pageTitle"><span data-i18n="prog.form.new">New Program</span></h1>
-    <p class="lede" style="margin-top:10px; max-width:640px;" id="pageLede"><span data-i18n="prog.lede">A Program groups several related projects under one umbrella — like Chubut's "Hub Digital Patagónico," which bundled a submarine cable, a backbone and last-mile builds as separate, independently financed projects presented by the same organization.</span></p>
+    <h1 class="h-section" style="margin-top:14px;" id="pageTitle"><span data-i18n="init.form.new">New Initiative</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;" id="pageLede"><span data-i18n="init.lede">An Initiative groups several separately-financed projects under one sponsoring effort — like EPECH's "Atlántico-Pacífico," which bundles a fiber backbone, a submarine cable and a datacenter as three independent projects, each financed on its own.</span></p>
 
     <!-- Shown/populated by JS only when editing an existing program that
          someone else currently has locked (see acquireEditLock() below and
@@ -69,7 +87,30 @@
         <input id="pgFinancingEntity" type="text" placeholder="BID, CAF, Banco Nación, ENACOM-FSU…">
         <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.financingEntity.help">The institution that actually finances this program — not the presenting organization above. For Universal Service Fund programs, use exactly "ENACOM-FSU" so it groups correctly on the project's Financing tab.</span></p>
       </div>
+      <!-- Program role — 'financing' means the program IS a funding source
+           (further split by fundingStage below); 'umbrella' means it just
+           groups several independently-financed projects under one
+           sponsoring effort, like EPECH's "Atlántico-Pacífico" (fiber
+           backbone + submarine cable + datacenter, each a separate project
+           with its own financing) — this is what's called an "Initiative"
+           everywhere else in the platform's UI (see initiatives.html and
+           PLATFORM_SETUP.md); the value itself is still 'umbrella' in the
+           database. Since Financing Programs and Initiatives now live on
+           two separate list pages (financing-programs.html vs
+           initiatives.html — see migration_v43_program_role.sql), arriving
+           here via either page's "Create" button locks this field to the
+           matching role (see applyRoleContext()/lockedRole below) instead
+           of asking again; the picker only reappears when editing an
+           existing program, in case it needs reclassifying. Deliberately
+           shown before "What does this program fund?" — that question
+           doesn't apply to an Initiative, so picking 'umbrella' here hides
+           it entirely (see renderProgramRoleOptions() below). -->
       <div class="field" style="margin-top:18px;">
+        <label><span data-i18n="prog.f.role">Role</span></label>
+        <div class="chk-group" id="programRoleOptions"></div>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;" id="programRoleHelp"><span data-i18n="prog.f.role.help">"Financing program" is a real funding source (FSU, BID, CAF, USTDA…), selectable when a project applies for financing. "Initiative" just groups several separately-financed projects under one effort — e.g. Atlántico-Pacífico bundling a fiber backbone, a submarine cable and a datacenter as three independent projects. An Initiative funds nothing itself.</span></p>
+      </div>
+      <div class="field" style="margin-top:18px;" id="fundingStageField">
         <label><span data-i18n="prog.f.fundingStage">What does this program fund?</span></label>
         <div class="chk-group" id="fundingStageOptions"></div>
         <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.fundingStage.help">"Project financing" (default) funds the project's implementation, like FSU or a multilateral loan. "Project preparation" funds elaborating/structuring the project itself before it's finished — e.g. a USTDA feasibility-study grant.</span></p>
@@ -115,15 +156,73 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=41"></script>
+<script src="/assets/i18n.js?v=48"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=47"></script>
-<script src="/assets/script.js?v=12"></script>
+<script src="/assets/platform.js?v=54"></script>
+<script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
   const editId = params.get('id');
   const isEdit = !!editId;
+
+  // Which list page ("Initiatives" = umbrella, or "Financing" = financing
+  // sources) this form was reached from / should return to. On create,
+  // that's whatever ?role= the originating page's "Create" button passed
+  // (initiatives.html sends 'umbrella', financing-programs.html sends
+  // 'financing' — the query-param value itself is unchanged from before
+  // this page's user-facing "Programs" → "Initiatives" rename; it still
+  // maps directly to program_role='umbrella') — see
+  // migration_v43_program_role.sql. A missing or unrecognized value falls
+  // back to showing the role picker instead of locking it, same as
+  // visiting this page with no query string at all. On edit, the role
+  // isn't known yet (it's whatever the loaded program already has), so
+  // lockedRole stays null and the picker is always shown.
+  const roleParam = params.get('role');
+  const lockedRole = (!isEdit && (roleParam === 'financing' || roleParam === 'umbrella')) ? roleParam : null;
+
+  function listPageFor(role) {
+    return role === 'financing' ? 'financing-programs.html' : 'initiatives.html';
+  }
+
+  // Updates the top nav, breadcrumb link/label, page title, lede and submit
+  // button to match the given role — called once up front (from lockedRole
+  // or a plain 'umbrella' guess before anything has loaded), again once the
+  // real role is known (after an edit-mode program loads), and again right
+  // before the redirect on save (in case editing changed the role).
+  function applyRoleContext(role) {
+    const financing = role === 'financing';
+    document.getElementById('navInitiativesLink').classList.toggle('active', !financing);
+    document.getElementById('navFinancingLink').classList.toggle('active', financing);
+    const crumbLink = document.getElementById('crumbLink');
+    crumbLink.href = listPageFor(role);
+    crumbLink.innerHTML = financing
+      ? '<span data-i18n="progfin.nav">Financing</span>'
+      : '<span data-i18n="init.nav">Initiatives</span>';
+
+    const titleKey = isEdit
+      ? (financing ? 'progfin.form.edit' : 'init.form.edit')
+      : (financing ? 'progfin.form.new' : 'init.form.new');
+    const titleText = isEdit
+      ? (financing ? 'Edit Financing Program' : 'Edit Initiative')
+      : (financing ? 'New Financing Program' : 'New Initiative');
+    document.getElementById('pageTitle').innerHTML = `<span data-i18n="${titleKey}">${titleText}</span>`;
+    document.getElementById('crumbLabel').innerHTML = `<span data-i18n="${titleKey}">${titleText}</span>`;
+
+    if (!isEdit) {
+      document.getElementById('pageLede').innerHTML = financing
+        ? '<span data-i18n="progfin.lede">A Financing Program is a real funding source a project can apply to — FSU, BID, CAF, USTDA and similar.</span>'
+        : '<span data-i18n="init.lede">An Initiative groups several separately-financed projects under one sponsoring effort — like EPECH\'s "Atlántico-Pacífico," which bundles a fiber backbone, a submarine cable and a datacenter as three independent projects, each financed on its own.</span>';
+      const createKey = financing ? 'progfin.form.create' : 'init.form.create';
+      const createText = financing ? 'Create Financing Program' : 'Create Initiative';
+      document.getElementById('pgSubmit').innerHTML = `<span data-i18n="${createKey}">${createText}</span>`;
+    }
+    // Re-translate the swapped-in spans immediately in the active
+    // language — applyLang() (assets/i18n.js) only re-scans [data-i18n]
+    // elements on a lang-button click, not on innerHTML changes like this
+    // one.
+    if (typeof applyLang === 'function') applyLang(INAPlatform.currentLang());
+  }
 
   // See the matching comment in new-project.html — set only when this tab
   // actually holds the edit lock, stops the 60s heartbeat that renews it.
@@ -190,6 +289,48 @@
   }
   renderFundingStageOptions();
 
+  /* Program role — see the field comment above and
+     supabase/migration_v43_program_role.sql. Toggling to 'umbrella' hides
+     "What does this program fund?" entirely, since an umbrella program
+     isn't a funding source and funding_stage is meaningless for it (it
+     still gets submitted as whatever it was left at, just ignored
+     everywhere it would otherwise matter). */
+  const PROGRAM_ROLES = ['financing', 'umbrella'];
+  function renderProgramRoleOptions(selected) {
+    const el = document.getElementById('programRoleOptions');
+    // Create mode, arrived via a list page's "Create" button (lockedRole
+    // set above): don't offer a choice — the role is implied by which page
+    // sent the user here. Show a plain hidden input instead of the radio
+    // picker (so FormData().get('programRole') below still finds it the
+    // same way) plus a static label, and hide the now-redundant help text.
+    if (lockedRole) {
+      el.innerHTML = `
+        <input type="hidden" name="programRole" value="${lockedRole}">
+        <span class="type-tag">${INAPlatform.programRoleLabel(lockedRole)}</span>
+      `;
+      document.getElementById('programRoleHelp').style.display = 'none';
+      updateFundingStageFieldVisibility();
+      return;
+    }
+    el.innerHTML = PROGRAM_ROLES.map((v, i) => `
+      <label class="chk-pill">
+        <input type="radio" name="programRole" value="${v}" ${(selected ? v === selected : i === 0) ? 'checked' : ''}>
+        <span>${INAPlatform.programRoleLabel(v)}</span>
+      </label>
+    `).join('');
+    updateFundingStageFieldVisibility();
+  }
+  function updateFundingStageFieldVisibility() {
+    // Reads the DOM element directly rather than the `form` variable below
+    // (declared later in this script) — this runs at render time, before
+    // that declaration executes.
+    const role = (new FormData(document.getElementById('programForm'))).get('programRole') || 'financing';
+    document.getElementById('fundingStageField').style.display = role === 'umbrella' ? 'none' : '';
+  }
+  renderProgramRoleOptions();
+  document.getElementById('programRoleOptions').addEventListener('change', updateFundingStageFieldVisibility);
+  applyRoleContext(lockedRole || 'umbrella');
+
   /* Declared program types — checkboxes from the same catalog as
      projects.project_type. A Program can have several checked, unlike a
      project's single required type. See supabase/migration_v11_program_types.sql. */
@@ -233,9 +374,12 @@
   }
   renderProgramTemplateOptions('');
 
+  // Submit-button text in edit mode is role-agnostic ("Save Changes"),
+  // unlike create mode's role-specific text — applyRoleContext() above
+  // already set pageTitle/crumbLabel for edit mode (defaulting to the
+  // Initiative wording until the real program loads and calls it again
+  // with the actual role — see init() below).
   if (isEdit) {
-    document.getElementById('pageTitle').innerHTML = '<span data-i18n="prog.form.edit">Edit Program</span>';
-    document.getElementById('crumbLabel').innerHTML = '<span data-i18n="prog.form.edit">Edit Program</span>';
     document.getElementById('pgSubmit').innerHTML = '<span data-i18n="prog.form.save">Save Changes</span>';
   }
 
@@ -352,7 +496,11 @@
       document.getElementById('appUserAvatar').textContent = initials(viewerProfile.full_name);
       document.getElementById('appUserName').textContent = viewerProfile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
-      if (INAPlatform.isAdmin(viewerProfile)) document.getElementById('adminNavLink').style.display = 'inline';
+      const canAdminUsers = INAPlatform.isAdmin(viewerProfile);
+      const canMasterData = INAPlatform.canManageMasterData(viewerProfile);
+      if (canAdminUsers || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
+      if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
+      if (canAdminUsers) document.getElementById('adminUsersMenuItem').style.display = 'flex';
       if (INAPlatform.canManageRoadmaps(viewerProfile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
     } catch (e) { /* non-critical */ }
 
@@ -363,7 +511,7 @@
     // an EXISTING program a user already owns is unaffected — that stays
     // owner-only, handled further down.
     if (!isEdit && !INAPlatform.canManagePrograms(viewerProfile)) {
-      location.href = 'programs.html';
+      location.href = listPageFor(lockedRole);
       return;
     }
 
@@ -372,16 +520,19 @@
       try {
         program = await INAPlatform.getProgram(editId);
       } catch (e) {
-        location.href = 'programs.html';
+        // Role isn't known — the program failed to load at all — so this
+        // falls back to the Initiatives list rather than guessing.
+        location.href = 'initiatives.html';
         return;
       }
       // Editing is owner-only. Anyone else landing on this URL for a
-      // program they don't own gets sent back to the list instead — the
-      // update would be rejected by RLS anyway.
+      // program they don't own gets sent back to its actual list page
+      // instead — the update would be rejected by RLS anyway.
       if (program.user_id !== session.user.id) {
-        location.href = 'programs.html';
+        location.href = listPageFor(program.program_role || 'financing');
         return;
       }
+      applyRoleContext(program.program_role || 'financing');
 
       // See the matching comment in new-project.html — fields still get
       // populated below regardless of the lock outcome.
@@ -397,6 +548,7 @@
       document.getElementById('pgFinancingEntity').value = program.financing_entity || '';
       document.getElementById('pgDesc').value = program.description || '';
       renderOrgTypeOptions(program.organization_type);
+      renderProgramRoleOptions(program.program_role || 'financing');
       renderFundingStageOptions(program.funding_stage || 'financing');
       typesChecked = new Set(program.types || []);
       renderProgramTypeOptions();
@@ -432,6 +584,7 @@
       financingEntity: document.getElementById('pgFinancingEntity').value,
       organizationType: (new FormData(form)).get('orgType') || 'public',
       fundingStage: (new FormData(form)).get('fundingStage') || 'financing',
+      programRole: (new FormData(form)).get('programRole') || 'financing',
       types: Array.from(typesChecked),
       description: document.getElementById('pgDesc').value,
       templateKey: document.getElementById('pgTemplate').value,
@@ -452,7 +605,12 @@
         try { await INAPlatform.releaseEditLock('program', editId); } catch (e) { /* non-critical */ }
       }
 
-      location.href = 'programs.html';
+      // Return to whichever list page actually shows this program now —
+      // financing-programs.html for a financing program, initiatives.html
+      // for an umbrella one — not always the same page, since editing can
+      // change the role (payload.programRole reflects the final saved
+      // value either way, locked or picked).
+      location.href = listPageFor(payload.programRole);
     } catch (err) {
       note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar el programa.' : "Couldn't save the program.");
       submitBtn.disabled = false;

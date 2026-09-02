@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Master Data — INA Platform" data-i18n-es="Master Data — Plataforma INA">Master Data — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Internal directory of contacts, companies, products and public agencies." data-i18n-es="Directorio interno de contactos, empresas, productos y organismos p&uacute;blicos." content="Internal directory of contacts, companies, products and public agencies.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=21">
+<link rel="stylesheet" href="/assets/app.css?v=9">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+        </div>
+      </div>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="md.title">Master Data</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="md.lede">The platform's internal directory — contacts and their current position at a Company or Public Agency, the companies themselves (manufacturers, service providers, financial entities), and a product catalog.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="mdBody" style="display:none; margin-top:24px;">
+
+      <div class="md-tabs" style="display:flex; gap:8px; border-bottom:1px solid var(--paper-line); margin-bottom:24px;">
+        <button type="button" class="md-tab active" data-tab="contacts"><span data-i18n="md.tab.contacts">Contacts</span></button>
+        <button type="button" class="md-tab" data-tab="companies"><span data-i18n="md.tab.companies">Companies</span></button>
+        <button type="button" class="md-tab" data-tab="products"><span data-i18n="md.tab.products">Products</span></button>
+        <button type="button" class="md-tab" data-tab="agencies"><span data-i18n="md.tab.agencies">Public Agencies</span></button>
+      </div>
+
+      <!-- ===== Contacts ===== -->
+      <div class="md-panel" id="panelContacts">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; flex-wrap:wrap;">
+          <h3 style="margin:0;"><span data-i18n="md.contacts.listTitle">Contacts</span></h3>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <span id="cardScanStatus" class="card-scan-status" style="display:none;"></span>
+            <button type="button" class="btn ghost small" id="scanCardBtn"><span data-i18n="md.contacts.scanCard">📇 Upload from business card</span></button>
+            <input type="file" id="cardFileInput" accept="image/*" style="display:none;">
+            <button type="button" class="btn amber small" id="newContactBtn"><span data-i18n="md.contacts.new">+ New Contact</span></button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="risk-table" id="contactsTable">
+            <thead>
+              <tr>
+                <th data-i18n="md.contacts.col.name">Name</th>
+                <th data-i18n="md.contacts.col.position">Position</th>
+                <th data-i18n="md.contacts.col.org">Company / Agency</th>
+                <th data-i18n="md.contacts.col.email">Email</th>
+                <th data-i18n="md.contacts.col.phone">Phone</th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="contactsTableBody"></tbody>
+          </table>
+          <p id="contactsEmpty" style="display:none; color:var(--muted); font-size:13.5px; padding:20px 0;"><span data-i18n="md.contacts.empty">No contacts yet.</span></p>
+        </div>
+      </div>
+
+      <!-- ===== Companies ===== -->
+      <div class="md-panel" id="panelCompanies" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h3 style="margin:0;"><span data-i18n="md.companies.listTitle">Companies</span></h3>
+          <button type="button" class="btn amber small" id="newCompanyBtn"><span data-i18n="md.companies.new">+ New Company</span></button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="risk-table" id="companiesTable">
+            <thead>
+              <tr>
+                <th data-i18n="md.companies.col.name">Name</th>
+                <th data-i18n="md.companies.col.types">Type(s)</th>
+                <th data-i18n="md.companies.col.country">Country</th>
+                <th data-i18n="md.companies.col.website">Website</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="companiesTableBody"></tbody>
+          </table>
+          <p id="companiesEmpty" style="display:none; color:var(--muted); font-size:13.5px; padding:20px 0;"><span data-i18n="md.companies.empty">No companies yet.</span></p>
+        </div>
+      </div>
+
+      <!-- ===== Products ===== -->
+      <div class="md-panel" id="panelProducts" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h3 style="margin:0;"><span data-i18n="md.products.listTitle">Products</span></h3>
+          <button type="button" class="btn amber small" id="newProductBtn"><span data-i18n="md.products.new">+ New Product</span></button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="risk-table" id="productsTable">
+            <thead>
+              <tr>
+                <th data-i18n="md.products.col.name">Name</th>
+                <th data-i18n="md.products.col.company">Company</th>
+                <th data-i18n="md.products.col.category">Category</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+          <p id="productsEmpty" style="display:none; color:var(--muted); font-size:13.5px; padding:20px 0;"><span data-i18n="md.products.empty">No products yet.</span></p>
+        </div>
+      </div>
+
+      <!-- ===== Public Agencies ===== -->
+      <div class="md-panel" id="panelAgencies" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h3 style="margin:0;"><span data-i18n="md.agencies.listTitle">Public Agencies</span></h3>
+          <button type="button" class="btn amber small" id="newAgencyBtn"><span data-i18n="md.agencies.new">+ New Public Agency</span></button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="risk-table" id="agenciesTable">
+            <thead>
+              <tr>
+                <th data-i18n="md.agencies.col.name">Name</th>
+                <th data-i18n="md.agencies.col.jurisdiction">Jurisdiction</th>
+                <th data-i18n="md.agencies.col.country">Country</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="agenciesTableBody"></tbody>
+          </table>
+          <p id="agenciesEmpty" style="display:none; color:var(--muted); font-size:13.5px; padding:20px 0;"><span data-i18n="md.agencies.empty">No public agencies yet.</span></p>
+        </div>
+      </div>
+
+      <!-- ===== Contact form overlay ===== -->
+      <div class="risk-form-overlay" id="contactFormOverlay" style="display:none;">
+        <div class="risk-form-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <h3 style="margin:0;" id="contactFormTitle"><span data-i18n="md.contacts.new">+ New Contact</span></h3>
+            <button type="button" class="btn ghost small" id="closeContactForm">&times;</button>
+          </div>
+          <form id="contactForm">
+            <div class="field"><label for="cFullName"><span data-i18n="md.contacts.f.fullName">Full name</span></label><input id="cFullName" type="text" required></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="field"><label for="cEmail"><span data-i18n="md.contacts.f.email">Email</span></label><input id="cEmail" type="email"></div>
+              <div class="field"><label for="cPhone"><span data-i18n="md.contacts.f.phone">Phone</span></label><input id="cPhone" type="text"></div>
+            </div>
+            <div class="field"><label><span data-i18n="md.contacts.f.affiliation">Current position at</span></label><div class="chk-group" id="cAffiliationOptions"></div></div>
+            <div class="field" id="cCompanyField" style="display:none;">
+              <label for="cCompanySelect"><span data-i18n="md.contacts.f.company">Company</span></label>
+              <select id="cCompanySelect"></select>
+              <div id="cNewCompanyBox" class="new-org-box" style="display:none;">
+                <label class="chk-pill-inline"><input type="checkbox" id="cNewCompanyConfirm" checked> <span data-i18n="md.contacts.newOrg.createCompany">Create this new company</span></label>
+                <input type="text" id="cNewCompanyName" placeholder="">
+                <div class="chk-group" id="cNewCompanyTypesOptions" style="margin-top:8px;"></div>
+              </div>
+            </div>
+            <div class="field" id="cAgencyField" style="display:none;">
+              <label for="cAgencySelect"><span data-i18n="md.contacts.f.agency">Public Agency</span></label>
+              <select id="cAgencySelect"></select>
+              <div id="cNewAgencyBox" class="new-org-box" style="display:none;">
+                <label class="chk-pill-inline"><input type="checkbox" id="cNewAgencyConfirm" checked> <span data-i18n="md.contacts.newOrg.createAgency">Create this new public agency</span></label>
+                <input type="text" id="cNewAgencyName" placeholder="">
+                <div class="chk-group" id="cNewAgencyJurisdictionOptions" style="margin-top:8px;"></div>
+              </div>
+            </div>
+            <div class="field" id="cPositionField" style="display:none;"><label for="cPositionTitle"><span data-i18n="md.contacts.f.position">Position / title</span></label><input id="cPositionTitle" type="text"></div>
+            <div class="field"><label for="cNotes"><span data-i18n="md.contacts.f.notes">Notes</span></label><textarea id="cNotes" rows="3"></textarea></div>
+            <div class="field">
+              <label><span data-i18n="md.contacts.f.card">Business card</span></label>
+              <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <a href="#" id="cCurrentCardLink" target="_blank" rel="noopener" style="display:none;"><span data-i18n="md.contacts.viewCard">View current card</span></a>
+                <span id="cPendingCardName" class="card-pending-name" style="display:none;"></span>
+                <button type="button" class="btn ghost small" id="attachCardBtn"><span data-i18n="md.contacts.attachCard">Attach / replace card image</span></button>
+                <input type="file" id="cardAttachInput" accept="image/*" style="display:none;">
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:20px; align-items:center;">
+              <button type="submit" class="btn amber" id="contactSubmitBtn"><span data-i18n="md.save">Save</span></button>
+              <button type="button" class="btn ghost" id="deleteContactBtn" style="display:none;"><span data-i18n="md.delete">Delete</span></button>
+              <p id="contactFormNote" class="contact-note" style="margin:0;"></p>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ===== Company form overlay ===== -->
+      <div class="risk-form-overlay" id="companyFormOverlay" style="display:none;">
+        <div class="risk-form-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <h3 style="margin:0;" id="companyFormTitle"><span data-i18n="md.companies.new">+ New Company</span></h3>
+            <button type="button" class="btn ghost small" id="closeCompanyForm">&times;</button>
+          </div>
+          <form id="companyForm">
+            <div class="field"><label for="coName"><span data-i18n="md.companies.f.name">Name</span></label><input id="coName" type="text" required></div>
+            <div class="field"><label><span data-i18n="md.companies.f.types">Type(s)</span></label><div class="chk-group" id="coTypesOptions"></div></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="field"><label for="coCountry"><span data-i18n="md.companies.f.country">Country</span></label><input id="coCountry" type="text"></div>
+              <div class="field"><label for="coWebsite"><span data-i18n="md.companies.f.website">Website</span></label><input id="coWebsite" type="text" placeholder="https://"></div>
+            </div>
+            <div class="field"><label for="coNotes"><span data-i18n="md.companies.f.notes">Notes</span></label><textarea id="coNotes" rows="3"></textarea></div>
+            <div style="display:flex; gap:12px; margin-top:20px; align-items:center;">
+              <button type="submit" class="btn amber" id="companySubmitBtn"><span data-i18n="md.save">Save</span></button>
+              <button type="button" class="btn ghost" id="deleteCompanyBtn" style="display:none;"><span data-i18n="md.delete">Delete</span></button>
+              <p id="companyFormNote" class="contact-note" style="margin:0;"></p>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ===== Product form overlay ===== -->
+      <div class="risk-form-overlay" id="productFormOverlay" style="display:none;">
+        <div class="risk-form-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <h3 style="margin:0;" id="productFormTitle"><span data-i18n="md.products.new">+ New Product</span></h3>
+            <button type="button" class="btn ghost small" id="closeProductForm">&times;</button>
+          </div>
+          <form id="productForm">
+            <div class="field"><label for="pName"><span data-i18n="md.products.f.name">Name</span></label><input id="pName" type="text" required></div>
+            <div class="field"><label for="pCompanySelect"><span data-i18n="md.products.f.company">Manufacturer / provider</span></label><select id="pCompanySelect"></select></div>
+            <div class="field"><label for="pCategory"><span data-i18n="md.products.f.category">Category</span></label><input id="pCategory" type="text"></div>
+            <div class="field"><label for="pDescription"><span data-i18n="md.products.f.description">Description</span></label><textarea id="pDescription" rows="3"></textarea></div>
+            <div style="display:flex; gap:12px; margin-top:20px; align-items:center;">
+              <button type="submit" class="btn amber" id="productSubmitBtn"><span data-i18n="md.save">Save</span></button>
+              <button type="button" class="btn ghost" id="deleteProductBtn" style="display:none;"><span data-i18n="md.delete">Delete</span></button>
+              <p id="productFormNote" class="contact-note" style="margin:0;"></p>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ===== Public Agency form overlay ===== -->
+      <div class="risk-form-overlay" id="agencyFormOverlay" style="display:none;">
+        <div class="risk-form-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <h3 style="margin:0;" id="agencyFormTitle"><span data-i18n="md.agencies.new">+ New Public Agency</span></h3>
+            <button type="button" class="btn ghost small" id="closeAgencyForm">&times;</button>
+          </div>
+          <form id="agencyForm">
+            <div class="field"><label for="aName"><span data-i18n="md.agencies.f.name">Name</span></label><input id="aName" type="text" required></div>
+            <div class="field"><label><span data-i18n="md.agencies.f.jurisdiction">Jurisdiction</span></label><div class="chk-group" id="aJurisdictionOptions"></div></div>
+            <div class="field"><label for="aCountry"><span data-i18n="md.agencies.f.country">Country</span></label><input id="aCountry" type="text"></div>
+            <div class="field"><label for="aNotes"><span data-i18n="md.agencies.f.notes">Notes</span></label><textarea id="aNotes" rows="3"></textarea></div>
+            <div style="display:flex; gap:12px; margin-top:20px; align-items:center;">
+              <button type="submit" class="btn amber" id="agencySubmitBtn"><span data-i18n="md.save">Save</span></button>
+              <button type="button" class="btn ghost" id="deleteAgencyBtn" style="display:none;"><span data-i18n="md.delete">Delete</span></button>
+              <p id="agencyFormNote" class="contact-note" style="margin:0;"></p>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=48"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=54"></script>
+<script src="/assets/script.js?v=14"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  let lang = INAPlatform.currentLang();
+  let companies = [];
+  let agencies = [];
+  let contacts = [];
+  let products = [];
+  let editingContactId = null;
+  let editingCompanyId = null;
+  let editingProductId = null;
+  let editingAgencyId = null;
+
+  /* ---------- Tabs ---------- */
+  function switchTab(tab) {
+    document.querySelectorAll('.md-tab').forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tab));
+    document.getElementById('panelContacts').style.display = tab === 'contacts' ? 'block' : 'none';
+    document.getElementById('panelCompanies').style.display = tab === 'companies' ? 'block' : 'none';
+    document.getElementById('panelProducts').style.display = tab === 'products' ? 'block' : 'none';
+    document.getElementById('panelAgencies').style.display = tab === 'agencies' ? 'block' : 'none';
+  }
+  document.querySelectorAll('.md-tab').forEach((btn) => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  /* ---------- Shared select/option helpers ---------- */
+  function populateSelectEl(selectEl, options, valueKey) {
+    selectEl.innerHTML = options.map((opt) => `<option value="${opt[valueKey || 'value']}">${opt[lang] || opt.en}</option>`).join('');
+  }
+
+  function populateCompanySelect(selectEl, selectedId) {
+    const blank = lang === 'es' ? '— Ninguna —' : '— None —';
+    selectEl.innerHTML = `<option value="">${blank}</option>` + companies.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
+    selectEl.value = selectedId || '';
+  }
+
+  function populateAgencySelect(selectEl, selectedId) {
+    const blank = lang === 'es' ? '— Ninguno —' : '— None —';
+    selectEl.innerHTML = `<option value="">${blank}</option>` + agencies.map((a) => `<option value="${a.id}">${a.name}</option>`).join('');
+    selectEl.value = selectedId || '';
+  }
+
+  const AFFILIATION_OPTIONS = [
+    { value: 'none', en: 'None', es: 'Ninguno' },
+    { value: 'company', en: 'Company', es: 'Empresa' },
+    { value: 'agency', en: 'Public Agency', es: 'Organismo Público' },
+  ];
+
+  function renderAffiliationOptions(selected) {
+    const el = document.getElementById('cAffiliationOptions');
+    el.innerHTML = AFFILIATION_OPTIONS.map((v, i) => `
+      <label class="chk-pill">
+        <input type="radio" name="cAffiliation" value="${v.value}" ${(selected ? v.value === selected : i === 0) ? 'checked' : ''}>
+        <span>${v[lang] || v.en}</span>
+      </label>`).join('');
+    el.querySelectorAll('input').forEach((input) => input.addEventListener('change', updateAffiliationFieldVisibility));
+    updateAffiliationFieldVisibility();
+  }
+
+  function updateAffiliationFieldVisibility() {
+    const checked = document.querySelector('input[name="cAffiliation"]:checked');
+    const val = checked ? checked.value : 'none';
+    document.getElementById('cCompanyField').style.display = val === 'company' ? '' : 'none';
+    document.getElementById('cAgencyField').style.display = val === 'agency' ? '' : 'none';
+    document.getElementById('cPositionField').style.display = val === 'none' ? 'none' : '';
+    // The "create new company/agency" suggestion only makes sense for
+    // whichever affiliation is currently selected — hide it for the other
+    // one (or both, if switched back to "None"). See prefillFromCardExtraction().
+    if (val !== 'company') hideNewOrgBox('company');
+    if (val !== 'agency') hideNewOrgBox('agency');
+  }
+
+  /* ---------- Business card upload/extraction (see migration_v45) ---------- */
+  let pendingCardFile = null;
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result || '';
+        const comma = result.indexOf(',');
+        resolve(comma >= 0 ? result.slice(comma + 1) : result);
+      };
+      reader.onerror = () => reject(new Error('Could not read the image file.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Case-insensitive exact match first, then a loose substring match (e.g.
+  // card says "BID" but Master Data has "Banco Interamericano de
+  // Desarrollo (BID)") — best-effort, the user reviews the result either way.
+  function findOrgMatch(list, name) {
+    if (!name) return null;
+    const norm = (s) => (s || '').trim().toLowerCase();
+    const target = norm(name);
+    if (!target) return null;
+    return list.find((o) => norm(o.name) === target)
+      || list.find((o) => norm(o.name).includes(target) || target.includes(norm(o.name)))
+      || null;
+  }
+
+  function renderNewCompanyTypeOptions(selected) {
+    const el = document.getElementById('cNewCompanyTypesOptions');
+    const set = new Set(selected || []);
+    el.innerHTML = INAPlatform.COMPANY_TYPES.map((t) => `
+      <label class="chk-pill">
+        <input type="checkbox" value="${t.value}" ${set.has(t.value) ? 'checked' : ''}>
+        <span>${t[lang] || t.en}</span>
+      </label>`).join('');
+  }
+
+  function renderNewAgencyJurisdictionOptions(selected) {
+    const el = document.getElementById('cNewAgencyJurisdictionOptions');
+    el.innerHTML = INAPlatform.PUBLIC_AGENCY_JURISDICTIONS.map((v, i) => `
+      <label class="chk-pill">
+        <input type="radio" name="cNewAgencyJurisdiction" value="${v.value}" ${(selected ? v.value === selected : i === 0) ? 'checked' : ''}>
+        <span>${v[lang] || v.en}</span>
+      </label>`).join('');
+  }
+
+  function showNewOrgBox(kind, name) {
+    if (kind === 'company') {
+      document.getElementById('cNewCompanyBox').style.display = 'block';
+      document.getElementById('cNewCompanyConfirm').checked = true;
+      document.getElementById('cNewCompanyName').value = name;
+      renderNewCompanyTypeOptions([]);
+    } else {
+      document.getElementById('cNewAgencyBox').style.display = 'block';
+      document.getElementById('cNewAgencyConfirm').checked = true;
+      document.getElementById('cNewAgencyName').value = name;
+      renderNewAgencyJurisdictionOptions('national');
+    }
+  }
+
+  function hideNewOrgBox(kind) {
+    const el = document.getElementById(kind === 'company' ? 'cNewCompanyBox' : 'cNewAgencyBox');
+    if (el) el.style.display = 'none';
+  }
+
+  // Pre-fills the (already-open, blank) Contact form with what
+  // api/extract-business-card.js read off the card photo. If the detected
+  // company/agency isn't found in Master Data yet, shows the "create new"
+  // suggestion box instead of silently creating anything — Pablo reviews
+  // and confirms (or edits/cancels) before Save actually writes it.
+  function prefillFromCardExtraction(result, file) {
+    pendingCardFile = file;
+    document.getElementById('cPendingCardName').style.display = 'inline';
+    document.getElementById('cPendingCardName').textContent = file.name;
+    document.getElementById('cFullName').value = result.full_name || '';
+    document.getElementById('cEmail').value = result.email || '';
+    document.getElementById('cPhone').value = result.phone || '';
+    document.getElementById('cPositionTitle').value = result.position_title || '';
+
+    const orgName = result.org_name;
+    if (!orgName) { renderAffiliationOptions('none'); return; }
+
+    if (result.is_public_agency) {
+      const match = findOrgMatch(agencies, orgName);
+      renderAffiliationOptions('agency');
+      if (match) {
+        populateAgencySelect(document.getElementById('cAgencySelect'), match.id);
+      } else {
+        populateAgencySelect(document.getElementById('cAgencySelect'));
+        showNewOrgBox('agency', orgName);
+      }
+    } else {
+      const match = findOrgMatch(companies, orgName);
+      renderAffiliationOptions('company');
+      if (match) {
+        populateCompanySelect(document.getElementById('cCompanySelect'), match.id);
+      } else {
+        populateCompanySelect(document.getElementById('cCompanySelect'));
+        showNewOrgBox('company', orgName);
+      }
+    }
+  }
+
+  document.getElementById('scanCardBtn').addEventListener('click', () => document.getElementById('cardFileInput').click());
+  document.getElementById('cardFileInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const statusEl = document.getElementById('cardScanStatus');
+    statusEl.style.display = 'inline';
+    statusEl.textContent = lang === 'es' ? 'Analizando tarjeta…' : 'Reading card…';
+    try {
+      const base64 = await fileToBase64(file);
+      const result = await INAPlatform.extractBusinessCard(base64, file.type || 'image/jpeg');
+      openContactForm(null);
+      prefillFromCardExtraction(result, file);
+    } catch (err) {
+      alert(err.message || (lang === 'es' ? 'No se pudo leer la tarjeta.' : "Couldn't read the card."));
+    } finally {
+      statusEl.style.display = 'none';
+    }
+  });
+
+  document.getElementById('attachCardBtn').addEventListener('click', () => document.getElementById('cardAttachInput').click());
+  document.getElementById('cardAttachInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    pendingCardFile = file;
+    document.getElementById('cPendingCardName').style.display = 'inline';
+    document.getElementById('cPendingCardName').textContent = file.name;
+  });
+
+  document.getElementById('cCompanySelect').addEventListener('change', (e) => {
+    if (e.target.value) hideNewOrgBox('company');
+  });
+  document.getElementById('cAgencySelect').addEventListener('change', (e) => {
+    if (e.target.value) hideNewOrgBox('agency');
+  });
+
+  function renderCompanyTypeOptions(selected) {
+    const el = document.getElementById('coTypesOptions');
+    const set = new Set(selected || []);
+    el.innerHTML = INAPlatform.COMPANY_TYPES.map((t) => `
+      <label class="chk-pill">
+        <input type="checkbox" value="${t.value}" ${set.has(t.value) ? 'checked' : ''}>
+        <span>${t[lang] || t.en}</span>
+      </label>`).join('');
+  }
+
+  function renderJurisdictionOptions(selected) {
+    const el = document.getElementById('aJurisdictionOptions');
+    el.innerHTML = INAPlatform.PUBLIC_AGENCY_JURISDICTIONS.map((v, i) => `
+      <label class="chk-pill">
+        <input type="radio" name="aJurisdiction" value="${v.value}" ${(selected ? v.value === selected : i === 0) ? 'checked' : ''}>
+        <span>${v[lang] || v.en}</span>
+      </label>`).join('');
+  }
+
+  /* ---------- Contacts ---------- */
+  function renderContactsTable() {
+    const tbody = document.getElementById('contactsTableBody');
+    const empty = document.getElementById('contactsEmpty');
+    const wrap = document.getElementById('contactsTable');
+    if (!contacts.length) {
+      wrap.style.display = 'none'; empty.style.display = 'block'; tbody.innerHTML = ''; return;
+    }
+    wrap.style.display = 'table'; empty.style.display = 'none';
+    tbody.innerHTML = contacts.map((c) => {
+      const org = (c.companies && c.companies.name) || (c.public_agencies && c.public_agencies.name) || '—';
+      const cardTitle = lang === 'es' ? 'Ver tarjeta' : 'View card';
+      return `
+        <tr data-id="${c.id}" class="risk-row">
+          <td>${c.full_name}</td>
+          <td>${c.position_title || '—'}</td>
+          <td>${org}</td>
+          <td>${c.email || '—'}</td>
+          <td>${c.phone || '—'}</td>
+          <td>${c.business_card_path ? `<button type="button" class="btn ghost small view-card-btn" data-id="${c.id}" title="${cardTitle}">📇</button>` : ''}</td>
+          <td><button type="button" class="btn ghost small edit-contact-btn" data-id="${c.id}"><span data-i18n="risk.edit">Edit</span></button></td>
+        </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.edit-contact-btn').forEach((btn) => btn.addEventListener('click', () => openContactForm(btn.dataset.id)));
+    tbody.querySelectorAll('.view-card-btn').forEach((btn) => btn.addEventListener('click', async () => {
+      const c = contacts.find((x) => x.id === btn.dataset.id);
+      if (!c || !c.business_card_path) return;
+      try {
+        const url = await INAPlatform.getContactBusinessCardUrl(c.business_card_path);
+        if (url) window.open(url, '_blank', 'noopener');
+      } catch (err) {
+        alert(err.message || (lang === 'es' ? 'No se pudo abrir la tarjeta.' : "Couldn't open the card."));
+      }
+    }));
+  }
+
+  function openContactForm(id) {
+    editingContactId = id || null;
+    const form = document.getElementById('contactForm');
+    form.reset();
+    document.getElementById('contactFormNote').textContent = '';
+    document.getElementById('deleteContactBtn').style.display = editingContactId ? 'inline-block' : 'none';
+    document.getElementById('contactFormTitle').innerHTML = editingContactId
+      ? `<span data-i18n="md.contacts.edit">Edit Contact</span>` : `<span data-i18n="md.contacts.new">+ New Contact</span>`;
+    populateCompanySelect(document.getElementById('cCompanySelect'));
+    populateAgencySelect(document.getElementById('cAgencySelect'));
+    pendingCardFile = null;
+    hideNewOrgBox('company');
+    hideNewOrgBox('agency');
+    document.getElementById('cPendingCardName').style.display = 'none';
+    const cardLink = document.getElementById('cCurrentCardLink');
+    cardLink.style.display = 'none';
+    if (editingContactId) {
+      const c = contacts.find((x) => x.id === editingContactId);
+      if (c) {
+        document.getElementById('cFullName').value = c.full_name || '';
+        document.getElementById('cEmail').value = c.email || '';
+        document.getElementById('cPhone').value = c.phone || '';
+        document.getElementById('cPositionTitle').value = c.position_title || '';
+        const affiliation = c.company_id ? 'company' : (c.public_agency_id ? 'agency' : 'none');
+        renderAffiliationOptions(affiliation);
+        if (c.company_id) populateCompanySelect(document.getElementById('cCompanySelect'), c.company_id);
+        if (c.public_agency_id) populateAgencySelect(document.getElementById('cAgencySelect'), c.public_agency_id);
+        document.getElementById('cNotes').value = c.notes || '';
+        if (c.business_card_path) {
+          INAPlatform.getContactBusinessCardUrl(c.business_card_path).then((url) => {
+            if (url) { cardLink.href = url; cardLink.style.display = 'inline'; }
+          }).catch(() => {});
+        }
+      }
+    } else {
+      renderAffiliationOptions('none');
+    }
+    document.getElementById('contactFormOverlay').style.display = 'flex';
+  }
+
+  function closeContactForm() {
+    document.getElementById('contactFormOverlay').style.display = 'none';
+    editingContactId = null;
+  }
+
+  document.getElementById('newContactBtn').addEventListener('click', () => openContactForm(null));
+  document.getElementById('closeContactForm').addEventListener('click', closeContactForm);
+
+  document.getElementById('contactForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('contactFormNote');
+    note.textContent = '';
+    const submitBtn = document.getElementById('contactSubmitBtn');
+    submitBtn.disabled = true;
+    try {
+      const affiliation = (document.querySelector('input[name="cAffiliation"]:checked') || {}).value || 'none';
+      let companyId = affiliation === 'company' ? (document.getElementById('cCompanySelect').value || null) : null;
+      let publicAgencyId = affiliation === 'agency' ? (document.getElementById('cAgencySelect').value || null) : null;
+
+      // "Create new company/agency" suggestion — see prefillFromCardExtraction().
+      // Only acted on if the box is visible AND still confirmed; the user
+      // can uncheck it (or just pick an existing one from the select
+      // instead) to skip creating anything.
+      if (affiliation === 'company' && document.getElementById('cNewCompanyBox').style.display !== 'none'
+          && document.getElementById('cNewCompanyConfirm').checked) {
+        const newName = document.getElementById('cNewCompanyName').value.trim();
+        if (newName) {
+          const types = Array.from(document.querySelectorAll('#cNewCompanyTypesOptions input[type="checkbox"]:checked')).map((i) => i.value);
+          const newCompany = await INAPlatform.createCompany({ name: newName, types });
+          companyId = newCompany.id;
+          await loadCompanies();
+        }
+      }
+      if (affiliation === 'agency' && document.getElementById('cNewAgencyBox').style.display !== 'none'
+          && document.getElementById('cNewAgencyConfirm').checked) {
+        const newName = document.getElementById('cNewAgencyName').value.trim();
+        if (newName) {
+          const jurisdiction = (document.querySelector('input[name="cNewAgencyJurisdiction"]:checked') || {}).value || 'national';
+          const newAgency = await INAPlatform.createPublicAgency({ name: newName, jurisdiction });
+          publicAgencyId = newAgency.id;
+          await loadAgencies();
+        }
+      }
+
+      const payload = {
+        fullName: document.getElementById('cFullName').value.trim(),
+        email: document.getElementById('cEmail').value.trim(),
+        phone: document.getElementById('cPhone').value.trim(),
+        positionTitle: affiliation === 'none' ? '' : document.getElementById('cPositionTitle').value.trim(),
+        companyId,
+        publicAgencyId,
+        notes: document.getElementById('cNotes').value.trim(),
+      };
+      const saved = editingContactId
+        ? await INAPlatform.updateContact(editingContactId, payload)
+        : await INAPlatform.createContact(payload);
+
+      let cardUploadFailed = false;
+      if (pendingCardFile) {
+        try {
+          await INAPlatform.uploadContactBusinessCard(saved.id, pendingCardFile);
+        } catch (cardErr) {
+          // The contact itself is already saved at this point — a failed
+          // card upload shouldn't be reported as "couldn't save the
+          // contact" (misleading), but the form is about to close so a
+          // silent `note` update wouldn't be seen — alert() instead.
+          cardUploadFailed = true;
+        }
+      }
+
+      closeContactForm();
+      await loadContacts();
+      if (cardUploadFailed) {
+        alert(lang === 'es'
+          ? 'El contacto se guardó, pero no se pudo subir la imagen de la tarjeta.'
+          : 'The contact was saved, but the card image upload failed.');
+      }
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar el contacto.' : "Couldn't save the contact.");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('deleteContactBtn').addEventListener('click', async () => {
+    if (!editingContactId) return;
+    const ok = confirm(lang === 'es' ? '¿Eliminar este contacto?' : 'Delete this contact?');
+    if (!ok) return;
+    try {
+      await INAPlatform.deleteContact(editingContactId);
+      closeContactForm();
+      await loadContacts();
+    } catch (err) {
+      document.getElementById('contactFormNote').textContent = err.message || (lang === 'es' ? 'No se pudo eliminar.' : "Couldn't delete.");
+    }
+  });
+
+  async function loadContacts() {
+    contacts = await INAPlatform.listContacts();
+    renderContactsTable();
+  }
+
+  /* ---------- Companies ---------- */
+  function renderCompaniesTable() {
+    const tbody = document.getElementById('companiesTableBody');
+    const empty = document.getElementById('companiesEmpty');
+    const wrap = document.getElementById('companiesTable');
+    if (!companies.length) {
+      wrap.style.display = 'none'; empty.style.display = 'block'; tbody.innerHTML = ''; return;
+    }
+    wrap.style.display = 'table'; empty.style.display = 'none';
+    tbody.innerHTML = companies.map((c) => `
+      <tr data-id="${c.id}" class="risk-row">
+        <td>${c.name}</td>
+        <td>${(c.types || []).map((t) => `<span class="type-tag">${INAPlatform.companyTypeLabel(t)}</span>`).join(' ') || '—'}</td>
+        <td>${c.country || '—'}</td>
+        <td>${c.website ? `<a href="${c.website}" target="_blank" rel="noopener">${c.website}</a>` : '—'}</td>
+        <td><button type="button" class="btn ghost small edit-company-btn" data-id="${c.id}"><span data-i18n="risk.edit">Edit</span></button></td>
+      </tr>`).join('');
+    tbody.querySelectorAll('.edit-company-btn').forEach((btn) => btn.addEventListener('click', () => openCompanyForm(btn.dataset.id)));
+  }
+
+  function openCompanyForm(id) {
+    editingCompanyId = id || null;
+    const form = document.getElementById('companyForm');
+    form.reset();
+    document.getElementById('companyFormNote').textContent = '';
+    document.getElementById('deleteCompanyBtn').style.display = editingCompanyId ? 'inline-block' : 'none';
+    document.getElementById('companyFormTitle').innerHTML = editingCompanyId
+      ? `<span data-i18n="md.companies.edit">Edit Company</span>` : `<span data-i18n="md.companies.new">+ New Company</span>`;
+    if (editingCompanyId) {
+      const c = companies.find((x) => x.id === editingCompanyId);
+      if (c) {
+        document.getElementById('coName').value = c.name || '';
+        document.getElementById('coCountry').value = c.country || '';
+        document.getElementById('coWebsite').value = c.website || '';
+        document.getElementById('coNotes').value = c.notes || '';
+        renderCompanyTypeOptions(c.types || []);
+      }
+    } else {
+      renderCompanyTypeOptions([]);
+    }
+    document.getElementById('companyFormOverlay').style.display = 'flex';
+  }
+
+  function closeCompanyForm() {
+    document.getElementById('companyFormOverlay').style.display = 'none';
+    editingCompanyId = null;
+  }
+
+  document.getElementById('newCompanyBtn').addEventListener('click', () => openCompanyForm(null));
+  document.getElementById('closeCompanyForm').addEventListener('click', closeCompanyForm);
+
+  document.getElementById('companyForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('companyFormNote');
+    note.textContent = '';
+    const submitBtn = document.getElementById('companySubmitBtn');
+    submitBtn.disabled = true;
+    const types = Array.from(document.querySelectorAll('#coTypesOptions input[type="checkbox"]:checked')).map((i) => i.value);
+    const payload = {
+      name: document.getElementById('coName').value.trim(),
+      types,
+      country: document.getElementById('coCountry').value.trim(),
+      website: document.getElementById('coWebsite').value.trim(),
+      notes: document.getElementById('coNotes').value.trim(),
+    };
+    try {
+      if (editingCompanyId) await INAPlatform.updateCompany(editingCompanyId, payload);
+      else await INAPlatform.createCompany(payload);
+      closeCompanyForm();
+      await loadCompanies();
+      // Company names/tags are embedded in Contacts/Products — refresh those too.
+      await Promise.all([loadContacts(), loadProducts()]);
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar la empresa.' : "Couldn't save the company.");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('deleteCompanyBtn').addEventListener('click', async () => {
+    if (!editingCompanyId) return;
+    const ok = confirm(lang === 'es' ? '¿Eliminar esta empresa?' : 'Delete this company?');
+    if (!ok) return;
+    try {
+      await INAPlatform.deleteCompany(editingCompanyId);
+      closeCompanyForm();
+      await loadCompanies();
+      await Promise.all([loadContacts(), loadProducts()]);
+    } catch (err) {
+      document.getElementById('companyFormNote').textContent = err.message || (lang === 'es' ? 'No se pudo eliminar.' : "Couldn't delete.");
+    }
+  });
+
+  async function loadCompanies() {
+    companies = await INAPlatform.listCompanies();
+    renderCompaniesTable();
+  }
+
+  /* ---------- Products ---------- */
+  function renderProductsTable() {
+    const tbody = document.getElementById('productsTableBody');
+    const empty = document.getElementById('productsEmpty');
+    const wrap = document.getElementById('productsTable');
+    if (!products.length) {
+      wrap.style.display = 'none'; empty.style.display = 'block'; tbody.innerHTML = ''; return;
+    }
+    wrap.style.display = 'table'; empty.style.display = 'none';
+    tbody.innerHTML = products.map((p) => `
+      <tr data-id="${p.id}" class="risk-row">
+        <td>${p.name}</td>
+        <td>${(p.companies && p.companies.name) || '—'}</td>
+        <td>${p.category || '—'}</td>
+        <td><button type="button" class="btn ghost small edit-product-btn" data-id="${p.id}"><span data-i18n="risk.edit">Edit</span></button></td>
+      </tr>`).join('');
+    tbody.querySelectorAll('.edit-product-btn').forEach((btn) => btn.addEventListener('click', () => openProductForm(btn.dataset.id)));
+  }
+
+  function openProductForm(id) {
+    editingProductId = id || null;
+    const form = document.getElementById('productForm');
+    form.reset();
+    document.getElementById('productFormNote').textContent = '';
+    document.getElementById('deleteProductBtn').style.display = editingProductId ? 'inline-block' : 'none';
+    document.getElementById('productFormTitle').innerHTML = editingProductId
+      ? `<span data-i18n="md.products.edit">Edit Product</span>` : `<span data-i18n="md.products.new">+ New Product</span>`;
+    populateCompanySelect(document.getElementById('pCompanySelect'));
+    if (editingProductId) {
+      const p = products.find((x) => x.id === editingProductId);
+      if (p) {
+        document.getElementById('pName').value = p.name || '';
+        document.getElementById('pCategory').value = p.category || '';
+        document.getElementById('pDescription').value = p.description || '';
+        populateCompanySelect(document.getElementById('pCompanySelect'), p.company_id);
+      }
+    }
+    document.getElementById('productFormOverlay').style.display = 'flex';
+  }
+
+  function closeProductForm() {
+    document.getElementById('productFormOverlay').style.display = 'none';
+    editingProductId = null;
+  }
+
+  document.getElementById('newProductBtn').addEventListener('click', () => openProductForm(null));
+  document.getElementById('closeProductForm').addEventListener('click', closeProductForm);
+
+  document.getElementById('productForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('productFormNote');
+    note.textContent = '';
+    const submitBtn = document.getElementById('productSubmitBtn');
+    submitBtn.disabled = true;
+    const payload = {
+      name: document.getElementById('pName').value.trim(),
+      companyId: document.getElementById('pCompanySelect').value || null,
+      category: document.getElementById('pCategory').value.trim(),
+      description: document.getElementById('pDescription').value.trim(),
+    };
+    try {
+      if (editingProductId) await INAPlatform.updateProduct(editingProductId, payload);
+      else await INAPlatform.createProduct(payload);
+      closeProductForm();
+      await loadProducts();
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar el producto.' : "Couldn't save the product.");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('deleteProductBtn').addEventListener('click', async () => {
+    if (!editingProductId) return;
+    const ok = confirm(lang === 'es' ? '¿Eliminar este producto?' : 'Delete this product?');
+    if (!ok) return;
+    try {
+      await INAPlatform.deleteProduct(editingProductId);
+      closeProductForm();
+      await loadProducts();
+    } catch (err) {
+      document.getElementById('productFormNote').textContent = err.message || (lang === 'es' ? 'No se pudo eliminar.' : "Couldn't delete.");
+    }
+  });
+
+  async function loadProducts() {
+    products = await INAPlatform.listProducts();
+    renderProductsTable();
+  }
+
+  /* ---------- Public Agencies ---------- */
+  function renderAgenciesTable() {
+    const tbody = document.getElementById('agenciesTableBody');
+    const empty = document.getElementById('agenciesEmpty');
+    const wrap = document.getElementById('agenciesTable');
+    if (!agencies.length) {
+      wrap.style.display = 'none'; empty.style.display = 'block'; tbody.innerHTML = ''; return;
+    }
+    wrap.style.display = 'table'; empty.style.display = 'none';
+    tbody.innerHTML = agencies.map((a) => `
+      <tr data-id="${a.id}" class="risk-row">
+        <td>${a.name}</td>
+        <td>${INAPlatform.publicAgencyJurisdictionLabel(a.jurisdiction)}</td>
+        <td>${a.country || '—'}</td>
+        <td><button type="button" class="btn ghost small edit-agency-btn" data-id="${a.id}"><span data-i18n="risk.edit">Edit</span></button></td>
+      </tr>`).join('');
+    tbody.querySelectorAll('.edit-agency-btn').forEach((btn) => btn.addEventListener('click', () => openAgencyForm(btn.dataset.id)));
+  }
+
+  function openAgencyForm(id) {
+    editingAgencyId = id || null;
+    const form = document.getElementById('agencyForm');
+    form.reset();
+    document.getElementById('agencyFormNote').textContent = '';
+    document.getElementById('deleteAgencyBtn').style.display = editingAgencyId ? 'inline-block' : 'none';
+    document.getElementById('agencyFormTitle').innerHTML = editingAgencyId
+      ? `<span data-i18n="md.agencies.edit">Edit Public Agency</span>` : `<span data-i18n="md.agencies.new">+ New Public Agency</span>`;
+    if (editingAgencyId) {
+      const a = agencies.find((x) => x.id === editingAgencyId);
+      if (a) {
+        document.getElementById('aName').value = a.name || '';
+        document.getElementById('aCountry').value = a.country || '';
+        document.getElementById('aNotes').value = a.notes || '';
+        renderJurisdictionOptions(a.jurisdiction || 'national');
+      }
+    } else {
+      document.getElementById('aCountry').value = 'Argentina';
+      renderJurisdictionOptions('national');
+    }
+    document.getElementById('agencyFormOverlay').style.display = 'flex';
+  }
+
+  function closeAgencyForm() {
+    document.getElementById('agencyFormOverlay').style.display = 'none';
+    editingAgencyId = null;
+  }
+
+  document.getElementById('newAgencyBtn').addEventListener('click', () => openAgencyForm(null));
+  document.getElementById('closeAgencyForm').addEventListener('click', closeAgencyForm);
+
+  document.getElementById('agencyForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('agencyFormNote');
+    note.textContent = '';
+    const submitBtn = document.getElementById('agencySubmitBtn');
+    submitBtn.disabled = true;
+    const jurisdiction = (document.querySelector('input[name="aJurisdiction"]:checked') || {}).value || 'national';
+    const payload = {
+      name: document.getElementById('aName').value.trim(),
+      jurisdiction,
+      country: document.getElementById('aCountry').value.trim(),
+      notes: document.getElementById('aNotes').value.trim(),
+    };
+    try {
+      if (editingAgencyId) await INAPlatform.updatePublicAgency(editingAgencyId, payload);
+      else await INAPlatform.createPublicAgency(payload);
+      closeAgencyForm();
+      await loadAgencies();
+      await loadContacts();
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar el organismo.' : "Couldn't save the agency.");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('deleteAgencyBtn').addEventListener('click', async () => {
+    if (!editingAgencyId) return;
+    const ok = confirm(lang === 'es' ? '¿Eliminar este organismo?' : 'Delete this public agency?');
+    if (!ok) return;
+    try {
+      await INAPlatform.deletePublicAgency(editingAgencyId);
+      closeAgencyForm();
+      await loadAgencies();
+      await loadContacts();
+    } catch (err) {
+      document.getElementById('agencyFormNote').textContent = err.message || (lang === 'es' ? 'No se pudo eliminar.' : "Couldn't delete.");
+    }
+  });
+
+  async function loadAgencies() {
+    agencies = await INAPlatform.listPublicAgencies();
+    renderAgenciesTable();
+  }
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setTimeout(() => {
+        lang = INAPlatform.currentLang();
+        renderContactsTable();
+        renderCompaniesTable();
+        renderProductsTable();
+        renderAgenciesTable();
+      }, 0);
+    });
+  });
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    let profile = null;
+    try {
+      profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      const canAdminUsers = INAPlatform.isAdmin(profile);
+      const canMasterData = INAPlatform.canManageMasterData(profile);
+      if (canAdminUsers || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
+      if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
+      if (canAdminUsers) document.getElementById('adminUsersMenuItem').style.display = 'flex';
+      if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    // Advisor/admin only — see migration_v44_master_data.sql. No read-only
+    // carve-out for standard users (unlike Risks/Roadmaps): this catalog
+    // isn't scoped to a project they submitted.
+    if (!profile || !INAPlatform.canManageMasterData(profile)) {
+      location.href = 'dashboard.html';
+      return;
+    }
+
+    await Promise.all([loadCompanies(), loadAgencies(), loadProducts(), loadContacts()]);
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('mdBody').style.display = 'block';
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

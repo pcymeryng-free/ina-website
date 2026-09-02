@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Financing Programs — INA Platform" data-i18n-es="Programas de Financiación — Plataforma INA">Financing Programs — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Real funding sources a project can apply to — FSU, BID, CAF, USTDA and similar." data-i18n-es="Fuentes reales de financiamiento a las que un proyecto puede aplicar — FSU, BID, CAF, USTDA y similares." content="Real funding sources a project can apply to — FSU, BID, CAF, USTDA and similar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=21">
+<link rel="stylesheet" href="/assets/app.css?v=9">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="financing-programs.html" class="active"><span data-i18n="progfin.nav">Financing</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+        </div>
+      </div>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="platform-header reveal">
+      <div>
+        <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+        <h1 class="h-section" style="margin-top:14px;"><span data-i18n="progfin.title">Financing Programs</span></h1>
+        <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="progfin.lede">A Financing Program is a real funding source a project can apply to — FSU, BID, CAF, USTDA and similar.</span></p>
+      </div>
+      <a href="new-program.html?role=financing" class="btn amber" id="createProgramBtn" style="display:none;"><span data-i18n="progfin.form.create">Create Financing Program</span></a>
+    </div>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="programsBody" style="display:none; margin-top:24px;">
+      <div id="programList" style="display:flex; flex-direction:column; gap:14px;"></div>
+
+      <div class="empty-state" id="emptyState" style="display:none; margin-top:18px;">
+        <div class="ei"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.5"/></svg></div>
+        <p><span data-i18n="progfin.empty">No financing programs yet — create one above, or leave the financing pickers blank on individual projects.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=48"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=54"></script>
+<script src="/assets/script.js?v=14"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const newLang = btn.getAttribute('data-lang');
+      document.documentElement.setAttribute('lang', newLang);
+      lang = newLang;
+      if (allPrograms.length) renderList();
+    });
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  // NOT a const — see the matching comment in programs.html. Same
+  // stale-lang-capture fix, needed here for the same reason (this page also
+  // builds its list dynamically in plain JS, no [data-i18n] on any of it).
+  let lang = INAPlatform.currentLang();
+
+  let allPrograms = [];
+  let allProjects = [];
+  let currentUserId = null;
+  let currentIsAdmin = false;
+  // programId -> Set of project ids. For a financing program this comes
+  // almost entirely from project_programs (a project "applies to" FSU/BID/
+  // etc.) — see supabase/migration_v21_program_funding_stage_and_applications.sql
+  // — but the umbrella program_id link is still merged in too, as a
+  // defensive fallback for any legacy row that predates that table.
+  let programProjectIds = new Map();
+
+  function projectCount(programId) {
+    return (programProjectIds.get(programId) || new Set()).size;
+  }
+
+  /* Same rationale as programs.html's programTypes() — prefer the owner's
+     declared list (pg.types), falling back to deriving it from member
+     projects for older programs saved before that field existed. */
+  function programTypes(pg) {
+    if (pg.types && pg.types.length) return pg.types;
+    const types = allProjects
+      .filter((p) => p.program_id === pg.id)
+      .map((p) => p.project_type);
+    return Array.from(new Set(types));
+  }
+
+  function renderList() {
+    const list = document.getElementById('programList');
+    list.innerHTML = '';
+    document.getElementById('emptyState').style.display = allPrograms.length ? 'none' : 'block';
+
+    allPrograms.forEach((pg) => {
+      const count = projectCount(pg.id);
+      const countLabel = lang === 'es'
+        ? `${count} ${count === 1 ? 'proyecto' : 'proyectos'}`
+        : `${count} ${count === 1 ? 'project' : 'projects'}`;
+      const isOwner = pg.user_id === currentUserId;
+      const canDelete = isOwner || currentIsAdmin;
+      const types = programTypes(pg);
+      const typeTags = types
+        .map((t) => `<span class="type-tag">${INAPlatform.projectTypeLabel(t)}</span>`)
+        .join(' ');
+
+      // Every program on this page is a real financing source (see the
+      // isFinancingProgram() filter in init() below), so the badge is
+      // always the funding-stage one — never the umbrella role badge that
+      // programs.html shows.
+      const row = document.createElement('div');
+      row.className = 'info-block';
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div style="min-width:0;">
+            <h4 style="margin-bottom:4px;">${pg.name}</h4>
+            <p style="font-size:13px; color:var(--muted);">${pg.organization} <span class="type-tag" style="margin-left:4px;">${INAPlatform.programOrgTypeLabel(pg.organization_type)}</span> <span class="type-tag funding-stage-tag funding-stage-${pg.funding_stage || 'financing'}" style="margin-left:4px;">${INAPlatform.programFundingStageLabel(pg.funding_stage || 'financing')}</span>${pg.financing_entity ? ` <span class="type-tag financing-entity-tag${INAPlatform.isFsuFinancingEntity(pg.financing_entity) ? ' financing-entity-fsu' : ''}" style="margin-left:4px;" title="${lang === 'es' ? 'Entidad financiadora' : 'Financing entity'}">${lang === 'es' ? 'Financia' : 'Finances'}: ${pg.financing_entity}</span>` : ''}</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span class="fsu-pts">${countLabel}</span>
+            <a href="dashboard.html?program=${pg.id}" class="btn ghost small"><span data-i18n="prog.viewProjects">View Projects</span></a>
+            <div class="icon-action-group">
+              ${isOwner ? `<a href="new-program.html?id=${pg.id}" class="icon-btn" title="${lang === 'es' ? 'Editar programa' : 'Edit program'}">✎</a>` : ''}
+              ${canDelete ? `<button type="button" class="icon-btn icon-btn-delete" data-delete="${pg.id}" title="${lang === 'es' ? 'Eliminar programa' : 'Delete program'}">🗑</button>` : ''}
+            </div>
+          </div>
+        </div>
+        ${typeTags ? `<div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:5px;">${typeTags}</div>` : ''}
+        ${pg.description ? `<p style="margin-top:12px; font-size:13.5px; color:var(--muted); white-space:pre-wrap;">${pg.description}</p>` : ''}
+      `;
+      list.appendChild(row);
+    });
+
+    list.querySelectorAll('[data-delete]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const pg = allPrograms.find((p) => p.id === btn.getAttribute('data-delete'));
+        if (pg) deleteProgram(pg);
+      });
+    });
+  }
+
+  async function deleteProgram(pg) {
+    const count = projectCount(pg.id);
+    const linkedNote = count
+      ? (lang === 'es'
+          ? ` ${count} proyecto${count === 1 ? '' : 's'} vinculado${count === 1 ? '' : 's'} no se ${count === 1 ? 'elimina' : 'eliminan'}, solo ${count === 1 ? 'queda' : 'quedan'} sin este programa de financiamiento.`
+          : ` ${count} linked project${count === 1 ? '' : 's'} will NOT be deleted — just unlinked from this financing program.`)
+      : '';
+    const msg = (lang === 'es'
+      ? `¿Está seguro que desea eliminar definitivamente el programa "${pg.name}"? Esta acción no se puede deshacer.`
+      : `Are you sure you want to permanently delete the program "${pg.name}"? This can't be undone.`) + linkedNote;
+    if (!confirm(msg)) return;
+    try {
+      await INAPlatform.deleteProgram(pg.id);
+      allPrograms = allPrograms.filter((p) => p.id !== pg.id);
+      allProjects = allProjects.map((p) => (p.program_id === pg.id ? { ...p, program_id: null } : p));
+      renderList();
+    } catch (err) {
+      alert(lang === 'es'
+        ? `No se pudo eliminar el programa: ${err.message || err}`
+        : `Couldn't delete the program: ${err.message || err}`);
+    }
+  }
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+    currentUserId = session.user.id;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      currentIsAdmin = INAPlatform.isAdmin(profile);
+      const canMasterData = INAPlatform.canManageMasterData(profile);
+      if (currentIsAdmin || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
+      if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
+      if (currentIsAdmin) document.getElementById('adminUsersMenuItem').style.display = 'flex';
+      if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+      // Creating a Program is advisor/admin-only (see
+      // supabase/migration_v19_program_permissions.sql) — every user still
+      // sees the full list below and can apply a project to any of them,
+      // just can't create one.
+      if (INAPlatform.canManagePrograms(profile)) {
+        document.getElementById('createProgramBtn').style.display = 'inline-flex';
+      }
+    } catch (e) { /* non-critical */ }
+
+    let fetchedPrograms;
+    [fetchedPrograms, allProjects] = await Promise.all([
+      INAPlatform.listPrograms(),
+      INAPlatform.listProjects(),
+    ]);
+    // This page is financing-only — multi-project umbrellas live on
+    // programs.html instead. See migration_v43_program_role.sql.
+    allPrograms = fetchedPrograms.filter((pg) => INAPlatform.isFinancingProgram(pg));
+
+    // Build the umbrella (program_id) + applications (project_programs)
+    // combined index used by projectCount() above.
+    programProjectIds = new Map();
+    const addLink = (programId, projectId) => {
+      if (!programId || !projectId) return;
+      if (!programProjectIds.has(programId)) programProjectIds.set(programId, new Set());
+      programProjectIds.get(programId).add(projectId);
+    };
+    allProjects.forEach((p) => addLink(p.program_id, p.id));
+    try {
+      const appsMap = await INAPlatform.listProjectProgramsForProjects(allProjects.map((p) => p.id));
+      appsMap.forEach((rows, projectId) => rows.forEach((row) => addLink(row.program_id, projectId)));
+    } catch (e) { /* non-critical — umbrella-only counts still show */ }
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('programsBody').style.display = 'block';
+    renderList();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

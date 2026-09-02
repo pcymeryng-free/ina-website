@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=19">
-<link rel="stylesheet" href="/assets/app.css?v=7">
+<link rel="stylesheet" href="/assets/style.css?v=21">
+<link rel="stylesheet" href="/assets/app.css?v=9">
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -19,10 +19,19 @@
       <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
     </a>
     <nav class="app-nav">
+      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
       <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
-      <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
       <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
-      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+        </div>
+      </div>
     </nav>
     <div class="app-header-actions">
       <div class="lang-switch" aria-label="Language">
@@ -78,8 +87,8 @@
       </div>
 
       <!-- STEP 1 — everything about the project itself that isn't
-           financing: name, type, presenting entity, description, umbrella
-           Program (organizational grouping, not a funding source — see the
+           financing: name, type, presenting entity, description, Initiative
+           (organizational grouping, not a funding source — see the
            note on step 3 below), country, beneficiaries. "Continue" creates
            the project record with all of these already filled in, so step
            2's document uploads have a real project id to attach to. -->
@@ -101,19 +110,26 @@
           <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.entityType.help">The organization submitting this project — regulator, government, ISP, manufacturer, integrator, etc.</span></p>
         </div>
 
-        <div class="field" style="margin-top:18px;"><label for="pdesc"><span data-i18n="np.f.desc">Project description</span></label>
+        <div class="field field-full" style="margin-top:18px;"><label for="pdesc"><span data-i18n="np.f.desc">Project description</span></label>
           <textarea id="pdesc" required style="min-height:160px;" placeholder=""></textarea>
+          <p style="font-size:12.5px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.desc.help">Include what you know: sector, size/scale, sponsor type, current stage, financing sources considered, key risks. The more detail, the more accurate the analysis.</span></p>
         </div>
-        <p style="font-size:12.5px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.desc.help">Include what you know: sector, size/scale, sponsor type, current stage, financing sources considered, key risks. The more detail, the more accurate the analysis.</span></p>
 
-        <!-- Umbrella Program — organizational grouping (e.g. Chubut's "Hub
-             Digital Patagónico"), NOT itself a funding source, so it lives
-             here with the project's other non-financing attributes rather
-             than in the Financing section (step 3) below. -->
-        <div class="field" style="margin-top:18px;">
-          <label for="pprogram"><span data-i18n="np.f.program">Program (optional)</span></label>
+        <!-- Initiative — organizational grouping (e.g. EPECH's
+             "Atlántico-Pacífico", bundling a fiber backbone, a submarine
+             cable and a datacenter as separate projects), NOT itself a
+             funding source, so it lives here with the project's other
+             non-financing attributes rather than in the Financing section
+             (step 3) below. Only offers programs.program_role = 'umbrella'
+             — see loadPrograms() below and
+             supabase/migration_v43_program_role.sql. Field/element ids
+             (pprogram, createProgramLink) were kept as-is when this field
+             was relabeled "Program" → "Initiative" on the platform — see
+             app/initiatives.html and PLATFORM_SETUP.md. -->
+        <div class="field field-full" style="margin-top:18px;">
+          <label for="pprogram"><span data-i18n="np.f.initiative">Initiative (optional)</span></label>
           <select id="pprogram"></select>
-          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.program.help">Group this project under a Program if it's part of a broader initiative with several independently-financed projects.</span> <a href="new-program.html" target="_blank" id="createProgramLink" style="display:none;"><span data-i18n="np.f.program.create">Create a new program &rarr;</span></a></p>
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.initiative.help">Group this project under an Initiative if it's part of a broader effort with several independently-financed projects.</span> <a href="new-program.html?role=umbrella" target="_blank" id="createProgramLink" style="display:none;"><span data-i18n="np.f.initiative.create">Create a new initiative &rarr;</span></a></p>
           <!-- If this Program has its own guided template, it's filled in
                from the Templates section (4), not here — see
                updateProgramTemplateBtnVisibility() and the
@@ -124,8 +140,9 @@
           <select id="pcountry" required></select>
         </div>
 
-        <div class="field" style="margin-top:18px;"><label for="pbeneficiaries"><span data-i18n="np.f.beneficiaries">Beneficiaries reached (households, optional)</span></label><input id="pbeneficiaries" type="number" min="0" step="1"></div>
-        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.beneficiaries.help">For last-mile/universal-access projects — the number of households, businesses or public establishments the project reaches. Strengthens the case for Universal Service Fund financing.</span></p>
+        <div class="field" style="margin-top:18px;"><label for="pbeneficiaries"><span data-i18n="np.f.beneficiaries">Beneficiaries reached (households, optional)</span></label><input id="pbeneficiaries" type="number" min="0" step="1">
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.beneficiaries.help">For last-mile/universal-access projects — the number of households, businesses or public establishments the project reaches. Strengthens the case for Universal Service Fund financing.</span></p>
+        </div>
 
         <!-- Total project budget — see
              migration_v34_project_budget_complexity.sql. Distinct from the
@@ -199,6 +216,14 @@
         <p id="step1Note" class="contact-note" style="margin-top:14px; min-height:18px;"></p>
         <div class="wizard-nav">
           <button type="button" class="btn amber" id="step1NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <!-- Edit-mode only — lets an editor save from this section
+               directly instead of having to click through to section 4.
+               Runs the exact same save (performSave() below) as the
+               step-4 submit button — hidden here in create mode because
+               nothing exists yet to save until step 1's own "Continue"
+               creates the record. See the .save-anywhere-btn reveal in the
+               isEdit block below. -->
+          <button type="button" class="btn amber small save-anywhere-btn" style="display:none;"><span data-i18n="np.edit.submit">Save Changes</span></button>
           <!-- Edit-mode only — see the .cancel-edit-btn reveal in the isEdit
                block below and the shared click handler further down (stops
                the edit lock's heartbeat, releases it, then leaves without
@@ -299,8 +324,10 @@
         <div class="wizard-nav">
           <button type="button" class="btn ghost" id="step2BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
           <button type="button" class="btn amber" id="step2NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <button type="button" class="btn amber small save-anywhere-btn" style="display:none;"><span data-i18n="np.edit.submit">Save Changes</span></button>
           <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
         </div>
+        <p class="contact-note" data-save-note style="margin-top:10px; min-height:18px;"></p>
       </div>
 
       <!-- STEP 3 — Financing, and only financing: which program(s) fund
@@ -309,8 +336,8 @@
            program(s) fund its EXECUTION (implementation, e.g. CAF + BID
            each covering a share) — deliberately kept as two clearly
            separated groups, never merged into one list. Neither is the
-           umbrella "Program" field (that's organizational, not a funding
-           source — see step 1 above). Saved as project_programs rows right
+           "Initiative" field (that's organizational, not a funding source —
+           see step 1 above). Saved as project_programs rows right
            after the project is created/updated — see
            reconcileProgramApplications() below and
            supabase/migration_v21_program_funding_stage_and_applications.sql. -->
@@ -406,8 +433,10 @@
         <div class="wizard-nav">
           <button type="button" class="btn ghost" id="step3BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
           <button type="button" class="btn amber" id="step3NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <button type="button" class="btn amber small save-anywhere-btn" style="display:none;"><span data-i18n="np.edit.submit">Save Changes</span></button>
           <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
         </div>
+        <p class="contact-note" data-save-note style="margin-top:10px; min-height:18px;"></p>
       </div>
 
       <!-- STEP 4 — optional guided template + AI document autofill, and the
@@ -428,12 +457,17 @@
              type has no registered template. -->
         <p id="templateOfferEmpty" style="display:none; font-size:13.5px; color:var(--muted);"><span data-i18n="np.wizard.step3.empty">This project type doesn't have a guided template — there's nothing to fill in here.</span></p>
 
-        <!-- Shown only when the Program picked in the Project section
-             (pprogram) has its own guided template — see
-             updateProgramTemplateBtnVisibility() below. -->
+        <!-- Shown only when the Initiative picked in the Project section
+             (pprogram — only ever umbrella-role programs, see loadPrograms()
+             above) has its own guided template — see
+             updateProgramTemplateBtnVisibility() below. Element/function ids
+             below stay "program"-flavored on purpose, per the top-of-file
+             note; only the visible text + i18n keys changed to say
+             "Initiative" (this card can never show a financing program,
+             since pprogram only ever offers umbrella-role ones). -->
         <div class="template-offer-card" id="programTemplateOfferCard" style="display:none; margin-top:16px;">
-          <p style="font-size:14px; margin:0 0 6px;"><span data-i18n="np.wizard.step4.program.lede">The Program selected in the Project section has its own guided template.</span></p>
-          <p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;"><span data-i18n="np.f.templateForProgram">Corresponds to the financing program:</span> <strong id="programTemplateOfferName"></strong></p>
+          <p style="font-size:14px; margin:0 0 6px;"><span data-i18n="np.wizard.step4.initiative.lede">The Initiative selected in the Project section has its own guided template.</span></p>
+          <p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;"><span data-i18n="np.f.templateForInitiative">Corresponds to the initiative:</span> <strong id="programTemplateOfferName"></strong></p>
           <button type="button" id="useProgramTemplateBtn" class="btn ghost small"><span data-i18n="np.f.useProgramTemplate">Fill using this program's template</span></button>
         </div>
 
@@ -466,10 +500,10 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=41"></script>
+<script src="/assets/i18n.js?v=48"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=47"></script>
-<script src="/assets/script.js?v=12"></script>
+<script src="/assets/platform.js?v=54"></script>
+<script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
@@ -539,12 +573,12 @@
   const countrySelect = document.getElementById('pcountry');
   // NOT a const — see the .lang-btn listener further down. This page builds
   // the project-type/country <select> options, the "Already uploaded"
-  // document-category headings and the program dropdown's "No program"
+  // document-category headings and the initiative dropdown's "No initiative"
   // option in plain JS, none of which carry [data-i18n]; assets/i18n.js's
   // own lang-btn listener only re-translates elements that do, so without
   // this it kept showing whichever language was active on first load (e.g.
   // "Technical folder" never switching to "Carpeta técnica"). Same fix as
-  // dashboard.html/project.html/assessment.html/programs.html.
+  // dashboard.html/project.html/assessment.html/initiatives.html.
   let lang = INAPlatform.currentLang();
 
   // Rebuilds the type <select> in the current `lang`, preserving whatever
@@ -661,12 +695,17 @@
   function renderComplexityOptions() { renderTierOptions(complexitySelect, INAPlatform.COMPLEXITY_LABELS); }
   renderComplexityOptions();
 
-  /* Programs are optional and fetched async (RLS-scoped to the user's own
-     programs, or every program for an advisor) — populated once on init(),
-     ahead of the edit-mode prefill below if this is an edit. Cached in full
-     (not just id/name) so updateProgramTemplateBtnVisibility() below can
-     look up the selected program's template_key without a second round
-     trip. */
+  /* Initiatives (umbrella-role programs, see the field comment above) are
+     optional and fetched async (RLS-scoped to the user's own programs, or
+     every program for an advisor) — populated once on init(), ahead of the
+     edit-mode prefill below if this is an edit. Cached in full (not just
+     id/name) so updateProgramTemplateBtnVisibility() below can look up the
+     selected program's template_key without a second round trip. Variable/
+     function names below (programsCache, loadPrograms, programSelect…) stay
+     "program"-flavored on purpose — this is purely a user-facing rename
+     (see the pprogram field comment in section 1 above and
+     app/initiatives.html); the underlying programs table, program_role
+     value ('umbrella'), and JS identifiers are unchanged. */
   let programsCache = [];
   async function loadPrograms() {
     const sel = document.getElementById('pprogram');
@@ -676,24 +715,30 @@
     sel.innerHTML = '';
     const noneOpt = document.createElement('option');
     noneOpt.value = '';
-    noneOpt.textContent = lang === 'es' ? 'Sin programa' : 'No program';
+    noneOpt.textContent = lang === 'es' ? 'Sin iniciativa' : 'No initiative';
     sel.appendChild(noneOpt);
-    programsCache.forEach((pg) => {
-      const opt = document.createElement('option');
-      opt.value = pg.id;
-      opt.textContent = pg.name;
-      sel.appendChild(opt);
-    });
+    // Only 'umbrella'-role programs belong here — a program that's itself
+    // a funding source (FSU, BID, CAF, USTDA…) isn't an organizational
+    // grouping and shouldn't be pickable as one. See PROGRAM_ROLE_LABELS
+    // in assets/platform.js and supabase/migration_v43_program_role.sql.
+    programsCache
+      .filter((pg) => INAPlatform.isUmbrellaProgram(pg))
+      .forEach((pg) => {
+        const opt = document.createElement('option');
+        opt.value = pg.id;
+        opt.textContent = pg.name;
+        sel.appendChild(opt);
+      });
     renderPrepProgramOptions('');
     renderFinancingProgramOptions();
   }
 
-  // Program *names* are user-entered data, not translated — only the "No
-  // program" placeholder option needs updating on a language switch.
+  // Initiative *names* are user-entered data, not translated — only the "No
+  // initiative" placeholder option needs updating on a language switch.
   function updateProgramPlaceholderLang() {
     const sel = document.getElementById('pprogram');
     if (sel.options.length && sel.options[0].value === '') {
-      sel.options[0].textContent = lang === 'es' ? 'Sin programa' : 'No program';
+      sel.options[0].textContent = lang === 'es' ? 'Sin iniciativa' : 'No initiative';
     }
     const prepSel = document.getElementById('pPrepProgram');
     if (prepSel.options.length && prepSel.options[0].value === '') {
@@ -702,7 +747,7 @@
   }
 
   /* Which program(s) actually FUND this project — separate from the
-     "Program" umbrella field above. Preparation funding (e.g. USTDA) is
+     "Initiative" field above. Preparation funding (e.g. USTDA) is
      single-select, since normally only one entity funds elaborating a
      project; project financing (e.g. CAF + BID together) is multi-select,
      since more than one program can each cover a share. Both are backed by
@@ -749,7 +794,7 @@
     noneOpt.textContent = lang === 'es' ? 'Sin financiamiento de elaboración' : 'No preparation funding';
     sel.appendChild(noneOpt);
     programsCache
-      .filter((pg) => pg.funding_stage === 'preparation')
+      .filter((pg) => pg.funding_stage === 'preparation' && !INAPlatform.isUmbrellaProgram(pg))
       .forEach((pg) => {
         const opt = document.createElement('option');
         opt.value = pg.id;
@@ -761,7 +806,7 @@
 
   function renderFinancingProgramOptions() {
     const el = document.getElementById('financingProgramsOptions');
-    const financing = programsCache.filter((pg) => (pg.funding_stage || 'financing') === 'financing');
+    const financing = programsCache.filter((pg) => (pg.funding_stage || 'financing') === 'financing' && !INAPlatform.isUmbrellaProgram(pg));
     const pctLabel = lang === 'es' ? '% del presupuesto' : '% of budget';
     const amtLabel = lang === 'es' ? 'Monto (ARS)' : 'Amount (ARS)';
     el.innerHTML = financing.map((pg) => {
@@ -906,19 +951,19 @@
 
   // "Fill using this program's template" — a second, independent template
   // entry point (see PROGRAM_TEMPLATES in assets/platform.js): shown only
-  // when the selected Program was tagged with a template_key that resolves
-  // to a registered program template (e.g. ENACOM's Mercado de Capitales
-  // financing line). Unlike the project-type template above, setting
-  // pprogram.value programmatically (edit-mode prefill, draft restore)
-  // doesn't fire 'change', so every place that sets it also calls this
-  // directly rather than relying solely on the listener.
+  // when the selected Initiative was tagged with a template_key that
+  // resolves to a registered program template (e.g. ENACOM's Mercado de
+  // Capitales financing line). Unlike the project-type template above,
+  // setting pprogram.value programmatically (edit-mode prefill, draft
+  // restore) doesn't fire 'change', so every place that sets it also calls
+  // this directly rather than relying solely on the listener.
   const programSelect = document.getElementById('pprogram');
   const prepProgramSelect = document.getElementById('pPrepProgram');
   const useProgramTemplateBtn = document.getElementById('useProgramTemplateBtn');
   const programTemplateOfferCard = document.getElementById('programTemplateOfferCard');
   const programTemplateOfferName = document.getElementById('programTemplateOfferName');
   // programTemplateOfferCard lives in the Templates section (4) — it only
-  // shows up once the Program picked in the Project section (section 1)
+  // shows up once the Initiative picked in the Project section (section 1)
   // actually has a registered template, so section 4 always reflects
   // whatever was just selected in section 1.
   function updateProgramTemplateBtnVisibility() {
@@ -926,8 +971,8 @@
     const template = program && program.template_key ? INAPlatform.programTemplateFor(program.template_key) : null;
     useProgramTemplateBtn.style.display = template ? 'inline-flex' : 'none';
     if (programTemplateOfferCard) programTemplateOfferCard.style.display = template ? 'block' : 'none';
-    // Names the exact Program this card's template belongs to (plain text,
-    // as entered on new-program.html — not translated).
+    // Names the exact Initiative this card's template belongs to (plain
+    // text, as entered on new-program.html — not translated).
     if (programTemplateOfferName) programTemplateOfferName.textContent = template && program ? program.name : '';
   }
   programSelect.addEventListener('change', updateProgramTemplateBtnVisibility);
@@ -1183,6 +1228,14 @@
     // cancel out of yet (closing the tab is enough there); clearing the
     // inline display:none lets .btn's own CSS display rule take over.
     document.querySelectorAll('.cancel-edit-btn').forEach((btn) => { btn.style.display = ''; });
+    // "Save Changes" is also reachable from sections 1-3, not just the
+    // final section 4 — an editor tweaking one field shouldn't have to
+    // click through the whole wizard just to save it. Wired to the same
+    // performSave() as the section-4 submit button, below.
+    document.querySelectorAll('.save-anywhere-btn').forEach((btn) => {
+      btn.style.display = '';
+      btn.addEventListener('click', () => performSave());
+    });
   }
 
   // Documents now upload immediately on select/drop instead of staging in
@@ -1450,7 +1503,11 @@
       document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
       document.getElementById('appUserName').textContent = profile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
-      if (INAPlatform.isAdmin(profile)) document.getElementById('adminNavLink').style.display = 'inline';
+      const canAdminUsers = INAPlatform.isAdmin(profile);
+      const canMasterData = INAPlatform.canManageMasterData(profile);
+      if (canAdminUsers || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
+      if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
+      if (canAdminUsers) document.getElementById('adminUsersMenuItem').style.display = 'flex';
       if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
       // Creating a Program is advisor/admin-only (see
       // supabase/migration_v19_program_permissions.sql) — a standard user
@@ -1584,16 +1641,36 @@
   }
   init();
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    note.textContent = '';
+  // All the note-ish elements a save can report into — whichever one(s)
+  // happen to be visible depend on which section is currently active
+  // (#step1Note in section 1, the two new [data-save-note] paragraphs in
+  // sections 2/3, #formNote in section 4). Setting all of them is cheap
+  // and guarantees the message shows up regardless of which "Save" button
+  // triggered performSave() below.
+  const saveButtons = () => [submitBtn, ...document.querySelectorAll('.save-anywhere-btn')];
+  function setSaveNote(text) {
+    note.textContent = text;
+    const step1Note = document.getElementById('step1Note');
+    if (step1Note) step1Note.textContent = text;
+    document.querySelectorAll('[data-save-note]').forEach((el) => { el.textContent = text; });
+  }
+
+  // Shared by the section-4 "Submit for Analysis"/"Save Changes" button
+  // (via the form's native submit event below) and the edit-mode-only
+  // "Save Changes" buttons on sections 1-3 (.save-anywhere-btn) — same
+  // save, same redirect, just reachable from anywhere in the wizard once
+  // editing an existing project. Always a save-in-place (never a fresh
+  // insert) since activeProjectId is guaranteed to exist by the time any
+  // of these buttons are visible/clickable.
+  async function performSave() {
+    setSaveNote('');
     if (!INAPlatform.isConfigured()) {
-      note.textContent = 'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      setSaveNote('Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.');
       return;
     }
-    submitBtn.disabled = true;
+    saveButtons().forEach((b) => { b.disabled = true; });
     const lang2 = INAPlatform.currentLang();
-    note.textContent = lang2 === 'es' ? 'Enviando…' : 'Submitting…';
+    setSaveNote(lang2 === 'es' ? 'Enviando…' : 'Submitting…');
 
     try {
       const payload = {
@@ -1633,9 +1710,7 @@
 
       await reconcileProgramApplications(project.id);
 
-      note.textContent = lang2 === 'es'
-        ? 'Proyecto enviado.'
-        : 'Project submitted.';
+      setSaveNote(lang2 === 'es' ? 'Proyecto enviado.' : 'Project submitted.');
 
       // The project is now saved for good — clear any per-template draft
       // answers left over from project-template.html (inaTemplateAnswers:*,
@@ -1660,9 +1735,14 @@
       // they're ready. See project.html's notAnalyzedBlock / startAnalysisBtn.
       location.href = `project.html?id=${project.id}`;
     } catch (err) {
-      note.textContent = err.message || 'Something went wrong.';
-      submitBtn.disabled = false;
+      setSaveNote(err.message || 'Something went wrong.');
+      saveButtons().forEach((b) => { b.disabled = false; });
     }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await performSave();
   });
 
   // Best-effort release when the tab/window closes without a successful

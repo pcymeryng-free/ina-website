@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Initiatives — INA Platform" data-i18n-es="Iniciativas — Plataforma INA">Initiatives — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Group several separately-financed projects under one multi-project Initiative, presented by one organization." data-i18n-es="Agrup&aacute; varios proyectos financiados de forma independiente bajo una misma Iniciativa multi-proyecto, presentada por una organizaci&oacute;n." content="Group several separately-financed projects under one multi-project Initiative, presented by one organization.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=21">
+<link rel="stylesheet" href="/assets/app.css?v=9">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="initiatives.html" class="active"><span data-i18n="init.nav">Initiatives</span></a>
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+        </div>
+      </div>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="platform-header reveal">
+      <div>
+        <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+        <h1 class="h-section" style="margin-top:14px;"><span data-i18n="init.title">Initiatives</span></h1>
+        <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="init.lede">An Initiative groups several separately-financed projects under one sponsoring effort — like EPECH's "Atlántico-Pacífico," which bundles a fiber backbone, a submarine cable and a datacenter as three independent projects, each financed on its own.</span></p>
+      </div>
+      <a href="new-program.html?role=umbrella" class="btn amber" id="createProgramBtn" style="display:none;"><span data-i18n="init.form.create">Create Initiative</span></a>
+    </div>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="programsBody" style="display:none; margin-top:24px;">
+      <div id="programList" style="display:flex; flex-direction:column; gap:14px;"></div>
+
+      <div class="empty-state" id="emptyState" style="display:none; margin-top:18px;">
+        <div class="ei"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.5"/></svg></div>
+        <p><span data-i18n="init.empty">No Initiatives yet — create one above to group several separately-financed projects under one effort, or leave the Initiative field blank on individual projects.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=48"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=54"></script>
+<script src="/assets/script.js?v=14"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const newLang = btn.getAttribute('data-lang');
+      document.documentElement.setAttribute('lang', newLang);
+      lang = newLang;
+      if (allPrograms.length) renderList();
+    });
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  // NOT a const — this used to be captured once at page load and never
+  // updated, so renderList() below kept using whatever language was
+  // active on first load even after switching. assets/i18n.js's own
+  // .lang-btn listener only re-translates [data-i18n]-tagged elements; it
+  // has no idea this page builds the initiative list dynamically in plain
+  // JS (project counts, type tags, edit/delete tooltips), none of which
+  // carry [data-i18n]. The listener below keeps this in sync and
+  // re-renders. Same fix as dashboard.html/project.html/assessment.html.
+  let lang = INAPlatform.currentLang();
+
+  // Internal variable/function names below still say "program"/"Program"
+  // throughout (allPrograms, programTypes(), deleteProgram(), etc.) — this
+  // page was renamed from app/programs.html to app/initiatives.html
+  // (user-facing "Programs" → "Initiatives", see
+  // supabase/migration_v43_program_role.sql and PLATFORM_SETUP.md), but the
+  // underlying public.programs table, its program_role='umbrella' value,
+  // and platform.js's isUmbrellaProgram()/PROGRAM_ROLE_LABELS helpers were
+  // deliberately left as-is — only the label changed, not the schema.
+  let allPrograms = [];
+  let allProjects = [];
+  let currentUserId = null;
+  let currentIsAdmin = false;
+  // programId -> Set of project ids, combining the "umbrella" program_id
+  // field on projects with the newer many-to-many project_programs
+  // applications (a project can apply to a financing Program like FSU or
+  // BID without belonging to it as its Initiative) — see
+  // supabase/migration_v21_program_funding_stage_and_applications.sql.
+  let programProjectIds = new Map();
+
+  function projectCount(programId) {
+    return (programProjectIds.get(programId) || new Set()).size;
+  }
+
+  /* An Initiative's displayed "types" prefer the owner's declared list
+     (pg.types, see supabase/migration_v11_program_types.sql) since that's
+     meant to reflect the Initiative's intended scope even before every
+     project has been submitted. For older programs saved before that field
+     existed (or left blank), fall back to deriving it from actual member
+     projects — each always a single type (see
+     supabase/migration_v10_remove_secondary_types.sql), so an Initiative
+     only spans several by containing several single-type projects, e.g.
+     Chubut's "Hub Digital Patagónico" spanning submarine cable + backbone
+     + last-mile. */
+  function programTypes(pg) {
+    if (pg.types && pg.types.length) return pg.types;
+    const types = allProjects
+      .filter((p) => p.program_id === pg.id)
+      .map((p) => p.project_type);
+    return Array.from(new Set(types));
+  }
+
+  function renderList() {
+    const list = document.getElementById('programList');
+    list.innerHTML = '';
+    document.getElementById('emptyState').style.display = allPrograms.length ? 'none' : 'block';
+
+    allPrograms.forEach((pg) => {
+      const count = projectCount(pg.id);
+      const countLabel = lang === 'es'
+        ? `${count} ${count === 1 ? 'proyecto' : 'proyectos'}`
+        : `${count} ${count === 1 ? 'project' : 'projects'}`;
+      const isOwner = pg.user_id === currentUserId;
+      const canDelete = isOwner || currentIsAdmin;
+      const types = programTypes(pg);
+      const typeTags = types
+        .map((t) => `<span class="type-tag">${INAPlatform.projectTypeLabel(t)}</span>`)
+        .join(' ');
+
+      const row = document.createElement('div');
+      row.className = 'info-block';
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div style="min-width:0;">
+            <h4 style="margin-bottom:4px;">${pg.name}</h4>
+            <p style="font-size:13px; color:var(--muted);">${pg.organization} <span class="type-tag" style="margin-left:4px;">${INAPlatform.programOrgTypeLabel(pg.organization_type)}</span></p>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span class="fsu-pts">${countLabel}</span>
+            <a href="dashboard.html?program=${pg.id}" class="btn ghost small"><span data-i18n="prog.viewProjects">View Projects</span></a>
+            <div class="icon-action-group">
+              ${isOwner ? `<a href="new-program.html?id=${pg.id}" class="icon-btn" title="${lang === 'es' ? 'Editar iniciativa' : 'Edit initiative'}">✎</a>` : ''}
+              ${canDelete ? `<button type="button" class="icon-btn icon-btn-delete" data-delete="${pg.id}" title="${lang === 'es' ? 'Eliminar iniciativa' : 'Delete initiative'}">🗑</button>` : ''}
+            </div>
+          </div>
+        </div>
+        ${typeTags ? `<div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:5px;">${typeTags}</div>` : ''}
+        ${pg.description ? `<p style="margin-top:12px; font-size:13.5px; color:var(--muted); white-space:pre-wrap;">${pg.description}</p>` : ''}
+      `;
+      list.appendChild(row);
+    });
+
+    list.querySelectorAll('[data-delete]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const pg = allPrograms.find((p) => p.id === btn.getAttribute('data-delete'));
+        if (pg) deleteProgram(pg);
+      });
+    });
+  }
+
+  async function deleteProgram(pg) {
+    const count = projectCount(pg.id);
+    const linkedNote = count
+      ? (lang === 'es'
+          ? ` ${count} proyecto${count === 1 ? '' : 's'} vinculado${count === 1 ? '' : 's'} no se ${count === 1 ? 'elimina' : 'eliminan'}, solo ${count === 1 ? 'queda' : 'quedan'} sin iniciativa.`
+          : ` ${count} linked project${count === 1 ? '' : 's'} will NOT be deleted — just unlinked from this initiative.`)
+      : '';
+    const msg = (lang === 'es'
+      ? `¿Está seguro que desea eliminar definitivamente la iniciativa "${pg.name}"? Esta acción no se puede deshacer.`
+      : `Are you sure you want to permanently delete the initiative "${pg.name}"? This can't be undone.`) + linkedNote;
+    if (!confirm(msg)) return;
+    try {
+      await INAPlatform.deleteProgram(pg.id);
+      allPrograms = allPrograms.filter((p) => p.id !== pg.id);
+      allProjects = allProjects.map((p) => (p.program_id === pg.id ? { ...p, program_id: null } : p));
+      renderList();
+    } catch (err) {
+      alert(lang === 'es'
+        ? `No se pudo eliminar la iniciativa: ${err.message || err}`
+        : `Couldn't delete the initiative: ${err.message || err}`);
+    }
+  }
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+    currentUserId = session.user.id;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      currentIsAdmin = INAPlatform.isAdmin(profile);
+      const canMasterData = INAPlatform.canManageMasterData(profile);
+      if (currentIsAdmin || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
+      if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
+      if (currentIsAdmin) document.getElementById('adminUsersMenuItem').style.display = 'flex';
+      if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+      // Creating an Initiative is advisor/admin-only (see
+      // supabase/migration_v19_program_permissions.sql) — every user still
+      // sees the full list below and can associate a project with any of
+      // them, just can't create one.
+      if (INAPlatform.canManagePrograms(profile)) {
+        document.getElementById('createProgramBtn').style.display = 'inline-flex';
+      }
+    } catch (e) { /* non-critical */ }
+
+    let fetchedPrograms;
+    [fetchedPrograms, allProjects] = await Promise.all([
+      INAPlatform.listPrograms(),
+      INAPlatform.listProjects(),
+    ]);
+    // This page is umbrella-only (Initiatives) — real financing sources
+    // live on financing-programs.html instead. See
+    // migration_v43_program_role.sql.
+    allPrograms = fetchedPrograms.filter((pg) => INAPlatform.isUmbrellaProgram(pg));
+
+    // Build the umbrella (program_id) + applications (project_programs)
+    // combined index used by projectCount() above.
+    programProjectIds = new Map();
+    const addLink = (programId, projectId) => {
+      if (!programId || !projectId) return;
+      if (!programProjectIds.has(programId)) programProjectIds.set(programId, new Set());
+      programProjectIds.get(programId).add(projectId);
+    };
+    allProjects.forEach((p) => addLink(p.program_id, p.id));
+    try {
+      const appsMap = await INAPlatform.listProjectProgramsForProjects(allProjects.map((p) => p.id));
+      appsMap.forEach((rows, projectId) => rows.forEach((row) => addLink(row.program_id, projectId)));
+    } catch (e) { /* non-critical — umbrella-only counts still show */ }
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('programsBody').style.display = 'block';
+    renderList();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

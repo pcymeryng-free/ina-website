@@ -8,8 +8,35 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=19">
-<link rel="stylesheet" href="/assets/app.css?v=7">
+<link rel="stylesheet" href="/assets/style.css?v=21">
+<link rel="stylesheet" href="/assets/app.css?v=9">
+<style>
+/* Print-only "filtered project list" view (#dashPrintView, built by
+   printListBtn's click handler below) — kept as an inline block scoped to
+   this page only, rather than in the shared assets/style.css, so it
+   doesn't affect project-template.html's own print view (#tplPrintView,
+   portrait, a single template's field list — a different shape of
+   document than a many-row table). Reuses .p-header/.p-brand/.p-date/
+   .p-project from the shared stylesheet's @media print block for visual
+   consistency between the two, since those are plain classes, not
+   ID-scoped. */
+@media print {
+  @page { size: landscape; margin: 12mm; }
+  #dashPrintView, #dashPrintView *{ visibility: visible; }
+  #dashPrintView{
+    display:block; position:absolute; top:0; left:0; width:100%;
+    padding:0; margin:0; color:#000; background:#fff; font-family:var(--sans, Arial, sans-serif);
+  }
+  #dashPrintView h1{ font-size:17px; margin:0 0 4px; }
+  #dashPrintView .p-count{ font-size:11px; color:#333; margin:0 0 16px; }
+  #dashPrintView .p-table{ width:100%; border-collapse:collapse; font-size:9.5px; }
+  #dashPrintView .p-table th, #dashPrintView .p-table td{
+    border:1px solid #999; padding:5px 6px; text-align:left; vertical-align:top;
+  }
+  #dashPrintView .p-table th{ background:#eee; text-transform:uppercase; letter-spacing:.03em; font-size:8.5px; }
+  #dashPrintView .p-table tr{ page-break-inside:avoid; }
+}
+</style>
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -19,10 +46,19 @@
       <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
     </a>
     <nav class="app-nav">
+      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
       <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
-      <a href="programs.html"><span data-i18n="prog.nav">Programs</span></a>
+      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
       <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
-      <a href="admin.html" id="adminNavLink" style="display:none;"><span data-i18n="admin.nav">Admin</span></a>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+        </div>
+      </div>
     </nav>
     <div class="app-header-actions">
       <div class="lang-switch" aria-label="Language">
@@ -66,8 +102,13 @@
           <label for="fType"><span data-i18n="dash.filter.type">Project type</span></label>
           <select id="fType"></select>
         </div>
+        <!-- Label says "Program / Initiative" — see the populateFilterOptions()
+             comment below — because this single dropdown mixes both a
+             project's Initiative (program_id, umbrella-role) and every
+             financing/preparation Program it applied to (project_programs);
+             it isn't only one or the other. -->
         <div class="ffield">
-          <label for="fProgram"><span data-i18n="dash.filter.program">Program</span></label>
+          <label for="fProgram"><span data-i18n="dash.filter.program">Program / Initiative</span></label>
           <select id="fProgram"></select>
         </div>
         <div class="ffield">
@@ -91,16 +132,29 @@
 
       <div class="filter-count-row">
         <p class="filter-count" id="filterCount"></p>
-        <!-- List/Grid layout toggle — see viewMode/setViewMode() in the
-             script below. Persisted in localStorage so it sticks across
-             visits. -->
-        <div class="view-toggle" role="group" aria-label="View">
-          <button type="button" class="view-toggle-btn" data-view="list" title="List view">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <!-- Prints exactly the projects currently matching the filters
+               above, as a clean landscape table (name/type/country/status/
+               program/budget/beneficiaries/priority/scores/date) — built
+               fresh from applyFilters() right before window.print(), same
+               separate-print-view pattern as project-template.html's
+               tplPrintBtn/#tplPrintView. See #dashPrintView below and the
+               dashboard-only print CSS in <head>. -->
+          <button type="button" class="btn ghost small" id="printListBtn" title="Print">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px; margin-right:5px;"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2M6 14h12v7H6z"/></svg>
+            <span data-i18n="dash.print">Print list</span>
           </button>
-          <button type="button" class="view-toggle-btn" data-view="grid" title="Grid view">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
-          </button>
+          <!-- List/Grid layout toggle — see viewMode/setViewMode() in the
+               script below. Persisted in localStorage so it sticks across
+               visits. -->
+          <div class="view-toggle" role="group" aria-label="View">
+            <button type="button" class="view-toggle-btn" data-view="list" title="List view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <button type="button" class="view-toggle-btn" data-view="grid" title="Grid view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -118,6 +172,15 @@
       <p style="margin-top:8px;"><span data-i18n="dash.empty.lede">Submit your first project to get an Investment Readiness Index&trade; score and financing recommendations.</span></p>
       <a href="new-project.html" class="btn amber" style="margin-top:20px;"><span data-i18n="dash.newProject">Submit New Project</span></a>
     </div>
+
+    <!-- Print-only rendering of the currently filtered project list — hidden
+         on screen, built fresh from applyFilters(allProjects) right before
+         window.print() (see printListBtn's click handler below). Separate
+         from #tplPrintView (project-template.html) so both print views can
+         coexist without clashing — see the dashboard-only print CSS in
+         <head>, which reuses the .p-header/.p-brand/.p-date/.p-project
+         classes already defined for #tplPrintView in assets/style.css. -->
+    <div id="dashPrintView" class="print-only"></div>
   </div>
 </section>
 </main>
@@ -127,11 +190,11 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=41"></script>
+<script src="/assets/i18n.js?v=48"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="/assets/platform.js?v=47"></script>
-<script src="/assets/script.js?v=12"></script>
+<script src="/assets/platform.js?v=54"></script>
+<script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
   const signOutBtn = document.getElementById('signOutBtn');
@@ -212,6 +275,10 @@
 
   function initials(name) {
     return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   // Small stroke icons per project type — reuses the same visual language
@@ -392,6 +459,88 @@
       }
       return true;
     });
+  }
+
+  // Short human-readable recap of whichever filters are currently active
+  // ("Estado: Enviado · Tipo: Datacenter…") — shown under the title in the
+  // printed list so it's clear on paper which subset of projects this is,
+  // not just how many. Empty string when no filter is set.
+  function activeFiltersSummary() {
+    const l = lang();
+    const parts = [];
+    if (fStatus.value) parts.push(`${l === 'es' ? 'Estado' : 'Status'}: ${fStatus.options[fStatus.selectedIndex].textContent}`);
+    if (fType.value) parts.push(`${l === 'es' ? 'Tipo' : 'Type'}: ${fType.options[fType.selectedIndex].textContent}`);
+    if (fProgram.value) parts.push(`${l === 'es' ? 'Programa/Iniciativa' : 'Program/Initiative'}: ${fProgram.options[fProgram.selectedIndex].textContent}`);
+    if (fFrom.value) parts.push(`${l === 'es' ? 'Desde' : 'From'}: ${fFrom.value}`);
+    if (fTo.value) parts.push(`${l === 'es' ? 'Hasta' : 'To'}: ${fTo.value}`);
+    if (fMinBeneficiaries.value !== '') parts.push(`${l === 'es' ? 'Mín. beneficiarios' : 'Min. beneficiaries'}: ${fMinBeneficiaries.value}`);
+    if (fSearch.value.trim()) parts.push(`${l === 'es' ? 'Búsqueda' : 'Search'}: "${fSearch.value.trim()}"`);
+    return parts.join(' · ');
+  }
+
+  // Builds #dashPrintView's contents from the projects currently matching
+  // the filter bar — a clean landscape table with the attributes an
+  // advisor scans for first (see attrTagsHtml()/scoreBadgesHtml() above
+  // for the same set shown on-screen), rather than trying to print the
+  // on-screen list/grid rows as-is (built for interaction — icons, links,
+  // menus — not a physical/PDF document). Called by printListBtn's click
+  // handler below, right before window.print().
+  function renderPrintView(filtered) {
+    const l = lang();
+    const dateFmt = (d) => new Date(d).toLocaleDateString(l === 'es' ? 'es-AR' : 'en-US');
+
+    const rows = filtered.map((p) => {
+      const budget = INAPlatform.formatCurrency(p.budget_amount) || INAPlatform.formatCurrencyUSD(p.budget_amount_usd) || '—';
+      const beneficiaries = p.beneficiary_count != null ? p.beneficiary_count.toLocaleString(l === 'es' ? 'es-AR' : 'en-US') : '—';
+      const priority = p.priority ? INAPlatform.priorityLabel(p.priority) : '—';
+      const programs = programNamesFor(p).join(', ') || '—';
+
+      const entry = analysesByProject.get(p.id) || {};
+      const fsu = fsuByProject.get(p.id);
+      const scoreParts = [];
+      if (entry.ai && entry.ai.overall_score != null) scoreParts.push(`${l === 'es' ? 'IA' : 'AI'} ${entry.ai.overall_score}`);
+      if (entry.manual && entry.manual.overall_score != null) scoreParts.push(`${l === 'es' ? 'Auto' : 'Self'} ${entry.manual.overall_score}`);
+      if (fsu && fsu.score_total != null) scoreParts.push(`FSU ${fsu.score_total}`);
+
+      return `<tr>
+        <td>${escapeHtml(p.name)}</td>
+        <td>${escapeHtml(INAPlatform.projectTypeLabel(p.project_type))}</td>
+        <td>${escapeHtml(INAPlatform.countryLabel(p.country))}</td>
+        <td>${escapeHtml(INAPlatform.effectiveStatusLabel(p))}</td>
+        <td>${escapeHtml(programs)}</td>
+        <td>${escapeHtml(budget)}</td>
+        <td>${escapeHtml(beneficiaries)}</td>
+        <td>${escapeHtml(priority)}</td>
+        <td>${escapeHtml(scoreParts.join(' · ') || '—')}</td>
+        <td>${dateFmt(p.created_at)}</td>
+      </tr>`;
+    }).join('');
+
+    const summary = activeFiltersSummary();
+    const countText = l === 'es'
+      ? `${filtered.length} de ${allProjects.length} proyecto${allProjects.length === 1 ? '' : 's'}`
+      : `${filtered.length} of ${allProjects.length} project${allProjects.length === 1 ? '' : 's'}`;
+
+    document.getElementById('dashPrintView').innerHTML = `
+      <div class="p-header"><div class="p-brand">INA — International Network Advisors</div><div class="p-date">${dateFmt(new Date())}</div></div>
+      <h1>${l === 'es' ? 'Listado de Proyectos' : 'Project List'}</h1>
+      <p class="p-count">${countText}${summary ? ' — ' + escapeHtml(summary) : ''}</p>
+      <table class="p-table">
+        <thead><tr>
+          <th>${l === 'es' ? 'Nombre' : 'Name'}</th>
+          <th>${l === 'es' ? 'Tipo' : 'Type'}</th>
+          <th>${l === 'es' ? 'País' : 'Country'}</th>
+          <th>${l === 'es' ? 'Estado' : 'Status'}</th>
+          <th>${l === 'es' ? 'Programa/Iniciativa' : 'Program/Initiative'}</th>
+          <th>${l === 'es' ? 'Presupuesto' : 'Budget'}</th>
+          <th>${l === 'es' ? 'Beneficiarios' : 'Beneficiaries'}</th>
+          <th>${l === 'es' ? 'Prioridad' : 'Priority'}</th>
+          <th>${l === 'es' ? 'Puntajes' : 'Scores'}</th>
+          <th>${l === 'es' ? 'Fecha' : 'Date'}</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
   }
 
   // ---------------------------------------------------------------------
@@ -838,12 +987,15 @@
   // Same project_programs rows as programNamesFor() above, but split by
   // programs.funding_stage instead of merged into one list — used by
   // attrTagsHtml() to show "Prog. preparación" / "Prog. financiación" as
-  // separate tags. The umbrella program_id isn't included here (it has no
-  // funding_stage of its own — it's a different relationship, see
-  // programNamesFor()); financingProgramNamesFor() intentionally does
-  // include it, though, since in practice it's almost always a financing
-  // Program (USTDA-style preparation programs are applied to via
-  // project_programs, not set as the umbrella).
+  // separate tags. The umbrella program_id (p.programs, aka the project's
+  // Initiative) is deliberately excluded from BOTH of these — it's not a
+  // funding source at all (that's the whole point of the Iniciativas vs.
+  // Financiación split, see program_role in supabase/migration_v43_
+  // program_role.sql and app/new-project.html's pprogram field, which only
+  // ever offers umbrella-role programs), so it has no funding_stage and
+  // can't correctly be called either "preparation" or "financing". It still
+  // shows up on its own via programNamesFor()'s combined list (the project
+  // card's meta line), just not mislabeled as a financing tag here.
   function preparationProgramNamesFor(p) {
     const names = [];
     (programAppsByProject.get(p.id) || []).forEach((row) => {
@@ -855,7 +1007,6 @@
   }
   function financingProgramNamesFor(p) {
     const names = [];
-    if (p.programs && p.programs.name) names.push(p.programs.name);
     (programAppsByProject.get(p.id) || []).forEach((row) => {
       if (row.programs && row.programs.funding_stage !== 'preparation' && row.programs.name && !names.includes(row.programs.name)) {
         names.push(row.programs.name);
@@ -1112,6 +1263,11 @@
     btn.addEventListener('click', () => setViewMode(btn.getAttribute('data-view')));
   });
 
+  document.getElementById('printListBtn').addEventListener('click', () => {
+    renderPrintView(applyFilters(allProjects));
+    window.print();
+  });
+
   function clearFilters() {
     fStatus.value = '';
     fType.value = '';
@@ -1144,7 +1300,10 @@
       document.getElementById('appUserName').textContent = profile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
       currentIsAdmin = INAPlatform.isAdmin(profile);
-      if (currentIsAdmin) document.getElementById('adminNavLink').style.display = 'inline';
+      const canMasterData = INAPlatform.canManageMasterData(profile);
+      if (currentIsAdmin || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
+      if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
+      if (currentIsAdmin) document.getElementById('adminUsersMenuItem').style.display = 'flex';
       if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
       advisor = INAPlatform.isAdvisor(profile);
       if (advisor) document.getElementById('advisorBanner').style.display = 'flex';
@@ -1185,8 +1344,9 @@
     renderStats();
     populateFilterOptions();
 
-    // Coming from a "View Projects" link on programs.html
-    // (dashboard.html?program=<id>) — preset the filter to that program.
+    // Coming from a "View Projects" link on initiatives.html or
+    // financing-programs.html (dashboard.html?program=<id>) — preset the
+    // filter to that program/initiative.
     const presetProgram = new URLSearchParams(location.search).get('program');
     if (presetProgram) {
       const hasOption = Array.from(fProgram.options).some((o) => o.value === presetProgram);
