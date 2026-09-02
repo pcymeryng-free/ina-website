@@ -273,3 +273,80 @@
   font-size:13px; line-height:1.5;
 }
 .lock-banner svg{ width:18px; height:18px; flex:0 0 auto; margin-top:1px; }
+
+/* ---------- Card refresh (product screens, matches the platform demo video) ----------
+   .info-block is shared with the institutional marketing pages (framework.html,
+   why-ina.html, etc.), so this only overrides it inside .app-main — the app
+   pages get a whiter, rounder, more spacious "card" while the public site's
+   flat paper-2 blocks are untouched. */
+.app-main .info-block{
+  background:#fff;
+  border-radius:14px;
+  padding:30px 32px;
+}
+.app-main .info-block-dark{ background:var(--ink) !important; }
+.app-main .info-block h4{ font-size:11.5px; margin-bottom:16px; }
+
+/* Attribute values as boxed label/value fields — same visual language as
+   the sample screens in the platform walkthrough video. */
+.app-main .attr-item-value{
+  background:var(--paper-2);
+  border:1px solid var(--paper-line);
+  border-radius:7px;
+  padding:11px 14px;
+  margin-top:3px;
+}
+.app-main .attr-item-label{ font-size:11px; }
+
+/* ---------- Wizard card + 2-column "Datos básicos" (new-project.html) ----------
+   Matches the "Alta del Proyecto" mockup slide in the platform walkthrough
+   video: the whole step becomes a white rounded card, and step 1's fields
+   pair up into two columns instead of one long single-column list. Steps
+   2-4 (documents / financing / templates) keep the same card treatment for
+   visual consistency but are left in a single column — their content
+   (upload zones, existing-docs list, template picker) is not made of
+   simple label+input pairs, so a forced 2-col grid would look awkward
+   there. Scoped to .app-main so nothing outside the app is touched. */
+.app-main .wizard-panel{
+  background:#fff;
+  border:1px solid var(--paper-line);
+  border-radius:14px;
+  padding:32px 34px;
+}
+.app-main .wizard-panel[data-step="1"].active{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px 28px;
+  align-items:start;
+}
+.app-main .wizard-panel[data-step="1"] > .field{ margin-top:0 !important; }
+.app-main .wizard-panel[data-step="1"] > .field-full,
+.app-main .wizard-panel[data-step="1"] > .field:has(textarea),
+.app-main .wizard-panel[data-step="1"] #step1Note,
+.app-main .wizard-panel[data-step="1"] .wizard-nav{
+  grid-column:1 / -1;
+}
+@media (max-width:760px){
+  .app-main .wizard-panel[data-step="1"]{ grid-template-columns:1fr; }
+  .app-main .wizard-panel{ padding:26px 22px; }
+}
+
+/* Boxed field inputs — replaces the shared minimalist underline style
+   (.field input/select/textarea in style.css) inside wizard cards only,
+   to match the video's boxed label/value look. */
+.app-main .wizard-panel .field input,
+.app-main .wizard-panel .field select,
+.app-main .wizard-panel .field textarea{
+  background:var(--paper-2);
+  border:1px solid var(--paper-line);
+  border-radius:7px;
+  padding:11px 13px;
+  transition:border-color .15s ease, background .15s ease;
+}
+.app-main .wizard-panel .field input:focus,
+.app-main .wizard-panel .field select:focus,
+.app-main .wizard-panel .field textarea:focus{
+  border-color:var(--amber-deep);
+  background:#fff;
+  outline:none;
+}

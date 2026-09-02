@@ -64,6 +64,16 @@ function extractTemplateDataUrl() {
   return '/api/extract-template-data';
 }
 
+/* Same reasoning/hosting split as analyzeProjectUrl() above — see
+   api/extract-business-card.js, the "Upload from business card" endpoint
+   behind app/master-data.html's Contacts tab. */
+function extractBusinessCardUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/extract-business-card`;
+  }
+  return '/api/extract-business-card';
+}
+
 /* ---------- Reference data (bilingual) ---------- */
 
 const ROLE_TYPES = [
@@ -208,6 +218,25 @@ function riskScoreBandLabel(score, lang) {
   const band = RISK_SCORE_BANDS.find((b) => score <= b.max) || RISK_SCORE_BANDS[RISK_SCORE_BANDS.length - 1];
   return band[lang];
 }
+
+/* ---------- Master Data (app/master-data.html) ----------
+   See supabase/migration_v44_master_data.sql. A standalone internal
+   directory of Contacts, Companies, Products and Public Agencies —
+   advisor/admin only, same access pattern as Roadmap Templates. Not yet
+   wired into programs.financing_entity / projects.organization /
+   profiles.organization, which stay free text for now. */
+const COMPANY_TYPES = [
+  { value: 'manufacturer', en: 'Manufacturer', es: 'Fabricante' },
+  { value: 'service_provider', en: 'Service Provider', es: 'Proveedor de Servicios' },
+  { value: 'financial_entity', en: 'Financial Entity', es: 'Entidad Financiera' },
+];
+
+const PUBLIC_AGENCY_JURISDICTIONS = [
+  { value: 'national', en: 'National', es: 'Nacional' },
+  { value: 'provincial', en: 'Provincial', es: 'Provincial' },
+  { value: 'municipal', en: 'Municipal', es: 'Municipal' },
+  { value: 'international', en: 'International', es: 'Internacional' },
+];
 
 /* ---------- RACI (roadmap steps) ----------
    See supabase/migration_v42_roadmap_raci.sql. Item 2 of the same
@@ -1819,7 +1848,7 @@ const PROJECT_TEMPLATES = {
    Obligaciones Negociables) that can fund last-mile, wholesale-
    interconnection or TIC-applied-AI projects alike (see PROYECTOS
    ELEGIBLES, Sec. V of the Annex). So this template is attached to a
-   *Program* instead (app/programs.html / app/new-program.html), via the
+   *Program* instead (app/financing-programs.html / app/new-program.html), via the
    optional programs.template_key column — see
    supabase/migration_v18_program_template_key.sql. A submitter who selects
    a Program with a registered template gets a second "Fill using
@@ -3120,13 +3149,31 @@ const PROGRAM_TEMPLATES = {
    submits a project under it. Kept as a short curated list (rather than
    letting anyone type a free-text key) so it only ever points at a
    template that actually exists in PROGRAM_TEMPLATES above. */
+/* Every ENACOM financing line below (all except USTDA prep funding and the
+   Emergencias/Catástrofes umbrella Initiative — see the note further down)
+   is ultimately funded out of the Fondo de Servicio Universal, so Pablo
+   asked for their labels here to carry an explicit "FSU —" prefix — it
+   wasn't obvious at a glance that e.g. "Red Mayorista Neutral" is FSU money
+   rather than some other ENACOM budget line. This is a label-only change
+   (this array only feeds the "Program template" dropdown text, via
+   programTemplateLabel() below); it doesn't touch the `value` keys, which
+   stay unprefixed since they're internal lookups into PROGRAM_TEMPLATES
+   above and into programs.template_key. The *actual* Program rows a user
+   creates by picking one of these (their free-text `name` field, typed on
+   new-program.html) are a separate thing — see
+   supabase/data_fix_fsu_program_names_prefix.sql for prefixing those. */
 const PROGRAM_TEMPLATE_OPTIONS = [
-  { value: 'capital_markets_debt_financing', en: 'Capital Markets Debt Financing (ENACOM FATIC — Res. 1191/25)', es: 'Financiamiento por Mercado de Capitales (ENACOM FATIC — Res. 1191/25)' },
-  { value: 'wholesale_neutral_network_program', en: 'Red Mayorista Neutral (ENACOM — Res. 951/25)', es: 'Red Mayorista Neutral (ENACOM — Res. 951/25)' },
-  { value: 'tasu_subsidized_rate_credit', en: 'Subsidized Rate Credit — TASU (ENACOM FATIC — Res. 1385/25)', es: 'Créditos a Tasa Subsidiada — TASU (ENACOM FATIC — Res. 1385/25)' },
-  { value: 'fatic_general_equipment_provision', en: 'FATIC — General / Equipment Provision (ENACOM — Res. 950/25)', es: 'FATIC — General / Provisión de Equipamiento (ENACOM — Res. 950/25)' },
+  { value: 'capital_markets_debt_financing', en: 'FSU — Capital Markets Debt Financing (ENACOM FATIC — Res. 1191/25)', es: 'FSU — Financiamiento por Mercado de Capitales (ENACOM FATIC — Res. 1191/25)' },
+  { value: 'wholesale_neutral_network_program', en: 'FSU — Red Mayorista Neutral (ENACOM — Res. 951/25)', es: 'FSU — Red Mayorista Neutral (ENACOM — Res. 951/25)' },
+  { value: 'tasu_subsidized_rate_credit', en: 'FSU — Subsidized Rate Credit — TASU (ENACOM FATIC — Res. 1385/25)', es: 'FSU — Créditos a Tasa Subsidiada — TASU (ENACOM FATIC — Res. 1385/25)' },
+  { value: 'fatic_general_equipment_provision', en: 'FSU — FATIC — General / Equipment Provision (ENACOM — Res. 950/25)', es: 'FSU — FATIC — General / Provisión de Equipamiento (ENACOM — Res. 950/25)' },
+  // Emergencias/Catástrofes is NOT prefixed — it's an umbrella Initiative
+  // (program_role='umbrella', see migration_v43_program_role.sql and the
+  // Sept 2026 CIP/Emergencias role fix), not a financing line, so an "FSU"
+  // funding prefix would misrepresent it: it funds nothing itself.
   { value: 'emergencias_catastrofes', en: 'Assistance for Emergencies & Disasters (ENACOM — Res. 449/21, updated Res. 323/25)', es: 'Asistencia ante Emergencias y Catástrofes (ENACOM — Res. 449/21, act. Res. 323/25)' },
-  { value: 'conectividad_interes_publico', en: 'Public Interest Connectivity — C.I.P. (ENACOM — Res. 1072/24)', es: 'Conectividad de Interés Público — C.I.P. (ENACOM — Res. 1072/24)' },
+  { value: 'conectividad_interes_publico', en: 'FSU — Public Interest Connectivity — C.I.P. (ENACOM — Res. 1072/24)', es: 'FSU — Conectividad de Interés Público — C.I.P. (ENACOM — Res. 1072/24)' },
+  // USTDA is a separate US federal agency, not ENACOM/FSU money — no prefix.
   { value: 'ustda_project_preparation', en: 'USTDA Project Preparation Funding (standard, pending final version)', es: 'Financiamiento USTDA para Elaboración de Proyecto (estándar, pendiente versión definitiva)' },
 ];
 
@@ -3182,7 +3229,7 @@ const PROJECT_STATUS_LABELS = {
 
 /* A Program's "organization_type" — the public or private entity
    presenting it (e.g. a provincial government vs. a private operator or
-   cooperative). See app/programs.html. */
+   cooperative). See app/new-program.html. */
 const PROGRAM_ORG_TYPE_LABELS = {
   public: { en: 'Public', es: 'Público' },
   private: { en: 'Private', es: 'Privado' },
@@ -3202,6 +3249,38 @@ const PROGRAM_FUNDING_STAGE_LABELS = {
   financing: {
     en: 'Project financing',
     es: 'Financiamiento del proyecto',
+  },
+};
+
+/* A Program's "role" — see the comment on public.programs.program_role in
+   supabase/schema.sql / supabase/migration_v43_program_role.sql.
+   'financing' (default) is what every pre-existing Program already meant:
+   an actual funding source (FSU, BID, CAF, USTDA...), selectable in the
+   "Project preparation/financing" pickers (funding_stage above decides
+   which bucket). 'umbrella' is a different, non-financing role: a Program
+   that just groups several separately-financed projects under one
+   sponsoring initiative — e.g. EPECH's "Atlántico-Pacífico", which bundles
+   independent fiber backbone, submarine cable, datacenter and passive-
+   infrastructure projects. An umbrella Program is never itself a funding
+   source, so it's excluded from the financing/preparation pickers and is
+   the only kind offered in new-project.html's Initiative field — see
+   PROGRAM_ROLE_LABELS' callers for the actual filtering.
+
+   NOTE — user-facing rename (Sept 2026): 'umbrella' programs are called
+   "Initiative"/"Iniciativa" everywhere in the UI (app/initiatives.html,
+   the pprogram field in new-project.html and new-program.html) even though
+   this DB value, this constant's key, and every function/variable name
+   that touches it are deliberately left as "program"/"umbrella" — this is
+   purely a display-text rename, not a schema or identifier rename. See
+   app/initiatives.html's top-of-file comment and PLATFORM_SETUP.md. */
+const PROGRAM_ROLE_LABELS = {
+  financing: {
+    en: 'Financing program',
+    es: 'Programa de financiación',
+  },
+  umbrella: {
+    en: 'Initiative',
+    es: 'Iniciativa',
   },
 };
 
@@ -4073,7 +4152,8 @@ const INAPlatform = {
   /* Programs can only be created by an advisor or admin — see
      supabase/migration_v19_program_permissions.sql for the RLS policy that
      actually enforces this (programs_insert_advisor_or_admin). Used by
-     app/programs.html, app/new-program.html and app/new-project.html to
+     app/initiatives.html, app/financing-programs.html, app/new-program.html
+     and app/new-project.html to
      hide the "Create Program" entry points from standard users, rather than
      letting them fill out the whole form and hit a permission error on
      submit. Any signed-in user — including standard users — can still SEE
@@ -4099,6 +4179,17 @@ const INAPlatform = {
      only an advisor/admin can load/edit/delete them; enforced by RLS
      regardless of what the UI hides. */
   canManageRisks(profile) {
+    return this.isAdvisor(profile) || this.isAdmin(profile);
+  },
+
+  /* Same advisor-or-admin bar, for the Master Data directory (Contacts,
+     Companies, Products, Public Agencies — see
+     supabase/migration_v44_master_data.sql). Unlike Risks/Roadmaps there's
+     no "project owner read-only" carve-out here: a standard user has no
+     visibility into this catalog at all, since it isn't scoped to a
+     project they submitted. Enforced by RLS regardless of what the UI
+     hides. */
+  canManageMasterData(profile) {
     return this.isAdvisor(profile) || this.isAdmin(profile);
   },
 
@@ -4131,6 +4222,14 @@ const INAPlatform = {
   RACI_ROLES,
   raciRoleLabel(value) { return raciRoleLabel(value, currentLang()); },
   raciRoleLetter(value) { return raciRoleLetter(value); },
+  COMPANY_TYPES,
+  companyTypeLabel(value) { return labelFor(COMPANY_TYPES, value, currentLang()); },
+  /* types is companies.types (a text[]) — renders every tag, comma-joined. */
+  companyTypesLabel(types) {
+    return (types || []).map((t) => labelFor(COMPANY_TYPES, t, currentLang())).filter(Boolean).join(', ');
+  },
+  PUBLIC_AGENCY_JURISDICTIONS,
+  publicAgencyJurisdictionLabel(value) { return labelFor(PUBLIC_AGENCY_JURISDICTIONS, value, currentLang()); },
   /* Guided project-submission templates (see PROJECT_TEMPLATES above).
      Returns undefined for project types without a template — callers use
      that to decide whether to show a "Fill using template" link. */
@@ -4741,9 +4840,10 @@ const INAPlatform = {
 
   /* Returns every Program on the platform, regardless of who created it —
      enforced by the programs_select_all_authenticated RLS policy, not by
-     anything client-side. Used both by programs.html (the full list) and
-     new-project.html's Program dropdown (so any user can pick any
-     Program). */
+     anything client-side. Used by initiatives.html and
+     financing-programs.html (each filters this same full list down to its
+     own program_role) and by new-project.html's Initiative dropdown (so
+     any user can pick any Program). */
   async listPrograms() {
     const { data, error } = await supabaseClient
       .from('programs')
@@ -4772,7 +4872,7 @@ const INAPlatform = {
      supabase/migration_v19_program_permissions.sql); a standard user's
      insert is rejected at the database level even if the UI hiding the
      "Create Program" button were somehow bypassed. */
-  async createProgram({ name, organization, organizationType, financingEntity, types, description, templateKey, fundingStage }) {
+  async createProgram({ name, organization, organizationType, financingEntity, types, description, templateKey, fundingStage, programRole }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
@@ -4789,6 +4889,10 @@ const INAPlatform = {
         description: description || null,
         template_key: templateKey || null,
         funding_stage: fundingStage === 'preparation' ? 'preparation' : 'financing',
+        // 'umbrella' = groups several independently-financed projects, not
+        // itself a funding source (e.g. Atlántico-Pacífico) — see
+        // PROGRAM_ROLE_LABELS above and migration_v43_program_role.sql.
+        program_role: programRole === 'umbrella' ? 'umbrella' : 'financing',
       })
       .select()
       .single();
@@ -4803,7 +4907,7 @@ const INAPlatform = {
      'financing' (funds the project's implementation — FSU, BID, etc.,
      default) — see PROGRAM_FUNDING_STAGE_LABELS below and
      supabase/migration_v21_program_funding_stage_and_applications.sql. */
-  async updateProgram(id, { name, organization, organizationType, financingEntity, types, description, templateKey, fundingStage }) {
+  async updateProgram(id, { name, organization, organizationType, financingEntity, types, description, templateKey, fundingStage, programRole }) {
     const { data, error } = await supabaseClient
       .from('programs')
       .update({
@@ -4815,6 +4919,7 @@ const INAPlatform = {
         description: description || null,
         template_key: templateKey || null,
         funding_stage: fundingStage === 'preparation' ? 'preparation' : 'financing',
+        program_role: programRole === 'umbrella' ? 'umbrella' : 'financing',
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
@@ -5014,6 +5119,26 @@ const INAPlatform = {
   programFundingStageLabel(value) {
     const entry = PROGRAM_FUNDING_STAGE_LABELS[value];
     return entry ? entry[currentLang()] : value;
+  },
+
+  PROGRAM_ROLE_LABELS,
+  programRoleLabel(value) {
+    const entry = PROGRAM_ROLE_LABELS[value || 'financing'];
+    return entry ? entry[currentLang()] : value;
+  },
+  // Defaults missing/legacy data (programs created before migration_v43) to
+  // 'financing' — the role every Program had before 'umbrella' existed, so
+  // nothing already in the financing/preparation pickers silently
+  // disappears just because it predates this field.
+  isUmbrellaProgram(pg) {
+    return !!pg && pg.program_role === 'umbrella';
+  },
+  // Inverse of isUmbrellaProgram() above — used by app/financing-programs.html
+  // to list only real funding sources, and treats a missing/legacy
+  // program_role as 'financing' (the pre-migration_v43 default) rather than
+  // silently dropping older rows.
+  isFinancingProgram(pg) {
+    return !!pg && pg.program_role !== 'umbrella';
   },
 
   // Agreed convention (migration_v36_program_financing_entity.sql): a
@@ -5996,6 +6121,269 @@ const INAPlatform = {
       if (!topRisk || r.risk_score > topRisk.risk_score) topRisk = r;
     });
     return { counts, topRisk, total: (risks || []).length };
+  },
+
+  /* ---------- Master Data (companies, public_agencies, contacts, products) ----------
+     See supabase/migration_v44_master_data.sql. RLS restricts all four
+     tables to advisor/admin, so these helpers assume the caller already
+     gated the page with canManageMasterData(). */
+
+  async listCompanies() {
+    const { data, error } = await supabaseClient
+      .from('companies')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  async createCompany({ name, types, country, website, notes }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('companies')
+      .insert({
+        name,
+        types: types || [],
+        country: country || null,
+        website: website || null,
+        notes: notes || null,
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateCompany(id, patch) {
+    const payload = { updated_at: new Date().toISOString() };
+    if (patch.name !== undefined) payload.name = patch.name;
+    if (patch.types !== undefined) payload.types = patch.types || [];
+    if (patch.country !== undefined) payload.country = patch.country || null;
+    if (patch.website !== undefined) payload.website = patch.website || null;
+    if (patch.notes !== undefined) payload.notes = patch.notes || null;
+    const { data, error } = await supabaseClient
+      .from('companies')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteCompany(id) {
+    const { error } = await supabaseClient.from('companies').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async listPublicAgencies() {
+    const { data, error } = await supabaseClient
+      .from('public_agencies')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  async createPublicAgency({ name, jurisdiction, country, notes }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('public_agencies')
+      .insert({
+        name,
+        jurisdiction: jurisdiction || 'national',
+        country: country || 'Argentina',
+        notes: notes || null,
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updatePublicAgency(id, patch) {
+    const payload = { updated_at: new Date().toISOString() };
+    if (patch.name !== undefined) payload.name = patch.name;
+    if (patch.jurisdiction !== undefined) payload.jurisdiction = patch.jurisdiction || 'national';
+    if (patch.country !== undefined) payload.country = patch.country || 'Argentina';
+    if (patch.notes !== undefined) payload.notes = patch.notes || null;
+    const { data, error } = await supabaseClient
+      .from('public_agencies')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deletePublicAgency(id) {
+    const { error } = await supabaseClient.from('public_agencies').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  /* Embeds company/public_agency name for display — a contact has at most
+     one of the two set (contacts_single_affiliation CHECK). */
+  async listContacts() {
+    const { data, error } = await supabaseClient
+      .from('contacts')
+      .select('*, companies(id, name), public_agencies(id, name)')
+      .order('full_name', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  async createContact({ fullName, email, phone, positionTitle, companyId, publicAgencyId, notes }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('contacts')
+      .insert({
+        full_name: fullName,
+        email: email || null,
+        phone: phone || null,
+        position_title: positionTitle || null,
+        company_id: companyId || null,
+        public_agency_id: publicAgencyId || null,
+        notes: notes || null,
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateContact(id, patch) {
+    const payload = { updated_at: new Date().toISOString() };
+    if (patch.fullName !== undefined) payload.full_name = patch.fullName;
+    if (patch.email !== undefined) payload.email = patch.email || null;
+    if (patch.phone !== undefined) payload.phone = patch.phone || null;
+    if (patch.positionTitle !== undefined) payload.position_title = patch.positionTitle || null;
+    if (patch.companyId !== undefined) payload.company_id = patch.companyId || null;
+    if (patch.publicAgencyId !== undefined) payload.public_agency_id = patch.publicAgencyId || null;
+    if (patch.notes !== undefined) payload.notes = patch.notes || null;
+    if (patch.businessCardPath !== undefined) payload.business_card_path = patch.businessCardPath || null;
+    const { data, error } = await supabaseClient
+      .from('contacts')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteContact(id) {
+    const { error } = await supabaseClient.from('contacts').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  /* ---------- Business card upload (Contacts) — see migration_v45 ----------
+     Reads a photographed/scanned business card via api/extract-business-card.js
+     (Anthropic vision — see that file's header for why it's the only
+     provider wired up here) and returns the extracted fields for the
+     caller to pre-fill app/master-data.html's Contact form. Never writes
+     anything — the contact is only saved when the user hits Save. */
+  async extractBusinessCard(imageBase64, mediaType) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(extractBusinessCardUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ imageBase64, mediaType }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error || 'Card reading request failed.');
+    return body;
+  },
+
+  /* Uploads the business card image file to Storage (same "project-documents"
+     bucket as project/program documents, reused under a "master-data/"
+     prefix rather than a new bucket — see migration_v45) and links it to
+     the given contact via business_card_path. Call AFTER the contact
+     already exists (createContact/updateContact), since the storage path
+     includes the contact's id. */
+  async uploadContactBusinessCard(contactId, file) {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `master-data/contacts/${contactId}/${Date.now()}_${safeName}`;
+    const { error: uploadError } = await supabaseClient
+      .storage
+      .from('project-documents')
+      .upload(storagePath, file);
+    if (uploadError) throw uploadError;
+    return this.updateContact(contactId, { businessCardPath: storagePath });
+  },
+
+  /* Signed URL (1 hour) to view/download a contact's business card image —
+     the bucket is private, so this is generated on demand rather than
+     stored. First client-side use of createSignedUrl() in this codebase;
+     see the comment on the "master_data_read_advisor_or_admin" storage
+     policy in migration_v45 for why advisor/admin can always read it
+     regardless of who uploaded it (Master Data has no "owner" concept). */
+  async getContactBusinessCardUrl(path) {
+    if (!path) return null;
+    const { data, error } = await supabaseClient
+      .storage
+      .from('project-documents')
+      .createSignedUrl(path, 3600);
+    if (error) throw error;
+    return data.signedUrl;
+  },
+
+  async listProducts() {
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('*, companies(id, name)')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  async createProduct({ name, companyId, category, description }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('products')
+      .insert({
+        name,
+        company_id: companyId || null,
+        category: category || null,
+        description: description || null,
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateProduct(id, patch) {
+    const payload = { updated_at: new Date().toISOString() };
+    if (patch.name !== undefined) payload.name = patch.name;
+    if (patch.companyId !== undefined) payload.company_id = patch.companyId || null;
+    if (patch.category !== undefined) payload.category = patch.category || null;
+    if (patch.description !== undefined) payload.description = patch.description || null;
+    const { data, error } = await supabaseClient
+      .from('products')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteProduct(id) {
+    const { error } = await supabaseClient.from('products').delete().eq('id', id);
+    if (error) throw error;
   },
 
   /* ---------- Framework analysis ---------- */

@@ -581,18 +581,18 @@ form.advisory .full{ grid-column: 1 / -1; }
    palette that doesn't exist anywhere else in the site's ink/paper/amber
    system. */
 .risk-badge{
-  display:inline-flex; align-items:center; gap:4px; font-family:var(--mono); font-size:10.5px;
-  letter-spacing:.02em; white-space:nowrap; padding:4px 10px; border-radius:100px; line-height:1.3;
-  background:var(--paper-2); color:var(--muted); border:1px solid var(--paper-line);
+  display:inline-flex; align-items:center; gap:4px; font-family:var(--mono); font-size:12px;
+  letter-spacing:.02em; white-space:nowrap; padding:6px 13px; border-radius:100px; line-height:1.3;
+  background:var(--paper-2); color:var(--muted); border:1px solid var(--paper-line); font-weight:600;
 }
 .risk-badge.band-low{ background:var(--paper-2); color:var(--muted); border:1px solid var(--paper-line); }
 .risk-badge.band-medium{ background:var(--amber-soft); color:var(--amber-deep); border:1px solid var(--amber); }
 .risk-badge.band-high{ background:var(--amber); color:var(--ink); border:1px solid var(--amber-deep); }
 .risk-badge.band-critical{ background:var(--ink); color:var(--amber); border:1px solid var(--ink); }
 
-.risk-summary{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; max-width:520px; }
+.risk-summary{ display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; max-width:600px; }
 .risk-summary-card{
-  padding:14px 12px; border-radius:10px; text-align:center;
+  padding:20px 16px; border-radius:12px; text-align:center;
   background:var(--paper-2); border:1px solid var(--paper-line);
 }
 .risk-summary-card.band-low{ background:var(--paper-2); border-color:var(--paper-line); }
@@ -601,8 +601,8 @@ form.advisory .full{ grid-column: 1 / -1; }
 .risk-summary-card.band-critical{ background:var(--ink); border-color:var(--ink); }
 .risk-summary-card.band-critical .risk-summary-count,
 .risk-summary-card.band-critical .risk-summary-label{ color:var(--amber); }
-.risk-summary-count{ font-family:var(--serif); font-style:italic; font-size:24px; color:var(--text); line-height:1; }
-.risk-summary-label{ font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-top:6px; }
+.risk-summary-count{ font-family:var(--serif); font-style:italic; font-size:32px; color:var(--text); line-height:1; }
+.risk-summary-label{ font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-top:8px; }
 @media (max-width:520px){ .risk-summary{ grid-template-columns:repeat(2, 1fr); max-width:none; } }
 
 .risk-top-card{
@@ -823,6 +823,38 @@ form.advisory .full{ grid-column: 1 / -1; }
   border:1px solid var(--paper-line); white-space:nowrap;
 }
 
+/* Master Data tab switcher (see app/master-data.html) — a plain
+   underline-tab pattern, distinct from .chk-pill (used inside its forms
+   for single/multi-select fields like company type or jurisdiction). */
+.md-tab{
+  font-family:var(--sans); font-size:13.5px; font-weight:500; color:var(--muted);
+  background:none; border:none; border-bottom:2px solid transparent;
+  padding:10px 4px; margin-bottom:-1px; cursor:pointer;
+}
+.md-tab:hover{ color:var(--text); }
+.md-tab.active{ color:var(--ink); border-bottom-color:var(--amber); }
+
+/* Business card upload (Master Data → Contacts) — see migration_v45 and
+   app/master-data.html's "Upload from business card" flow. */
+.card-scan-status{
+  font-family:var(--mono); font-size:11.5px; color:var(--amber-deep);
+}
+.card-pending-name{
+  font-size:12px; color:var(--muted); font-style:italic;
+}
+/* "Create this new company/agency" suggestion box shown inside the Contact
+   form when the card reader detects an org that isn't in Master Data yet —
+   never submitted silently, see cNewCompanyConfirm/cNewAgencyConfirm. */
+.new-org-box{
+  margin-top:10px; padding:12px 14px; border:1px dashed var(--amber);
+  background:var(--amber-soft); border-radius:4px;
+}
+.new-org-box input[type="text"]{ margin-top:8px; width:100%; }
+.chk-pill-inline{
+  display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--amber-deep); font-weight:500;
+}
+.chk-pill-inline input{ accent-color:var(--amber-deep); margin:0; }
+
 /* Program funding_stage badge (see app/programs.html and
    supabase/migration_v21_program_funding_stage_and_applications.sql) —
    'preparation' Programs (fund elaborating the project itself, e.g. USTDA)
@@ -830,6 +862,17 @@ form.advisory .full{ grid-column: 1 / -1; }
    just uses .type-tag's neutral styling. */
 .funding-stage-preparation{
   background:rgba(217,146,46,.12); color:var(--amber-deep); border-color:rgba(217,146,46,.35);
+}
+
+/* Program role badge (see app/programs.html, supabase/migration_v43_program_role.sql)
+   — shown INSTEAD OF the funding-stage badge above for 'umbrella' Programs
+   (they don't fund anything, so a preparation/financing badge would be
+   misleading). A deliberately different hue (ink, not amber) so a
+   multi-project umbrella like Atlántico-Pacífico never reads as "just
+   another financing badge" next to FSU/BID/CAF tags in the same list. */
+.program-role-umbrella{
+  background:rgba(11,21,38,.06); color:var(--ink-2); border-color:rgba(11,21,38,.18);
+  font-weight:600;
 }
 
 /* Program financing_entity tag (see migration_v36_program_financing_entity.sql
@@ -936,13 +979,13 @@ a.roadmap-row:hover{ border-color:var(--amber); }
    RACI breakdown scans quickly; same restrained ink/paper/amber palette
    as the rest of the platform (no unrelated color language introduced). */
 .raci-badge{
-  display:inline-flex; align-items:center; gap:4px; font-family:var(--mono); font-size:10px;
-  letter-spacing:.02em; white-space:nowrap; padding:3px 8px 3px 6px; border-radius:100px; line-height:1.3;
+  display:inline-flex; align-items:center; gap:7px; font-family:var(--sans); font-size:12.5px;
+  letter-spacing:.01em; white-space:nowrap; padding:5px 13px 5px 5px; border-radius:100px; line-height:1.3;
   background:var(--paper-2); color:var(--muted); border:1px solid var(--paper-line);
 }
 .raci-badge .raci-letter{
-  display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px;
-  border-radius:50%; font-weight:700; font-size:9px;
+  display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+  border-radius:50%; font-weight:700; font-size:11.5px; font-family:var(--mono); flex:0 0 auto;
 }
 .raci-badge.role-responsible{ background:var(--paper-2); color:var(--text); border-color:var(--paper-line); }
 .raci-badge.role-responsible .raci-letter{ background:var(--text); color:var(--paper); }
