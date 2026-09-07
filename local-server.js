@@ -93,6 +93,7 @@ const LEGACY_REDIRECTS = {
   '/app/gestion-templates.html': '/app/roadmap-templates.html',
   '/app/new-gestion-template.html': '/app/new-roadmap-template.html',
   '/app/gestion-instance.html': '/app/roadmap-instance.html',
+  '/app/programs.html': '/app/initiatives.html',
   '/app': '/app/index.html',
 };
 app.get(Object.keys(LEGACY_REDIRECTS), (req, res) => {
