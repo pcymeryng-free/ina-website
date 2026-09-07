@@ -1764,13 +1764,17 @@ shipping.
 2. In Vercel → your project → **Settings → Environment Variables**, add:
    - `LLM_PROVIDER` = `groq`
    - `GROQ_API_KEY` = the key from step 1
-   - `GROQ_MODEL` (optional) — defaults to `llama-3.3-70b-versatile` if unset.
-     Groq's free-tier catalog also includes `llama-3.1-8b-instant` (faster,
-     weaker), `llama-4-scout`, `qwen3-32b` and `openai/gpt-oss-120b` as of
-     mid-2026 — check
-     [console.groq.com/docs/models](https://console.groq.com/docs/models)
-     for the current list, since free-tier model availability shifts over
-     time.
+   - `GROQ_MODEL` (optional) — defaults to `openai/gpt-oss-120b` if unset.
+     (Was `llama-3.3-70b-versatile` until Groq deprecated and shut it down
+     on 08/16/26 — this is exactly the kind of thing that breaks silently:
+     Pablo hit this in production as a 502 with `"model_not_found"` in the
+     Groq error body, invisible in Vercel's own logs until the client-side
+     logging fix below made it visible. Groq's free-tier catalog rotates
+     fairly often — check
+     [console.groq.com/docs/deprecations](https://console.groq.com/docs/deprecations)
+     and [console.groq.com/docs/models](https://console.groq.com/docs/models)
+     periodically, since free-tier model availability shifts over time and
+     a deprecated model ID just starts failing with no warning.)
 3. **Tick ONLY "Preview" and/or "Development" for these three variables —
    NOT "Production."** Production should keep using `ANTHROPIC_API_KEY`
    with `LLM_PROVIDER` left unset (defaults to `'anthropic'`). This is the
@@ -1789,16 +1793,18 @@ shipping.
 
 **This also now covers the business card reader (Master Data → Contacts →
 "Upload from business card").** Unlike when this section was first written,
-Groq's free tier added a genuinely multimodal open-weight model — Llama 4
-Scout (`meta-llama/llama-4-scout-17b-16e-instruct`), which reads images
-natively (up to 5 per request), not just text. `api/extract-business-card.js`
-picks it up automatically once `LLM_PROVIDER=groq` and `GROQ_API_KEY` are
-set (same two variables as above — nothing new to create). It uses a
-**separate** model variable, `GROQ_VISION_MODEL` (optional, defaults to
-`meta-llama/llama-4-scout-17b-16e-instruct`), rather than reusing
-`GROQ_MODEL` from step 2 above — the model configured there
-(`llama-3.3-70b-versatile` by default) is text-only and would reject an
-image. If `LLM_PROVIDER` is unset or anything other than `groq`, this
+Groq's free tier added a genuinely multimodal open-weight model — Qwen 3.6
+27B (`qwen/qwen3.6-27b`), which reads images natively (up to 5 per request),
+not just text. (This was Llama 4 Scout,
+`meta-llama/llama-4-scout-17b-16e-instruct`, until Groq deprecated and shut
+it down on 07/17/26 — see console.groq.com/docs/deprecations if it happens
+again.) `api/extract-business-card.js` picks it up automatically once
+`LLM_PROVIDER=groq` and `GROQ_API_KEY` are set (same two variables as above —
+nothing new to create). It uses a **separate** model variable,
+`GROQ_VISION_MODEL` (optional, defaults to `qwen/qwen3.6-27b`), rather than
+reusing `GROQ_MODEL` from step 2 above — the model configured there
+(`openai/gpt-oss-120b` by default) is text-only and would reject an image.
+If `LLM_PROVIDER` is unset or anything other than `groq`, this
 endpoint still falls back to Claude vision (`ANTHROPIC_API_KEY`) as before —
 Bedrock and local don't have a vision path wired up here (see
 `api/extract-business-card.js`'s file header). So to test the whole AI
@@ -3605,6 +3611,42 @@ extraction call + updated header comments). No database or `platform.js`
 changes. No redeploy step beyond the normal `npm install` + Vercel deploy —
 if you also run `local-server.js`, run `npm install` there too so its
 `node_modules` picks up 1.1.4.
+
+**Follow-up: analysis still failing silently after the pdf-parse fix.**
+Separately from the above, every branch of `api/analyze-project.js` and
+`api/extract-template-data.js` that sets `status: 'error'` on a project (a
+failed Groq/Bedrock/local/Anthropic request, a model response that isn't
+valid JSON, or any other unhandled exception) previously did so with zero
+logging — no `console.error` anywhere in those paths — so a genuine failure
+produced nothing in Vercel's Runtime Logs to diagnose it by, and the client
+(`app/project.html`) always shows the same generic "The analysis couldn't
+be completed" regardless of cause (it only polls the project's `status`
+column, which is just `'error'` with no detail attached). Added
+`console.error(...)` at every one of these branches in both files, so the
+next time an analysis fails, the actual cause (HTTP status + response body
+from the model provider, or the exception/stack trace) will show up in
+Vercel's Runtime Logs. This doesn't fix a specific bug by itself — it makes
+the *next* failure diagnosable. If you hit "The analysis couldn't be
+completed" again after deploying this, check Runtime Logs for a line
+starting with `[analyze-project]` right after the failed attempt.
+
+In practice, Vercel's Runtime Logs turned out unreliable to reach for this
+(historical search by request ID found nothing, and the live-tail view
+didn't show anything useful either — plan-dependent log retention/behavior,
+not something fixable from the code side). The client side had the same
+silent-failure problem for the same reason: `INAPlatform.requestAnalysis()`
+in `assets/platform.js` only used `body.error` (a short generic string) and
+silently dropped `body.detail` (the actual diagnostic — the model
+provider's error response, or the raw model output when JSON parsing
+failed) when throwing; `app/project.html`'s `runAnalysisAndPoll()` then
+caught and discarded even that. Fixed both: `requestAnalysis()` now
+`console.error`s `body.detail`/`body.raw` before throwing, and
+`runAnalysisAndPoll()` logs the caught error too. Net effect: the real
+cause of a failed analysis is now visible directly in the browser's own
+DevTools Console (F12) the moment it fails — no Vercel dashboard needed at
+all, which is both faster and worked reliably where the Vercel logs UI
+didn't. **Files touched:** `assets/platform.js`, `app/project.html`; bumped
+`platform.js?v=` to 60 across all `app/*.html`.
 
 ## Known limitations (v1)
 
