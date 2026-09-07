@@ -419,7 +419,11 @@ async function handler(req, res) {
 
     let parsed;
     try {
-      const cleaned = rawText.trim().replace(/^```json\s*/i, '').replace(/```$/, '');
+      // Strip a leading <think>...</think> block — see the matching
+      // comment/fix in api/analyze-project.js and
+      // api/extract-business-card.js for why.
+      const withoutThink = rawText.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '');
+      const cleaned = withoutThink.trim().replace(/^```json\s*/i, '').replace(/```$/, '');
       parsed = JSON.parse(cleaned);
     } catch (e) {
       console.error('[extract-template-data] could not parse model output as JSON:', e, '\nraw output (first 2000 chars):', rawText.slice(0, 2000));

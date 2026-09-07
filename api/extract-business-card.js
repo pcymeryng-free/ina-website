@@ -124,7 +124,16 @@ function cleanField(v) {
 }
 
 function parseModelJson(rawText) {
-  const cleaned = (rawText || '').trim().replace(/^```json\s*/i, '').replace(/```$/, '');
+  // Strip a leading <think>...</think> block first — reasoning models on
+  // Groq (e.g. qwen/qwen3.6-27b, the current GROQ_VISION_MODEL_DEFAULT)
+  // default to reasoning_format='raw', which puts the chain-of-thought
+  // inline in the content ahead of the actual answer. We pass
+  // reasoning_format: 'hidden' below to avoid this at the source, but
+  // stripping it here too is cheap insurance against any reasoning model
+  // that ends up configured here in the future, via GROQ_VISION_MODEL or
+  // otherwise.
+  const withoutThink = (rawText || '').replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '');
+  const cleaned = withoutThink.trim().replace(/^```json\s*/i, '').replace(/```$/, '');
   return JSON.parse(cleaned);
 }
 
@@ -208,6 +217,14 @@ async function handler(req, res) {
           model: GROQ_VISION_MODEL || GROQ_VISION_MODEL_DEFAULT,
           max_tokens: 500,
           temperature: 0,
+          // The default vision model (qwen/qwen3.6-27b) is a reasoning
+          // model that defaults to reasoning_format='raw' — its
+          // chain-of-thought gets prepended inline to the answer inside
+          // <think>...</think> tags, which broke JSON.parse() below the
+          // moment this model became the default (see PLATFORM_SETUP.md).
+          // 'hidden' returns only the final answer, no reasoning at all —
+          // exactly what's needed here since nothing downstream uses it.
+          reasoning_format: 'hidden',
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
             {

@@ -751,7 +751,17 @@ async function handler(req, res) {
 
     let parsed;
     try {
-      const cleaned = rawText.trim().replace(/^```json\s*/i, '').replace(/```$/, '');
+      // Strip a leading <think>...</think> block before anything else —
+      // some Groq models (reasoning models like Qwen 3.6/3.8) inline their
+      // chain-of-thought ahead of the actual answer when reasoning_format
+      // isn't explicitly set to 'hidden'/'parsed'. GROQ_MODEL_DEFAULT
+      // (openai/gpt-oss-120b) keeps reasoning in a separate field by
+      // default so this shouldn't normally fire, but it's cheap insurance
+      // against GROQ_MODEL being pointed at a reasoning model in the
+      // future — see the matching fix in api/extract-business-card.js,
+      // which hit this for real with its vision model.
+      const withoutThink = rawText.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '');
+      const cleaned = withoutThink.trim().replace(/^```json\s*/i, '').replace(/```$/, '');
       parsed = JSON.parse(cleaned);
     } catch (e) {
       console.error(`[analyze-project] projectId=${projectId} provider=${provider} could not parse model output as JSON:`, e, '\nraw output (first 2000 chars):', rawText.slice(0, 2000));
