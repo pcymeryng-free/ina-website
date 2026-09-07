@@ -39,7 +39,7 @@
  * env vars to set up here if AI Analysis is already configured.
  */
 
-const GROQ_MODEL_DEFAULT = 'llama-3.3-70b-versatile';
+const GROQ_MODEL_DEFAULT = 'openai/gpt-oss-120b'; // was 'llama-3.3-70b-versatile' — Groq deprecated/shut it down 08/16/26, see api/analyze-project.js's header comment
 const BEDROCK_MODEL_DEFAULT = 'meta.llama3-3-70b-instruct-v1:0';
 const BEDROCK_REGION_DEFAULT = 'us-east-1';
 const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
@@ -337,6 +337,7 @@ async function handler(req, res) {
       });
       if (!groqRes.ok) {
         const errText = await groqRes.text().catch(() => '');
+        console.error(`[extract-template-data] Groq request failed (status ${groqRes.status}):`, errText);
         return json(res, 502, { error: 'Extraction model request failed', detail: errText });
       }
       const groqData = await groqRes.json();
@@ -364,6 +365,7 @@ async function handler(req, res) {
       });
       if (!localRes.ok) {
         const errText = await localRes.text().catch(() => '');
+        console.error(`[extract-template-data] local model request failed (status ${localRes.status}):`, errText);
         return json(res, 502, { error: 'Extraction model request failed (local model)', detail: errText });
       }
       const localData = await localRes.json();
@@ -384,6 +386,7 @@ async function handler(req, res) {
         const outputContent = (bedrockRes.output && bedrockRes.output.message && bedrockRes.output.message.content) || [];
         rawText = outputContent.map((b) => b.text || '').join('');
       } catch (bedrockErr) {
+        console.error('[extract-template-data] Bedrock request failed:', bedrockErr);
         return json(res, 502, {
           error: 'Extraction model request failed',
           detail: String((bedrockErr && bedrockErr.message) || bedrockErr),
@@ -407,6 +410,7 @@ async function handler(req, res) {
       });
       if (!anthropicRes.ok) {
         const errText = await anthropicRes.text().catch(() => '');
+        console.error(`[extract-template-data] Anthropic request failed (status ${anthropicRes.status}):`, errText);
         return json(res, 502, { error: 'Extraction model request failed', detail: errText });
       }
       const anthropicData = await anthropicRes.json();
@@ -418,6 +422,7 @@ async function handler(req, res) {
       const cleaned = rawText.trim().replace(/^```json\s*/i, '').replace(/```$/, '');
       parsed = JSON.parse(cleaned);
     } catch (e) {
+      console.error('[extract-template-data] could not parse model output as JSON:', e, '\nraw output (first 2000 chars):', rawText.slice(0, 2000));
       return json(res, 502, { error: 'Could not parse extraction output', raw: rawText.slice(0, 2000) });
     }
 
@@ -429,6 +434,7 @@ async function handler(req, res) {
 
     return json(res, 200, { ok: true, answers, documentsUsed, skipped });
   } catch (err) {
+    console.error('[extract-template-data] unhandled error:', err);
     return json(res, 500, { error: 'Extraction failed', detail: String((err && err.message) || err) });
   }
 }

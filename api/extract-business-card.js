@@ -18,17 +18,20 @@
  * api/analyze-project.js and api/extract-template-data.js):
  *
  *   - LLM_PROVIDER='groq' (or unset GROQ_API_KEY-only setups) — uses Groq's
- *     free-tier cloud API with Llama 4 Scout (`meta-llama/llama-4-scout-
- *     17b-16e-instruct`), an open-weight Meta model that's natively
- *     multimodal (text + up to 5 images per request). Groq's free tier
- *     needs no credit card — see console.groq.com. This is the option to
- *     use if you want to test the whole platform's AI features, business
- *     cards included, without paying for API credits. Requires
+ *     free-tier cloud API with Qwen 3.6 27B (`qwen/qwen3.6-27b`), an
+ *     open-weight multimodal model (text + up to 5 images per request).
+ *     Groq's free tier needs no credit card — see console.groq.com. This
+ *     is the option to use if you want to test the whole platform's AI
+ *     features, business cards included, without paying for API credits.
+ *     (Was Llama 4 Scout, `meta-llama/llama-4-scout-17b-16e-instruct`,
+ *     until Groq deprecated/shut it down on 07/17/26 — see
+ *     console.groq.com/docs/deprecations for the current recommended
+ *     vision model if this ever needs updating again.) Requires
  *     GROQ_API_KEY (same key already used for AI Analysis/Autocomplete on
  *     the groq path — nothing new to create if that's already set up).
  *     Uses a SEPARATE env var for the model, GROQ_VISION_MODEL, rather
  *     than reusing GROQ_MODEL — the model configured there for AI
- *     Analysis (`llama-3.3-70b-versatile` by default) is text-only and
+ *     Analysis (`openai/gpt-oss-120b` by default) is text-only and
  *     does not accept images.
  *   - Anything else (default 'anthropic', or bedrock/local/bedrock-mock
  *     left over from AI Analysis config) — uses Claude vision
@@ -54,7 +57,7 @@
  *     write anything.
  */
 
-const GROQ_VISION_MODEL_DEFAULT = 'meta-llama/llama-4-scout-17b-16e-instruct';
+const GROQ_VISION_MODEL_DEFAULT = 'qwen/qwen3.6-27b'; // was 'meta-llama/llama-4-scout-17b-16e-instruct' — Groq deprecated/shut it down 07/17/26, see the file header comment above
 
 function json(res, status, body) {
   res.status(status).setHeader('Content-Type', 'application/json');

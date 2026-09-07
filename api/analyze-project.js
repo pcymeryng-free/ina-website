@@ -33,7 +33,13 @@
  *                         PLATFORM_SETUP.md for the full walkthrough.
  *   GROQ_API_KEY        — required when LLM_PROVIDER='groq'. Free account
  *                         at console.groq.com, no credit card needed.
- *   GROQ_MODEL          — optional, defaults to 'llama-3.3-70b-versatile'.
+ *   GROQ_MODEL          — optional, defaults to 'openai/gpt-oss-120b'. (Was
+ *                         'llama-3.3-70b-versatile' until Groq deprecated
+ *                         and shut it down on 08/16/26 — see
+ *                         console.groq.com/docs/deprecations. If you ever
+ *                         see a Groq "model_not_found" error again, that
+ *                         page is the place to check for the current
+ *                         recommended replacement.)
  *   ------------------------------------------------------------------
  *   Set LLM_PROVIDER='bedrock' to run an open-weight model (Meta Llama
  *   3.3 70B by default) through AWS Bedrock instead — an open-source model
@@ -137,7 +143,7 @@
 // function, not the 2.x `new PDFParse({data}).getText()` class), which is
 // reflected in the extraction code below.
 
-const GROQ_MODEL_DEFAULT = 'llama-3.3-70b-versatile';
+const GROQ_MODEL_DEFAULT = 'openai/gpt-oss-120b';
 const BEDROCK_MODEL_DEFAULT = 'meta.llama3-3-70b-instruct-v1:0';
 const BEDROCK_REGION_DEFAULT = 'us-east-1';
 const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
@@ -612,6 +618,7 @@ async function handler(req, res) {
 
       if (!groqRes.ok) {
         const errText = await groqRes.text().catch(() => '');
+        console.error(`[analyze-project] projectId=${projectId} Groq request failed (status ${groqRes.status}):`, errText);
         await supabaseRest(`/projects?id=eq.${projectId}`, {
           method: 'PATCH',
           body: { status: 'error', updated_at: new Date().toISOString() },
@@ -655,6 +662,7 @@ async function handler(req, res) {
 
       if (!localRes.ok) {
         const errText = await localRes.text().catch(() => '');
+        console.error(`[analyze-project] projectId=${projectId} local model request failed (status ${localRes.status}):`, errText);
         await supabaseRest(`/projects?id=eq.${projectId}`, {
           method: 'PATCH',
           body: { status: 'error', updated_at: new Date().toISOString() },
@@ -695,6 +703,7 @@ async function handler(req, res) {
         const outputContent = (bedrockRes.output && bedrockRes.output.message && bedrockRes.output.message.content) || [];
         rawText = outputContent.map((b) => b.text || '').join('');
       } catch (bedrockErr) {
+        console.error(`[analyze-project] projectId=${projectId} Bedrock request failed:`, bedrockErr);
         await supabaseRest(`/projects?id=eq.${projectId}`, {
           method: 'PATCH',
           body: { status: 'error', updated_at: new Date().toISOString() },
@@ -724,6 +733,7 @@ async function handler(req, res) {
 
       if (!anthropicRes.ok) {
         const errText = await anthropicRes.text().catch(() => '');
+        console.error(`[analyze-project] projectId=${projectId} Anthropic request failed (status ${anthropicRes.status}):`, errText);
         await supabaseRest(`/projects?id=eq.${projectId}`, {
           method: 'PATCH',
           body: { status: 'error', updated_at: new Date().toISOString() },
@@ -744,6 +754,7 @@ async function handler(req, res) {
       const cleaned = rawText.trim().replace(/^```json\s*/i, '').replace(/```$/, '');
       parsed = JSON.parse(cleaned);
     } catch (e) {
+      console.error(`[analyze-project] projectId=${projectId} provider=${provider} could not parse model output as JSON:`, e, '\nraw output (first 2000 chars):', rawText.slice(0, 2000));
       await supabaseRest(`/projects?id=eq.${projectId}`, {
         method: 'PATCH',
         body: { status: 'error', updated_at: new Date().toISOString() },
@@ -852,6 +863,13 @@ async function handler(req, res) {
 
     return json(res, 200, { ok: true, overall_score: overallScore, stage });
   } catch (err) {
+    // Was previously silent — status was set to 'error' with nothing
+    // logged, so a genuine crash here was invisible in Vercel's Runtime
+    // Logs (nothing to see because nothing was ever written). This is the
+    // catch-all for any unexpected exception in the whole handler, so it's
+    // the most likely place a real bug shows up — log it with a stack
+    // trace so it's actually diagnosable next time.
+    console.error(`[analyze-project] projectId=${projectId} provider=${provider} unhandled error:`, err);
     try {
       await supabaseRest(`/projects?id=eq.${projectId}`, {
         method: 'PATCH',
