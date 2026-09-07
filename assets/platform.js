@@ -3290,6 +3290,51 @@ const PLATFORM_ROLE_LABELS = {
   admin: { en: 'Admin', es: 'Admin' },
 };
 
+/* Configurable-roles system (see supabase/migration_v46_role_permissions.sql).
+   Entity keys must match exactly the `entity` CHECK constraint on
+   public.role_permissions — this list drives the permission matrix UI in
+   app/roles.html and is also the single source of truth every
+   entityPermission()/canManage*() call below reads from. */
+const RBAC_ENTITIES = [
+  'initiatives', 'projects', 'financing', 'roadmaps',
+  'master_data', 'risks', 'user_management',
+];
+const RBAC_ENTITY_LABELS = {
+  initiatives: { en: 'Initiatives', es: 'Iniciativas' },
+  projects: { en: 'Projects', es: 'Proyectos' },
+  financing: { en: 'Financing', es: 'Financiación' },
+  roadmaps: { en: 'Roadmaps', es: 'Roadmaps' },
+  master_data: { en: 'Master Data', es: 'Master Data' },
+  risks: { en: 'Risk Matrix', es: 'Matriz de Riesgos' },
+  user_management: { en: 'User & Role Management', es: 'Gestión de Usuarios y Roles' },
+};
+
+/* Client-side mirror of public.has_entity_access() in
+   migration_v46_role_permissions.sql — used ONLY to decide what the UI
+   shows (nav links, buttons, "create" gates). The database RLS policies
+   are what actually enforce access; this can never grant anything the
+   database wouldn't also allow, it can only under-hide things (a stale
+   client cache would just cause a permission error on submit, same
+   fallback pattern already used by canManagePrograms() etc. throughout
+   this file).
+
+   Reads profile.custom_role.role_permissions, a nested embed produced by
+   getProfile() below (only present for profile.role === 'user' — admin and
+   advisor never have a custom_role_id). Returns { can_view, can_edit, scope }
+   — scope is 'all' | 'own', see role_permissions.scope. */
+function entityPermission(profile, entity) {
+  if (!profile) return { can_view: false, can_edit: false, scope: 'own' };
+  if (profile.role === 'admin') return { can_view: true, can_edit: true, scope: 'all' };
+  if (profile.role === 'advisor') {
+    const allowed = entity !== 'user_management';
+    return { can_view: allowed, can_edit: allowed, scope: 'all' };
+  }
+  const rows = (profile.custom_role && profile.custom_role.role_permissions) || [];
+  const row = rows.find((r) => r.entity === entity);
+  if (!row) return { can_view: false, can_edit: false, scope: 'own' };
+  return { can_view: !!row.can_view, can_edit: !!row.can_edit, scope: row.scope || 'own' };
+}
+
 const READINESS_STAGE_LABELS = {
   // 'Not Analyzed' isn't a projects.readiness_stage value (that column is
   // simply null for it) — this entry exists so stageLabel() can translate
@@ -4149,48 +4194,103 @@ const INAPlatform = {
     return !!profile && profile.role === 'admin';
   },
 
-  /* Programs can only be created by an advisor or admin — see
-     supabase/migration_v19_program_permissions.sql for the RLS policy that
-     actually enforces this (programs_insert_advisor_or_admin). Used by
-     app/initiatives.html, app/financing-programs.html, app/new-program.html
-     and app/new-project.html to
-     hide the "Create Program" entry points from standard users, rather than
-     letting them fill out the whole form and hit a permission error on
-     submit. Any signed-in user — including standard users — can still SEE
-     every Program and associate a project with one; only creating a new
-     Program is restricted. */
+  /* ---- Configurable-roles system (migration_v46_role_permissions.sql) ----
+     Every canManageX() below used to be a flat "advisor or admin" check.
+     They're now backed by entityPermission()/has_entity_access(): admin and
+     advisor keep EXACTLY the same result as before (entityPermission()
+     fast-paths them first, matching the DB function), and a profile with
+     role='user' whose assigned custom_role_id grants can_edit on the
+     matching entity now also passes — a capability that didn't exist prior
+     to this migration. Function names/signatures are unchanged on purpose,
+     so no page's call sites needed to change. As always, RLS on the server
+     is what actually enforces this; these only decide what the UI shows. */
+
+  /* Generic accessor, for anything that needs a specific entity by name
+     (e.g. app/roles.html's own permission matrix, or a future page) rather
+     than one of the fixed canManageX() shortcuts below. */
+  canViewEntity(profile, entity) {
+    return entityPermission(profile, entity).can_view;
+  },
+  canEditEntity(profile, entity) {
+    return entityPermission(profile, entity).can_edit;
+  },
+  entityScope(profile, entity) {
+    return entityPermission(profile, entity).scope;
+  },
+  /* Row-level helper: does `profile` have edit access to a SPECIFIC row of
+     `entity` owned by `ownerId`? Honors scope='own' by comparing ownerId to
+     the signed-in profile's own id. Not required by any existing page today
+     (projects/risks/roadmaps already have their own hardcoded owner checks
+     that this migration deliberately left untouched — see the migration's
+     header comment) but exposed for app/roles.html and any future
+     finer-grained UI. */
+  canEditRow(profile, entity, ownerId) {
+    const perm = entityPermission(profile, entity);
+    if (!perm.can_edit) return false;
+    if (perm.scope === 'own') return !!profile && ownerId === profile.id;
+    return true;
+  },
+
+  /* Programs can only be created/edited by an advisor, admin, or a custom
+     role with edit access on 'initiatives'/'financing' — see
+     migration_v46_role_permissions.sql (programs_insert_advisor_or_admin /
+     programs_update_own). Used by app/initiatives.html,
+     app/financing-programs.html, app/new-program.html and
+     app/new-project.html to hide the "Create Program" entry points from
+     users without that access, rather than letting them fill out the whole
+     form and hit a permission error on submit. This checks BOTH the
+     Iniciativas and Financiación entities (OR'd together) since the same
+     "Create Program" gate is shared by both flows and the concrete
+     program_role is only chosen inside the form — a page that wants a
+     precise per-entity check can call canEditEntity(profile,
+     'initiatives'|'financing') directly instead. Any signed-in user —
+     including standard users — can still SEE every Program and associate a
+     project with one; only creating/editing is restricted. */
   canManagePrograms(profile) {
-    return this.isAdvisor(profile) || this.isAdmin(profile);
+    return entityPermission(profile, 'initiatives').can_edit || entityPermission(profile, 'financing').can_edit;
   },
 
-  /* Same advisor-or-admin bar as canManagePrograms above, named separately
-     for the "Roadmaps" checklist feature (see
-     supabase/migration_v26_gestion_templates.sql) — a project owner can see
-     their own project's roadmap checklist (read-only), but only an
-     advisor/admin can browse/edit roadmap_templates or write to
-     project_roadmaps; enforced by RLS regardless of what the UI hides. */
+  /* Roadmaps (see migration_v46_role_permissions.sql, entity 'roadmaps') —
+     a project owner can still see their own project's roadmap checklist
+     read-only regardless of this (unchanged, handled by RLS directly), but
+     browsing/editing roadmap_templates or writing to a project's roadmap
+     instance requires can_edit on 'roadmaps' — true for advisor/admin as
+     before, or for a custom role granted it. */
   canManageRoadmaps(profile) {
-    return this.isAdvisor(profile) || this.isAdmin(profile);
+    return entityPermission(profile, 'roadmaps').can_edit;
   },
 
-  /* Same advisor-or-admin bar, for the Risk Matrix (see
-     supabase/migration_v41_project_risks.sql) — Pablo's explicit choice:
-     the project owner can see their own project's risks (read-only), but
-     only an advisor/admin can load/edit/delete them; enforced by RLS
-     regardless of what the UI hides. */
+  /* View-only access to Roadmaps (entity 'roadmaps') — broader than
+     canManageRoadmaps() above. Used to gate page/nav visibility so a
+     standard user can browse roadmap templates/instances read-only,
+     while canManageRoadmaps() still gates create/edit/delete controls. */
+  canViewRoadmaps(profile) {
+    return entityPermission(profile, 'roadmaps').can_view;
+  },
+
+  /* Risk Matrix (entity 'risks') — the project owner still sees their own
+     project's risks read-only regardless of this (unchanged), only
+     load/edit/delete requires can_edit on 'risks'. */
   canManageRisks(profile) {
-    return this.isAdvisor(profile) || this.isAdmin(profile);
+    return entityPermission(profile, 'risks').can_edit;
   },
 
-  /* Same advisor-or-admin bar, for the Master Data directory (Contacts,
-     Companies, Products, Public Agencies — see
-     supabase/migration_v44_master_data.sql). Unlike Risks/Roadmaps there's
-     no "project owner read-only" carve-out here: a standard user has no
-     visibility into this catalog at all, since it isn't scoped to a
-     project they submitted. Enforced by RLS regardless of what the UI
-     hides. */
+  /* Master Data directory — Contacts, Companies, Products, Public Agencies
+     (entity 'master_data'). No "project owner read-only" carve-out here,
+     same as before this migration. */
   canManageMasterData(profile) {
-    return this.isAdvisor(profile) || this.isAdmin(profile);
+    return entityPermission(profile, 'master_data').can_edit;
+  },
+
+  /* Gestión de Usuarios y Roles (entity 'user_management') — true for
+     admin (as isAdmin() always was), and now ALSO true for a custom role
+     explicitly granted can_edit on 'user_management' by an admin. Advisor
+     is deliberately excluded, per Pablo's spec ("el rol advisor lo mismo
+     salvo la gestión de usuarios y roles") — entityPermission() already
+     encodes that exclusion. Gates both app/admin.html (user role changes)
+     and app/roles.html (the new role/permission matrix editor). */
+  canManageUsers(profile) {
+    return entityPermission(profile, 'user_management').can_edit;
   },
 
   platformRoleLabel(value) {
@@ -4372,6 +4472,24 @@ const INAPlatform = {
     return session;
   },
 
+  /* Same as requireAdmin() above, but for the 'user_management' entity
+     (see migration_v46_role_permissions.sql / canManageUsers()) instead of
+     a hard isAdmin() check — passes for admin (as requireAdmin() always
+     did) AND for a custom role explicitly granted can_edit on
+     'user_management'. Used by app/admin.html (user role changes) and
+     app/roles.html (the role/permission matrix editor); RLS is what
+     actually enforces this regardless. */
+  async requireCanManageUsers() {
+    const session = await this.requireAuth();
+    if (!session) return null;
+    const profile = await this.getProfile(session.user.id);
+    if (!this.canManageUsers(profile)) {
+      location.href = 'dashboard.html';
+      return null;
+    }
+    return session;
+  },
+
   /* ---------- Password reset ---------- */
 
   /* Sends a password-reset email. The link inside it lands the user on
@@ -4461,15 +4579,44 @@ const INAPlatform = {
     }
   },
 
+  /* The nested `custom_role:roles(...)` embed below is what lets every
+     canManage*()/entityPermission() call in this file work synchronously,
+     without every page's nav-gating script having to become async — see
+     migration_v46_role_permissions.sql. It only ever resolves to something
+     for profile.role === 'user' (profiles.custom_role_id is null for
+     admin/advisor, whose access is fully determined by profiles.role
+     itself). Harmless/cheap for admin/advisor: PostgREST just returns
+     custom_role: null when custom_role_id is null. */
   async getProfile(userId) {
     if (!supabaseClient) return null;
     const { data, error } = await supabaseClient
       .from('profiles')
+      .select('*, custom_role:roles(id, name, role_permissions(entity, can_view, can_edit, scope))')
+      .eq('id', userId)
+      .single();
+    if (!error) return data;
+    // Falls back to a plain select if the nested `custom_role` embed itself
+    // is what failed — specifically covers the window where platform.js has
+    // been deployed but supabase/migration_v46_role_permissions.sql hasn't
+    // been run yet in this Supabase project (no `roles`/`role_permissions`
+    // tables, or PostgREST's schema cache hasn't picked up the new FK yet).
+    // Without this fallback, every caller of getProfile() throws — which
+    // silently breaks the ENTIRE nav-gating block on every app page (Admin
+    // dropdown, Roadmaps link, avatar, etc. all live inside one try/catch
+    // right after getProfile(), see e.g. app/dashboard.html) even though
+    // none of that depends on custom roles existing yet. Once the migration
+    // has actually run, this branch never fires again — every profile row
+    // just resolves custom_role: null (no custom_role_id set) or a real
+    // embed, same as any other embed.
+    const isMissingRolesSchema = /relationship|schema cache|does not exist|relation .*roles/i.test(error.message || '');
+    if (!isMissingRolesSchema) throw error;
+    const fallback = await supabaseClient
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-    if (error) throw error;
-    return data;
+    if (fallback.error) throw fallback.error;
+    return fallback.data;
   },
 
   /* Updates the current user's own personal info. Deliberately never
@@ -4645,6 +4792,152 @@ const INAPlatform = {
       .from('profiles')
       .update({ role })
       .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Assigns (or clears, with roleId=null) a configurable custom role to a
+     'user'-role profile — see migration_v46_role_permissions.sql. Only
+     meaningful when the target profile's role === 'user'; setting it on an
+     advisor/admin profile is harmless (has_entity_access()/
+     entityPermission() never consult custom_role_id for those roles) but
+     pointless, so app/roles.html only offers this control for 'user' rows.
+     Same self-change guard as updateUserRole(): an admin cannot use this on
+     their own id either, prevent_role_self_change_trigger rejects it at the
+     database level regardless of what the client sends. */
+  async assignCustomRole(userId, roleId) {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .update({ custom_role_id: roleId })
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Combined version of updateUserRole()/assignCustomRole() above, for
+     app/admin.html's single role selector — which now lists native platform
+     roles (User/Advisor/Admin) alongside every configurable custom role in
+     one dropdown, instead of only offering the 3 native roles. Picking a
+     custom role always implies role:'user' (custom roles only ever apply to
+     'user'-role profiles — see entityPermission() in this file); picking a
+     native role always implies customRoleId:null, clearing any custom role
+     the user previously had. Updates both columns in a single request so
+     the row is never left in a role/custom_role_id combination the caller
+     didn't ask for. Same self-change guard as its two siblings above:
+     prevent_role_self_change_trigger rejects this on the caller's own id
+     at the database level regardless of what the client sends. */
+  async setUserRole(userId, { role, customRoleId }) {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .update({ role, custom_role_id: customRoleId })
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* ---------- Configurable roles (app/roles.html) ----------
+     RLS (the roles_ and role_permissions_ policies, see
+     migration_v46_role_permissions.sql) restricts all of this to a profile with can_edit/can_view on
+     'user_management' — today that's admin, plus any custom role an admin
+     explicitly grants it to. canManageUsers() above is the matching
+     UI-side gate. */
+
+  RBAC_ENTITIES,
+  entityLabel(value) {
+    const entry = RBAC_ENTITY_LABELS[value];
+    return entry ? entry[currentLang()] : value;
+  },
+
+  async listRoles() {
+    const { data, error } = await supabaseClient
+      .from('roles')
+      .select('*, role_permissions(*)')
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  async createRole({ name, description }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('roles')
+      .insert({ name, description: description || null, created_by: session.user.id })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateRole(roleId, { name, description }) {
+    const { data, error } = await supabaseClient
+      .from('roles')
+      .update({ name, description: description || null, updated_at: new Date().toISOString() })
+      .eq('id', roleId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Deletes a role. If it's currently the default signup role, any future
+     signup simply gets custom_role_id = null (see handle_new_user() in
+     migration_v46) — no error, just no default permissions until a new
+     default is marked. role_permissions rows cascade-delete with it;
+     profiles.custom_role_id on any user who had this role is set to null
+     (on delete set null), not deleted. */
+  async deleteRole(roleId) {
+    const { error } = await supabaseClient.from('roles').delete().eq('id', roleId);
+    if (error) throw error;
+  },
+
+  /* Marks `roleId` as the sole default signup role — mirrors the partial
+     unique index (roles_single_default_signup) that only allows one row
+     with is_default_signup_role=true, so this clears it on every other
+     role first, then sets it on the target (two statements rather than one
+     atomic upsert, since Supabase's client can't express "set X true, all
+     others false" in one call — the unique index still protects against a
+     race turning two rows true at once). */
+  async setDefaultSignupRole(roleId) {
+    const { error: clearError } = await supabaseClient
+      .from('roles')
+      .update({ is_default_signup_role: false })
+      .eq('is_default_signup_role', true);
+    if (clearError) throw clearError;
+    const { data, error } = await supabaseClient
+      .from('roles')
+      .update({ is_default_signup_role: true })
+      .eq('id', roleId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Upserts one (role_id, entity) permission row — app/roles.html calls
+     this once per checkbox/select change in the permission matrix, rather
+     than replacing the whole set, so one save can't accidentally wipe
+     entities the admin didn't touch. Pass can_view=false, can_edit=false to
+     effectively revoke an entity without deleting the row (equivalent
+     either way, has_entity_access() treats a missing row and an
+     all-false row identically). */
+  async upsertRolePermission(roleId, entity, { canView, canEdit, scope }) {
+    const { data, error } = await supabaseClient
+      .from('role_permissions')
+      .upsert({
+        role_id: roleId,
+        entity,
+        can_view: !!canView,
+        can_edit: !!canEdit,
+        scope: scope || 'all',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'role_id,entity' })
       .select()
       .single();
     if (error) throw error;
@@ -6226,12 +6519,15 @@ const INAPlatform = {
     if (error) throw error;
   },
 
-  /* Embeds company/public_agency name for display — a contact has at most
-     one of the two set (contacts_single_affiliation CHECK). */
+  /* Embeds company/public_agency name+country for display — a contact has
+     at most one of the two set (contacts_single_affiliation CHECK). country
+     is included so app/master-data.html can offer a "Country" filter on
+     Contacts without a second round-trip (the contact itself has no country
+     of its own — it inherits the affiliated Company/Agency's). */
   async listContacts() {
     const { data, error } = await supabaseClient
       .from('contacts')
-      .select('*, companies(id, name), public_agencies(id, name)')
+      .select('*, companies(id, name, country), public_agencies(id, name, country)')
       .order('full_name', { ascending: true });
     if (error) throw error;
     return data;
