@@ -1835,6 +1835,69 @@ leading `<think>...</think>` block before parsing, regardless of whether
 for the full `reasoning_format`/`reasoning_effort` reference if this needs
 revisiting for a different model.
 
+**Second failure, immediately after the first fix deployed:** same
+endpoint, new error — `SyntaxError: Unexpected end of JSON input`, with an
+*empty* raw output. Cause: hidden reasoning tokens still count against
+`max_tokens` even though `reasoning_format: 'hidden'` means they're never
+returned in the response. At `max_tokens: 500` (fine for the old
+non-reasoning model), the model burned the entire budget on internal
+reasoning and the completion got cut off before it ever wrote the visible
+answer — `content` came back as `''`. Fixed by adding
+`reasoning_effort: 'none'` (disables reasoning entirely for
+`qwen/qwen3.6-27b` — this is a simple structured-extraction task with no
+need for chain-of-thought) and bumping `max_tokens` to `1024` as headroom
+regardless. **Takeaway for next time a Groq default model changes:**
+reasoning models need either `reasoning_effort: 'none'` or a much larger
+`max_tokens` than a same-sized non-reasoning model needed, or short
+completions can come back empty with no visible explanation beyond "no
+tokens left."
+
+**Third failure, unrelated to the model — missing `vercel.json` rewrite.**
+Once the two fixes above were deployed, business card reading still failed
+outside of a Vercel preview URL, on the real production domain
+(`www.international-network-advisors.com`), with a browser CORS error:
+`No 'Access-Control-Allow-Origin' header is present on the requested
+resource` on the OPTIONS preflight to
+`https://api.international-network-advisors.com/extract-business-card`.
+
+This has nothing to do with the CORS-handling code inside
+`api/extract-business-card.js` itself (that code is correct and matches
+`api/analyze-project.js`'s pattern) — the request never reached the
+function at all. `assets/platform.js`'s `extractBusinessCardUrl()` (and
+`extractTemplateDataUrl()`) call the bare path (e.g.
+`https://api.international-network-advisors.com/extract-business-card`,
+no `/api/` prefix) on production, exactly like `analyzeProjectUrl()` does
+for `/analyze-project` — this only works because `vercel.json` has a
+`rewrites` entry mapping that bare path to the actual serverless function
+at `/api/analyze-project`. **That rewrite entry only ever existed for
+`/analyze-project`** — `/extract-template-data` and `/extract-business-card`
+were missing theirs, so requests to those two paths on the `api.*`
+subdomain hit nothing (no matching route → no CORS headers, since the
+function code that sets them never runs), which is exactly what shows up
+in the browser as a generic CORS failure rather than a clear 404. This was
+a pre-existing gap since both features were built (RR2 "Autocompletar
+desde documentos" and the business card reader) — they likely never worked
+from the real production domain, only from Vercel preview URLs (where
+`location.hostname` doesn't match `PRODUCTION_HOSTNAMES` and the relative
+`/api/...` path is used instead, which needs no rewrite).
+
+Fixed by adding both missing entries to `vercel.json`:
+
+```json
+"rewrites": [
+  { "source": "/analyze-project", "destination": "/api/analyze-project" },
+  { "source": "/extract-template-data", "destination": "/api/extract-template-data" },
+  { "source": "/extract-business-card", "destination": "/api/extract-business-card" }
+]
+```
+
+**Files touched:** `vercel.json` only. If any other endpoint is ever added
+that production calls via `api.international-network-advisors.com/<bare
+path>` (following the same `PRODUCTION_HOSTNAMES` pattern in
+`assets/platform.js`), it needs the same treatment here or it will hit
+this exact failure mode on the real domain while appearing to work fine
+everywhere else.
+
 ## Using AWS Bedrock (open-source model, confidential-data-friendly)
 
 For **production**, `api/analyze-project.js` also supports running an
