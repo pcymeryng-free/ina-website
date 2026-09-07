@@ -118,17 +118,24 @@
 // NOTE: pdf-parse and @aws-sdk/client-bedrock-runtime are deliberately
 // require()'d LAZILY, at their actual point of use further down (the PDF
 // text-extraction branch, and the 'bedrock' model-call branch,
-// respectively) — NOT unconditionally up here. Learned the hard way:
-// pdf-parse pulls in an optional native dependency (@napi-rs/canvas) that
-// doesn't install cleanly on Vercel's serverless runtime, and when that
-// happens pdf-parse throws a fatal `ReferenceError: DOMMatrix is not
-// defined` the moment it's require()'d — not when it's actually used. A
-// top-level require() here meant that crash happened on EVERY invocation
-// of this function regardless of which LLM_PROVIDER was active, including
-// providers ('anthropic', 'bedrock-mock') that never touch pdf-parse at
-// all. Lazy requires wrapped in try/catch (see below) mean a broken
-// optional dependency degrades to "that one PDF couldn't be read" instead
-// of taking down the whole endpoint.
+// respectively) — NOT unconditionally up here, so a broken/missing optional
+// dependency only affects the one provider that needs it, not every
+// invocation of this function.
+//
+// pdf-parse is pinned to 1.1.4 (NOT the 2.x line) specifically: pdf-parse
+// 2.x hard-depends on @napi-rs/canvas, a native (Rust/napi) addon with
+// per-platform prebuilt binaries. On Vercel that dependency routinely fails
+// to bundle correctly — the deployed function throws
+// `Error: Cannot find module '@napi-rs/canvas'` (visible in Vercel's
+// function logs as `Warning: Cannot load "@napi-rs/canvas" package`) the
+// moment pdf-parse is require()'d, which meant every PDF silently failed to
+// extract (or, depending on exactly where it blew up, took the whole
+// analysis down) for the Groq/Bedrock/local providers. pdf-parse 1.1.4 is
+// pure JavaScript with no native dependencies at all — no @napi-rs/canvas,
+// nothing platform-specific to bundle — and works identically on Vercel and
+// locally. Its API is also different (a plain `pdf(buffer) -> Promise`
+// function, not the 2.x `new PDFParse({data}).getText()` class), which is
+// reflected in the extraction code below.
 
 const GROQ_MODEL_DEFAULT = 'llama-3.3-70b-versatile';
 const BEDROCK_MODEL_DEFAULT = 'meta.llama3-3-70b-instruct-v1:0';
@@ -530,16 +537,15 @@ async function handler(req, res) {
           // comment at the top of the file. If pdf-parse itself can't even
           // load in this environment, this document is just skipped rather
           // than crashing every analysis regardless of provider.
-          let PDFParseCtor = null;
+          let pdfParseFn = null;
           try {
-            ({ PDFParse: PDFParseCtor } = require('pdf-parse'));
+            pdfParseFn = require('pdf-parse');
           } catch (loadErr) {
             skippedNotes.push(`${doc.file_name} (PDF text extraction unavailable in this environment)`);
           }
-          if (PDFParseCtor) {
-            const parser = new PDFParseCtor({ data: fileBuffer });
+          if (pdfParseFn) {
             try {
-              const extracted = await parser.getText();
+              const extracted = await pdfParseFn(fileBuffer);
               const text = (extracted.text || '').trim();
               if (text) {
                 projectText += `\n\n--- ATTACHED FILE (text extracted from PDF): ${doc.file_name} ---\n${text.slice(0, 4000)}`;
@@ -548,8 +554,6 @@ async function handler(req, res) {
               }
             } catch (e) {
               skippedNotes.push(`${doc.file_name} (couldn't parse PDF)`);
-            } finally {
-              await parser.destroy().catch(() => {});
             }
           }
         } else {

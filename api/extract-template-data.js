@@ -3,7 +3,9 @@
  * Vercel serverless function (Node.js runtime, no external dependencies for
  * the request/response path itself — pdf-parse and the Bedrock SDK are
  * lazily require()'d, same pattern as api/analyze-project.js, see the
- * comment there for why).
+ * comment there for why. pdf-parse is pinned to 1.1.4, pure JS, no native
+ * @napi-rs/canvas dependency — see that same comment for the Vercel bundling
+ * issue that caused).
  *
  * Reads a project's uploaded documents (project_documents) and asks the
  * configured LLM provider to extract values for a caller-supplied list of
@@ -275,17 +277,18 @@ async function handler(req, res) {
           continue;
         }
         // require('pdf-parse') deliberately lazy — see file header and
-        // api/analyze-project.js's matching comment.
-        let PDFParseCtor = null;
+        // api/analyze-project.js's matching comment (pinned to 1.1.4, the
+        // pure-JS line with no @napi-rs/canvas native dependency, which is
+        // what broke this on Vercel).
+        let pdfParseFn = null;
         try {
-          ({ PDFParse: PDFParseCtor } = require('pdf-parse'));
+          pdfParseFn = require('pdf-parse');
         } catch (loadErr) {
           skipped.push(`${doc.file_name} (PDF text extraction unavailable in this environment)`);
         }
-        if (PDFParseCtor) {
-          const parser = new PDFParseCtor({ data: fileBuffer });
+        if (pdfParseFn) {
           try {
-            const extracted = await parser.getText();
+            const extracted = await pdfParseFn(fileBuffer);
             const text = (extracted.text || '').trim();
             if (text) {
               combinedText += `\n\n--- FILE: ${doc.file_name} ---\n${text.slice(0, MAX_CHARS_PER_DOC)}`;
@@ -295,8 +298,6 @@ async function handler(req, res) {
             }
           } catch (e) {
             skipped.push(`${doc.file_name} (couldn't parse PDF)`);
-          } finally {
-            await parser.destroy().catch(() => {});
           }
         }
       } else if (mediaType === 'text/plain') {
