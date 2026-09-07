@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Roles &amp; Permissions — INA Platform" data-i18n-es="Roles y Permisos — Plataforma INA">Roles &amp; Permissions — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Create custom roles with view/edit permissions per entity." data-i18n-es="Cre&aacute; roles personalizados con permisos de ver/editar por entidad." content="Create custom roles with view/edit permissions per entity.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=21">
+<link rel="stylesheet" href="/assets/app.css?v=9">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger active" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+          <a href="roles.html" id="rolesMenuItem" class="menu-item" style="display:none;"><span data-i18n="roles.nav">Roles</span></a>
+        </div>
+      </div>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span><span data-i18n="roles.title">Roles &amp; Permissions</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="roles.title">Roles &amp; Permissions</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:680px;"><span data-i18n="roles.lede">Create custom roles with view/edit permissions per entity, and assign them to standard users. Admin and Advisor are fixed system roles and aren't managed here.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="rolesBody" style="display:none; margin-top:32px;">
+
+      <!-- ===== Roles list ===== -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0;"><span data-i18n="roles.list.title">Custom roles</span></h3>
+        <button type="button" class="btn amber small" id="newRoleBtn"><span data-i18n="roles.new">+ New Role</span></button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="risk-table" id="rolesTable">
+          <thead>
+            <tr>
+              <th data-i18n="roles.col.name">Name</th>
+              <th data-i18n="roles.col.description">Description</th>
+              <th data-i18n="roles.col.default">Default at signup</th>
+              <th data-i18n="roles.col.users">Users</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rolesTableBody"></tbody>
+        </table>
+        <p id="rolesEmpty" style="display:none; color:var(--muted); font-size:13.5px; padding:20px 0;"><span data-i18n="roles.empty">No custom roles yet.</span></p>
+      </div>
+
+      <!-- ===== Assign custom role to users ===== -->
+      <div style="margin-top:44px;">
+        <h3 style="margin:0 0 4px;"><span data-i18n="roles.assign.title">Assign custom role</span></h3>
+        <p class="lede" style="margin:0 0 14px; max-width:680px; font-size:13.5px;"><span data-i18n="roles.assign.lede">Only users with the fixed 'User' platform role can be assigned a custom role — Admin and Advisor already have full/near-full access.</span></p>
+        <div style="overflow-x:auto;">
+          <table class="risk-table" id="assignTable">
+            <thead>
+              <tr>
+                <th data-i18n="roles.assign.col.user">User</th>
+                <th data-i18n="roles.assign.col.role">Custom role</th>
+              </tr>
+            </thead>
+            <tbody id="assignTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ===== Role create/rename form overlay ===== -->
+<div class="risk-form-overlay" id="roleFormOverlay" style="display:none;">
+  <div class="risk-form-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+      <h3 style="margin:0;" id="roleFormTitle"><span data-i18n="roles.new">+ New Role</span></h3>
+      <button type="button" class="btn ghost small" id="closeRoleForm">&times;</button>
+    </div>
+    <form id="roleForm">
+      <div class="field"><label for="rName"><span data-i18n="roles.f.name">Role name</span></label><input id="rName" type="text" required></div>
+      <div class="field"><label for="rDescription"><span data-i18n="roles.f.description">Description</span></label><textarea id="rDescription" rows="3"></textarea></div>
+      <div style="display:flex; gap:12px; margin-top:20px; align-items:center;">
+        <button type="submit" class="btn amber" id="roleSubmitBtn"><span data-i18n="roles.save">Save</span></button>
+        <p id="roleFormNote" style="margin:0; font-size:13px; color:var(--muted);"></p>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Permission matrix overlay ===== -->
+<div class="risk-form-overlay" id="matrixOverlay" style="display:none;">
+  <div class="risk-form-panel" style="max-width:640px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+      <h3 style="margin:0;"><span data-i18n="roles.matrix.title">Permissions for</span> <span id="matrixRoleName"></span></h3>
+      <button type="button" class="btn ghost small" id="closeMatrix">&times;</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="risk-table" id="matrixTable">
+        <thead>
+          <tr>
+            <th data-i18n="roles.matrix.entity">Entity</th>
+            <th data-i18n="roles.matrix.view">View</th>
+            <th data-i18n="roles.matrix.edit">Edit</th>
+            <th data-i18n="roles.matrix.scope">Scope</th>
+          </tr>
+        </thead>
+        <tbody id="matrixTableBody"></tbody>
+      </table>
+    </div>
+    <div style="display:flex; gap:12px; margin-top:20px; align-items:center;">
+      <button type="button" class="btn ghost" id="matrixCloseBtn"><span data-i18n="roles.matrix.close">Close</span></button>
+      <p id="matrixNote" style="margin:0; font-size:13px; color:var(--muted);"></p>
+    </div>
+  </div>
+</div>
+
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=51"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=59"></script>
+<script src="/assets/script.js?v=14"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+  function t(key, fallback) {
+    // NOT "window.I18N" — assets/i18n.js declares `const I18N = {...}` at
+    // the top level of its own <script src> file, which does NOT attach it
+    // to window (unlike var/plain function declarations), so
+    // "window.I18N" is always undefined and this lookup silently always
+    // fell through to the English fallback, regardless of the selected
+    // language. I18N itself IS visible here directly, though — classic
+    // <script> tags share one global lexical scope, and i18n.js's own
+    // applyLang() (which drives every [data-i18n] element on every page)
+    // references I18N the same bare way.
+    const lang = INAPlatform.currentLang();
+    return (I18N[key] && I18N[key][lang]) || fallback || key;
+  }
+
+  let currentUserId = null;
+  let roles = [];       // each row: { id, name, description, is_default_signup_role, role_permissions: [...] }
+  let allUsers = [];    // profiles.role === 'user' only
+
+  // i18n.js's own .lang-btn listener only re-translates [data-i18n]-tagged
+  // static markup — it has no idea this page builds its role/assign tables
+  // (and the permission matrix) dynamically in plain JS via t(), none of
+  // which carries [data-i18n]. Without this, switching language left every
+  // button label ("Edit permissions", "Delete", "Set as default"...) and
+  // the matrix's scope options frozen in whatever language was active when
+  // the tables were first rendered. Same fix as dashboard.html/
+  // initiatives.html/assessment.html/project.html.
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (roles.length || allUsers.length) {
+        renderRolesTable();
+        renderAssignTable();
+      }
+      if (matrixRole) openMatrix(matrixRole);
+    });
+  });
+
+  /* ---------- Roles list ---------- */
+
+  function usersCountForRole(roleId) {
+    return allUsers.filter((u) => u.custom_role_id === roleId).length;
+  }
+
+  function renderRolesTable() {
+    const tbody = document.getElementById('rolesTableBody');
+    tbody.innerHTML = '';
+    document.getElementById('rolesEmpty').style.display = roles.length ? 'none' : 'block';
+
+    roles.forEach((r) => {
+      const tr = document.createElement('tr');
+
+      const tdName = document.createElement('td');
+      tdName.textContent = r.name;
+      tdName.style.fontWeight = '600';
+
+      const tdDesc = document.createElement('td');
+      tdDesc.textContent = r.description || '—';
+      tdDesc.style.color = 'var(--muted)';
+      tdDesc.style.fontSize = '13px';
+
+      const tdDefault = document.createElement('td');
+      if (r.is_default_signup_role) {
+        tdDefault.innerHTML = `<span style="color:var(--amber); font-weight:600;">${t('roles.isDefault', 'Default ✓')}</span>`;
+      } else {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn ghost small';
+        btn.textContent = t('roles.setDefault', 'Set as default');
+        btn.addEventListener('click', () => handleSetDefault(r));
+        tdDefault.appendChild(btn);
+      }
+
+      const tdUsers = document.createElement('td');
+      tdUsers.textContent = String(usersCountForRole(r.id));
+
+      const tdActions = document.createElement('td');
+      tdActions.style.whiteSpace = 'nowrap';
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'btn ghost small';
+      editBtn.textContent = t('roles.edit', 'Edit permissions');
+      editBtn.style.marginRight = '6px';
+      editBtn.addEventListener('click', () => openMatrix(r));
+
+      const renameBtn = document.createElement('button');
+      renameBtn.type = 'button';
+      renameBtn.className = 'btn ghost small';
+      renameBtn.textContent = t('roles.rename', 'Rename');
+      renameBtn.style.marginRight = '6px';
+      renameBtn.addEventListener('click', () => openRoleForm(r));
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'btn ghost small';
+      deleteBtn.textContent = t('roles.delete', 'Delete');
+      deleteBtn.addEventListener('click', () => handleDeleteRole(r));
+
+      tdActions.appendChild(editBtn);
+      tdActions.appendChild(renameBtn);
+      tdActions.appendChild(deleteBtn);
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdDesc);
+      tr.appendChild(tdDefault);
+      tr.appendChild(tdUsers);
+      tr.appendChild(tdActions);
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function handleSetDefault(role) {
+    try {
+      await INAPlatform.setDefaultSignupRole(role.id);
+      roles.forEach((r) => { r.is_default_signup_role = (r.id === role.id); });
+      renderRolesTable();
+    } catch (err) {
+      alert(err.message || 'Error');
+    }
+  }
+
+  async function handleDeleteRole(role) {
+    if (!confirm(t('roles.confirmDelete', 'Delete this role?'))) return;
+    try {
+      await INAPlatform.deleteRole(role.id);
+      roles = roles.filter((r) => r.id !== role.id);
+      allUsers.forEach((u) => { if (u.custom_role_id === role.id) u.custom_role_id = null; });
+      renderRolesTable();
+      renderAssignTable();
+    } catch (err) {
+      alert(err.message || 'Error');
+    }
+  }
+
+  /* ---------- Role create/rename form ---------- */
+
+  const roleFormOverlay = document.getElementById('roleFormOverlay');
+  const roleForm = document.getElementById('roleForm');
+  let editingRole = null;
+
+  function openRoleForm(role) {
+    editingRole = role || null;
+    document.getElementById('roleFormTitle').innerHTML = role
+      ? `<span data-i18n="roles.rename">${t('roles.rename', 'Rename')}</span>`
+      : `<span data-i18n="roles.new">${t('roles.new', '+ New Role')}</span>`;
+    document.getElementById('rName').value = role ? role.name : '';
+    document.getElementById('rDescription').value = role ? (role.description || '') : '';
+    document.getElementById('roleFormNote').textContent = '';
+    roleFormOverlay.style.display = 'flex';
+  }
+  function closeRoleForm() {
+    roleFormOverlay.style.display = 'none';
+    editingRole = null;
+    roleForm.reset();
+  }
+  document.getElementById('newRoleBtn').addEventListener('click', () => openRoleForm(null));
+  document.getElementById('closeRoleForm').addEventListener('click', closeRoleForm);
+  roleFormOverlay.addEventListener('click', (e) => { if (e.target === roleFormOverlay) closeRoleForm(); });
+
+  roleForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('rName').value.trim();
+    const description = document.getElementById('rDescription').value.trim();
+    if (!name) return;
+    const submitBtn = document.getElementById('roleSubmitBtn');
+    submitBtn.disabled = true;
+    try {
+      if (editingRole) {
+        const updated = await INAPlatform.updateRole(editingRole.id, { name, description });
+        const idx = roles.findIndex((r) => r.id === editingRole.id);
+        roles[idx] = Object.assign({}, roles[idx], updated);
+      } else {
+        const created = await INAPlatform.createRole({ name, description });
+        roles.push(Object.assign({ role_permissions: [] }, created));
+      }
+      renderRolesTable();
+      closeRoleForm();
+    } catch (err) {
+      document.getElementById('roleFormNote').textContent = err.message || 'Error';
+      document.getElementById('roleFormNote').style.color = '#b3452c';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  /* ---------- Permission matrix ---------- */
+
+  const matrixOverlay = document.getElementById('matrixOverlay');
+  let matrixRole = null;
+
+  function permRow(role, entity) {
+    return (role.role_permissions || []).find((p) => p.entity === entity) || { entity, can_view: false, can_edit: false, scope: 'all' };
+  }
+
+  function openMatrix(role) {
+    matrixRole = role;
+    document.getElementById('matrixRoleName').textContent = role.name;
+    document.getElementById('matrixNote').textContent = '';
+    const tbody = document.getElementById('matrixTableBody');
+    tbody.innerHTML = '';
+    INAPlatform.RBAC_ENTITIES.forEach((entity) => {
+      const row = permRow(role, entity);
+      const tr = document.createElement('tr');
+
+      const tdEntity = document.createElement('td');
+      tdEntity.textContent = INAPlatform.entityLabel(entity);
+      tdEntity.style.fontWeight = '600';
+
+      const tdView = document.createElement('td');
+      const viewChk = document.createElement('input');
+      viewChk.type = 'checkbox';
+      viewChk.checked = !!row.can_view;
+      tdView.appendChild(viewChk);
+
+      const tdEdit = document.createElement('td');
+      const editChk = document.createElement('input');
+      editChk.type = 'checkbox';
+      editChk.checked = !!row.can_edit;
+      tdEdit.appendChild(editChk);
+
+      const tdScope = document.createElement('td');
+      const scopeSel = document.createElement('select');
+      const optAll = document.createElement('option');
+      optAll.value = 'all';
+      optAll.textContent = t('roles.matrix.scope.all', 'Everything');
+      const optOwn = document.createElement('option');
+      optOwn.value = 'own';
+      optOwn.textContent = t('roles.matrix.scope.own', 'Only their own');
+      scopeSel.appendChild(optAll);
+      scopeSel.appendChild(optOwn);
+      scopeSel.value = row.scope || 'all';
+      tdScope.appendChild(scopeSel);
+
+      async function save() {
+        try {
+          const saved = await INAPlatform.upsertRolePermission(role.id, entity, {
+            canView: viewChk.checked,
+            canEdit: editChk.checked,
+            scope: scopeSel.value,
+          });
+          const list = role.role_permissions || (role.role_permissions = []);
+          const idx = list.findIndex((p) => p.entity === entity);
+          if (idx >= 0) list[idx] = saved; else list.push(saved);
+          document.getElementById('matrixNote').style.color = 'var(--muted)';
+          document.getElementById('matrixNote').textContent = t('roles.save', 'Saved.');
+        } catch (err) {
+          document.getElementById('matrixNote').style.color = '#b3452c';
+          document.getElementById('matrixNote').textContent = err.message || 'Error';
+        }
+      }
+      viewChk.addEventListener('change', save);
+      editChk.addEventListener('change', save);
+      scopeSel.addEventListener('change', save);
+
+      tr.appendChild(tdEntity);
+      tr.appendChild(tdView);
+      tr.appendChild(tdEdit);
+      tr.appendChild(tdScope);
+      tbody.appendChild(tr);
+    });
+    matrixOverlay.style.display = 'flex';
+  }
+  function closeMatrix() {
+    matrixOverlay.style.display = 'none';
+    matrixRole = null;
+    renderRolesTable();
+  }
+  document.getElementById('closeMatrix').addEventListener('click', closeMatrix);
+  document.getElementById('matrixCloseBtn').addEventListener('click', closeMatrix);
+  matrixOverlay.addEventListener('click', (e) => { if (e.target === matrixOverlay) closeMatrix(); });
+
+  /* ---------- Assign custom role to users ---------- */
+
+  function renderAssignTable() {
+    const tbody = document.getElementById('assignTableBody');
+    tbody.innerHTML = '';
+    allUsers.forEach((u) => {
+      const tr = document.createElement('tr');
+
+      const tdWho = document.createElement('td');
+      tdWho.innerHTML = `
+        <span class="mini-avatar" style="margin-right:8px;">${initials(u.full_name)}</span>
+        <span class="uname">${u.full_name || '—'}</span>
+        <span class="uemail" style="display:block; color:var(--muted); font-size:12px;">${u.email || ''}</span>`;
+
+      const tdRole = document.createElement('td');
+      const sel = document.createElement('select');
+      const noneOpt = document.createElement('option');
+      noneOpt.value = '';
+      noneOpt.textContent = t('roles.assign.none', 'No custom role');
+      sel.appendChild(noneOpt);
+      roles.forEach((r) => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = r.name;
+        if (u.custom_role_id === r.id) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      if (!u.custom_role_id) sel.value = '';
+      sel.addEventListener('change', async () => {
+        sel.disabled = true;
+        try {
+          await INAPlatform.assignCustomRole(u.id, sel.value || null);
+          u.custom_role_id = sel.value || null;
+          renderRolesTable();
+        } catch (err) {
+          alert(err.message || 'Error');
+        } finally {
+          sel.disabled = false;
+        }
+      });
+      tdRole.appendChild(sel);
+
+      tr.appendChild(tdWho);
+      tr.appendChild(tdRole);
+      tbody.appendChild(tr);
+    });
+  }
+
+  /* ---------- Init ---------- */
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireCanManageUsers();
+    if (!session) return;
+    currentUserId = session.user.id;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      document.getElementById('adminNavMenu').style.display = 'flex';
+      document.getElementById('rolesMenuItem').style.display = 'flex';
+      if (INAPlatform.canManageMasterData(profile)) document.getElementById('masterDataMenuItem').style.display = 'flex';
+      if (INAPlatform.canManageUsers(profile)) document.getElementById('adminUsersMenuItem').style.display = 'flex';
+      if (INAPlatform.canViewRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    roles = await INAPlatform.listRoles();
+    const profiles = await INAPlatform.listAllProfiles();
+    allUsers = profiles.filter((u) => u.role === 'user');
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('rolesBody').style.display = 'block';
+    renderRolesTable();
+    renderAssignTable();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

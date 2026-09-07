@@ -10,6 +10,31 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/style.css?v=21">
 <link rel="stylesheet" href="/assets/app.css?v=9">
+<style>
+/* Print-only "filtered contacts list" view (#contactsPrintView, built by
+   contactsPdfBtn's click handler below) — same pattern as
+   app/dashboard.html's #dashPrintView (see the comment there): a page-
+   scoped inline block so it doesn't collide with #tplPrintView's portrait
+   single-record layout in the shared stylesheet. Relies on that shared
+   stylesheet's `body *{ visibility:hidden; }` base rule to hide
+   everything else when printing. */
+@media print {
+  @page { size: landscape; margin: 12mm; }
+  #contactsPrintView, #contactsPrintView *{ visibility: visible; }
+  #contactsPrintView{
+    display:block; position:absolute; top:0; left:0; width:100%;
+    padding:0; margin:0; color:#000; background:#fff; font-family:var(--sans, Arial, sans-serif);
+  }
+  #contactsPrintView h1{ font-size:17px; margin:0 0 4px; }
+  #contactsPrintView .p-count{ font-size:11px; color:#333; margin:0 0 16px; }
+  #contactsPrintView .p-table{ width:100%; border-collapse:collapse; font-size:9.5px; }
+  #contactsPrintView .p-table th, #contactsPrintView .p-table td{
+    border:1px solid #999; padding:5px 6px; text-align:left; vertical-align:top;
+  }
+  #contactsPrintView .p-table th{ background:#eee; text-transform:uppercase; letter-spacing:.03em; font-size:8.5px; }
+  #contactsPrintView .p-table tr{ page-break-inside:avoid; }
+}
+</style>
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -30,6 +55,7 @@
         <div class="menu-panel" id="adminNavMenuPanel">
           <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
           <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+          <a href="roles.html" id="rolesMenuItem" class="menu-item" style="display:none;"><span data-i18n="roles.nav">Roles</span></a>
         </div>
       </div>
     </nav>
@@ -66,13 +92,37 @@
       <!-- ===== Contacts ===== -->
       <div class="md-panel" id="panelContacts">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; flex-wrap:wrap;">
-          <h3 style="margin:0;"><span data-i18n="md.contacts.listTitle">Contacts</span></h3>
-          <div style="display:flex; gap:10px; align-items:center;">
+          <h3 style="margin:0;"><span data-i18n="md.contacts.listTitle">Contacts</span> <span id="contactsCount" style="font-weight:400; font-size:12.5px; color:var(--muted);"></span></h3>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <span id="cardScanStatus" class="card-scan-status" style="display:none;"></span>
             <button type="button" class="btn ghost small" id="scanCardBtn"><span data-i18n="md.contacts.scanCard">📇 Upload from business card</span></button>
             <input type="file" id="cardFileInput" accept="image/*" style="display:none;">
+            <button type="button" class="btn ghost small" id="contactsPdfBtn"><span data-i18n="md.contacts.downloadPdf">Download PDF</span></button>
+            <button type="button" class="btn ghost small" id="contactsExcelBtn"><span data-i18n="md.contacts.downloadExcel">Download Excel</span></button>
             <button type="button" class="btn amber small" id="newContactBtn"><span data-i18n="md.contacts.new">+ New Contact</span></button>
           </div>
+        </div>
+        <div class="filter-bar">
+          <div class="ffield" style="flex:1 1 200px;">
+            <label for="cfName"><span data-i18n="md.contacts.filter.name">Name</span></label>
+            <input type="search" id="cfName" placeholder="">
+          </div>
+          <div class="ffield">
+            <label for="cfCompany"><span data-i18n="md.contacts.filter.company">Company</span></label>
+            <select id="cfCompany"></select>
+          </div>
+          <div class="ffield">
+            <label for="cfAgency"><span data-i18n="md.contacts.filter.agency">Public Agency</span></label>
+            <select id="cfAgency"></select>
+          </div>
+          <div class="ffield">
+            <label for="cfCountry"><span data-i18n="md.contacts.filter.country">Country</span></label>
+            <select id="cfCountry"></select>
+          </div>
+          <button type="button" class="fclear" id="cfClear"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+        </div>
+        <div class="filter-count-row">
+          <p class="filter-count" id="contactsFilterCount"></p>
         </div>
         <div style="overflow-x:auto;">
           <table class="risk-table" id="contactsTable">
@@ -91,12 +141,16 @@
           </table>
           <p id="contactsEmpty" style="display:none; color:var(--muted); font-size:13.5px; padding:20px 0;"><span data-i18n="md.contacts.empty">No contacts yet.</span></p>
         </div>
+        <!-- Populated by contactsPdfBtn's click handler right before
+             window.print() (see renderContactsPrintView() below). Hidden
+             on screen — only revealed by the @media print block in <head>. -->
+        <div id="contactsPrintView" class="print-only"></div>
       </div>
 
       <!-- ===== Companies ===== -->
       <div class="md-panel" id="panelCompanies" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-          <h3 style="margin:0;"><span data-i18n="md.companies.listTitle">Companies</span></h3>
+          <h3 style="margin:0;"><span data-i18n="md.companies.listTitle">Companies</span> <span id="companiesCount" style="font-weight:400; font-size:12.5px; color:var(--muted);"></span></h3>
           <button type="button" class="btn amber small" id="newCompanyBtn"><span data-i18n="md.companies.new">+ New Company</span></button>
         </div>
         <div style="overflow-x:auto;">
@@ -119,7 +173,7 @@
       <!-- ===== Products ===== -->
       <div class="md-panel" id="panelProducts" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-          <h3 style="margin:0;"><span data-i18n="md.products.listTitle">Products</span></h3>
+          <h3 style="margin:0;"><span data-i18n="md.products.listTitle">Products</span> <span id="productsCount" style="font-weight:400; font-size:12.5px; color:var(--muted);"></span></h3>
           <button type="button" class="btn amber small" id="newProductBtn"><span data-i18n="md.products.new">+ New Product</span></button>
         </div>
         <div style="overflow-x:auto;">
@@ -141,7 +195,7 @@
       <!-- ===== Public Agencies ===== -->
       <div class="md-panel" id="panelAgencies" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-          <h3 style="margin:0;"><span data-i18n="md.agencies.listTitle">Public Agencies</span></h3>
+          <h3 style="margin:0;"><span data-i18n="md.agencies.listTitle">Public Agencies</span> <span id="agenciesCount" style="font-weight:400; font-size:12.5px; color:var(--muted);"></span></h3>
           <button type="button" class="btn amber small" id="newAgencyBtn"><span data-i18n="md.agencies.new">+ New Public Agency</span></button>
         </div>
         <div style="overflow-x:auto;">
@@ -288,10 +342,13 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=48"></script>
+<script src="/assets/i18n.js?v=51"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=54"></script>
+<script src="/assets/platform.js?v=59"></script>
 <script src="/assets/script.js?v=14"></script>
+<!-- SheetJS (client-side .xlsx export) — only needed on this page for the
+     Contacts list's "Download Excel" button; see contactsExcelBtn below. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function () {
   const signOutBtn = document.getElementById('signOutBtn');
@@ -535,16 +592,219 @@
       </label>`).join('');
   }
 
+  /* ---------- Contacts: filters (name / company / public agency / country) ----------
+     Company and Public Agency are two separate dropdowns (not a combined
+     one) since a contact can only belong to one or the other — picking a
+     value in one clears the other below. The country filter reads
+     companies.country / public_agencies.country as embedded on each
+     contact by listContacts() — a contact has no country of its own, it
+     inherits its affiliated org's. Options are rebuilt whenever
+     companies/agencies change (loadContacts() calls this) so a newly
+     created company or agency shows up in the dropdown without a page
+     reload. */
+  function populateContactFilters() {
+    const companySel = document.getElementById('cfCompany');
+    const agencySel = document.getElementById('cfAgency');
+    const countrySel = document.getElementById('cfCountry');
+    const prevCompany = companySel.value;
+    const prevAgency = agencySel.value;
+    const prevCountry = countrySel.value;
+
+    const allLabel = lang === 'es' ? 'Todas' : 'All';
+
+    companySel.innerHTML = `<option value="">${allLabel}</option>` + companies.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
+    companySel.value = companies.some((c) => c.id === prevCompany) ? prevCompany : '';
+
+    agencySel.innerHTML = `<option value="">${allLabel}</option>` + agencies.map((a) => `<option value="${a.id}">${a.name}</option>`).join('');
+    agencySel.value = agencies.some((a) => a.id === prevAgency) ? prevAgency : '';
+
+    const countries = new Set();
+    companies.forEach((c) => { if (c.country) countries.add(c.country); });
+    agencies.forEach((a) => { if (a.country) countries.add(a.country); });
+    const sortedCountries = Array.from(countries).sort((a, b) => a.localeCompare(b, lang));
+    countrySel.innerHTML = `<option value="">${allLabel}</option>` + sortedCountries.map((c) => `<option value="${c}">${c}</option>`).join('');
+    countrySel.value = sortedCountries.includes(prevCountry) ? prevCountry : '';
+  }
+
+  function getFilteredContacts() {
+    const nameQ = (document.getElementById('cfName').value || '').trim().toLowerCase();
+    const companyVal = document.getElementById('cfCompany').value;
+    const agencyVal = document.getElementById('cfAgency').value;
+    const countryVal = document.getElementById('cfCountry').value;
+    return contacts.filter((c) => {
+      if (nameQ && !(c.full_name || '').toLowerCase().includes(nameQ)) return false;
+      if (companyVal && c.company_id !== companyVal) return false;
+      if (agencyVal && c.public_agency_id !== agencyVal) return false;
+      if (countryVal) {
+        const orgCountry = (c.companies && c.companies.country) || (c.public_agencies && c.public_agencies.country) || '';
+        if (orgCountry !== countryVal) return false;
+      }
+      return true;
+    });
+  }
+
+  ['cfName', 'cfCompany', 'cfAgency', 'cfCountry'].forEach((id) => {
+    const el = document.getElementById(id);
+    el.addEventListener(id === 'cfName' ? 'input' : 'change', () => {
+      // A contact belongs to a company OR a public agency, never both —
+      // so picking one clears the other rather than letting the user
+      // land on a combination that can never match anything.
+      if (id === 'cfCompany' && el.value) document.getElementById('cfAgency').value = '';
+      if (id === 'cfAgency' && el.value) document.getElementById('cfCompany').value = '';
+      renderContactsTable();
+    });
+  });
+  document.getElementById('cfClear').addEventListener('click', () => {
+    document.getElementById('cfName').value = '';
+    document.getElementById('cfCompany').value = '';
+    document.getElementById('cfAgency').value = '';
+    document.getElementById('cfCountry').value = '';
+    renderContactsTable();
+  });
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Human-readable summary of the currently active Contacts filters — used
+  // in both the PDF print view's subtitle and the Excel file's own summary
+  // row, so the exported list makes sense on its own (e.g. someone opens
+  // it a week later, or forwards the file) without the on-screen filter
+  // bar next to it. Same idea as dashboard.html's activeFiltersSummary().
+  function activeContactsFiltersSummary() {
+    const l = lang;
+    const parts = [];
+    const nameQ = (document.getElementById('cfName').value || '').trim();
+    const companyVal = document.getElementById('cfCompany').value;
+    const agencyVal = document.getElementById('cfAgency').value;
+    const countryVal = document.getElementById('cfCountry').value;
+    if (nameQ) parts.push(`${l === 'es' ? 'Búsqueda' : 'Search'}: "${nameQ}"`);
+    if (companyVal) {
+      const c = companies.find((x) => x.id === companyVal);
+      if (c) parts.push(`${l === 'es' ? 'Empresa' : 'Company'}: ${c.name}`);
+    }
+    if (agencyVal) {
+      const a = agencies.find((x) => x.id === agencyVal);
+      if (a) parts.push(`${l === 'es' ? 'Organismo' : 'Agency'}: ${a.name}`);
+    }
+    if (countryVal) parts.push(`${l === 'es' ? 'País' : 'Country'}: ${countryVal}`);
+    return parts.join(' · ');
+  }
+
+  // Builds #contactsPrintView's contents from the contacts currently
+  // matching the filter bar — same approach as dashboard.html's
+  // renderPrintView()/#dashPrintView for the project list. Called by
+  // contactsPdfBtn's click handler, right before window.print().
+  function renderContactsPrintView(filtered) {
+    const l = lang;
+    const dateFmt = (d) => new Date(d).toLocaleDateString(l === 'es' ? 'es-AR' : 'en-US');
+
+    const rows = filtered.map((c) => {
+      const org = (c.companies && c.companies.name) || (c.public_agencies && c.public_agencies.name) || '—';
+      return `<tr>
+        <td>${escapeHtml(c.full_name)}</td>
+        <td>${escapeHtml(c.position_title || '—')}</td>
+        <td>${escapeHtml(org)}</td>
+        <td>${escapeHtml(c.email || '—')}</td>
+        <td>${escapeHtml(c.phone || '—')}</td>
+      </tr>`;
+    }).join('');
+
+    const summary = activeContactsFiltersSummary();
+    const countText = l === 'es'
+      ? `${filtered.length} de ${contacts.length} contacto${contacts.length === 1 ? '' : 's'}`
+      : `${filtered.length} of ${contacts.length} contact${contacts.length === 1 ? '' : 's'}`;
+
+    document.getElementById('contactsPrintView').innerHTML = `
+      <div class="p-header"><div class="p-brand">INA — International Network Advisors</div><div class="p-date">${dateFmt(new Date())}</div></div>
+      <h1>${l === 'es' ? 'Listado de Contactos' : 'Contacts List'}</h1>
+      <p class="p-count">${countText}${summary ? ' — ' + escapeHtml(summary) : ''}</p>
+      <table class="p-table">
+        <thead><tr>
+          <th>${l === 'es' ? 'Nombre' : 'Name'}</th>
+          <th>${l === 'es' ? 'Cargo' : 'Position'}</th>
+          <th>${l === 'es' ? 'Empresa / Organismo' : 'Company / Agency'}</th>
+          <th>${l === 'es' ? 'Email' : 'Email'}</th>
+          <th>${l === 'es' ? 'Teléfono' : 'Phone'}</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  document.getElementById('contactsPdfBtn').addEventListener('click', () => {
+    renderContactsPrintView(getFilteredContacts());
+    window.print();
+  });
+
+  // Builds a real .xlsx (not CSV) from the contacts currently matching the
+  // filter bar, via SheetJS (loaded at the bottom of <body> — see the
+  // xlsx.full.min.js <script> tag, only needed on this page). One data
+  // sheet plus a one-cell "active filters" note above the header row, so
+  // it's clear the file is a filtered subset rather than the full catalog.
+  document.getElementById('contactsExcelBtn').addEventListener('click', () => {
+    const l = lang;
+    const filtered = getFilteredContacts();
+    const header = [
+      l === 'es' ? 'Nombre' : 'Name',
+      l === 'es' ? 'Cargo' : 'Position',
+      l === 'es' ? 'Empresa / Organismo' : 'Company / Agency',
+      'Email',
+      l === 'es' ? 'Teléfono' : 'Phone',
+      l === 'es' ? 'País' : 'Country',
+    ];
+    const rows = filtered.map((c) => {
+      const org = (c.companies && c.companies.name) || (c.public_agencies && c.public_agencies.name) || '';
+      const country = (c.companies && c.companies.country) || (c.public_agencies && c.public_agencies.country) || '';
+      return [c.full_name || '', c.position_title || '', org, c.email || '', c.phone || '', country];
+    });
+    const summary = activeContactsFiltersSummary();
+    const countText = l === 'es'
+      ? `${filtered.length} de ${contacts.length} contactos`
+      : `${filtered.length} of ${contacts.length} contacts`;
+
+    const aoa = [
+      [l === 'es' ? 'Listado de Contactos — INA Platform' : 'Contacts List — INA Platform'],
+      [countText + (summary ? ' — ' + summary : '')],
+      [],
+      header,
+      ...rows,
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{ wch: 26 }, { wch: 26 }, { wch: 28 }, { wch: 30 }, { wch: 18 }, { wch: 18 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, l === 'es' ? 'Contactos' : 'Contacts');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `contactos_ina_${dateStr}.xlsx`);
+  });
+
   /* ---------- Contacts ---------- */
   function renderContactsTable() {
+    const filtered = getFilteredContacts();
     const tbody = document.getElementById('contactsTableBody');
     const empty = document.getElementById('contactsEmpty');
     const wrap = document.getElementById('contactsTable');
-    if (!contacts.length) {
-      wrap.style.display = 'none'; empty.style.display = 'block'; tbody.innerHTML = ''; return;
+    const totalEl = document.getElementById('contactsCount');
+    const countEl = document.getElementById('contactsFilterCount');
+    if (totalEl) totalEl.textContent = `(${contacts.length})`;
+    if (countEl) {
+      countEl.textContent = lang === 'es'
+        ? `${filtered.length} de ${contacts.length} contacto${contacts.length === 1 ? '' : 's'}`
+        : `${filtered.length} of ${contacts.length} contact${contacts.length === 1 ? '' : 's'}`;
+    }
+    if (!filtered.length) {
+      wrap.style.display = 'none'; empty.style.display = 'block'; tbody.innerHTML = '';
+      if (contacts.length) {
+        // Contacts exist, but none match the current filters — distinct
+        // from the genuinely-empty-catalog message (which keeps its
+        // data-i18n span so it stays in sync on language switch).
+        empty.innerHTML = `<span>${lang === 'es' ? 'Ningún contacto coincide con los filtros.' : 'No contacts match the current filters.'}</span>`;
+      } else {
+        empty.innerHTML = `<span data-i18n="md.contacts.empty">No contacts yet.</span>`;
+      }
+      return;
     }
     wrap.style.display = 'table'; empty.style.display = 'none';
-    tbody.innerHTML = contacts.map((c) => {
+    tbody.innerHTML = filtered.map((c) => {
       const org = (c.companies && c.companies.name) || (c.public_agencies && c.public_agencies.name) || '—';
       const cardTitle = lang === 'es' ? 'Ver tarjeta' : 'View card';
       return `
@@ -710,6 +970,7 @@
 
   async function loadContacts() {
     contacts = await INAPlatform.listContacts();
+    populateContactFilters();
     renderContactsTable();
   }
 
@@ -718,6 +979,8 @@
     const tbody = document.getElementById('companiesTableBody');
     const empty = document.getElementById('companiesEmpty');
     const wrap = document.getElementById('companiesTable');
+    const totalEl = document.getElementById('companiesCount');
+    if (totalEl) totalEl.textContent = `(${companies.length})`;
     if (!companies.length) {
       wrap.style.display = 'none'; empty.style.display = 'block'; tbody.innerHTML = ''; return;
     }
@@ -816,6 +1079,8 @@
     const tbody = document.getElementById('productsTableBody');
     const empty = document.getElementById('productsEmpty');
     const wrap = document.getElementById('productsTable');
+    const totalEl = document.getElementById('productsCount');
+    if (totalEl) totalEl.textContent = `(${products.length})`;
     if (!products.length) {
       wrap.style.display = 'none'; empty.style.display = 'block'; tbody.innerHTML = ''; return;
     }
@@ -906,6 +1171,8 @@
     const tbody = document.getElementById('agenciesTableBody');
     const empty = document.getElementById('agenciesEmpty');
     const wrap = document.getElementById('agenciesTable');
+    const totalEl = document.getElementById('agenciesCount');
+    if (totalEl) totalEl.textContent = `(${agencies.length})`;
     if (!agencies.length) {
       wrap.style.display = 'none'; empty.style.display = 'block'; tbody.innerHTML = ''; return;
     }
@@ -1000,6 +1267,7 @@
     btn.addEventListener('click', () => {
       setTimeout(() => {
         lang = INAPlatform.currentLang();
+        populateContactFilters();
         renderContactsTable();
         renderCompaniesTable();
         renderProductsTable();
@@ -1023,12 +1291,13 @@
       document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
       document.getElementById('appUserName').textContent = profile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
-      const canAdminUsers = INAPlatform.isAdmin(profile);
+      const canAdminUsers = INAPlatform.canManageUsers(profile);
       const canMasterData = INAPlatform.canManageMasterData(profile);
       if (canAdminUsers || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
       if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
       if (canAdminUsers) document.getElementById('adminUsersMenuItem').style.display = 'flex';
-      if (INAPlatform.canManageRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+      if (canAdminUsers) document.getElementById('rolesMenuItem').style.display = 'flex';
+      if (INAPlatform.canViewRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
     } catch (e) { /* non-critical */ }
 
     // Advisor/admin only — see migration_v44_master_data.sql. No read-only
@@ -1040,6 +1309,12 @@
     }
 
     await Promise.all([loadCompanies(), loadAgencies(), loadProducts(), loadContacts()]);
+    // The four loads above run in parallel, so loadContacts() may have
+    // built the org/country filter dropdowns before loadCompanies()/
+    // loadAgencies() finished populating the `companies`/`agencies`
+    // globals they read from. Rebuild once more now that all four have
+    // settled, to be safe.
+    populateContactFilters();
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('mdBody').style.display = 'block';
