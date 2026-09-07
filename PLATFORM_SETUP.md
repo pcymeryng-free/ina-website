@@ -1812,6 +1812,29 @@ surface of the platform — analysis, autocomplete, and business cards — on
 Groq's free tier with nothing paid at all, `LLM_PROVIDER=groq` +
 `GROQ_API_KEY` is the only setup needed.
 
+**Follow-up: business card reading broke immediately after switching to
+`qwen/qwen3.6-27b`.** Pablo hit this in production right after the model
+swap above: `api/extract-business-card.js` started failing with
+`SyntaxError: Unexpected token '<'... "<think>\nTh"... is not valid JSON`.
+Cause: `qwen/qwen3.6-27b` is a reasoning model, and Groq's default
+`reasoning_format` for it is `'raw'` — the model's entire chain-of-thought
+gets prepended to the actual answer inside `<think>...</think>` tags, all
+in the same `content` string. `parseModelJson()` was calling `JSON.parse()`
+directly on that content, so the literal `<think>` at the start broke every
+single request. Two-part fix: (1) added `reasoning_format: 'hidden'` to the
+Groq request body in `api/extract-business-card.js`, which tells Groq to
+return only the final answer with no reasoning content at all; (2) as
+cheap insurance against this recurring with any future reasoning model
+(including if `GROQ_MODEL` is ever pointed at one for AI Analysis or
+Autocomplete), all three JSON-parsing call sites —
+`api/extract-business-card.js`'s `parseModelJson()`,
+`api/analyze-project.js`, and `api/extract-template-data.js` — now strip a
+leading `<think>...</think>` block before parsing, regardless of whether
+`reasoning_format` was set correctly upstream. See
+[console.groq.com/docs/reasoning](https://console.groq.com/docs/reasoning)
+for the full `reasoning_format`/`reasoning_effort` reference if this needs
+revisiting for a different model.
+
 ## Using AWS Bedrock (open-source model, confidential-data-friendly)
 
 For **production**, `api/analyze-project.js` also supports running an
