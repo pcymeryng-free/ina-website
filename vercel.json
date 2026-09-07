@@ -13,6 +13,8 @@
     { "source": "/app", "destination": "/app/index.html", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/analyze-project", "destination": "/api/analyze-project" }
+    { "source": "/analyze-project", "destination": "/api/analyze-project" },
+    { "source": "/extract-template-data", "destination": "/api/extract-template-data" },
+    { "source": "/extract-business-card", "destination": "/api/extract-business-card" }
   ]
 }
