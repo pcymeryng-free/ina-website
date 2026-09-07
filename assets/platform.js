@@ -6761,7 +6761,17 @@ const INAPlatform = {
       body: JSON.stringify({ projectId }),
     });
     const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(body.error || 'Analysis request failed.');
+    if (!res.ok) {
+      // body.detail carries the actual diagnostic (the model provider's
+      // error response, or a JSON-parse failure with the raw model output)
+      // — api/analyze-project.js always includes it on failure, but it was
+      // being silently dropped here, which meant the only way to see *why*
+      // an analysis failed was to dig through Vercel's Runtime Logs by
+      // hand. Logging it directly to the browser console means it's always
+      // one F12 away, no Vercel dashboard needed.
+      console.error('[requestAnalysis] failed:', body.error, body.detail || body.raw || '');
+      throw new Error(body.error || 'Analysis request failed.');
+    }
     return body;
   },
 
