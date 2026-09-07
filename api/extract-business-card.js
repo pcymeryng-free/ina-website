@@ -222,6 +222,7 @@ async function handler(req, res) {
       });
       if (!groqRes.ok) {
         const errText = await groqRes.text().catch(() => '');
+        console.error(`[extract-business-card] Groq request failed (status ${groqRes.status}):`, errText);
         return json(res, 502, { error: 'Card reading request failed', detail: errText });
       }
       const groqData = await groqRes.json();
@@ -250,6 +251,7 @@ async function handler(req, res) {
       });
       if (!anthropicRes.ok) {
         const errText = await anthropicRes.text().catch(() => '');
+        console.error(`[extract-business-card] Anthropic request failed (status ${anthropicRes.status}):`, errText);
         return json(res, 502, { error: 'Card reading request failed', detail: errText });
       }
       const anthropicData = await anthropicRes.json();
@@ -260,6 +262,7 @@ async function handler(req, res) {
     try {
       parsed = parseModelJson(rawText);
     } catch (e) {
+      console.error('[extract-business-card] could not parse model output as JSON:', e, '\nraw output (first 1000 chars):', rawText.slice(0, 1000));
       return json(res, 502, { error: 'Could not parse card reading output', raw: rawText.slice(0, 1000) });
     }
 
@@ -273,6 +276,7 @@ async function handler(req, res) {
       is_public_agency: parsed.is_public_agency === true,
     });
   } catch (err) {
+    console.error('[extract-business-card] unhandled error:', err);
     return json(res, 500, { error: 'Card reading failed', detail: String((err && err.message) || err) });
   }
 }
