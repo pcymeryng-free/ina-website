@@ -6,9 +6,9 @@
     "local": "node local-server.js"
   },
   "dependencies": {
-    "pdf-parse": "2.4.5",
     "@aws-sdk/client-bedrock-runtime": "^3.1095.0",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "dotenv": "^16.4.5"
+    "pdf-parse": "1.1.4"
   }
 }

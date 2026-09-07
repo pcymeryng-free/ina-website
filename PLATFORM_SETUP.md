@@ -23,8 +23,9 @@ them by hand.
 
 There are three account roles. A regular **user** can only see and edit their
 own projects. An **advisor** can view every project submitted to the platform
-(read-only — editing and re-running analysis stay owner-only) in a filterable
-grid on the dashboard. An **admin** has the same view-everything access as an
+in a filterable grid on the dashboard — editing stays owner-only always, but
+re-running analysis opens up to the advisor once they've "taken" that
+specific project (see "Project workflow" below). An **admin** has the same view-everything access as an
 advisor, plus a **User Management** panel (`app/admin.html`) to change any
 user's role — including promoting other users to advisor or admin. Nobody can
 self-select any of these roles at signup — see "Promoting a user to advisor
@@ -114,18 +115,20 @@ to the old addresses breaks.
 >    `profiles.specialization` (nullable, unused for now — every advisor
 >    stays general-purpose until technical/financial/administrative
 >    advisor roles actually exist), `projects.assigned_advisor_id`, the
->    `project_workflow_events` audit-trail table, and two functions —
->    `take_project()` and `advance_project_workflow()` — that an advisor
->    calls from `app/project.html` to claim a project and push it one step
->    forward through the same 4 Investment Readiness Index™ stages already
->    used elsewhere (Concept Stage → Early Structuring → Advanced
->    Structuring → Investment Ready). See "Project workflow" under "How it
->    works" below.
+>    `project_workflow_events` audit-trail table, and `take_project()` —
+>    that an advisor calls from `app/project.html` to claim a project.
+>    `advance_project_workflow()`, originally added here, was replaced by
+>    `promote_project_workflow()`/`demote_project_workflow()`/
+>    `return_project_to_not_analyzed()` in
+>    `supabase/migration_v20_workflow_promote_demote.sql` — see "Project
+>    workflow" under "How it works" below for the current state machine
+>    (Not Analyzed → Concept Stage → Early Structuring → Advanced
+>    Structuring → Investment Ready).
 > 12. `supabase/migration_v13_program_documents.sql` — adds
 >    `program_documents` (same shape as `project_documents`, scoped to a
 >    Program instead), letting a program owner attach supporting files
 >    (PDFs, images, etc.) when creating or editing a Program in
->    `app/programs.html`. Reuses the existing `project-documents` Storage
+>    `app/initiatives.html`. Reuses the existing `project-documents` Storage
 >    bucket — no new bucket or bucket policies to create.
 > 13. `supabase/migration_v14_delete_policies.sql` — adds DELETE policies for
 >    `projects` and `programs` (owner or admin only — see "Deleting
@@ -151,6 +154,45 @@ to the old addresses breaks.
 >    replace an already-uploaded attachment from `app/new-project.html` /
 >    `app/new-program.html`. See "Deleting or replacing attachments" under
 >    "How it works" below.
+> 16. `supabase/migration_v17_wholesale_neutral_network_type.sql` — widens
+>    the `projects.project_type` and `programs.types` CHECK constraints to
+>    allow a new value, `wholesale_neutral_network`, for ENACOM's "Red
+>    Mayorista Neutral" Program (Resolución 951/2025). No new columns —
+>    just the two constraints. **Run this before submitting or selecting
+>    this project type anywhere in the app**, or the insert/update will be
+>    rejected by the database.
+> 17. `supabase/migration_v18_program_template_key.sql` — adds
+>    `programs.template_key` (nullable text, no CHECK constraint). Lets a
+>    Program be tagged with a guided-form template from the new
+>    `PROGRAM_TEMPLATES` registry — see "Program-level templates" under
+>    "Project submission templates" below.
+> 18. `supabase/migration_v19_program_permissions.sql` — changes who can
+>    create and see Programs: creating one now requires advisor or admin
+>    (`programs_insert_advisor_or_admin`, was any signed-in user before),
+>    while seeing the list opens up from owner/advisor/admin to **every**
+>    signed-in user (`programs_select_all_authenticated`) — so any standard
+>    user submitting a project can still associate it with any Program,
+>    just can't create a new one themselves. See "Programs" under "How it
+>    works" below.
+> 19. `supabase/migration_v21_program_funding_stage_and_applications.sql` —
+>    adds `programs.funding_stage` (`'preparation'` or `'financing'`,
+>    default `'financing'`) and a new `project_programs` table letting a
+>    project apply to **several** financing Programs at once (e.g. FSU +
+>    BID), plus separately to a Program that funds ELABORATING the project
+>    itself (e.g. USTDA) — independent of the pre-existing single
+>    "umbrella" `projects.program_id`. See "Financing Programs (multi-
+>    program applications)" under "How it works" below.
+> 20. `supabase/migration_v23_project_shared_field_answers.sql` — adds
+>    `projects.shared_field_answers` (jsonb, default `{}`), a flat pool of
+>    already-known field values shared across every template filled in for
+>    that project. See "Autocomplete templates from documents" under "How it
+>    works" below.
+> 21. `supabase/migration_v24_document_categories_expand.sql` — widens the
+>    `project_documents.document_type` CHECK constraint from 4 categories to
+>    7: `technical`, `economic`, `financial`, `bylaws`, `administrative`,
+>    `licenses`, `other`. Needed for the new project-creation wizard's
+>    document-upload step. See "Document categories" and "Creating a
+>    project: the 4-step wizard" under "How it works" below.
 >
 > Skip straight to "Promoting a user to advisor or admin" below once
 > they're run.
@@ -240,28 +282,39 @@ function, no extra configuration needed.
 ## 7. Test it
 
 1. Visit your live site → **Platform** → **Get Started**.
-2. Create an account (check your email if Supabase asks you to confirm it —
-   by default new Supabase projects require email confirmation; you can turn
-   this off in **Authentication → Providers → Email → Confirm email**, if you
-   want frictionless signups for now).
+2. Create an account. By default new Supabase projects require email
+   confirmation (**Authentication → Providers → Email → Confirm email**) —
+   with that on, `register.html` shows a "Check your email" screen instead
+   of going straight into the dashboard, Supabase emails a confirmation
+   link, and clicking it lands on `app/email-confirmed.html` before the
+   account can sign in (see step 8.1 below for the one-time setup this
+   needs). If you'd rather have frictionless signups for now, turn
+   **Confirm email** off — with it off, `signUp()` returns a session
+   immediately and the account is usable right away, no email involved.
 3. Submit a test project with a real description.
 4. Within under a minute you should see a scored Investment Readiness Index™
    with 8 dimension bars, a gap roadmap, and financing recommendations.
 
 ## 8. Enable password reset + two-factor authentication
 
-Two small one-time settings in Supabase, both under **Authentication**:
+Three small one-time settings in Supabase, all under **Authentication**:
 
-1. **Redirect URL (required for "Forgot password?" to work)**
-   Go to **Authentication → URL Configuration → Redirect URLs** and add:
+1. **Redirect URLs (required for "Forgot password?" and the email-confirmation
+   link to work)**
+   Go to **Authentication → URL Configuration → Redirect URLs** and add
+   both:
    ```
    https://yourdomain.com/app/reset-password.html
+   https://yourdomain.com/app/email-confirmed.html
    ```
-   (use your real domain). Supabase rejects password-reset links that
-   redirect anywhere not on this list, as a security measure — without this,
-   users clicking the emailed link will land on an "invalid link" screen.
-   If you're still testing locally or on a Vercel preview URL, add that
-   URL too (you can list more than one).
+   (use your real domain). Supabase rejects any emailed link — password
+   reset or signup confirmation — that redirects anywhere not on this list,
+   as a security measure. Without `reset-password.html` on the list,
+   "Forgot password?" links land on an "invalid link" screen; without
+   `email-confirmed.html`, new users' confirmation links do the same and
+   they can never activate their account. If you're still testing locally
+   or on a Vercel preview URL, add those URLs too (you can list more than
+   one).
 
 2. **Authenticator app (TOTP) provider (required for the Security page's
    "Enable Two-Factor Authentication" to work)**
@@ -270,11 +323,670 @@ Two small one-time settings in Supabase, both under **Authentication**:
    on. (Recent Supabase projects usually have this on by default — if the
    toggle is already green, there's nothing to do.)
 
-Nothing else is needed — both features are self-service per user, with no
-admin step per account. Test them the same way as step 7: create a test
-account, then from **Security** in the Platform enable 2FA (scan the QR
-code with an authenticator app), sign out, and sign back in to confirm it
-asks for a code; separately, try "Forgot password?" on the sign-in page.
+3. **Email sending for account confirmation (see 8.1 below if you turned
+   on "Confirm email" in step 7)** — Supabase's own built-in email sender
+   is fine for testing but hard-capped at **2 emails per hour, project-wide,
+   shared across signup confirmations, password-recovery emails, and
+   email-address changes combined** — not 2 per user, 2 total for
+   everyone using the platform that hour. Hit that cap and every further
+   attempt fails with `Email rate limit exceeded` (a 429 error), regardless
+   of how slow or fast the mail actually gets delivered. For anything past
+   casual testing, configure **Authentication → SMTP Settings** (some
+   Supabase UI versions show this as **Project Settings → Auth → SMTP
+   Settings**) with real SMTP credentials — host, port, username, password
+   — for a mailbox. *Correction: this is NOT the same thing as
+   `contact.php`* — that script sends mail via PHP's built-in `mail()`
+   through Bluehost's local Exim server directly, with no SMTP
+   host/port/username/password of its own to reuse. To get real SMTP
+   credentials from Bluehost: **cPanel → Email Accounts** → the mailbox you
+   want to send as (e.g. `info@inaai.co`) → **Connect Devices** (or
+   "Configure Mail Client") — that screen shows the actual outgoing/SMTP
+   host, port, and the mailbox's own password to plug into Supabase.
+   - **Configuring custom SMTP does not, by itself, raise the 2/hour cap.**
+     It only *unlocks* the ability to raise it — the limit stays at
+     whatever it's set to until you separately go to **Authentication →
+     Rate Limits** and increase **"Rate limit for sending emails"**
+     (grayed out / stuck at 2 until custom SMTP is active). Set it to
+     whatever fits expected signup volume — 30–100/hour is plenty for a
+     platform this size.
+   - If you're already on custom SMTP and still seeing `Email rate limit
+     exceeded`, that Rate Limits value is almost certainly still at its
+     low default — go raise it there, that setting is the actual fix, not
+     anything about Bluehost's sending speed.
+
+**Session persistence.** Pablo: closing the platform without explicitly
+signing out shouldn't leave you signed in the next time you open it —
+always go back through login. The Supabase client (`assets/platform.js`)
+is now configured with `auth: { storage: window.sessionStorage }` instead
+of the default `localStorage`. Practically: signing in on one device/tab
+never affects any other device or tab (each has always had its own
+storage, this doesn't change that); staying signed in while navigating or
+refreshing pages within the same browser tab still works exactly as
+before; but closing that tab or window clears its session, so reopening
+the platform lands on `login.html` again, not the dashboard. No manual
+Supabase dashboard step needed — this is purely a client-side setting.
+
+Separately, since each browser's storage was always independent of every
+other browser/device to begin with, signing in from a second PC, phone, or
+tab already worked side by side with no changes needed — nothing to set up
+there either.
+
+**Edit-mode concurrency lock.** Pablo: when a user opens a Project, Program,
+or Roadmap Model in edit mode, everyone else should be locked out of
+editing it until that user is done. This is a hard lock — a second person
+can't enter edit mode at all while someone else holds it; they see who's
+editing (when possible — see the RLS note below) and since when, and stay
+read-only until the lock clears.
+
+- **Requires a manual migration**: run `supabase/migration_v31_edit_locks.sql`
+  in the Supabase SQL editor (same as any other migration in this doc — it's
+  additive, safe to run once). It adds `edit_locked_by` /`edit_locked_at`
+  columns to `projects`, `programs`, and `roadmap_templates`, plus one
+  acquire/release RPC pair per table. `schema.sql` has been updated to match,
+  for anyone setting up a fresh database from scratch.
+- **How it works**: opening `new-project.html`, `new-program.html`, or
+  `new-roadmap-template.html` in edit mode (`?id=...`) tries to claim the
+  lock via `INAPlatform.acquireEditLock(kind, id)`. If it succeeds, a 60-
+  second heartbeat (`INAPlatform.startEditLockHeartbeat`) keeps renewing it
+  while the tab stays open; the lock releases on a successful save, and a
+  best-effort `beforeunload` handler tries to release it immediately on tab
+  close too. If someone else already holds it, the form shows an amber
+  "Currently being edited by X since HH:MM" banner and every field/button in
+  it gets disabled — read-only until the lock clears.
+- **No manual "force unlock."** If a tab closes, crashes, or loses network
+  before releasing its lock, nothing gets permanently stuck — the lock
+  simply auto-expires 5 minutes after its last heartbeat (see
+  `LOCK_TIMEOUT_MINUTES` in `assets/platform.js`, kept in sync with the
+  `interval '5 minutes'` in the migration), at which point the next person
+  to try acquiring it claims it automatically.
+- **Who can ever hold the lock** is governed entirely by the RLS UPDATE
+  policy each table already had before this feature (owner-or-assigned-
+  advisor for projects, owner for programs, advisor-or-admin for roadmap
+  templates) — the lock RPCs run as the calling user (`security invoker`),
+  so there's no separate permission system to keep in sync.
+- **A name might not show.** The banner's "being edited by X" name comes
+  from a join against `profiles`, which has its own RLS restricting reads to
+  your own row unless you're an advisor/admin. A standard user blocked by an
+  advisor's or admin's lock will still see the read-only banner, just with a
+  generic "Someone else is currently editing this" message instead of a
+  name — this is expected, not a bug, and nothing to configure.
+- **Not applied to Roadmap Instances** (the step-by-step tracker on
+  `roadmap-instance.html`) — advancing a step there was always meant to
+  allow multiple advisors/admins to act on the same instance, so it's
+  deliberately left out of this feature.
+
+### 8.0 New project type: Infraestructura Pasiva
+
+`passive_infrastructure` project type (see "New project type" note under
+Roadmaps/Gestiones above for the full rationale).
+
+- **Requires a manual migration**: run
+  `supabase/migration_v32_passive_infrastructure_type.sql` in the Supabase
+  SQL editor. It only widens the `projects.project_type` and
+  `programs.types` CHECK constraints — no new columns or tables.
+  `schema.sql` has been updated to match, for anyone setting up a fresh
+  database from scratch. **Run this before submitting or selecting this
+  project type anywhere in the app**, or the insert/update will be rejected
+  by the database.
+- **No dedicated guided template.** Unlike Datacenter, Submarine Cable,
+  Wholesale Neutral Network and Early Warning System, this type has no
+  `PROJECT_TEMPLATES` entry — same as `fiber_backbone_last_mile`,
+  `fixed_wireless_access` and `satellite_constellation`. Submitters use the
+  plain free-text description field on `new-project.html`.
+
+### 8.0.1 New project attributes: duration, priority, technical criticality, FSU amount/scope
+
+Six new optional columns on `public.projects`, added for internal
+prioritization/tracking rather than as part of the Investment Readiness
+Index™ or Multilateral Finance Navigator™ scoring itself:
+
+- **Estimated duration** — `duration_value` (integer) + `duration_unit`
+  (`'days'` or `'months'`). Two columns instead of one normalized unit, since
+  a project's expected timeline is usually communicated in whichever unit is
+  natural for its scale (a pilot in days, a multi-year rollout in months) —
+  converting everything to a single unit would just require converting back
+  for display. Rendered via `INAPlatform.formatDuration(value, unit)`.
+- **Priority** — `priority` (`'low' | 'medium' | 'high'`, nullable). Reuses
+  the same 3-tier scale as `framework_analysis.gap_roadmap[].priority`
+  (`PRIORITY_LABELS` in `assets/platform.js`) for vocabulary consistency
+  across the platform, rather than inventing a separate scale. This is about
+  management urgency for the implementing organization.
+- **Technical criticality** — `technical_criticality` (`'low' | 'medium' |
+  'high'`, nullable). Same 3-tier scale as priority, but a distinct axis
+  (impact of a technical failure or delay, not urgency) — rendered through
+  its own label dictionary (`CRITICALITY_LABELS`) so the two read distinctly
+  wherever both appear together (e.g. `project.html`'s meta line).
+- **FSU amount** — `fsu_amount` (numeric, nullable). The amount
+  requested/estimated specifically from the **Universal Service Fund** as a
+  financing mechanism. Assumed ARS, no separate currency column. Distinct
+  from `shared_field_answers.monto_total_solicitado` (a guided template's
+  total project budget, e.g. AlertAR's ARS 12,000 million overall estimate)
+  — this field is specifically the FSU-mechanism slice of financing, not the
+  project's total cost.
+- **FSU scope** — `fsu_scope` (text, nullable). Free-form description of
+  what the FSU financing would cover (localities, households, services) — no
+  closed category list exists in any ENACOM regulation reviewed so far, so
+  this stays free text rather than a checkbox/select set.
+
+**Requires a manual migration**: run
+`supabase/migration_v33_project_attributes.sql` in the Supabase SQL editor.
+`schema.sql` has been updated to match for anyone setting up a fresh
+database. All 6 columns are nullable — existing projects are unaffected
+until someone fills them in.
+
+**Where they live in the UI**: duration/priority/technical criticality are
+on `new-project.html`'s section 1 (Project), right after "Beneficiaries
+reached" — they describe the project itself, not its financing. FSU
+amount/scope are on section 3 (Financing), in their own "Universal Service
+Fund (FSU)" subsection below the Program-application checkboxes — distinct
+from those (a Program is an umbrella funding relationship; FSU amount/scope
+is a specific number/description, not a Program selection). `project.html`
+shows duration/priority/criticality appended to the project's meta line
+(same line as country/beneficiaries/entity), and FSU amount/scope in their
+own info block right after the Description block (hidden entirely if
+neither is set). Both also feed into the PDF export's meta line
+(duration/priority/criticality only — FSU amount/scope aren't currently in
+the PDF).
+
+### 8.0.2 New project attributes: total budget, complexity — and a Grid view on the dashboard
+
+Two more optional attributes on `public.projects`, plus a list/grid layout
+toggle on `app/dashboard.html` so both new attributes (and the two from
+8.0.1) are visible at a glance across every project, not just one at a time
+on `project.html`:
+
+- **Total budget** — `budget_amount` (numeric, ARS, nullable). The
+  project's total estimated cost, independent of financing source. Distinct
+  from `fsu_amount` (8.0.1 above), which is specifically the slice requested
+  from the Universal Service Fund mechanism — a project can have a total
+  budget without being FSU-eligible at all (e.g. AlertAR: budget_amount ≈
+  ARS 12,000 million, fsu_amount null).
+- **Complexity** — `complexity` (`'low' | 'medium' | 'high'`, nullable). A
+  third axis alongside `priority` and `technical_criticality` (8.0.1): the
+  project's intrinsic difficulty (moving parts, interdependencies, unproven
+  technology), as opposed to management urgency (priority) or the impact of
+  a technical failure (technical_criticality). Reuses the same 3-tier scale
+  as those two, rendered through its own `COMPLEXITY_LABELS` dictionary in
+  `assets/platform.js` so it reads distinctly wherever shown alongside them.
+
+**Requires a manual migration**: run
+`supabase/migration_v34_project_budget_complexity.sql` in the Supabase SQL
+editor. `schema.sql` has been updated to match. Both columns are nullable.
+
+**Dashboard List/Grid toggle**: two buttons (list icon / grid icon) next to
+the project count, right above the project list — see `viewMode`/
+`setViewMode()` in `app/dashboard.html`. List is the original dense-row
+layout (unchanged); Grid arranges the same data as self-contained cards in a
+responsive `auto-fill` CSS grid (`.project-grid`/`.project-card` in
+`assets/style.css`), useful for scanning many projects visually at once.
+The chosen mode is remembered in `localStorage` (`inaDashboardViewMode`)
+across visits. Both layouts share the exact same per-project data and
+actions (PDF/Edit/Delete) — `renderListRows()` and `renderGridCards()` are
+just two different DOM arrangements of the same `filtered` array, built via
+shared helpers (`attrTagsHtml()`, `programNamesFor()`, `buildActions()`) so
+nothing drifts between the two views over time.
+
+**Budget/duration/complexity/criticality on the dashboard**: both views now
+show a compact row of small pills — `attrTagsHtml()` in `app/dashboard.html`
+— under the score badges (Self-Assessment/AI Analysis/FSU Scoring), listing
+whichever of budget/duration/complexity/technical-criticality are actually
+set for that project (omitted entirely if none are, same "never show a
+placeholder" convention as the score badges). Complexity and technical
+criticality get colored `.tier-pill` badges (low/medium/high, reusing the
+`stage-*` muted/amber/ink progression); budget and duration are plain text
+since they aren't a 3-tier scale.
+
+### 8.0.2b Dashboard tags: generating entity + preparation/financing programs
+
+`attrTagsHtml()` in `app/dashboard.html` (the pill row under the score
+badges in both the list row and grid card) now also shows, when set:
+
+- **Entity** — `p.generating_entity_name` (+ `generating_entity_type`, if
+  set) — the organization that originates the project.
+- **Prep. program** — Program(s) this project has applied to
+  (`project_programs`) whose `programs.funding_stage` is `'preparation'`
+  (e.g. USTDA — funds elaborating the project itself).
+- **Financing program** — the umbrella `program_id` plus any applied
+  Program(s) whose `funding_stage` isn't `'preparation'` (FSU, BID, etc. —
+  fund the project's implementation).
+
+New helpers `preparationProgramNamesFor(p)` / `financingProgramNamesFor(p)`
+split the same `project_programs` data `programNamesFor()` already merges
+into one flat list, so an advisor scanning the dashboard can tell a
+preparation-funding Program apart from an implementation-financing one at a
+glance instead of seeing them mixed together. No DB migration — this only
+surfaces data the platform already stores.
+
+### 8.0.3 Project Attributes grid on project.html + shrunk Description box
+
+`project.html`'s meta line used to pack country, program, generating entity,
+beneficiaries, budget, duration, priority, technical criticality and
+complexity into a single "·"-separated line under the project name — easy
+to lose an attribute in, especially with several set at once. Split into
+two pieces:
+
+- **Meta line** (`#pmeta`) — trimmed down to just country · program ·
+  generating entity, a quick "where/who" line next to the name.
+- **Project Attributes** (`#attrsBlock`/`#attrsGrid`, new `renderAttrs()` in
+  `app/project.html`) — a dedicated `.info-block` right under the Workflow
+  block, showing every other optional attribute (beneficiaries, total
+  budget, duration, priority, technical criticality, complexity) as its own
+  labeled item in a responsive grid (`.attrs-grid`/`.attr-item` in
+  `assets/style.css`). Any attribute that isn't set on the project is simply
+  omitted — same convention used everywhere else on this page — and the
+  whole block hides itself if none are set. FSU amount/scope keep their own
+  existing block below (`#fsuAttrBlock`) rather than being duplicated here.
+
+The **Description** box (`#pdesc`) was also capped at `max-height:130px`
+with `overflow-y:auto` so a long description no longer pushes the new
+Attributes grid (and everything below it) far down the page — the full text
+is still there, just scrollable within its box instead of always fully
+expanded.
+
+New i18n key: `pd.attrs.title` ("Project Attributes" / "Atributos del
+Proyecto"). No DB migration — this only reorganizes fields the platform
+already stores.
+
+### 8.0.4 Financing mix: FSU % + per-Program % + "other source" — a project financed by multiple sources at once
+
+Until now the platform modeled a project's financing as coming from ONE
+source at a time: the FSU amount/scope (`fsu_amount`/`fsu_scope`,
+migration_v33) on one hand, and the list of Programs a project "applies to"
+(`project_programs`, migration_v21) on the other — with no data on HOW MUCH
+of the project each one actually covers.
+
+In practice a project is often financed by a **mix** of sources, each
+covering a share of `projects.budget_amount`, together not exceeding 100%:
+the FSU covering a first stage or partial scope (already described in words
+via `fsu_scope`), one or more Programs already registered on the platform
+(BID, CAF, TASU, credit lines, etc.) each covering an additional share, and
+possibly a remainder covered by something that isn't a registered Program
+at all (the proponent's own funds, a one-off bank credit line — see the
+real CEPA Punta Alta case: a Banco Nación credit line plus "fondos propios
+de la Cooperativa" for the balance).
+
+**Requires a manual migration**: run
+`supabase/migration_v35_financing_mix.sql` in the Supabase SQL editor.
+`schema.sql` has been updated to match. All new columns are nullable.
+
+**New columns**:
+
+- `projects.fsu_percentage` (numeric, 0-100) — % of `budget_amount` the FSU
+  would cover. Complements `fsu_amount` (absolute amount) and `fsu_scope`
+  (free-form description) from migration_v33 — all three are optional and
+  independent.
+- `project_programs.financing_percentage` (numeric, 0-100) — % of
+  `budget_amount` a specific Program application covers. Only meaningful
+  when the embedded Program's `funding_stage` isn't `'preparation'` — a
+  preparation-stage Program (USTDA-style) funds elaborating the project,
+  not a share of its implementation cost, so this stays unused on those
+  rows.
+- `projects.other_financing_percentage` (numeric, 0-100) +
+  `projects.other_financing_notes` (text) — the remainder covered by a
+  source that's neither the FSU nor a registered Program, with a short
+  free-text description.
+
+No DB constraint enforces that the shares sum to ≤ 100% — that sum spans
+two tables and the mix can legitimately be filled in gradually, so the
+check is informational in the UI, not a hard `CHECK`. Each individual
+percentage is still bounded to 0-100.
+
+**`assets/platform.js`**:
+
+- `createProject`/`updateProject` now accept and persist `fsuPercentage`,
+  `otherFinancingPercentage`, `otherFinancingNotes`.
+- `applyToProgram(projectId, programId, { templateAnswers, notes,
+  financingPercentage })` — `financingPercentage` is a new, optional third
+  field. Unlike `templateAnswers`/`notes` (which the function has always
+  defaulted to `null` when omitted), a omitted `financingPercentage` is
+  left OUT of the upserted row entirely, so re-applying later to update
+  notes/template answers never wipes out a percentage set separately, and
+  vice versa.
+- `updateProjectProgramPercentage(projectId, programId, percentage)` — new.
+  Updates just `financing_percentage` on an existing application via a
+  plain `.update()`, so editing the percentage from project.html never
+  touches that application's saved template answers/notes.
+- `computeFinancingCoverage(project, projectPrograms)` — new. Returns
+  `{ fsuPct, otherPct, programShares, programsPct, totalPct }`, treating
+  every unset share as 0. Single source of truth for the arithmetic, used
+  by project.html's coverage summary.
+
+**`app/new-project.html`** (Financing section, step 3):
+
+- FSU subsection gains a "FSU share of total budget (%)" input next to the
+  existing amount/scope fields.
+- New "Other financing source" subsection — percentage + free-text
+  description.
+- Each checked financing-Program checkbox (`financingProgramsOptions`) now
+  shows an inline "%" number field next to it (a sibling of the checkbox's
+  `<label>`, not nested inside it — nesting it there would make clicks in
+  the number field also toggle the checkbox). Percentages are tracked in
+  `financingProgramsPercentages` (a `Map`, mirroring `financingProgramsChecked`)
+  and applied on submit by `reconcileProgramApplications()`: a brand-new
+  application gets its percentage set via `applyToProgram`'s
+  `financingPercentage` option; an application that already existed gets
+  updated via `updateProjectProgramPercentage()` instead, so its
+  template answers/notes are left alone. Editing an existing project
+  prefills both the checkboxes and their percentages from the project's
+  saved `project_programs` rows.
+
+**`app/project.html`**:
+
+- `#fsuAttrBlock` gains a "Covers: N% of the total budget" line
+  (`fsu_percentage`).
+- New `#otherFinancingBlock` — shows the "other source" percentage/notes,
+  hidden entirely when both are unset (same convention as `fsuAttrBlock`).
+- Each financing-stage row in the "Financing Programs" section
+  (`renderProgramApplicationRow()`) now has an inline "% of budget" number
+  input + Save button (preparation-stage rows don't get one — see the
+  `financing_percentage` column comment above). Saving calls
+  `updateProjectProgramPercentage()` directly, without touching that
+  application's template answers.
+- New **financing coverage summary** (`#financingCoverage`, populated by
+  `renderFinancingCoverage()`) at the top of the "Financing Programs"
+  block: adds up the FSU's share, every financing-stage Program's saved
+  share, and the "other source" share against 100%, with a small
+  progress bar and a warning color/icon if the total exceeds 100%. Hidden
+  entirely until at least one share is actually set.
+
+New i18n keys: `np.f.fsuPercentage`(`.help`), `np.f.otherFinancingSection`
+(`.help`), `np.f.otherFinancingPercentage`, `np.f.otherFinancingNotes`
+(`.help`), `pd.otherFinancing.title`.
+
+### 8.0.5 Program financing entity + FSU vs. Other grouping on the Financing tab
+
+A Program's existing `organization` field is who **presents** it (the
+proponent — e.g. a cooperative, a provincial government), not who actually
+**finances** it. This adds a separate field for that, and uses it to group
+everything FSU-related together on a project's Financing tab, per Pablo's
+request.
+
+**Requires a manual migration**: run
+`supabase/migration_v36_program_financing_entity.sql` in the Supabase SQL
+editor. `schema.sql` has been updated to match. The new column is nullable,
+free text (no `CHECK` — this is a data-entry convention, not a closed list).
+
+**New column**: `programs.financing_entity` (text) — the institution that
+actually finances the program (e.g. "BID", "CAF", "Banco de la Nación
+Argentina"). **Convention**: for Programs tied to the Universal Service
+Fund, set this to exactly `"ENACOM-FSU"`.
+
+**`assets/platform.js`**:
+
+- `createProgram`/`updateProgram` now accept and persist `financingEntity`.
+- `FSU_FINANCING_ENTITY: 'ENACOM-FSU'` and `isFsuFinancingEntity(value)` —
+  new exports. The comparison is case/whitespace-insensitive (`"Enacom-FSU"`,
+  `"enacom-fsu "`, etc. all match), since the column has no `CHECK`
+  enforcing exact casing.
+- Every place that embeds `programs(...)` for a `project_programs` row
+  (`listProjectPrograms`, `listProjectProgramsForProjects`,
+  `applyToProgram`, `updateProjectProgramPercentage`) now also selects
+  `financing_entity`, so `app/project.html` can group on it.
+
+**`app/new-program.html`**: new "Financing entity (optional)" field
+(`pgFinancingEntity`), right after "Presenting organization", with inline
+help clarifying the distinction and the `"ENACOM-FSU"` convention. Included
+in create/edit/prefill/submit.
+
+**`app/initiatives.html`**: each program row shows a `Finances: <value>` tag
+next to the organization/type/funding-stage tags when `financing_entity` is
+set, with a blue tint (`.financing-entity-fsu`) when it matches the FSU
+convention.
+
+**`app/project.html`** — Financing tab (`#programsBlock` → "Project
+financing") is now split into two visually distinct groups instead of one
+flat list:
+
+- **`#fsuFinancingGroup`** ("Universal Service Fund (FSU)") — combines the
+  project's own direct FSU fields (`fsu_amount`/`fsu_scope`/
+  `fsu_percentage`, ex-`#fsuAttrBlock`, now nested here with the same ids)
+  with every financing-stage `project_programs` application whose Program
+  has `isFsuFinancingEntity(financing_entity) === true`.
+- **`#otherFinancingGroup`** ("Other Financing Source") — combines the
+  project's "other financing" fields (`other_financing_percentage`/
+  `other_financing_notes`, ex-`#otherFinancingBlock`, same ids, now nested
+  here) with every remaining financing-stage application.
+
+`renderProgramApplications()` now splits what used to be a single `finRows`
+list into `fsuRows`/`otherRows` via `INAPlatform.isFsuFinancingEntity()`,
+rendering into `#fsuProgramsList`/`#otherProgramsList` respectively. Each
+group shows its own "nothing here yet" message
+(`#fsuFinancingEmpty`/`#otherFinancingEmpty`) only when it has neither a
+program row nor a project-level field set. Preparation-stage applications
+and the shared financing coverage summary (`#financingCoverage`) are
+unaffected — this only regroups the "Project financing" list.
+
+New CSS: `.financing-group`/`.financing-group-title` (the two group
+containers), `#fsuFinancingGroup` (blue tint), `.financing-entity-fsu`
+(initiatives.html's tag color) in `assets/style.css`.
+
+New i18n keys: `prog.f.financingEntity`(`.help`),
+`pd.programs.fsuGroup.empty`, `pd.programs.otherGroup.empty`. The group
+headers themselves reuse the existing `pd.fsuAttr.title`/
+`pd.otherFinancing.title` keys.
+
+### 8.0.6 Financing as an amount, not just a percentage
+
+Two of the three financing-mix components (8.0.4 above) could only be
+entered as a % of `budget_amount`: a Program application's share
+(`project_programs.financing_percentage`) and the "other source" share
+(`projects.other_financing_percentage`). The FSU component
+(`projects.fsu_amount`/`fsu_percentage`, migration_v33) already supported
+both an absolute amount and a % independently since it was first added —
+this extends that same flexibility to the other two, per Pablo's request
+("la financiación puede expresarse en porcentaje o en montos").
+
+**Requires a manual migration**: run
+`supabase/migration_v37_financing_amounts.sql` in the Supabase SQL editor.
+`schema.sql` has been updated to match. Both new columns are nullable,
+`numeric`, with a `>= 0` check (no upper bound, unlike the % columns).
+
+**New columns**:
+
+- `project_programs.financing_amount` — the ARS amount a specific Program
+  application covers. Independent of `financing_percentage`; either, both,
+  or neither can be set. Same "only meaningful for non-preparation-stage
+  applications" rule as `financing_percentage`.
+- `projects.other_financing_amount` — same idea for the "other source"
+  bucket, alongside `other_financing_percentage`.
+
+**`assets/platform.js`**:
+
+- `createProject`/`updateProject` now accept and persist
+  `otherFinancingAmount`.
+- `applyToProgram(projectId, programId, { templateAnswers, notes,
+  financingPercentage, financingAmount })` — `financingAmount` is a new,
+  optional fourth field, following the same "omit when undefined rather
+  than default to null" non-destructive pattern as `financingPercentage`.
+- **Renamed** `updateProjectProgramPercentage(projectId, programId,
+  percentage)` → **`updateProjectProgramFinancing(projectId, programId, {
+  percentage, amount })`**. Only the keys actually passed are included in
+  the `.update()` payload, so passing just `{ percentage }` leaves
+  `financing_amount` on the row untouched, and vice versa. All callers
+  (`new-project.html`, `project.html`) were updated to the new name and
+  signature.
+- `computeFinancingCoverage(project, projectPrograms)` — updated. Each of
+  the three components now resolves to an effective % this way: use the
+  explicit % if set; otherwise, if only an amount is set, convert it to a %
+  of `project.budget_amount` (rounded); otherwise (no % and no
+  amount-with-a-budget-to-divide-by) contribute 0. This means an amount
+  entered on a project with no `budget_amount` set still displays wherever
+  the raw amount itself is shown (e.g. `fsuAttrAmount`,
+  `otherFinancingAmount` on `project.html`), but doesn't factor into the
+  0-100% coverage bar until a total budget exists to compute a share
+  against.
+
+**`app/new-project.html`** (Financing section, step 3):
+
+- Each checked financing-Program checkbox now shows a second inline
+  "Monto (ARS)" number field next to its existing "%" one — same
+  sibling-of-the-`<label>` placement, tracked in a new
+  `financingProgramsPercentages`-mirroring `Map` called
+  `financingProgramsAmounts`, applied on submit by
+  `reconcileProgramApplications()` the same way the % is (new application →
+  `applyToProgram`'s `financingAmount` option; existing application →
+  `updateProjectProgramFinancing()`).
+- New "Amount (ARS, optional)" field (`pOtherFinancingAmount`) next to the
+  existing "Other financing source" percentage field. Wired into all three
+  draft-save objects, `restoreTemplateDraftIfAny()`, edit-mode prefill, and
+  the submit payload, same as `otherFinancingPercentage`.
+
+**`app/project.html`**:
+
+- `#otherFinancingBlock` gains an "Amount: ARS N" line
+  (`other_financing_amount`), shown alongside the existing percentage line
+  (same convention as `fsuAttrAmount`/`fsuAttrPercentage`).
+- Each financing-stage program row now has both a "% del presupuesto" and a
+  "Monto (ARS)" input, saved together by a single Save button
+  (`saveFinancing()`, replacing the old `savePercentage()`). Unlike the
+  non-destructive omit-if-undefined pattern used by
+  `reconcileProgramApplications()`/`applyToProgram()`, this Save button
+  always sends both fields' current values — an explicit click on a fully
+  visible pair of inputs means "what you see is what gets saved," including
+  clearing a field to blank.
+
+New i18n keys: `np.f.otherFinancingAmount`,
+`np.f.financingPrograms.amountHelp`.
+
+### 8.0.7 Budget and FSU amounts in USD + exchange rate
+
+Motivated by loading a spreadsheet of ENACOM pipeline projects
+(`supabase/data_pipeline_proyectos_planilla_ago2026.sql`) whose figures
+were quoted in USD, not ARS. Until now, `budget_amount` and `fsu_amount`
+assumed pesos with no separate currency column (see their original
+comments in `schema.sql`) — loading a dollar figure meant either guessing
+an ARS conversion (risking a ~1000x scale error) or leaving it out of the
+structured fields entirely and burying it in free text. Per Pablo's
+request ("agregar un campo que represente los montos en dólares y otro
+campo que sea el tipo de cambio"), this adds a proper USD twin for each
+amount plus a shared exchange rate.
+
+**Requires a manual migration**: run
+`supabase/migration_v38_usd_amounts.sql` in the Supabase SQL editor.
+`schema.sql` has been updated to match.
+
+**New columns** (all nullable, on `projects`):
+
+- `budget_amount_usd` numeric — USD twin of `budget_amount`. Independent;
+  not derived from or synced with the ARS figure.
+- `fsu_amount_usd` numeric — USD twin of `fsu_amount`. Same convention.
+- `exchange_rate` numeric (`> 0` check) — ARS per USD, shared by both USD
+  fields above. Used only to compute a display-only ARS-equivalent; never
+  written back into `budget_amount`/`fsu_amount` automatically. If Pablo
+  wants a confirmed rate turned into a real ARS figure, that's a manual
+  `UPDATE`, not something the platform does on its own.
+- `exchange_rate_date` date — when that rate was captured, so a reviewer
+  can judge how stale it is (the ARS/USD rate moves fast).
+
+**`assets/platform.js`**:
+
+- `formatCurrencyUSD(value)` — same formatting convention as
+  `formatCurrency()`, with a `USD` prefix instead of `ARS`.
+- `usdToArs(usdValue, exchangeRate)` — pure display helper, returns
+  `usdValue * exchangeRate` or `null` if either input is missing/zero.
+  Never persisted.
+- `createProject`/`updateProject` now accept and persist
+  `fsuAmountUsd`, `budgetAmountUsd`, `exchangeRate`, `exchangeRateDate`.
+
+**`app/new-project.html`**:
+
+- New "Total estimated budget (USD)" field (`pBudgetAmountUsd`) next to
+  the existing ARS one (step 1), plus the shared "Exchange rate used (ARS
+  per USD)" (`pExchangeRate`) and "Exchange rate date" (`pExchangeRateDate`)
+  fields right below it.
+- New "FSU amount requested (USD)" field (`pFsuAmountUsd`) next to the
+  existing ARS one (step 3, Financing section) — shares the same
+  `exchange_rate`/`exchange_rate_date` entered in step 1.
+- All four fields wired into the three draft-save objects (template
+  hand-off round trip), `restoreTemplateDraftIfAny()`, edit-mode prefill,
+  the initial `createProject()` call, and the final `updateProject()`
+  submit payload — same treatment as every other financing field.
+
+**`app/project.html`**:
+
+- Project Attributes grid: when `budget_amount_usd` is set, shows it plus
+  (if `exchange_rate` is also set) a calculated "ARS equivalent" line right
+  below it. A separate "Exchange rate used" line shows `1 USD = N ARS
+  (date)` whenever `exchange_rate` is set.
+- `#fsuAttrBlock`: new `#fsuAttrAmountUsd` line, shown alongside the
+  existing ARS amount line, with the same inline calculated-equivalent
+  treatment in parentheses.
+
+New i18n keys: `np.f.fsuAmountUsd`, `np.f.budgetUsd`(`.help`),
+`np.f.exchangeRate`(`.help`), `np.f.exchangeRateDate`. The dynamic
+project.html labels ("ARS equivalent (calculated)", "Exchange rate used")
+are inline EN/ES ternaries in the JS, matching the existing pattern for
+that page's other financing labels (not `data-i18n` keys).
+
+### 8.1 Email confirmation on sign-up
+
+New in this update: `register.html` now expects Supabase to send a
+real confirmation email when someone creates an account, instead of
+silently redirecting straight into the dashboard.
+
+- **Turn it on**: **Authentication → Providers → Email → Confirm email**.
+  With this on, `INAPlatform.signUp()` (in `assets/platform.js`) still
+  creates the account immediately, but Supabase withholds the session
+  until the user clicks the link in the confirmation email — until then,
+  they can't sign in. `register.html` detects the missing session and
+  shows a "Check your email" screen instead of redirecting.
+- **Confirmation link expiration (12 hours)**: Pablo — since Bluehost's SMTP
+  can be slow to actually deliver the email, the confirmation link needs to
+  stay valid well past the default 1 hour or people will click a "dead"
+  link if it arrives late. This isn't a setting in this codebase at all —
+  it's purely a Supabase Dashboard setting: **Authentication → Sign In /
+  Providers → Auth Providers → Email → Email OTP expiration**, given in
+  seconds. Set it to `43200` (12 hours). Supabase allows up to `86400`
+  (24 hours) directly in the dashboard — anything beyond that needs the
+  Management API and is discouraged for security reasons, so 12 hours
+  comfortably fits without needing that. One thing to know: this single
+  setting governs the expiration of *every* email-based link Supabase
+  sends — signup confirmation, password recovery, email-change
+  confirmation, and admin invitations alike — there's no separate control
+  per link type, so this also extends how long a "Forgot password?" link
+  or an email-change confirmation stays valid.
+- **Where the link goes**: `signUp()` passes
+  `emailRedirectTo: <origin>/app/email-confirmed.html`, a new page that
+  mirrors `reset-password.html`'s shell — it waits for Supabase's client
+  library to establish the session from the link's token, then shows
+  "Email confirmed" with a button to `login.html`. Requires that URL on
+  the Redirect URLs allowlist (item 1 above) or the link shows an
+  "invalid or expired" screen instead.
+- **Customizing the email itself** (subject line, wording, INA branding) is
+  done in Supabase under **Authentication → Email Templates → Confirm
+  signup** — optional, Supabase's default template works out of the box.
+- **Turning it off** reverts to the platform's original behavior:
+  `signUp()` returns a session immediately, `register.html` redirects
+  straight to `dashboard.html`, and no email is sent at all.
+- **Duplicate email detection**: registering with an email that already has
+  an account now shows a clear "an account with that email already exists"
+  message (bilingual, in `register.html`) instead of either a confusing
+  Supabase error string or — with Confirm email on — silently landing on
+  "Check your email" for an account that isn't actually theirs. This works
+  regardless of the Confirm email setting, because Supabase itself behaves
+  differently depending on it:
+  - **Confirm email OFF**: `signUp()` rejects the duplicate outright with an
+    error ("User already registered" or similar).
+  - **Confirm email ON**: Supabase deliberately does **not** return an error
+    for a duplicate email — it's an anti-enumeration measure, so the
+    response itself never reveals whether an email is already registered.
+    Instead, `signUp()` "succeeds" with no error, but the returned
+    `data.user.identities` array is empty (no new identity was actually
+    created) instead of the usual one-element array — that's the documented
+    signal Supabase gives for this case.
+  `INAPlatform.signUp()` checks for both and normalizes them into one
+  `err.code === 'email_already_registered'`, so `register.html` doesn't
+  need to know which Confirm email setting is active. Nothing to configure
+  in Supabase for this — it works either way, no admin step needed.
+
+Nothing else is needed — the confirmation flow, like password reset and
+2FA, is self-service per user, with no admin step per account. Test it the
+same way as step 7: register a test account, check that inbox for the
+confirmation email, click the link, confirm it lands on "Email confirmed,"
+then sign in. Separately, test password reset ("Forgot password?" on the
+sign-in page) and 2FA (**Security** in the Platform → scan the QR code with
+an authenticator app → sign out → sign back in and confirm it asks for a
+code).
 
 ---
 
@@ -355,14 +1067,78 @@ requires another admin, or the Supabase steps above.
   to a 0–100 score. `assets/platform.js`'s `computeFsuScore()` is a pure
   function that mirrors the manual's point table exactly, so
   `app/fsu-scoring.html` can show a live-updating breakdown as the form is
-  filled in, before ever saving. Only offered for `fiber_backbone_last_mile`
-  projects (`INAPlatform.FSU_SCORING_ELIGIBLE_TYPE`) — the criteria only make
-  sense for fiber-to-the-home builds — and only to the project owner; a
+  filled in, before ever saving. Offered for `fiber_backbone_last_mile`
+  projects (`INAPlatform.FSU_SCORING_ELIGIBLE_TYPE` — the criteria make
+  sense for fiber-to-the-home builds) **or** any project applying under a
+  Program tagged with one of the three FATIC (Financiamiento y Apoyo a
+  Proveedores de Servicios de TIC) template_keys —
+  `capital_markets_debt_financing`, `tasu_subsidized_rate_credit`,
+  `fatic_general_equipment_provision` — since those financing lines are
+  FSU-funded regardless of the underlying infrastructure category (see
+  `FSU_SCORING_ELIGIBLE_PROGRAM_TEMPLATES` and `isFsuScoringEligible()`,
+  the single source of truth `app/project.html`, `app/fsu-scoring.html` and
+  `app/dashboard.html` all call). Only offered to the project owner; a
   saved score shows as a badge on `project.html` for owner and advisor
   viewers alike. This is an orientation estimate based on the manual's
   published table, not an official ENACOM evaluation or eligibility
   determination.
-- **Programs**: `app/programs.html` lets a user group several related
+- **PDF export**: the "Download PDF" / "Descargar PDF" button on
+  `app/project.html` (`generateProjectPdf()`) builds a branded report —
+  navy header band, amber accents, matching `Manual_Usuario_Plataforma_INA.pdf`'s
+  palette — entirely client-side with [jsPDF](https://github.com/parallax/jsPDF)
+  (loaded from jsDelivr, no server call). It reuses whatever's already been
+  fetched for the page (`currentProject`, `currentAnalysis`, `currentFsu`):
+  project fields, FSU Scoring if present, and — if the project has been
+  analyzed — the Investment Readiness Index™ score/stage/summary, all 8-9
+  dimension bars, the Gap Roadmap, and the Multilateral Finance Navigator™
+  recommendations. For a self-assessment (`source === 'manual'`) it
+  recomputes from `raw_model_output` in the current UI language, same as
+  `renderAnalysis()` does on-screen. Available to any viewer (owner or
+  advisor) since nothing in the PDF isn't already visible on the page; for
+  a project that hasn't been analyzed yet it just notes that instead of the
+  analysis sections. No new DB column, RLS policy, or Vercel function
+  needed — it's a pure rendering feature. The report covers every entered
+  field, not just the summary shown at the top of project.html: supporting
+  documents grouped by category, the workflow stage/assigned advisor/history
+  when the project has entered the pipeline, the full FSU Scoring
+  breakdown (each of the 7 `INAPlatform.FSU_CRITERIA_META` criteria with
+  the raw input(s) that produced it — via a small `fsuInputText()` switch —
+  next to the points awarded, then the 0-100 total), and for a manual
+  self-assessment specifically, a "Self-Assessment Detail" section listing
+  each dimension's 3 Likert questions (`INAPlatform.assessmentQuestionSet()`)
+  next to the 1-5 value the user actually picked, not just the rolled-up
+  dimension score bar. `app/dashboard.html` offers the
+  same export from each row's ⬇ icon (`downloadProjectPdf()` /
+  `generateProjectPdf()`, a near-identical copy of project.html's version)
+  without opening the project first — the one difference is
+  `listProjects()` only returns the `projects` table columns, so this
+  fetches the analysis/FSU rows on demand via `getAnalysis()`/
+  `getFsuScoring()` when the icon is clicked, instead of reading
+  already-loaded page state — and, for the same reason, also fetches
+  `listDocuments()`/`getWorkflowEvents()` on click so the row-triggered PDF
+  matches project.html's in every section, including documents and workflow.
+- **Dashboard score badges**: `app/dashboard.html`'s project grid shows up
+  to 3 small pills under each project's name/type line — Self-Assessment
+  (`Auto`/`Self`), AI Analysis (`IA`/`AI`) and FSU Scoring (`FSU`) — so an
+  advisor scanning the whole list doesn't have to open every project to see
+  where it stands on each scoring system. A project simply shows fewer (or
+  no) badges if it hasn't been scored yet; nothing renders as a "0"
+  placeholder. Unlike `project.html`'s `getAnalysis()` (which only ever
+  returns the single most recent `framework_analysis` row regardless of
+  source, since that page shows one "current" result), the dashboard needs
+  the Self-Assessment and the AI Analysis side by side even when one is
+  older than the other — `INAPlatform.listAnalysesForProjects(projectIds)`
+  fetches every `framework_analysis` row for the visible projects in one
+  batched query and keeps only the newest per `(project_id, source)`
+  client-side, returning a `Map` of `{ manual, ai }` per project.
+  `INAPlatform.listFsuScoringForProjects(projectIds)` is the equivalent
+  batch fetch for `fsu_scoring` (already one row per project via its
+  `unique(project_id)` constraint). Both calls run alongside the existing
+  `listProjectProgramsForProjects()` batch fetch in `init()`, and both fail
+  soft — a fetch error just means that row's badges are missing, not a
+  broken grid. Hovering a badge shows its full source name and, for
+  Self-Assessment/AI Analysis, its Investment Readiness Index™ stage.
+- **Programs**: `app/initiatives.html` lets a user group several related
   projects under one umbrella — e.g. Chubut's "Hub Digital Patagónico,"
   which bundled a submarine cable landing, a regional backbone and
   last-mile builds as separate projects, each financed and analyzed
@@ -375,13 +1151,13 @@ requires another admin, or the Supabase steps above.
   `INAPlatform.createProgram()` / `INAPlatform.updateProgram()` in
   `assets/platform.js`); the dashboard grid shows each project's program
   name and can filter by it (`?program=<id>` in the URL, e.g. from
-  programs.html's "View Projects" link, presets the filter). Each project
+  initiatives.html's "View Projects" link, presets the filter). Each project
   is always a single type, but a Program can span several. This is now a
   declared field (`programs.types`, a checkbox multi-select on
-  `programs.html`) the owner sets independent of which projects exist
+  `initiatives.html`) the owner sets independent of which projects exist
   under the program yet — useful when planning a program's scope before
   submitting any of its projects. For programs saved before this field
-  existed, or left blank, `programs.html` falls back to computing it
+  existed, or left blank, `initiatives.html` falls back to computing it
   client-side as the distinct `project_type` values among the program's
   actual member projects. See `supabase/migration_v9_programs.sql`,
   `supabase/migration_v10_remove_secondary_types.sql` and
@@ -395,22 +1171,398 @@ requires another admin, or the Supabase steps above.
   `supabase/migration_v13_program_documents.sql`). These are separate from
   — and don't replace — documents attached to the program's individual
   projects.
-- **Project workflow**: `app/project.html` now shows a stepper for the same
-  4 Investment Readiness Index™ stages already used elsewhere (Concept
-  Stage → Early Structuring → Advanced Structuring → Investment Ready),
-  visible to owner and advisor viewers alike. An advisor viewing a project
-  can click **Take project** to claim it (`INAPlatform.takeProject()` →
-  `take_project()` in the database) and **Advance to `<next stage>`**
-  (`INAPlatform.advanceProjectWorkflow()` → `advance_project_workflow()`)
-  to manually push it one stage forward — logged to
-  `project_workflow_events` (who, when, from/to) and shown as a history
-  list under the stepper. This is deliberately independent of the
-  AI/manual framework analysis: a fresh analysis can still set
-  `readiness_stage` on its own exactly as before, and an advisor's manual
-  advance doesn't require or wait for one. Both writes go through
-  `SECURITY DEFINER` database functions (never a direct client `.update()`
-  on `projects`), so an advisor gets exactly this one capability without a
-  broad "advisors can edit any project" policy.
+
+  **Who can do what**: creating a Program is restricted to advisors and
+  admins — `initiatives.html`'s "Create Program" button, `new-program.html`
+  itself (redirects a standard user straight back to the list), and
+  `new-project.html`'s inline "Create a new program →" shortcut all hide
+  or block that entry point for a standard user, and the
+  `programs_insert_advisor_or_admin` RLS policy rejects the insert at the
+  database level regardless (see
+  `supabase/migration_v19_program_permissions.sql` — **run this once in
+  Supabase SQL Editor**, it's not automatic). Viewing is the opposite:
+  every Program is visible to every signed-in user, not just its owner or
+  an advisor/admin — a standard user submitting a project needs to see and
+  pick from the full list to associate their project with the right
+  umbrella initiative, even one they had no part in creating
+  (`programs_select_all_authenticated`, same migration). Editing an
+  existing Program stays owner-only (`programs_update_own`, unchanged);
+  deleting stays owner-or-admin (`programs_delete_own_or_admin`,
+  unchanged) — this migration only touches who can *create* one and who
+  can *see* the list.
+- **Financing Programs (multi-program applications)**: separate from the
+  single "umbrella" Program above (which groups related projects the way
+  Chubut's "Hub Digital Patagónico" does), a project can also **apply** to
+  one or more Programs that actually fund it — e.g. FSU and BID together
+  for implementation financing — and, independently, to a Program that
+  funds **elaborating** the project itself before it's finished (e.g. a
+  USTDA Feasibility Study / Definitional Mission grant). This distinction
+  is `programs.funding_stage` (`'preparation'` funds elaborating the
+  project, `'financing'` — the default, and what every pre-existing Program
+  means — funds the project's implementation), set on `new-program.html`
+  and shown as a badge on `initiatives.html`. Each application is a row in the
+  new `project_programs` table (`project_id`, `program_id`,
+  `template_answers` jsonb, `notes` text, `applied_at`) — see
+  `supabase/migration_v21_program_funding_stage_and_applications.sql`.
+  `app/project.html`'s "Financing Programs" section (owner or the currently
+  assigned advisor only) lists applications grouped into "Project
+  preparation funding" and "Project financing", with an "Apply to program"
+  picker for each group that excludes Programs already applied to. Picking
+  a Program with a registered `template_key` (see "Program-level
+  templates" below) hands off to `app/project-template.html` in **apply
+  mode** (`?mode=apply&project=<id>&program=<id>&ptpl=<key>`), which saves
+  the filled-in answers straight onto that `project_programs` row via
+  `INAPlatform.applyToProgram()` instead of compiling them into the
+  project's description the way the normal drafting flow from
+  `new-project.html` does — and returns to `project.html` instead of
+  `new-project.html` when done. A Program with no template is just applied
+  directly (`applyToProgram()` with no answers). Withdrawing an application
+  (`INAPlatform.removeProjectProgram()`) is owner/assigned-advisor-only,
+  same as applying. `app/dashboard.html` and `app/initiatives.html` both
+  additionally treat `project_programs` membership as matching a Program
+  (via `INAPlatform.listProjectProgramsForProjects()`), so the "View
+  Projects" link, the Program filter, and each row's program tag(s) now
+  reflect BOTH the umbrella `program_id` and every applied Program, not
+  just the umbrella one.
+
+  A second entry point lives right on `app/new-project.html` (both
+  creating and editing), separate from the "Program" umbrella dropdown:
+  "Project preparation funding" is a single `<select>` (at most one
+  `'preparation'`-stage Program — normally only one entity funds
+  elaborating a project) and "Project financing program(s)" is a
+  checkbox multi-select (`'financing'`-stage Programs — e.g. CAF **and**
+  BID checked together, each covering a share of the same project). On
+  submit, `reconcileProgramApplications()` diffs what's selected against
+  the project's existing `project_programs` rows (empty for a new
+  project) and calls `applyToProgram()`/`removeProjectProgram()` only for
+  what actually changed — an application that's still checked is left
+  alone, so any `template_answers` already saved on it survive.
+
+  Selecting the **preparation** Program shows a "Fill using this
+  program's template" button (identical in spirit to the umbrella
+  field's own button) whenever that Program has a `template_key` —
+  clicking it saves the current form as a draft and opens
+  `project-template.html?ptpl=<key>&prep=1` ("prep mode"), a third mode
+  alongside the existing draft-compile and DB-writing apply modes. Prep
+  mode behaves like the normal draft round-trip (same `sessionStorage`
+  draft/return mechanism, so nothing on the form is lost) but on submit
+  stores the answers separately (`inaPrepTemplateAnswers` /
+  `inaPrepTemplateCompiled`) instead of compiling them into the
+  project's description, since they belong to the preparation Program's
+  own application, not to the project's free-text description.
+  `new-project.html` reads those answers back in, shows a "✓ Template
+  filled in" note next to the button, and — because the project doesn't
+  have a real id yet at this point — only actually attaches them to a
+  `project_programs` row once the project is created/updated, via
+  `reconcileProgramApplications()` (it force-applies the preparation
+  Program whenever fresh prep-template answers are pending, even if that
+  Program was already applied, so re-filling the template acts as an
+  edit). Changing the preparation-Program selection after filling the
+  template clears the pending answers, so they can't end up attached to
+  the wrong Program.
+
+  The **financing** multi-select does not have this inline-fill button —
+  fill each financing Program's template afterwards from
+  `project.html`'s "Financing Programs" section, which shows a "Fill
+  template"/"Edit template" link (not just "Apply") on every applied row
+  whose Program has a `template_key`, whether the application came from
+  here or from there. `project-template.html`'s apply mode also falls
+  back to loading the application's already-saved `template_answers`
+  from the database when there's no local `sessionStorage` draft, so
+  "Edit template" on a fresh browser/session doesn't come back blank.
+- **Autocomplete templates from documents**: a project can end up with
+  several guided templates filled in over its life — its own project-type
+  template, an umbrella Program template, a preparation-funding Program
+  template, one or more financing Program templates — several of which ask
+  for the same underlying facts (organization name, contact email, total
+  requested amount, country, etc.). Two pieces work together so those facts
+  only have to be entered once:
+  1. `projects.shared_field_answers` (jsonb, `migration_v23_project_
+     shared_field_answers.sql`) — a flat `{field_key: value}` pool on the
+     project row. Every time ANY template is submitted for that project
+     (project-type, apply, or prep mode), whatever was typed is merged into
+     this pool (`INAPlatform.mergeSharedFieldAnswers()`), best-effort and
+     non-blocking — it never overwrites an existing pool value with a blank
+     one.
+  2. `app/project-template.html` shows an "Autocomplete from documents"
+     button whenever the current project's id is known (apply mode always
+     has one; the default/prep drafting flows only have one when
+     `new-project.html` is **editing** an existing project — it appends
+     `&project=<id>` to the template URL in that case, since a brand-new
+     project being created for the first time has no uploaded documents or
+     pool yet). Clicking it calls `INAPlatform.autofillTemplateAnswers()`,
+     which first reuses whatever the shared pool already has for this
+     template's fields (free, no model call), then sends only the
+     still-missing fields to the new `/api/extract-template-data.js`
+     serverless function — same Vercel/env-var setup as `api/analyze-
+     project.js` (see "AI Analysis" below), no new environment variables
+     required. That function reads the project's uploaded documents (PDF
+     text via `pdf-parse`, plain text files as-is — images are skipped, not
+     analyzed) and asks the configured LLM provider to extract a value for
+     each field, returning `null` for anything not clearly stated rather
+     than guessing. Only fields still blank in the form get filled in —
+     nothing already typed is ever overwritten — and every newly-extracted
+     value is merged back into the shared pool, so the NEXT template opened
+     for the same project (e.g. the FSU financing template right after the
+     USTDA preparation one) gets it for free without another model call.
+- **Print / Save as PDF a filled-in template**: `app/project-template.html`
+  has a "Print / Save as PDF" button next to Submit, on every template (not
+  just USTDA — the implementation is template-agnostic, so it works for the
+  Datacenter, submarine cable, any Program template, etc.). Clicking it
+  builds a clean, formatted document from whatever's currently filled in on
+  the form (`renderPrintView()` — only non-empty fields, `select` values
+  resolved to their label, notes included if present) into a hidden
+  `#tplPrintView` element, then calls the browser's native `window.print()`.
+  A `@media print` rule in `assets/style.css` hides everything else on the
+  page and shows only that element, styled as a standalone document with an
+  "INA — International Network Advisors" header and today's date — so the
+  user just picks "Save as PDF" as the destination in the print dialog to
+  get a PDF file to send to the funder (USTDA, a multilateral, etc.) without
+  leaving the platform. No server-side PDF generation involved — it's pure
+  browser print, which also means multi-page pagination is automatic for
+  templates with a lot of filled-in content, with no manual page-break logic
+  needed.
+- **Project workflow**: `app/project.html` shows a stepper for the same 4
+  Investment Readiness Index™ stages already used elsewhere (Concept Stage
+  → Early Structuring → Advanced Structuring → Investment Ready), visible
+  to owner and advisor viewers alike. An advisor viewing a project can
+  click **Take project** to claim it (`INAPlatform.takeProject()` →
+  `take_project()` in the database) — logged to `project_workflow_events`
+  and shown as a history list under the stepper.
+  Taking a project also unlocks the Análisis IA control for that advisor
+  specifically: `app/project.html` tracks `isAssignedAdvisor` (`project.
+  assigned_advisor_id === session.user.id`) alongside `isOwner`, and
+  `setAiAnalysisBtn()` shows the button to either. The gates differ though
+  (`canRunAnalysis = (isOwner && !!project.readiness_stage) ||
+  isAssignedAdvisor || isAdminForAnalysis`, the last being `currentProfile
+  && INAPlatform.isAdmin(currentProfile)`): the owner still needs the
+  project to have left Not Analyzed first (their own Self-Assessment); an
+  assigned advisor, or ANY admin at all — no "Take project" required —
+  can run AI Analysis at **any** stage, including before any
+  Self-Assessment exists, since for either it's a decision-support tool,
+  not gated on the owner having self-assessed or the project having been
+  formally assigned. Admins were added deliberately broader than advisors
+  here: an advisor still needs `assigned_advisor_id` to match (i.e. has
+  taken that specific project), but an admin's whole role is
+  platform-wide oversight, so requiring them to "take" every project
+  before reading it with AI would be pure friction — see the ZZ1/ZZ2
+  changelog entries for the concrete case (Chubut/Bariloche) that
+  surfaced this. `api/analyze-project.js` enforces the same asymmetric
+  rule server-side, but since the admin check isn't derivable from the
+  `projects` row the way `assigned_advisor_id` is, it does its own
+  `/profiles?id=eq.<user>&select=role` lookup (service-role key, so no RLS
+  involved) and fails closed — `isAdminCaller` stays `false` — if that
+  lookup errors, rather than throwing or silently granting access. If an
+  advisor's or admin's AI Analysis is the very first thing to complete on
+  a project that was still Not Analyzed, that completion sets
+  `readiness_stage` to Concept Stage — the same "first time only, never
+  overwritten on a later re-run" rule `submitManualAssessment()` already
+  used for Self-Assessment (see the state machine below) — so any of the
+  three paths (owner self-assessment, assigned-advisor AI Analysis,
+  admin AI Analysis) is an equally valid entry point into the pipeline.
+  One more consequence worth knowing about: `app/project.html`'s
+  `advisorNote` banner (shown to any non-owner, non-assigned-advisor
+  viewer, normally saying editing AND re-running analysis are owner-only)
+  would overclaim for an admin, since AI Analysis isn't actually
+  restricted for them — so `init()` swaps in an admin-specific sentence
+  for that one case instead of relying on the default `pd.viewingAsAdvisor`
+  i18n text.
+- **Workflow state machine v2 — promote/demote/return, mandatory comments**
+  (`supabase/migration_v20_workflow_promote_demote.sql`, superseding the
+  single `advance_project_workflow()` above): the stage is no longer
+  score-derived. It's driven entirely by explicit actions:
+  Not Analyzed (`readiness_stage` null) — the owner runs Self-Assessment
+  (`app/assessment.html`, owner-only), which moves the project to Concept
+  Stage regardless of the computed score (`INAPlatform.
+  submitManualAssessment()`'s `currentReadinessStage` param — only sets
+  `readiness_stage` the first time, never overwrites it on a later
+  re-run). AI Analysis (`api/analyze-project.js`) follows the identical
+  first-time-only rule — see "AI Analysis at any stage (advisor/admin)"
+  below — but never overwrites `readiness_stage` on any later re-run either; the
+  score it computes on a re-run is informational only, stored on the
+  `framework_analysis` row and surfaced to the advisor as a suggestion
+  (`app/project.html`'s `#stageSuggestionNotice`, see below), never
+  applied automatically.
+  From Concept Stage, an advisor who's taken the project can run AI
+  Analysis, **promote** to Early Structuring, or **send it back to Not
+  Analyzed** (`returnProjectToNotAnalyzed()` → `return_project_to_not_analyzed()`,
+  un-claims it too). From Early/Advanced Structuring, an advisor can
+  **promote** or **demote** one step (`promoteProjectWorkflow()`/
+  `demoteProjectWorkflow()` → `promote_project_workflow()`/
+  `demote_project_workflow()`). Investment Ready is terminal — no
+  promote, no demote. All three RPCs require a non-blank `p_note` (raise
+  otherwise) and live in the **Actions** menu on `app/project.html`
+  (`promoteBtn`/`demoteBtn`/`returnToNotAnalyzedBtn`, plus their
+  `navProjectMenuPanel` twins), gathered via a `prompt()` dialog
+  (`promptForNote()`) rather than the old inline "Advance to `<stage>`"
+  button in the workflow block, which was removed. `project_workflow_events.
+  to_stage`'s CHECK constraint gained a 5th value, `'Not Analyzed'`, for the
+  return case; `renderWorkflowHistory()` now phrases each entry as
+  promoted/demoted/returned (comparing stage order, not just "advanced")
+  and displays the stored comment under each row.
+- **AI Analysis at any stage (advisor/admin) + stage suggestion notice**: an
+  advisor's or admin's read on a project shouldn't have to wait for the
+  owner to self-assess first, so the assigned advisor — or any admin,
+  taken or not — can trigger AI Analysis regardless of the project's
+  current `readiness_stage`, including while it's still Not Analyzed (see
+  the asymmetric `canRunAnalysis` gate above).
+  The workflow stage itself still never moves automatically from a score,
+  though — promote/demote/return stay explicit, advisor-driven actions, one
+  step at a time, exactly as in the state machine above. To make the
+  AI-computed `stage` actually useful to the advisor instead of just a
+  number next to the score, `app/project.html`'s `renderAnalysis()`
+  compares it against the project's real `readiness_stage` and, **for
+  advisor/admin viewers only**, shows a plain-text callout
+  (`#stageSuggestionNotice`) when they disagree — e.g. "AI suggestion:
+  based on this score, the project would correspond to Advanced
+  Structuring — it's currently at Early Structuring" — pointing the
+  advisor at the existing Promote/Demote controls in the Actions menu
+  rather than adding a separate "jump to suggested stage" action. The
+  notice is built inline (bilingual ternaries, like the rest of this
+  file's dynamic advisor-facing strings) rather than through `assets/
+  i18n.js`, since it interpolates the two stage labels into the sentence.
+  One follow-up bug this feature surfaced: `renderAnalysis()` still had a
+  leftover rule from the original UU1 fix that force-hid the AI Analysis
+  button whenever the analysis on screen had `source === 'ai'` (i.e. a
+  real AI run, not a Self-Assessment) — harmless back when AI Analysis was
+  assumed to run at most once per project, but it silently defeated
+  re-running once advisors/admins could trigger it at any stage: a
+  project already promoted to Advanced/Investment Ready almost always has
+  a `source === 'ai'` row on screen, so the button stayed hidden there
+  specifically, even for an eligible admin/advisor. Fixed by always
+  calling `setAiAnalysisBtn('start')` in `renderAnalysis()` — the function
+  already does the real gating via `canRunAnalysis` internally, so this
+  call no longer needs its own opinion about when re-running is allowed.
+- **Project workflow — always-visible stepper + separated header actions**:
+  the stepper in `app/project.html` (`renderWorkflow()`) is now shown
+  unconditionally, even for a brand-new, never-analyzed project — it gains
+  a leading 5th pseudo-step, "Not Analyzed"/"No Analizado"
+  (`wf.step.notAnalyzed`), computed as `currentIdx = p.readiness_stage ? 1 +
+  STAGE_ORDER.indexOf(p.readiness_stage) : 0`. While `project.status ===
+  'analyzing'`, that leading step gets a `.wf-step.analyzing` pulse
+  animation (`assets/app.css`, `@keyframes wfPulse`) instead of the plain
+  "current" styling. The advisor-assignment row, Take/Advance buttons, and
+  history list (`#wfAdvisorRow`) remain gated to only the pipeline-entered
+  case (`status==='completed'|'analyzing'` or `readiness_stage` set) — only
+  the stepper visual itself became unconditional.
+
+  The header actions live in two separate dropdown menus, both plain
+  text+caret buttons (an icon-only kebab trigger and a top-nav placement
+  for Analysis were both tried and reverted — see below): **Acciones/
+  Actions** (`#actionsMenu`) sits next to the status pill in the
+  `.platform-header`, opening a panel with Guardar PDF/Save PDF, Editar/
+  Edit, Eliminar/Delete, and a Cerrar/Close item (`pd.close`, links back
+  to `dashboard.html`). **Análisis/Analysis** (`#analysisMenu`,
+  amber-tinted via `.btn.tint-amber`) sits in its own row (`.page-menu-row`)
+  directly under the breadcrumb — the first thing inside `#projectContent`
+  — with FSU Scoring, Self-Assessment, and the Análisis IA control inside
+  it. Both menus share the same `.menu`/`.menu-panel`/`.menu-item`
+  mechanics: each trigger toggles its panel via an `open` class on the
+  `.menu` wrapper, opening one closes the other, and clicking outside,
+  pressing Escape, or clicking any `.menu-item` closes whichever is open
+  (see the `menus`/`closeMenus()` block in `app/project.html`'s script).
+
+  An icon-only kebab (⋮) trigger for Actions was tried and reverted based
+  on feedback (back to a plain text+caret button). While diagnosing why it
+  "didn't show up," a real bug surfaced: `assets/app.css` was linked with
+  **no cache-busting query string** on all 16 `app/*.html` pages (unlike
+  `style.css?v=N`, `i18n.js?v=N`, `platform.js?v=N`, which already had
+  one) — so browsers could keep serving a stale cached copy indefinitely
+  across CSS edits. Fixed by adding `?v=N` to every `app.css` reference
+  (currently `v=2`); **bump this number the same way as the other assets
+  whenever `app.css` changes** — see the cache-busting convention
+  described elsewhere in this doc.
+
+  Both menus are also duplicated in the sticky top nav so they stay
+  reachable without scrolling back up (`.app-header` is
+  `position:sticky`) — same items, same behavior as the body copies
+  (`#analysisMenu` under the breadcrumb, `#actionsMenu` next to the
+  status pill in `.platform-header`). Every place that toggles the body
+  elements' href/visibility/disabled state (`init()`'s owner/admin
+  gating, `setAiAnalysisBtn()`, the delete confirm handler) updates both
+  the body element and its `nav*`-prefixed twin together — see
+  `app/project.html`'s script for the paired
+  `['id', 'navId'].forEach(...)` pattern used throughout. The nav copies
+  inherit `.app-nav`'s mobile behavior (hidden below 760px), so the body
+  copies remain the only access point on mobile — intentional, not a
+  regression.
+
+  **project.html's top nav is now page-specific**, not the shared
+  Projects/Programs/Admin nav every other `app/*.html` page uses. Exact
+  order: **Project** (`#navProjectMenu`) — Nuevo Proyecto/New Project
+  (plain link to `new-project.html`, no id), Editar/Edit
+  (`#navEditLink`), Descargar PDF/Download PDF (`#navDownloadPdfBtn`),
+  Eliminar/Delete (`#navDeleteLink`), Cerrar/Close (links to
+  `dashboard.html`) — then **Analysis** (`#navAnalysisMenu`, unchanged:
+  FSU Scoring/Self-Assessment/AI Analysis), then **Help**
+  (`#navHelpLink`) — a plain nav-styled link with a no-op click handler
+  (`e.preventDefault()`), placeholder only, "por ahora nada." "Programs"
+  and "Admin" were removed from this page's nav entirely (still reachable
+  from `dashboard.html` and elsewhere) since the new 3-item order was
+  specified as exhaustive. New i18n keys: `nav.project` ("Project"/
+  "Proyecto"), `nav.help` ("Help"/"Ayuda"), `pd.newProject` ("New
+  Project"/"Nuevo Proyecto"). `pd.downloadPdf` reverted from "Save
+  PDF"/"Guardar PDF" back to "Download PDF"/"Descargar PDF" — the label
+  now matches on both the body and nav copies of the Actions/Project
+  menu.
+
+  This also shortened several previously-redundant labels on this page:
+  `wf.title` ("Project Workflow" → "Workflow"), `pd.description`
+  ("Project Description" → "Description"), `pd.editProject` ("Edit
+  Project" → "Edit"), `pd.deleteProject` ("Delete Project" → "Delete"),
+  and `pd.downloadPdf` ("Download PDF" → "Save PDF"/"Guardar PDF").
+
+  The "Análisis IA" trigger — previously three separate buttons
+  (`startAnalysisBtn` in the not-analyzed panel, `retryBtn` in the pending
+  panel, `retryBtnError` in the error panel) — is now a single menu item,
+  `#aiAnalysisBtn` inside the Analysis menu, whose label/class/
+  disabled-state is driven by one helper, `setAiAnalysisBtn(state)`
+  (`'start' | 'analyzing' | 'retry' | 'hidden'`), called from
+  `showNotAnalyzed()`/`showPending()`/`showError()`/`renderAnalysis()`
+  respectively. Label reads "Análisis IA" when nothing has run yet,
+  disabled ("Analizando…", i18n key `pd.analyzing.short`) while
+  `status==='analyzing'`, plain ("Reintentar Análisis") on error, and
+  hidden once results are showing — shown to the owner or the assigned
+  advisor (`isOwner || isAssignedAdvisor`, see "Project workflow" below)
+  and `runAnalysisAndPoll()` call as before, just consolidated into one
+  control instead of three duplicated buttons scattered across the page.
+
+  **All `.menu-item`s now share one uniform look** — same mono font,
+  11.5px, `font-weight:600`, same `var(--text)` color, same alignment —
+  across every dropdown and every copy (body `#actionsMenu`/
+  `#analysisMenu`, nav `#navProjectMenu`/`#navAnalysisMenu`). The earlier
+  `.menu-item-danger` (red Delete) and `.menu-item-cta` (bold amber-deep
+  AI Analysis) color variants were removed from `assets/app.css`, and the
+  matching `menu-item-danger`/`menu-item-cta` classes were stripped from
+  `#deleteLink`/`#navDeleteLink` in `app/project.html`; `setAiAnalysisBtn()`
+  now always sets `btn.className = 'menu-item'`. Rationale (see comment in
+  `assets/app.css`): the Delete confirm dialog and the always-visible
+  status pill already signal what matters, so the menu itself stays
+  visually consistent instead of highlighting individual items.
+
+  **Follow-up bug**: after that pass, the `<a>` items in the *nav* copies
+  of these menus (New Project/Edit/Close in `#navProjectMenu`, FSU
+  Scoring/Self-Assessment in `#navAnalysisMenu`) still looked visibly
+  different — lighter, different font — from their `<button>` siblings
+  in the same panel (Download PDF/Delete/AI Analysis). Cause: `.app-nav
+  a` (the plain nav-link style — `var(--muted-on-dark)`, sans-serif,
+  22px vertical padding, meant for `.app-nav`'s direct text links) is a
+  descendant selector with higher specificity than the class-only
+  `.menu-item`, so it was winning the cascade for any `<a class=
+  "menu-item">` nested inside `.app-nav`'s dropdown panels — a rule
+  meant for top-level nav links was leaking into the dropdown content
+  three levels down. Body-copy menus (`#actionsMenu`/`#analysisMenu`,
+  outside `.app-nav`) were never affected.
+
+  Fixed with a targeted override, `.app-nav .menu-panel a.menu-item`
+  (plus its `:hover`), which re-asserts `.menu-item`'s font/color/padding
+  for `<a>` items specifically inside a nav dropdown panel — same fix
+  pattern as the earlier `#actionsMenu .menu-panel` override, just for
+  this selector-specificity conflict instead of alignment. Also
+  polished all menu panels while in there: rounded corners
+  (`border-radius:4px`), a slightly softer/larger shadow, and a 1px
+  gap between stacked items — cosmetic only, same across every menu.
+  `assets/app.css` bumped to `?v=4` for this change.
 
   Today **every advisor can act at every stage** — `profiles.specialization`
   exists (nullable: `technical` / `financial` / `administrative`) but isn't
@@ -419,12 +1571,12 @@ requires another admin, or the Supabase steps above.
   Concept Stage), the follow-up is small: decide the stage→specialization
   mapping, assign each advisor's `specialization` (same manual
   admin-panel/Table Editor pattern as `role` itself), and add the check
-  inside `advance_project_workflow()` in
-  `supabase/migration_v12_workflow.sql`/`schema.sql` — no new tables or
-  migration needed for that step. See `supabase/migration_v12_workflow.sql`.
+  inside `promote_project_workflow()`/`demote_project_workflow()` in
+  `supabase/migration_v20_workflow_promote_demote.sql`/`schema.sql` — no
+  new tables or migration needed for that step.
 - **Deleting projects and programs**: `app/dashboard.html` (a 🗑 icon per
   row), `app/project.html` (a "Delete Project" button) and
-  `app/programs.html` (a "Delete" button per row) all let the **owner or a
+  `app/initiatives.html` (a "Delete" button per row) all let the **owner or a
   platform admin** permanently delete a project or program, after a native
   `confirm()` dialog. Backed by `INAPlatform.deleteProject()` /
   `deleteProgram()` in `assets/platform.js`, which are plain
@@ -442,27 +1594,136 @@ requires another admin, or the Supabase steps above.
   were, just without a program grouping; the confirm dialog says as much
   when a program still has linked projects. Program *documents* attached
   to the program itself ARE cascade-deleted along with it.
-- **Document categories**: `app/new-project.html` offers four separate,
+- **Document categories**: `app/new-project.html` offers seven separate,
   independently-optional drop zones when submitting or editing a project —
-  **Technical folder**, **Financial & economic documentation**,
-  **Administrative documentation**, and **Other attachments** — instead of
-  one flat upload list. None of the four are required to submit; the point
-  is just to let a submitter organize documents by category as they become
-  available (they can always come back and add more from the Edit screen)
-  rather than being forced to have the full technical/financial/
-  administrative set ready on day one. Backed by
-  `project_documents.document_type` (`technical` / `financial` /
-  `administrative` / `other`, defaults to `other` — see
-  `supabase/migration_v15_document_categories.sql`), set by
+  **Technical description**, **Economic documentation**, **Financial
+  documentation**, **Bylaws / corporate charter**, **Administrative
+  documentation**, **Licenses**, and **Other** — instead of one flat upload
+  list. None of the seven are required to submit; the point is just to let
+  a submitter organize documents by category as they become available
+  (they can always come back and add more later) rather than being forced
+  to have the full set ready on day one. Backed by
+  `project_documents.document_type` (`technical` / `economic` / `financial`
+  / `bylaws` / `administrative` / `licenses` / `other`, defaults to `other`
+  — originally 4 categories via `supabase/migration_v15_document_
+  categories.sql`, widened to 7 by `supabase/migration_v24_document_
+  categories_expand.sql`), set by
   `INAPlatform.uploadDocument(projectId, file, documentType)` in
   `assets/platform.js`. `app/project.html`'s "Supporting Documents" block
   and `new-project.html`'s "Already uploaded" list both group existing
   uploads by this same category (`INAPlatform.DOCUMENT_TYPES` /
   `documentTypeLabel()`) so an evaluator can go straight to, say, the
   financial documentation instead of scanning one flat list.
+- **Creating and editing a project: the same 4-section interface**:
+  `app/new-project.html` shows one `.wizard-panel` section at a time —
+  **1. Project** (`Proyecto`), **2. Attached documents**
+  (`Documentación adjunta`), **3. Details** (`Detalle`), **4. Templates**
+  (same word in both languages) — with a clickable section-name indicator
+  (`#wizardSteps`) at the top. This is identical whether the page is
+  creating a brand-new project or editing an existing one; the only
+  differences are copy (page title/lede/submit button label) and how early
+  `activeProjectId` (starts as `editId` from `?id=`, or `null` for a new
+  project) gets set. Switching sections never scrolls the page — `goToStep()`
+  only toggles the `.active` panel/dot, it doesn't call `window.scrollTo()`.
+  - **Section 1 — Project**: name, type, description, and the
+    project-presenting entity (name + type — see
+    `migration_v27_gestion_instances.sql`) — the fields collected before
+    anything is saved on a brand-new project; "Continue" calls
+    `INAPlatform.createProject()` with the real name/type/description/
+    entity fields and a blank `country` (allows `''` — collected in
+    section 3 instead) purely to get a real project id, then
+    `history.replaceState()`s `?id=<newId>` into the URL without reloading.
+    On an existing project `activeProjectId` is already set, so "Continue"
+    just validates and moves on — nothing is written until the final
+    submit. The entity fields moved here from section 3 (where they lived
+    when first introduced) so the project's identifying info — who it is
+    and who's presenting it — is captured in one place, up front; both stay
+    optional, and their values are also folded into the section-4 template
+    draft round trip (`useTemplateBtn` et al.) so typing them in and then
+    jumping to "Fill using template" before the final submit doesn't lose
+    them.
+  - **Section 2 — Attached documents**: the seven upload zones from
+    "Document categories" above; each file uploads *immediately* on
+    select/drop (via `INAPlatform.uploadDocument(activeProjectId, ...)`)
+    instead of staging in memory until final submit — specifically so the
+    project has real, already-uploaded documents by section 4.
+  - **Section 3 — Details**: Program, preparation-funding program,
+    financing-program checkboxes, Country, and Beneficiaries. Picking a
+    Program or preparation-funding program here doesn't show a
+    "Fill using template" button in this section anymore — if the pick has
+    a registered template, the offer to fill it appears in section 4
+    instead (see below), alongside the project-type template.
+  - **Section 4 — Templates**: every template offer relevant to what was
+    picked earlier in the wizard, all in one place. Since three cards can
+    show here at once, each one names exactly what it corresponds to (not
+    just "this Program" or "the project type") so it's unambiguous which
+    selection each button fills in:
+    - `templateOfferCard`, shown if the project type selected in section 1
+      has a registered template (`INAPlatform.projectTemplateFor()`) —
+      labeled with that project type's name (`templateOfferTypeName`,
+      via `INAPlatform.projectTypeLabel()`, re-set on every type change
+      and language switch inside `updateTemplateBtnVisibility()`). In edit
+      mode, `init()` also calls `updateTemplateBtnVisibility()` right after
+      setting `ptype.value` from the saved project — setting `.value`
+      programmatically doesn't fire `change`, so without this the card kept
+      showing whatever template matched the dropdown's default option
+      (computed before the real saved type was known) instead of the
+      project's actual type. Same pattern already existed for the Program
+      and prep-program cards.
+    - `programTemplateOfferCard`, shown if the Program selected in
+      section 3 (`pprogram`) has a `template_key` resolving via
+      `INAPlatform.programTemplateFor()` — labeled with that Program's
+      plain-text `name` (`programTemplateOfferName`) — toggled by
+      `updateProgramTemplateBtnVisibility()`, called on the select's
+      `change` event, when restoring a template draft, and during
+      edit-mode `init()` once the saved program is prefilled.
+    - `prepTemplateOfferCard`, the same mechanism for the preparation-
+      funding program (`pPrepProgram`) — labeled with its own `name`
+      (`prepTemplateOfferName`) — toggled by
+      `updatePrepProgramTemplateBtnVisibility()`, called on the same three
+      occasions (`change`, draft restore, and edit-mode `init()` after
+      `renderPrepProgramOptions()` prefills the saved selection).
+    Each card hands off to `app/project-template.html` (the project
+    already exists by this point, so that page's own "Autocomplete from
+    documents" button can actually read the documents uploaded in
+    section 2). If the project type has no template, `templateOfferEmpty`
+    shows a short explanatory note instead. Section 4 is also where the
+    real "Submit for Analysis" / "Save Changes" button lives, which always
+    saves via `INAPlatform.updateProject(activeProjectId, ...)` — the
+    record already exists by the time this section is reachable, whether
+    from section 1's "Continue" (new project) or from the original `?id=`
+    (existing one). All template answers — project-type, Program, and
+    prep-program — are filled in independently, manually or via
+    "Autocomplete from documents," and are saved whenever the submitter
+    finishes that template's form or hits the final submit.
+  - **Free navigation between sections**: every name in `#wizardSteps` is
+    clickable (`canJumpTo()` + the `wizard-step-dot` click handler) — jump
+    to any of the 4 sections, forward or backward, at any time. Section 1
+    is always reachable; sections 2-4 become reachable as soon as
+    `activeProjectId` exists (immediately when editing; after section 1's
+    "Continue" when creating). Each section's own "Continue"/"Back" buttons
+    remain too, as a guided default path, but they're not the only way
+    through — moving between sections never loses data, since every field
+    stays in the DOM the whole time (sections are just shown/hidden) and
+    the final submit always re-reads current field values.
+  - **A creation session interrupted partway through** (closed tab, etc.)
+    resumes exactly where it left off: the project already exists and the
+    address bar already carries its real `?id=` (from section 1's
+    `history.replaceState()`), so reopening that URL lands back on this
+    same 4-section interface with `activeProjectId` already set and every
+    section already reachable — nothing special to "recover," it behaves
+    exactly like editing.
+  - The "Fill using template" / "Fill using this program's template" /
+    prep-program-template buttons all use `activeProjectId` (not
+    `isEdit`/`editId`) to build their `project-template.html` return URL
+    and `&project=` param — so the AI document-autofill feature that used
+    to only work when editing now also works the first time a project is
+    created, since by the time those buttons are reachable the project
+    always already exists.
 - **Deleting or replacing attachments**: the "Already uploaded" list in
-  `app/new-project.html` (edit mode) and `app/new-program.html` (edit mode)
-  has a 🗑 button next to every existing file, deleting it immediately (with
+  `app/new-project.html` (section 2, once the project exists — see above)
+  and `app/new-program.html` (edit mode) has a 🗑 button next to every
+  existing file, deleting it immediately (with
   a confirm dialog) via `INAPlatform.deleteDocument()` /
   `deleteProgramDocument()` in `assets/platform.js`. There's no separate
   "replace" button — to swap a file out, delete the old one, then drop the
@@ -525,6 +1786,25 @@ shipping.
    script/batch a lot of test submissions you may hit the per-minute cap —
    the error surfaces the same way as any other model-request failure (a
    502 on `analyze-project` with Groq's error message in `detail`).
+
+**This also now covers the business card reader (Master Data → Contacts →
+"Upload from business card").** Unlike when this section was first written,
+Groq's free tier added a genuinely multimodal open-weight model — Llama 4
+Scout (`meta-llama/llama-4-scout-17b-16e-instruct`), which reads images
+natively (up to 5 per request), not just text. `api/extract-business-card.js`
+picks it up automatically once `LLM_PROVIDER=groq` and `GROQ_API_KEY` are
+set (same two variables as above — nothing new to create). It uses a
+**separate** model variable, `GROQ_VISION_MODEL` (optional, defaults to
+`meta-llama/llama-4-scout-17b-16e-instruct`), rather than reusing
+`GROQ_MODEL` from step 2 above — the model configured there
+(`llama-3.3-70b-versatile` by default) is text-only and would reject an
+image. If `LLM_PROVIDER` is unset or anything other than `groq`, this
+endpoint still falls back to Claude vision (`ANTHROPIC_API_KEY`) as before —
+Bedrock and local don't have a vision path wired up here (see
+`api/extract-business-card.js`'s file header). So to test the whole AI
+surface of the platform — analysis, autocomplete, and business cards — on
+Groq's free tier with nothing paid at all, `LLM_PROVIDER=groq` +
+`GROQ_API_KEY` is the only setup needed.
 
 ## Using AWS Bedrock (open-source model, confidential-data-friendly)
 
@@ -591,6 +1871,776 @@ and noted as unread. Test PDF-heavy submissions against the real
    this platform's usage pattern (occasional project analyses, not
    high-volume traffic) this should come out to well under what the
    equivalent Anthropic usage costs.
+
+### Trying it without an AWS account (`bedrock-mock`)
+
+Set `LLM_PROVIDER=bedrock-mock` to try the full submit → analyze → results
+flow without creating an AWS account at all — no `AWS_*` variables needed.
+It fabricates a plausible-looking result locally (randomized-but-bounded
+scores per dimension, generic gap-roadmap/financing items) instead of
+calling any model. Every generated string is explicitly labeled
+`[SIMULATED]` — in the executive summary, every dimension's rationale, and
+every gap/financing item — specifically so this can never be mistaken for
+a real assessment if read later out of context. Switch to `bedrock` (real
+AWS Bedrock, see above) or leave unset (Anthropic) whenever you're ready
+for actual analysis.
+
+## Using a local/on-premise model (Ollama, LM Studio, etc.)
+
+Both AI features — **AI Analysis** (`api/analyze-project.js`) and
+**Autocomplete from documents** (`api/extract-template-data.js`) — can also
+run entirely on a model hosted on your own PC or infrastructure, instead of
+any cloud provider (Anthropic, Groq, AWS). Set `LLM_PROVIDER=local`. No
+project data ever leaves your own machine/network on this path — the
+strongest confidentiality option available in the platform, and free
+(no per-token billing to anyone), at the cost of that machine needing to be
+on and reachable whenever an analysis or autocomplete is requested.
+
+**Important — read this before setting anything up.** `api/analyze-
+project.js` and `api/extract-template-data.js` are Vercel serverless
+functions: once deployed, they run on Vercel's cloud servers, **not on your
+PC**. For either function to reach a model running on your machine, your
+machine has to be reachable from wherever the function is actually
+executing. That gives you two genuinely different setups depending on what
+you're trying to do:
+
+- **Running the whole platform locally (recommended for trying this out, or
+  for personal/internal use only)** — run the app itself on your own PC too
+  (`vercel dev` from the project folder, or any local Node setup that
+  serves the `api/` functions), alongside your local model server. Both
+  live on `localhost`, nothing is exposed to the internet, and this is by
+  far the simplest and most private option. This is NOT the same as the
+  live site at `international-network-advisors.com` / your Vercel
+  deployment — it's a separate, local-only copy for your own use.
+- **Making the live, deployed site use your local model** — only do this if
+  you specifically want other users (advisors, ENACOM staff) hitting the
+  real production site to trigger analyses that run on your machine. This
+  requires exposing your local model server to the internet through a
+  tunnel (**Cloudflare Tunnel** is the recommended option — free, a stable
+  hostname that doesn't change every restart unlike most free ngrok setups,
+  and the traffic is encrypted end-to-end) and pointing `LOCAL_LLM_BASE_URL`
+  at that tunnel's URL in Vercel's environment variables. Be aware this
+  makes AI Analysis and Autocomplete unavailable to everyone the moment your
+  PC is off, asleep, or disconnected — not ideal for a platform other
+  advisors rely on day-to-day. If confidential-data handling is the actual
+  goal rather than running on your specific machine, AWS Bedrock (above)
+  gets the same effect (open-source model, no training/retention of your
+  data) without this availability trade-off.
+
+**Setup (either scenario):**
+
+1. Install [Ollama](https://ollama.com) (macOS/Windows/Linux) — the
+   simplest option, and what these defaults assume. LM Studio, llama.cpp's
+   built-in server (`--api`), and vLLM's OpenAI-compatible server all work
+   too, since this integration just speaks the same OpenAI-style chat API
+   all of them expose; only the base URL/port differs (see below).
+2. Pull an instruction-tuned model sized to what your hardware can run
+   comfortably — e.g. `ollama pull llama3.1:8b` (fast, modest hardware) or
+   `ollama pull qwen2.5:14b-instruct` / `llama3.3:70b` (slower, needs more
+   RAM/VRAM, noticeably better reasoning quality for the scoring task).
+   Leave `ollama serve` running (Ollama runs this automatically in the
+   background on macOS/Windows once installed).
+3. Set environment variables (in Vercel → Project → Settings → Environment
+   Variables for the deployed-site scenario; in a local `.env`/your shell
+   for the `vercel dev` scenario):
+   - `LLM_PROVIDER` = `local`
+   - `LOCAL_LLM_MODEL` = the model name you pulled, e.g. `llama3.1:8b`
+     (**required** — no safe default, since it depends entirely on what
+     you've pulled).
+   - `LOCAL_LLM_BASE_URL` (optional) — defaults to
+     `http://localhost:11434/v1` (Ollama's default OpenAI-compatible
+     endpoint). Change the port for LM Studio (`http://localhost:1234/v1`
+     by default) or swap in your tunnel's URL for the deployed-site
+     scenario.
+   - `LOCAL_LLM_API_KEY` (optional) — most local servers don't check for
+     one at all; only set this if yours sits behind something that requires
+     a bearer token.
+4. Redeploy (or restart `vercel dev`) for the env var changes to take
+   effect.
+
+**Trade-offs to know going in:** same as Groq/Bedrock — no native PDF/image
+reading on this path, so PDFs are text-extracted (`pdf-parse`) and images
+are skipped and noted as unread. Quality also depends heavily on which
+model you pull — a small local model (e.g. 8B parameters) will generally
+reason less thoroughly than Claude, Llama 3.3 70B on Bedrock, or Groq's
+hosted 70B, especially for the 8-dimension Investment Readiness scoring;
+test a few real submissions against a cloud path if consistency matters for
+a specific case.
+
+## Running everything locally, without Vercel
+
+If you specifically want to run the platform's AI features (and the site
+itself) entirely on your own PC — no Vercel deployment involved at all, not
+even for local testing — use `local-server.js` at the repo root instead of
+`vercel dev`. It's a small, plain Node/Express server (not a Vercel CLI
+wrapper) that serves the exact same static site (`index.html`, `app/`,
+`assets/`) AND the two AI endpoints
+(`api/analyze-project.js`/`api/extract-template-data.js`, required in
+completely unmodified — they stay just as deployable to Vercel as before)
+from one process on `localhost`. Because the site and the API share the
+same origin this way, `assets/platform.js` needs zero code changes to work
+with it — it already falls back to a plain relative API path
+(`/api/analyze-project`) on any hostname that isn't the production Bluehost
+domain, which now just resolves back to this same local server.
+
+**What this does and doesn't remove:** Vercel and whichever cloud AI
+provider (Anthropic/Groq/Bedrock) are fully out of the picture — the model
+runs on your machine via Ollama (or LM Studio/llama.cpp/vLLM, same as
+"Using a local/on-premise model" above). **Supabase stays a separate cloud
+service either way** — authentication, the project database, and file
+Storage are unaffected by this; this only replaces the compute side (Vercel
+functions + AI provider), not Supabase. Fully self-hosting Supabase too is
+a bigger, separate undertaking (it does offer a self-hosted Docker setup)
+and isn't covered here.
+
+**Setup:**
+
+1. Make sure [Node.js](https://nodejs.org) (LTS) is installed, and that
+   [Ollama](https://ollama.com) is installed and running with a model
+   pulled — see steps 1-2 under "Using a local/on-premise model" above
+   (e.g. `ollama pull llama3.1:8b`).
+2. From the project folder, install dependencies once:
+   ```
+   npm install
+   ```
+   (This installs `express`/`dotenv` for `local-server.js`, plus the
+   existing `pdf-parse`/`@aws-sdk/client-bedrock-runtime` the two AI
+   endpoints already depend on.)
+3. Copy `.env.local.example` to `.env.local` and fill in:
+   - `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_ANON_KEY` —
+     the same values already set in Vercel (Supabase Dashboard → Project
+     Settings → API for the first and third; the service role key is under
+     the same page, kept secret).
+   - `LOCAL_LLM_MODEL` — whichever model you pulled with Ollama (e.g.
+     `llama3.1:8b`). `LLM_PROVIDER=local` and `LOCAL_LLM_BASE_URL` are
+     already set to sensible defaults in the example file.
+   - `.env.local` is already excluded from git via `.gitignore` — it's
+     never committed, same care as any other secret.
+4. Run it:
+   ```
+   npm run local
+   ```
+   which prints the URL to open and flags anything still missing from
+   `.env.local`.
+5. Open `http://localhost:5050/app/dashboard.html` (or whatever `PORT` you
+   set) in a browser. Sign in as usual — Supabase auth is unaffected — and
+   use AI Analysis / Autocomplete from documents exactly as on the live
+   site; both now run against your local Ollama model with zero requests to
+   Vercel or any cloud AI provider.
+
+This is a **separate, parallel** way to run the same code — it doesn't
+touch, redeploy, or otherwise affect the live site at
+international-network-advisors.com, which keeps working independently on
+Vercel/Bluehost whether or not you ever run this. It's also bound to your
+machine only (`localhost`) — no one else can reach it unless you
+deliberately expose it, which isn't recommended without the same
+tunnel-and-caveats treatment described under "Using a local/on-premise
+model" above.
+
+## Making production use your local model (replacing Vercel)
+
+This is the "I don't want to depend on Vercel at all" setup: the **live**
+site at international-network-advisors.com stops calling Vercel for AI
+Analysis / Autocomplete entirely, and calls `local-server.js` on your Mac
+instead — for every visitor, not just you. It reuses everything already
+built above (`local-server.js`, Ollama) plus a **permanent** Cloudflare
+Tunnel so your Mac has a stable public address, and repoints one DNS
+record. **Zero code changes** are needed: `assets/platform.js` already
+calls `https://api.international-network-advisors.com/analyze-project`
+(and `/extract-template-data`) whenever the page is served from the
+production hostname — today that hostname resolves to Vercel; after this
+setup it resolves to your Mac instead. The two API files' existing CORS
+allowlist already includes `https://international-network-advisors.com`
+(it was built for exactly this cross-origin shape), so that doesn't need
+touching either.
+
+**Read this trade-off before setting it up:** once this is live, AI
+Analysis and Autocomplete for the real site — for every advisor/user, not
+just you — depend on your Mac being on, awake, connected, with Ollama and
+this tunnel running, 24/7. If your Mac goes to sleep, loses power, or loses
+internet, those two features go down site-wide (the rest of the site,
+served from Bluehost, is unaffected). If that's not what you want for a
+platform other people rely on day to day, AWS Bedrock ("Using AWS Bedrock"
+above) gets you a similarly-priced open-source model with none of this
+availability risk. Template files for all of this live in `local/` in the
+project folder.
+
+**Setup:**
+
+1. Get `local-server.js` fully working locally first — walk through
+   "Running everything locally, without Vercel" above and confirm AI
+   Analysis works at `http://localhost:5050` before exposing it to the
+   internet. Debugging is much easier before a tunnel is involved.
+
+2. Install `cloudflared`:
+   ```
+   brew install cloudflared
+   ```
+   (no Homebrew? Download from
+   [developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads))
+
+3. Create a free Cloudflare account at
+   [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up) —
+   you do **not** need to move your domain's DNS there or change your
+   registrar; the account is only used to create and authenticate the
+   tunnel.
+
+4. Authenticate and create the tunnel:
+   ```
+   cloudflared tunnel login
+   cloudflared tunnel create ina-local-api
+   ```
+   The second command prints a **tunnel UUID** and writes a credentials
+   file to `~/.cloudflared/<UUID>.json` — note the UUID, you need it next.
+
+5. Configure the tunnel's routing. Copy
+   `local/cloudflared-config.yml.example` to `~/.cloudflared/config.yml`
+   and fill in the UUID and your macOS username (both explained inline in
+   the file). It routes `api.international-network-advisors.com` to
+   `http://localhost:5050`, matching where `local-server.js` listens by
+   default.
+
+6. **Repoint the DNS record.** Wherever you currently manage DNS for
+   `international-network-advisors.com` (this is almost certainly Bluehost
+   — that's where the original `api` → Vercel CNAME was set up per
+   `MIGRACION_BLUEHOST.md`), edit the existing `api` record and change its
+   target from Vercel's value to:
+   ```
+   <TUNNEL-UUID>.cfargotunnel.com
+   ```
+   using the same UUID from step 4. DNS changes can take anywhere from a
+   few minutes to an hour to propagate.
+
+7. Run the tunnel:
+   ```
+   cloudflared tunnel run ina-local-api
+   ```
+   Leave it running in a Terminal tab for a first test — see step 9 below
+   for making it permanent.
+
+8. Make sure `local-server.js` is running too (`npm run local` in another
+   tab), with `.env.local` fully filled in (Supabase values +
+   `LOCAL_LLM_MODEL`).
+
+9. **Test it**: open the real site, `https://international-network-advisors.com`,
+   go to any project, and run AI Analysis. It should now be served by your
+   Mac's Ollama model — check the Terminal running `npm run local` for the
+   request coming through.
+
+10. **Make both processes permanent** (essential — a Terminal window
+    closing, or your Mac restarting, would otherwise silently take AI
+    Analysis down site-wide). Two options:
+    - **Simplest**: `sudo cloudflared service install` sets up the tunnel
+      as a system service (Cloudflare's own official installer). For
+      `local-server.js`, use the launchd template below (there's no
+      equivalent built-in installer for a custom Node script).
+    - **launchd templates** (in `local/` in the project folder — use these
+      for both if you'd rather not run `cloudflared service install`, or
+      just for `local-server.js`):
+      - `local/com.ina.local-server.plist.example`
+      - `local/com.ina.cloudflared-tunnel.plist.example`
+
+      Each file has its own "HOW TO USE" steps at the top (find your
+      `node`/`cloudflared` binary path with `which node` / `which
+      cloudflared`, copy the filled-in file to `~/Library/LaunchAgents/`,
+      `launchctl load` it). Logs land in `local/logs/` in the project
+      folder.
+
+**Reverting back to Vercel** if anything goes wrong: edit the `api` DNS
+record back to its original Vercel target (keep a note of the original
+value before step 6, or check Vercel's project settings → Domains for the
+CNAME target it expects), and stop the tunnel/local-server. The site falls
+straight back to Vercel with no other changes needed, since none of the
+application code was touched for this setup.
+
+## Project submission templates ("Fill using template")
+
+On `app/new-project.html`, project types with a registered template show a
+"Fill using template" button next to the description field. It opens
+`app/project-template.html?type=<project_type>`, a guided form of
+sections/fields specific to that project type; submitting it compiles the
+filled-in answers into a structured plain-text block and drops it into the
+description field back on `new-project.html` (appended below anything
+already typed there, not overwriting it).
+
+There's no new database table or column behind this — it's purely a better
+way to write the existing free-text `projects.description`. Everything
+lives in one place: the `PROJECT_TEMPLATES` registry in `assets/platform.js`,
+keyed by the same `project_type` values as `PROJECT_TYPES`. Three project
+types have a template today: `ai_datacenter` (`DATACENTER_TEMPLATE`, based
+on ENACOM's official Datacenter proposal template v3, July 2026 — 13
+sections, 59 fields, covering traditional/edge-SME/hybrid/AI datacenters
+for presentation to ENACOM and/or multilateral lenders: applicant &
+institutional roles, classification incl. target service segment, site
+area, server specs, storage capacity/scalability, and multilateral-
+financing-readiness fields — economic rate of return, sensitivity
+analysis, FX hedging, disbursement schedule — plus a dedicated sizing
+section for edge/SME operating capacity; environmental & social
+safeguards, the results framework/logframe, the 7-category risk matrix,
+the staged deployment plan/pilot KPIs and the documentation checklist are
+intentionally left to the free-text notes field rather than modeled as
+dozens more inputs) and `submarine_cable` (`SUBMARINE_CABLE_TEMPLATE`,
+based on ENACOM Advisory IT's submarine cable project template, enriched
+with 8 additional fields — 62 total — grounded in the recommendations of
+the International Advisory Body on Submarine Cable Resilience (IAB) July
+2026 report: international route diversity from existing chokepoints,
+branching units for future connectivity, CLS/OSP physical security and
+real-time DAS fronthaul monitoring, satellite/microwave failover
+protocols, a designated SPOC for permitting, anchor-tenancy commitments,
+and insurance mechanisms including parametric/cat-bond options), and
+`wholesale_neutral_network` (`WHOLESALE_NEUTRAL_NETWORK_TEMPLATE`, a *new*
+project type — not just a new template for an existing one, see the
+migration note above — based on ENACOM's "Red Mayorista Neutral" Program,
+Resolución RESOL-2025-951-APN-ENACOM#JGM and its Anexo I, July 2025: open-
+access wholesale network and/or 5G access deployment in underserved areas,
+financed by the Fondo del Servicio Universal. 10 sections, 39 fields:
+applicant eligibility — TIC registration (SCM/STeFI/SVA), ≥2 years track
+record —, the program's 6 eligible funding destinations and implementation
+modality, deployment zone, technical network design and — the two most
+heavily-weighted evaluation criteria per the program's own Sec. VII —
+neutrality/open access with REFEFO interconnection and RAN sharing,
+beneficiaries, eligible expenses, operation & sustainability, regulatory
+framework, and monitoring/audit. This type also got its own 9th
+self-assessment dimension ("Neutrality & Interconnection Readiness") and
+was added to the Universal Service Fund financing-suggestion eligibility
+list, alongside `fiber_backbone_last_mile` and `fixed_wireless_access`).
+
+**To add a template for another project type:**
+1. In `assets/platform.js`, define a new `const YOUR_TEMPLATE = { title, intro,
+   sections: [...], notesField }` object next to `DATACENTER_TEMPLATE` /
+   `SUBMARINE_CABLE_TEMPLATE` / `WHOLESALE_NEUTRAL_NETWORK_TEMPLATE` — same
+   shape (bilingual `{en, es}` strings throughout; each section has a
+   bilingual `title` and a list of `fields`, each field is `select` — with
+   bilingual `options` —, `text` for short single-line values, or
+   `textarea` for longer narrative answers).
+2. Add it to the `PROJECT_TEMPLATES` map: `PROJECT_TEMPLATES = { ai_datacenter:
+   DATACENTER_TEMPLATE, submarine_cable: SUBMARINE_CABLE_TEMPLATE,
+   wholesale_neutral_network: WHOLESALE_NEUTRAL_NETWORK_TEMPLATE, your_type:
+   YOUR_TEMPLATE }`.
+   If `your_type` isn't already one of the values in `PROJECT_TYPES` /
+   `projects.project_type`'s CHECK constraint / `programs.types`'s CHECK
+   constraint, add it to all three (see `supabase/migration_v17_wholesale_neutral_network_type.sql`
+   for a worked example of the migration that needs).
+3. That's it — `new-project.html`'s "Fill using template" button and
+   `project-template.html`'s form are both fully generic and render whatever
+   template the registry returns for the selected project type. No HTML/JS
+   changes needed for a new template, only the data structure in
+   `platform.js`.
+
+### Program-level templates
+
+Not every standardized submission maps to a single project type. ENACOM's
+"Participación en Instrumentos de Deuda en el Mercado de Capitales"
+financing line (Resolución ENACOM 1191/2025 and its Annex, under the
+Programa "FINANCIAMIENTO Y APOYO A PROVEEDORES DE SERVICIOS DE TIC", Res.
+950/25) is a financing mechanism — the Fondo del Servicio Universal
+co-invests in Obligaciones Negociables — not an infrastructure category: it
+can fund last-mile renewal, wholesale interconnection, coverage expansion
+or TIC-applied-AI projects alike (see PROYECTOS ELEGIBLES, Annex Sec. V).
+So instead of a project-type template, it's attached to a **Program**
+(`app/initiatives.html` / `app/new-program.html`) via the optional
+`programs.template_key` column (migration_v18, see above) and a parallel
+`PROGRAM_TEMPLATES` registry in `assets/platform.js`.
+
+On `app/new-program.html`, the "Program template" dropdown lets the
+Program's owner tag it with a registered template. Seven exist today:
+
+- `capital_markets_debt_financing` (`CAPITAL_MARKETS_TEMPLATE`: 7 sections,
+  30 fields covering applicant eligibility incl. the SCM exclusion and
+  2-year track record, the 5 eligible project categories from Annex Sec. V,
+  the Carpeta Técnica, the debt instrument itself — issuance type/tranche
+  which determines whether ENACOM can finance up to 70% or 80% of the
+  project, risk rating, CNV social/green/sustainable labeling —, the
+  Carpeta Económica, the 10%-of-project performance guarantee (waived for
+  socially/environmentally-labeled issuances), and follow-up/audit).
+  "Capital Markets Debt Instruments" was also added as a 10th Multilateral
+  Finance Navigator™ mechanism in `MECHANISM_LABELS`.
+- `wholesale_neutral_network_program` (`WHOLESALE_NEUTRAL_NETWORK_PROGRAM_TEMPLATE`,
+  based on ENACOM Resolución 951/2025 and its Anexo I — the "Red Mayorista
+  Neutral" Program). Unlike the Mercado de Capitales line above, this
+  Program maps almost entirely onto the single `wholesale_neutral_network`
+  project type, whose template already covers the technical design,
+  deployment zone, open-access/interconnection, beneficiaries and eligible-
+  expense content from the Anexo in depth (0 field-key overlap between the
+  two, verified). So this Program-level template is deliberately narrow
+  and complementary rather than a full re-ask: 4 sections, 12 fields —
+  applicant identity & the specific línea/convocatoria, explicit narrative
+  alignment with each of the Anexo's 4 evaluation criteria (Sec. VII —
+  social/economic impact, users benefited, technical viability, neutrality
+  & interconnection level — nothing else in the platform asks for these
+  directly), budget & co-financing (the Resolución's "modelo híbrido
+  público-privado"), and compliance/audit. A submitter under this Program
+  would typically fill in *both* templates — the project-type one for the
+  technical project, this one for the Program application itself; both
+  "Fill using template" buttons show independently on `new-project.html`.
+- `tasu_subsidized_rate_credit` (`TASU_TEMPLATE`, based on ENACOM
+  Resolución 1385/2025 and its Annex — the "Créditos a Tasa Subsidiada"
+  (TASU) financing line, under the same Programa FATIC as Mercado de
+  Capitales above). Structurally the same kind of thing as Mercado de
+  Capitales — a financing *line* spanning any TIC infrastructure project
+  (operation, upgrade and/or expansion), not a single infrastructure
+  category — so it's a Program-level template too, not a project type. 7
+  sections, 31 fields: applicant eligibility (2-year track record,
+  excluded activity sectors — financial intermediation, insurance, legal/
+  accounting/real-estate services —, BCRA-disqualification/bankruptcy
+  status, no debts with ENACOM/ARCA), the eligible-project checks (Annex
+  Sec. V exclusions on staff costs and existing financial-contract
+  obligations), the Carpeta Técnica and Carpeta Económica (same structure
+  Art. 20 of the RGSU requires across these financing lines), the credit
+  line's own terms — adherent BCRA-authorized financial entity, requested
+  amount, term up to 6 years, interest-rate subsidy points (ENACOM
+  subsidizes up to 15 points, funded from the FSU) —, the 1%-of-project
+  performance guarantee (Annex Sec. XIV — unlike Mercado de Capitales,
+  TASU has no guarantee-exemption case), and follow-up/audit. "Subsidized
+  Rate Credit" was also added as an 11th Multilateral Finance Navigator™
+  mechanism in `MECHANISM_LABELS`.
+- `fatic_general_equipment_provision` (`FATIC_GENERAL_TEMPLATE`, based on
+  ENACOM Resolución 950/2025 and its Anexo — the base Programa FATIC
+  itself, parent of Mercado de Capitales and TASU above). Covers the
+  Carpeta Administrativa eligibility shared by every línea (MiPyME/
+  Cooperativa status, 2-year track record, no debts) plus the third línea
+  the Anexo describes but that hasn't been formalized by its own
+  Resolución yet — Provisión Directa o Indirecta de Equipamiento
+  Tecnológico (Sec. IV.1.3) — and the scoring factors ENACOM weighs across
+  any of the three líneas (Sec. VI.1). 5 sections, 19 fields. A submitter
+  who already knows they're applying under Mercado de Capitales or TASU
+  should use those dedicated templates instead; this one covers the
+  Equipment línea, or a general FATIC application before a línea is
+  chosen.
+- `emergencias_catastrofes` (`EMERGENCIAS_CATASTROFES_TEMPLATE`, based on
+  ENACOM Resolución 449/2021, updated by Resolución 323/2025 — the
+  Programa "Asistencia a Prestadores de Servicios TIC ante Emergencias y
+  Catástrofes"). Fully independent of FATIC — its own $2.500.000.000
+  budget, funding up to 100% of financiable investments as a non-
+  reimbursable contribution (ANR), capped at $150.000.000 per project, to
+  replace TIC network infrastructure damaged by a declared emergency or
+  disaster. 6 sections, 28 fields — field labels are taken directly from
+  ENACOM's own fillable Carpeta Administrativa / Carpeta Técnica forms for
+  this Program, so the guided form mirrors exactly what TAD asks for
+  (name/CUIT/license resolution/contact data, then the Memoria
+  Descriptiva: objective, project description, existing vs. affected
+  infrastructure, affected-area map, affected users, work schedule,
+  equipment to acquire), plus a Plan de Inversiones summary (the full
+  itemized budget is a separate spreadsheet to attach — ARS/USD amounts,
+  Financiable/No financiable per item — meant to be filled and uploaded
+  alongside), the 30%-of-ANR performance guarantee, and follow-up/audit.
+- `conectividad_interes_publico` (`CIP_TEMPLATE`, based on ENACOM
+  Resolución 1072/2024 — the Programa "Conectividad de Interés Público",
+  C.I.P.). Different kind of destinatario than every other Program-level
+  template here: national/provincial/municipal government bodies (or
+  ENACOM itself) requesting TIC services — connectivity, internal network
+  "pisos tecnológicos", or equipment — as an input to an education,
+  health, safety or other sectoral plan, not TIC licensees funding their
+  own network. Explicitly not a substitute for nor complementary to any
+  other ENACOM program. 5 sections, 13 fields: requesting body & sectoral
+  plan, type of request, allocation mechanism (self-submitted vs. ENACOM-
+  driven call for proposals), sizing/cost-reasonableness justification,
+  and follow-up/audit.
+- `ustda_project_preparation` (`USTDA_PREPARATION_TEMPLATE`) — ⚠️
+  **standard placeholder, not based on an actual USTDA document yet** (see
+  the note right below). Modeled on the U.S. Trade and Development
+  Agency's general, publicly known Feasibility Study / Definitional
+  Mission grant criteria rather than a specific USTDA solicitation. 6
+  sections, 20 fields: requesting entity & sponsor eligibility, project
+  description & the U.S.-nexus requirement (opportunities for U.S. goods/
+  services/technology — USTDA's core eligibility test), scope of the
+  requested study or mission (technical/economic-financial/environmental-
+  social), estimated costs & local counterpart, anticipated follow-on
+  financing for the implementation phase (DFC, EXIM, multilateral banks,
+  etc.), and contacts/follow-up. This is the only `funding_stage:
+  'preparation'` template today — see "Financing Programs (multi-program
+  applications)" above — every other template on this list funds a
+  project's implementation, not its elaboration.
+
+Once a Program has a `template_key`, anyone submitting a project under it
+on `new-project.html` sees a second, independent "Fill using this
+program's template" button next to the Program selector — alongside, not
+instead of, any project-type template for whatever type they picked. It
+opens `app/project-template.html?ptpl=<template_key>` (vs. `?type=` for
+project-type templates); `project-template.html` resolves either query
+param to the same `{title, intro, sections, notesField}` shape via
+`INAPlatform.programTemplateFor()` / `projectTemplateFor()`, so the actual
+rendering code needed zero changes.
+
+A Program's template also has a **second** entry point, independent of
+`new-project.html`'s drafting flow above: `app/project.html`'s "Financing
+Programs" section (see "Financing Programs (multi-program applications)"
+under "How it works") opens the same `project-template.html` form in
+**apply mode** (`?mode=apply&project=<id>&program=<id>&ptpl=<key>`) when
+applying an ALREADY-CREATED project to that Program. The form itself is
+identical either way; only what happens on submit differs — apply mode
+saves the answers onto that `project_programs` row
+(`INAPlatform.applyToProgram()`) and returns to `project.html`, instead of
+compiling them into the project's `description` and returning to
+`new-project.html`.
+
+**To set up USTDA's project preparation funding in the platform (standard
+version — see the ⚠️ note on `ustda_project_preparation` above):**
+1. From `app/initiatives.html`, create a Program named e.g. "USTDA — Project
+   Preparation Funding", organization "U.S. Trade and Development Agency",
+   funding stage **"Project preparation funding"** (this is the field that
+   makes it show up under project.html's "elaboration" bucket rather than
+   "financing"), type(s) covering whatever infrastructure categories are
+   realistically in scope, and template "USTDA Project Preparation Funding
+   (standard, pending final version)".
+2. Any project owner (or the advisor assigned to that project) can then
+   apply their project to it from `app/project.html`'s "Financing
+   Programs" section, under "Project preparation funding".
+3. **Once Pablo shares a real USTDA reference document**, replace
+   `USTDA_PREPARATION_TEMPLATE`'s `sections`/fields in `assets/platform.js`
+   with the actual requirements — the `PROGRAM_TEMPLATES` /
+   `PROGRAM_TEMPLATE_OPTIONS` registration, the Program record, and every
+   project that already applied under it are all unaffected by that swap
+   (existing `project_programs.template_answers` for old field keys just
+   stop showing up in the compiled description if a key is removed/
+   renamed — re-open the application to re-fill it against the new form).
+
+**To set up ENACOM's Mercado de Capitales Program in the platform:**
+1. Run `supabase/migration_v18_program_template_key.sql` if you haven't yet.
+2. From `app/initiatives.html`, create a Program named e.g. "Financiamiento y
+   Apoyo a Proveedores TIC — Línea Mercado de Capitales", organization
+   "ENACOM", type(s) covering `fiber_backbone_last_mile`,
+   `wholesale_neutral_network` and `ai_datacenter` (the infrastructure
+   categories the eligible project list spans), and template
+   "Capital Markets Debt Financing (ENACOM FATIC — Res. 1191/25)".
+3. Submitters select that Program from `new-project.html`'s Program
+   dropdown and get the guided form automatically.
+
+**To set up ENACOM's TASU (Créditos a Tasa Subsidiada) Program in the
+platform:**
+1. Run `supabase/migration_v18_program_template_key.sql` if you haven't yet
+   (same nullable `programs.template_key` column used by every entry above
+   — no new migration needed for TASU).
+2. From `app/initiatives.html`, create a Program named e.g. "Financiamiento y
+   Apoyo a Proveedores TIC — Línea Créditos a Tasa Subsidiada (TASU)",
+   organization "ENACOM", type(s) covering whichever infrastructure
+   categories the credit will fund in practice (TASU itself isn't
+   type-restricted — any TIC network operation/upgrade/expansion project
+   qualifies), and template "Subsidized Rate Credit — TASU (ENACOM FATIC —
+   Res. 1385/25)".
+3. Submitters select that Program from `new-project.html`'s Program
+   dropdown and get the guided form automatically.
+
+**To set up ENACOM's FATIC — General / Equipment Provision, Emergencias y
+Catástrofes, or Conectividad de Interés Público (C.I.P.) Programs in the
+platform:** same three steps as above — no new migration needed (all
+three reuse `programs.template_key`). Create a Program from
+`app/initiatives.html` and pick the matching entry from the "Program
+template" dropdown:
+- "FATIC — General / Equipment Provision (ENACOM — Res. 950/25)"
+- "Assistance for Emergencies & Disasters (ENACOM — Res. 449/21, updated
+  Res. 323/25)"
+- "Public Interest Connectivity — C.I.P. (ENACOM — Res. 1072/24)"
+
+**To add a template for another Program (not tied to a single project
+type):** define a new template constant next to `CAPITAL_MARKETS_TEMPLATE`,
+add it to `PROGRAM_TEMPLATES`, and add a matching bilingual entry to
+`PROGRAM_TEMPLATE_OPTIONS` (the curated list `new-program.html`'s dropdown
+renders — deliberately not free text, so the dropdown can only ever point
+at a template that actually exists).
+
+## Roadmaps (regulator checklist tracker) + Early Warning System project type
+
+> **Naming note.** This feature was originally called "Gestiones" — Pablo
+> asked for it to be renamed to "Roadmap" (English) / "Hoja de Ruta"
+> (Spanish) across the UI, the codebase, and the database. That rename is
+> `migration_v30_rename_gestion_to_roadmap.sql` (run after v29, see the
+> manual steps at the end of this section). Everywhere below uses the
+> current, post-rename names (`roadmap_templates`, `app/roadmap-instance.html`,
+> etc.); the migration filenames themselves keep their original
+> `..._gestion_...` names since a file that already shipped and ran against
+> a database is a historical record, not something to rename after the
+> fact.
+
+**What this is.** Some project types — most notably Early Warning Systems
+(broadcast alerts for earthquakes, storms, hurricanes, tsunamis, etc.) —
+require the applicant to complete a series of *roadmap steps*: coordination
+steps with public and/or private entities (spectrum authorization, mobile
+operator agreements, civil-protection coordination, etc.) that sit outside
+the project's financial/technical readiness, but are just as necessary to
+get the project actually implemented. This feature gives ENACOM's
+advisors/admins a way to (a) define a reusable checklist template for a
+given project type, and (b) load and track that checklist on any specific
+project, with the project owner able to see progress read-only.
+
+**New project type.** `early_warning_system` ("Sistema de Alerta Temprana")
+was added alongside the existing 7 types (Datacenter, Submarine Cable,
+Fiber Backbone, Fixed Wireless, Wholesale Neutral Network, Satellite
+Communications, Other). It has its own guided project template (general
+info, hazard scope, dissemination channel/standard, technical architecture,
+regulatory framework, sustainability plan) and its own 9th self-assessment
+dimension ("Alert Dissemination Readiness"), following the same pattern as
+every other project type. Requires **migration_v25** (see below).
+
+**New project type.** `passive_infrastructure` ("Infraestructura Pasiva") was
+added for projects centered on sharing/opening access to existing passive
+infrastructure (electrical poles, ducts, chambers, towers, dark fiber,
+shelters, technical spaces) between operators — e.g. CAPPI's "Programa
+Nacional de Infraestructura Compartida y Acceso Abierto" proposal to ENACOM,
+modeled on Colombia's and Brazil's shared-access regulatory frameworks. It
+has its own 9th self-assessment dimension ("Shared Access & Interoperability
+Readiness" — asset inventory, access/sharing agreements, cost-based tariff
+methodology) but no dedicated guided project template yet (same as
+`fiber_backbone_last_mile`, `fixed_wireless_access` and `satellite_constellation`
+— it just uses the plain free-text description field). Requires
+**migration_v32** (see below).
+
+**Three tables from migration_v26** (run after v25; renamed by migration_v30
+— original names in parentheses):
+- `roadmap_templates` (was `gestion_templates`) — a named, reusable
+  checklist, optionally scoped to one `project_type` (leave blank/null to
+  make it available on every project type — e.g. a generic "Environmental
+  Permitting" checklist).
+- `roadmap_template_steps` (was `gestion_template_steps`) — the ordered
+  steps inside a template: title, description, entity name, entity type
+  (public/private/mixed), whether it's required.
+- `project_roadmaps` (was `project_gestiones`) — an earlier, free-form
+  per-project checklist. **Left in the database but no longer used by the
+  app** — superseded by `roadmap_instances`/`roadmap_instance_steps` below
+  (migration_v27). Kept only so any data already entered isn't lost; not
+  dropped.
+
+**Entities + sequential tracking (migration_v27, run after v26).** A
+follow-up round added: (1) who generates a project and what kind of
+organization they are, (2) an optional restriction on which kind of entity
+may run a given roadmap checklist, and (3) replaced the free-form
+`project_roadmaps` checklist with a proper **sequential, step-by-step
+workflow**.
+
+- `projects.generating_entity_name` / `generating_entity_type` — who
+  submitted the project (free text name + a type: Regulatory body,
+  National/Provincial/Municipal government, ISP, Manufacturer, Integrator,
+  Other). Both optional, set in section 1 of `new-project.html`'s wizard
+  (moved there from section 3 — see "Creating and editing a project" under
+  "How it works" above), shown in `project.html`'s overview line.
+- `roadmap_templates.allowed_entity_type` — optional restriction on the
+  whole template (not per-step): e.g. the "Alerta Temprana" checklist can
+  be scoped to `regulator` only, so it won't show up as an option when
+  starting a roadmap under any other entity type. Null = any entity type.
+  Set in `new-roadmap-template.html`.
+- `roadmap_template_steps.expected_result` — free text describing what
+  "done" looks like for that step; shown to the user when they're deciding
+  whether to advance past it.
+- `roadmap_template_steps.entity_name` / `entity_type` — the ONE entity
+  **responsible** for driving that step, plus its nature (public/private/
+  mixed — a separate, older catalog than `allowed_entity_type`'s
+  regulator/gov/ISP/etc. one, see `ROADMAP_ENTITY_TYPES` vs. `ENTITY_TYPES`
+  in `assets/platform.js`). Both optional.
+- `roadmap_template_steps.involved_entities` — free-form list (text array)
+  of the OTHER entities that also participate in that step, besides the one
+  responsible for it — e.g. a spectrum-authorization step might be the
+  applicant's responsibility but involve the regulator, a mobile operator,
+  and civil protection all at once. Added by
+  `migration_v29_gestion_step_entities.sql` (below).
+- `roadmap_instances` — one named, sequential run of a template against a
+  specific performing entity (which may not be a project's owner — e.g. the
+  regulator runs the coordination steps, not the applicant), **optionally**
+  linked to a project. `current_step_index` points at the active step.
+- `roadmap_instance_steps` — the template's steps copied into the instance
+  at creation time (independent copies — editing the template later never
+  changes a running instance, `template_step_id` is `on delete set null`).
+  Each step has a status (pending/in progress/completed/skipped/blocked),
+  an optional decision note, and who/when it was resolved.
+
+**A Roadmap doesn't need a project (migration_v28, run after v27).**
+Pablo's correction to the original v27 design: a Roadmap is often the step
+that comes *before* the project it concerns even exists — e.g. a regulator
+starts coordinating spectrum authorization before an applicant has
+formally submitted anything. `roadmap_instances.project_id` was originally
+`not null`; `migration_v28_gestion_instance_optional_project.sql` drops
+that constraint. No RLS change was needed —
+`roadmap_instances_select_own_or_advisor`'s owner-visibility clause is an
+`EXISTS` subquery joining through `project_id`, which simply finds nothing
+to match when `project_id` is null, falling through to "advisor/admin
+only" — correct, since a project-less Roadmap has no owner to grant
+read-only visibility to. A linked instance can still be started/viewed
+from `project.html` as before; an unlinked one is only reachable from the
+"Roadmap Instances" list on `roadmap-templates.html` (below), or by
+linking it to a project later (not yet built as a UI action — currently
+the link is set once, at creation, via the optional project field on
+`roadmap-instance.html`'s setup form).
+
+**Responsible entity vs. involved entities (migration_v29, run after v28).**
+Pablo: "cada gestión tiene una entidad responsable de la gestión y
+entidades involucradas en ese paso de la gestión." `roadmap_template_steps.
+entity_name`/`entity_type` already existed (as "the entity involved") and
+now formally mean "the one entity responsible for the step" — no column
+rename, just a clarified meaning, so every place that already read/wrote
+those two columns keeps working unchanged. New:
+`roadmap_template_steps.involved_entities` (`text[]`), a free-form list of
+the other entities that also participate in the step — mirrored onto
+`roadmap_instance_steps.involved_entities` too, since steps are copied
+there verbatim at instance-creation time. In
+`new-roadmap-template.html`, each step row now has a small tag input below
+its responsible-entity field — type a name, press Enter or "+ Add," and it
+becomes a removable chip; the `roadmap-instance.html` tracker shows both
+("Responsable: ..." / "Involucradas: ...") on the current and completed
+steps.
+
+**Permissions.** This is deliberately a regulator-facing tool, not a
+general one:
+- `roadmap_templates` / `roadmap_template_steps` are only visible to
+  advisors and admins — standard users never see the admin template list
+  at all (unlike Programs, which any authenticated user can browse). Any
+  advisor/admin can edit any template, the same "any advisor can act on
+  any X" pattern already used elsewhere (e.g. `take_project()`).
+- `roadmap_instances` / `roadmap_instance_steps`: the project owner can
+  only **view** (there is no owner insert/update/delete policy at all —
+  read-only by design). Only advisors/admins can start a roadmap or
+  advance its steps.
+
+**Where it lives in the UI:**
+- `app/roadmap-templates.html` — admin list of templates (advisor/admin
+  only, full-page redirect gate for anyone else), plus a "New Roadmap"
+  shortcut into the page below. Below the template list, a second
+  "Roadmap Instances" section (`INAPlatform.listAllRoadmapInstances()`)
+  lists **every** instance ever started, project-linked or not — the only
+  place a project-less instance is reachable again after creation (a
+  linked one also still shows up on its project's own "Roadmaps"
+  section). Each row shows name, status, performing entity, and either the
+  linked project's name or "No project linked."
+- `app/new-roadmap-template.html` — create/edit a template: name, optional
+  project type, optional allowed entity type, description, and a dynamic
+  reorderable list of steps (each with an expected result).
+- `app/roadmap-instance.html` — with no `?id=`, it's a setup form: the
+  entity actually carrying it out (name + type, required) and which
+  checklist applies (templates are filtered primarily by the entity's
+  type, and secondarily by project type if one is linked) come first;
+  linking an existing project is **optional** — leave it blank if the
+  Roadmap precedes the project's own submission, and pick one later if it
+  becomes relevant. Submitting starts the instance and switches the same
+  page into tracking mode. With `?id=`, it shows a vertical stepper: past
+  steps (resolved, with any decision note), the current step (description
+  + expected result + Advance / Skip / Block controls, advisor/admin only
+  — "the user decides whether to advance to the next step or not"), and
+  future steps (locked). Reachable with `?project=<id>` pre-filled from a
+  project's own page. The entity-type `<select>` deliberately starts on a
+  blank option rather than defaulting to the first value in the list — an
+  earlier version defaulted to "Regulator," which silently filtered the
+  template dropdown down to regulator-only checklists the instant the page
+  loaded, making it look like no templates existed.
+- `app/project.html` — the "Roadmaps" section lists every
+  `roadmap_instances` row **linked** to that project (name, performing
+  entity, status), each linking into `roadmap-instance.html`, plus a "New
+  Roadmap" button for advisors/admins. The project owner sees the same
+  list read-only. A Roadmap started without a project won't appear here —
+  see the "Roadmap Instances" list on `roadmap-templates.html` above.
+- A "Roadmaps" nav link appears in the header for advisors/admins across
+  every `app/*.html` page.
+
+**Manual steps required (same policy as always — Claude does not run
+migrations or touch Supabase credentials):**
+1. In Supabase → SQL Editor, run `supabase/migration_v25_early_warning_system_type.sql`.
+2. Then run `supabase/migration_v26_gestion_templates.sql`.
+3. Then run `supabase/migration_v27_gestion_instances.sql`.
+4. Then run `supabase/migration_v28_gestion_instance_optional_project.sql`.
+5. Then run `supabase/migration_v29_gestion_step_entities.sql`.
+6. Then run `supabase/migration_v30_rename_gestion_to_roadmap.sql` — must be
+   deployed at the same time as the application code (this migration and
+   the current app code are not independently compatible with the pre-v30
+   `gestion_*` app code or database).
+7. Re-upload every changed file to Bluehost (see the file list at the end
+   of this delivery).
 
 ## Troubleshooting: analysis stuck on "Applying the Investment Readiness Index…"
 
@@ -672,6 +2722,890 @@ If the results page spins indefinitely instead of completing:
    too low"`** — not a bug; the Anthropic Console account behind
    `ANTHROPIC_API_KEY` needs billing set up. Console → Plans & Billing.
 
+## Bilingual AI Analysis (English/Spanish) — migration_v40
+
+**The bug:** on the results page, switching the site to English translated the
+UI chrome and the Self-Assessment (`source='manual'`) results correctly, but
+the **AI Analysis** (`source='ai'`) dimensions, gap roadmap, financing
+recommendations and summary stayed in Spanish. Self-Assessment results are
+recomputed live from the raw Likert answers in the browser
+(`INAPlatform.computeManualAssessment()`), so they've always been
+language-aware. AI Analysis results are frozen freeform text written once by
+the LLM and persisted to `framework_analysis` — there was no mechanism to
+localize them at all.
+
+**The fix, in three parts:**
+
+1. **DB** (`supabase/migration_v40_bilingual_analysis.sql`, mirrored in
+   `schema.sql`): adds four nullable columns to `framework_analysis` —
+   `dimensions_en`, `gap_roadmap_en`, `financing_recommendations_en`,
+   `summary_en` (jsonb/jsonb/jsonb/text). The existing unsuffixed columns
+   remain the Spanish canonical version — every row already has them. The
+   `_en` columns start out `null` until translated; `null` means "not
+   translated yet," never "show a blank field."
+2. **`api/analyze-project.js`**: the LLM prompt now asks for both languages
+   in a single response — `rationale_es`/`rationale_en` per dimension,
+   `action_es`/`action_en` per gap item, `rationale_es`/`rationale_en` per
+   financing item, `summary_es`/`summary_en` — sharing identical underlying
+   scores/priorities/mechanisms, just phrased naturally in each language
+   (not literal translations). The endpoint parses both and persists all 8
+   fields (4 base + 4 `_en`) to `framework_analysis`. Every **new** AI
+   Analysis run from now on is bilingual automatically.
+3. **`assets/platform.js` + `app/project.html`**: a new helper,
+   `INAPlatform.localizeAnalysis(a, lang)`, is a safe no-op for
+   `lang !== 'en'` or missing input. For English, it swaps in each `_en`
+   field with a per-field fallback to the Spanish version, so a
+   partially-translated (or not-yet-translated) record never renders blank.
+   It's called in both `renderAnalysis()` (screen view) and
+   `generateProjectPdf()` (PDF export) in `project.html`, right after the
+   existing manual-recompute step — so the Self-Assessment path is
+   untouched and stays a no-op through this helper.
+
+**Backfilling existing rows:** the 25 AI Analysis records already loaded this
+session (before the fix) had Spanish-only text, so three backfill scripts
+translate them into the new `_en` columns without touching the Spanish
+originals:
+
+- `supabase/data_ai_analysis_backfill_en_all_projects.sql` — Cruce
+  Transandino, Red Federal de Centros Regionales, Programa Nacional de
+  Infraestructura Compartida, Plan Argentina Digital Federal 2040, FTTH/HFC
+  Punta Alta, Patagonia Hub de IA (6 projects).
+- `supabase/data_ai_analysis_backfill_en_alertar.sql` — AlertAR (1 project,
+  includes the 9th type-specific dimension `alert_dissemination_readiness`).
+- `supabase/data_ai_analysis_backfill_en_pipeline_planilla.sql` — the 18
+  projects from the pipeline spreadsheet (Atlántico-Pacífico ×5, Cable
+  Submarino PUMA, Tramo Bioceánico Norte, CALF, Internet Service, ARSAT ×3,
+  Starlink, ENACOM ×3, YPF, Telcos).
+
+Run all three **after** `migration_v40_bilingual_analysis.sql`. Each script
+ends with a verification `select` confirming the four `_en` columns are
+populated for its projects. Where a gap-roadmap action or financing
+rationale had been sourced verbatim from `RECOMMENDATION_TIPS` /
+`STAGE_FINANCING_SUGGESTION` / `USF_SUGGESTION` in `assets/platform.js`, the
+backfills reuse that same constant's `.en` string, so the AI Analysis text
+stays consistent with the rest of the app's English UI.
+
+**If you add a new AI Analysis project type or otherwise run the analysis
+manually going forward**, you don't need to do anything extra — the prompt
+change makes every new run bilingual on its own. The backfill scripts are
+only needed for rows created before this fix shipped (v46 of
+`assets/platform.js`).
+
+## Risk Matrix + RACI module (medium-term roadmap items) — migration_v41, migration_v42
+
+Two of the four "3–9 month" platform items from the *INA Project Structuring
+Framework™* PDF (section 9.3) are implemented: a structured **Risk Matrix**
+per project, and a **RACI** (Responsible/Accountable/Consulted/Informed) role
+assignment per Roadmap step, replacing the old free-text entity fields. The
+other two items (extending the AI Diagnostic Agent, and a Financial
+Structuring Agent) are not part of this change.
+
+### Risk Matrix (`migration_v41_project_risks.sql`)
+
+A new `public.project_risks` table gives each project a structured risk
+register, separate from the freeform "risk & mitigation" text already
+produced by AI Analysis (`framework_analysis.dimensions.risk_mitigation`).
+Each risk has a category (9 values: regulatory, technical, financial,
+operational, environmental, political, market, execution, other), a
+1–5 probability and a 1–5 impact, and a generated `risk_score` column
+(`probability * impact`, stored, range 1–25). The score maps to a 4-band
+severity used consistently across the UI: low (≤4), medium (≤9), high (≤15),
+critical (≤25) — reusing the existing amber/ink severity ramp already used
+for readiness-stage and tier badges (no red/green anywhere, per the site's
+palette).
+
+**Permissions:** only advisor/admin can create, edit, or delete risks —
+same model as Roadmaps. The project owner sees a read-only summary on
+`project.html` (top risks + counts by severity) with a link to the full
+matrix; only advisor/admin get the "Manage Risks" action and the create/edit
+form on the new `app/risk-matrix.html` page. RLS follows the same
+`_select_own_or_advisor` + `_insert/update/delete_advisor_or_admin` pattern
+used by `project_roadmaps`/`roadmap_instances`.
+
+**Files:** `supabase/migration_v41_project_risks.sql` (run once, after
+`migration_v40`), `assets/platform.js` (`RISK_CATEGORIES`, `RISK_STATUS`,
+`riskScoreBand()`, `listProjectRisks`/`createProjectRisk`/
+`updateProjectRisk`/`deleteProjectRisk`/`riskMatrixSummary()`),
+`app/risk-matrix.html` (new page), `app/project.html` (Risk Matrix summary
+section), `assets/style.css` (`.risk-badge`, `.risk-summary*`, `.risk-table`,
+`.risk-form-*`).
+
+### RACI module (`migration_v42_roadmap_raci.sql`)
+
+Each Roadmap step (template and live instance) used to have one free-text
+"entidad responsable" field and an array of "entidades involucradas". This
+is now an explicit RACI assignment: every entity added to a step gets one of
+four roles — Responsible, Accountable, Consulted, Informed — stored in two
+new tables, `public.roadmap_step_raci` (templates) and
+`public.roadmap_instance_step_raci` (live instances), each with a
+`unique(step_id, entity_name)` constraint so an entity can't hold two roles
+on the same step.
+
+**Backward compatibility:** the old `entity_name`/`involved_entities`
+columns on `roadmap_template_steps`/`roadmap_instance_steps` are **not**
+dropped. `replaceRoadmapTemplateSteps()` in `platform.js` now auto-derives
+them from the RACI array on every save (`entity_name` = the "responsible"
+entities joined; `involved_entities` = everyone else), so any older code
+path that still reads those two columns keeps working. Symmetrically, if a
+step from before this migration is opened in the editor (or displayed) with
+no RACI rows yet, a fallback RACI array is derived on the fly from the old
+fields (`entity_name` → role "responsible", each `involved_entities[i]` →
+role "informed") — nothing already in the database shows up blank.
+
+**Where it shows up:**
+- `app/new-roadmap-template.html` — each step's entity editor is now a RACI
+  row list (entity name + role dropdown, add/remove), with a non-blocking
+  warning if a step has no "Accountable" entity.
+- `app/roadmap-instance.html` — each step card shows RACI role badges
+  (letter + full label) instead of the old plain entity text; falls back to
+  the old text rendering if a step genuinely has no RACI rows.
+- `app/project.html`'s Roadmaps section only shows instance-level summary
+  info (name, executing entity, status/progress) — it never rendered
+  per-step entity text, so it needed no changes for this feature.
+- `createRoadmapInstance()` copies each template step's RACI rows to the new
+  instance's steps automatically.
+
+**Permissions:** RACI rows are advisor/admin-write only (same as the rest of
+Roadmap template/instance editing); the `roadmap_instance_step_raci` read
+policy follows the project-ownership chain (3-way join: instance step →
+instance → project) so a project owner can see the RACI badges on their own
+roadmap instance's steps.
+
+**Files:** `supabase/migration_v42_roadmap_raci.sql` (run once, after
+`migration_v41`), `assets/platform.js` (`RACI_ROLES`, `raciRoleLabel()`,
+`raciRoleLetter()`, `listStepsRaci()`, `listInstanceStepsRaci()`,
+updated `replaceRoadmapTemplateSteps()` and `createRoadmapInstance()`),
+`app/new-roadmap-template.html`, `app/roadmap-instance.html`,
+`assets/style.css` (`.raci-row`, `.raci-badge`, `.raci-badge-group`).
+
+### Migration order
+
+Run in order after everything else already documented in this file:
+
+```sql
+-- in the Supabase SQL Editor, in this order:
+-- 1. supabase/migration_v41_project_risks.sql
+-- 2. supabase/migration_v42_roadmap_raci.sql
+```
+
+Both are idempotent (`if not exists` throughout) and safe to re-run.
+
+## Program role: financing vs. Initiative (umbrella) — migration_v43
+
+> **Naming note (Sept 2026).** The `'umbrella'` `program_role` — a Program
+> that groups several separately-financed projects instead of funding
+> anything itself — was originally exposed in the UI as "Programs" (the list
+> page was `app/programs.html`) alongside "Financing" (the real funding
+> sources). That was confusing on two fronts: the word "Program" for
+> something that isn't a financing program, and its list page sharing a name
+> with `public.programs`, the table that holds *every* program regardless of
+> role. Pablo asked for the umbrella concept to be renamed **"Initiative"**
+> (English) / **"Iniciativa"** (Spanish) everywhere in the UI and URLs. This
+> was a **user-facing rename only** — same pattern as the earlier
+> Gestiones→Roadmaps rename, but narrower in scope: `app/programs.html` was
+> renamed to `app/initiatives.html` (with a redirect from the old URL, see
+> `vercel.json` and `local-server.js`'s `LEGACY_REDIRECTS`), and every label,
+> lede and help-text string that said "Program"/"Programa" for an umbrella
+> program now says "Initiative"/"Iniciativa". What did **not** change: the
+> `public.programs` table itself, the `program_role = 'umbrella'` value
+> (still `'umbrella'`, not `'initiative'`, in the database), and every JS
+> function/variable name that touches it (`programsCache`, `loadPrograms()`,
+> `isUmbrellaProgram()`, `PROGRAM_ROLE_LABELS`, etc. all keep their original,
+> "program"-flavored names — see the comment on `PROGRAM_ROLE_LABELS` in
+> `assets/platform.js` and the top-of-file comments in
+> `app/initiatives.html`/`app/new-project.html`). Everywhere below uses the
+> current, post-rename name ("Initiative", `app/initiatives.html`) for
+> anything user-facing, while keeping "Program"/`program_role`/`programs`
+> for the underlying schema and code, since that's still accurate.
+
+Until now every row in `public.programs` was implicitly assumed to be a real
+financing source, selectable in the preparation/financing pickers on
+`new-project.html` and `project.html`. That stopped matching reality once a
+program like EPECH's **"Atlántico-Pacífico"** was loaded: it's not a funding
+source at all, it's a sponsoring initiative that bundles several
+*independently financed* projects (a fiber backbone, a submarine cable, a
+datacenter) under one name. Picking it as a "financing program" on a project
+made no sense — it doesn't fund anything itself.
+
+`migration_v43_program_role.sql` adds `programs.program_role` (`'financing'`
+default, or `'umbrella'`), a CHECK-constrained column:
+
+- **`financing`** — the program IS a funding source (FSU, BID, CAF, USTDA…).
+  Its existing `funding_stage` (`'preparation'`/`'financing'`, migration_v21)
+  keeps meaning what it always meant, and it's still selectable in the
+  project-financing pickers.
+- **`umbrella`** — the program only groups several separately-financed
+  projects under one initiative. It funds nothing itself, so `funding_stage`
+  is irrelevant for it (the column stays, for schema simplicity, but its
+  form field is hidden when role = umbrella) and it never appears in a
+  financing picker — it only appears as the single-select "Program" field
+  (`projects.program_id`) when creating/editing a project.
+
+The migration also **reclassifies existing data**: it sets
+`program_role = 'umbrella'` for any program named exactly `'Atlántico-Pacífico'`,
+and — as a defensive backstop for any other umbrella-shaped program already
+sitting in Supabase that isn't reflected in the local seed scripts — for any
+`financing`-role program referenced as `program_id` by 2 or more projects
+(a financing program is applied to per-project via `project_programs`, so a
+program with 2+ projects pointing at it directly as their umbrella `program_id`
+is a strong signal it's actually an umbrella, not a funding source).
+
+### Two separate list pages: Initiatives (umbrella) vs. Financing
+
+The first cut of this feature just added a role badge to a single shared
+`initiatives.html` list. Pablo asked for a cleaner split: **"Initiatives"**
+(originally shipped as "Programs" — see the naming note above) and
+**"Financing"** are now two separate pages with their own nav link, each
+showing only its own role —
+
+- **`app/initiatives.html`** (originally `app/programs.html`, renamed —
+  redirected via `vercel.json`/`local-server.js`) — umbrella programs only
+  (`program_role = 'umbrella'`). This is the page `projects.program_id` (the
+  step-1 "Initiative" field, `#pprogram`) points at. Its "Create Initiative"
+  button links to `new-program.html?role=umbrella`.
+- **`app/financing-initiatives.html`** — financing programs only
+  (`program_role != 'umbrella'`, i.e. real funding sources like FSU, BID,
+  CAF, USTDA). This is what the preparation/financing pickers on
+  `new-project.html`/`project.html` draw from. Its "Create Financing
+  Program" button links to `new-program.html?role=financing`.
+
+Both pages share the same underlying `app/new-program.html` form. The
+`?role=umbrella` / `?role=financing` query param locks the "Program role"
+field on **create** (shown as a plain label instead of the radio picker,
+via a hidden `<input name="programRole">` so the submit payload is
+unaffected) — so a program created from one page's "Create" button can't
+accidentally end up filed under the other. The picker only reappears when
+**editing** an existing program, in case it genuinely needs reclassifying;
+after saving, the form redirects to whichever list page now actually shows
+that program (`financing-initiatives.html` if `program_role === 'financing'`,
+`initiatives.html` otherwise) — not always back to `initiatives.html`. The
+nav link, breadcrumb and page title/lede on `new-program.html` all update to
+match (see `applyRoleContext()`/`lockedRole`/`listPageFor()` near the top
+of its inline script).
+
+**Where it shows up:**
+- `app/new-program.html` — "Program role" field: a locked label on create
+  (from the `role` query param), a full radio picker on edit; hides "What
+  does this program fund?" entirely when role = umbrella. Breadcrumb/title/
+  lede/submit-button text all switch between "Initiative" and "Financing
+  Program" wording depending on the role — see `applyRoleContext()`.
+- `app/initiatives.html` — lists only umbrella programs (no more role badge,
+  since every card here is one by definition); "Create Initiative" →
+  `new-program.html?role=umbrella`.
+- `app/financing-initiatives.html` — lists only financing programs, each
+  card showing its funding-stage + financing-entity badges (same as the old
+  shared page did); "Create Financing Program" →
+  `new-program.html?role=financing`.
+- `app/new-project.html` — the step-1 "Initiative (optional)" select
+  (`#pprogram`) still only lists `program_role = 'umbrella'` programs; the
+  step-3 preparation-funding select and financing-program checkboxes still
+  exclude umbrella programs (unchanged from the first cut — this just moved
+  to depend on which list page the program lives on now).
+- `app/project.html` — the Financing tab's "apply to program" pickers
+  (preparation/financing) exclude umbrella programs the same way; the
+  header meta line's Initiative name tag is independent of that block.
+- `app/dashboard.html` — the combined "Program / Initiative" filter
+  (`fProgram`/`dash.filter.program`) mixes both an applied financing Program
+  and a project's Initiative in one dropdown, since a project can have both;
+  `financingProgramNamesFor()`/`preparationProgramNamesFor()` deliberately
+  exclude the Initiative (it isn't a funding source, so it has no
+  `funding_stage`) — it only shows up via the combined `programNamesFor()`
+  list in the row/card meta line.
+- Nav: every `app/*.html` page with the standard top nav (all except
+  `project.html`, which has its own dropdown-menu nav) has a
+  "Financiación"/"Financing" link next to "Initiatives".
+
+**Files:** `supabase/migration_v43_program_role.sql` (run once, after
+`migration_v42`), `supabase/schema.sql` (inline column for fresh installs),
+`assets/platform.js` (`PROGRAM_ROLE_LABELS` — `umbrella` now labeled
+"Initiative"/"Iniciativa" — `programRoleLabel()`, `isUmbrellaProgram()`,
+`isFinancingProgram()`, and `program_role` added to
+`createProgram`/`updateProgram`), `app/new-program.html`,
+`app/initiatives.html` (renamed from `app/programs.html`),
+`app/financing-initiatives.html`, `app/new-project.html`, `app/dashboard.html`,
+`app/project.html`, plus the standard nav block in every other `app/*.html`
+page, `assets/style.css` (`.program-role-umbrella`, unused after the split
+but left in place), `assets/i18n.js` (`init.*` keys, `progfin.form.edit`,
+`np.f.initiative*`, `np.f.templateForInitiative`,
+`np.wizard.step4.initiative.lede`, updated `prog.f.role.help`/
+`progfin.lede`/`dash.filter.program`; the old `prog.nav`/`prog.title`/
+`prog.lede`/`prog.empty`/`prog.form.new`/`prog.form.edit`/
+`prog.form.cancel`/`prog.list.*`/`prog.edit`/`prog.delete`/`np.f.program*`
+keys were removed as orphaned, same as the gestion→roadmap rename), plus
+`vercel.json` and `local-server.js` (redirect from `/app/programs.html` to
+`/app/initiatives.html`).
+
+**Data fix — CIP and Emergencias/Catástrofes had swapped roles.** While
+auditing the rename, two real ENACOM programs turned out to be misfiled:
+"Conectividad de Interés Público" was sitting under `program_role =
+'umbrella'` (showing up in Initiatives) when it's actually a real funding
+source and belongs in Financing, and "Asistencia ante Emergencias y
+Catástrofes" was the reverse — filed as `'financing'` when it's actually an
+umbrella/Initiative. `supabase/data_fix_cip_emergencias_program_role.sql`
+corrects both (matched by `template_key`, with a name-based `ILIKE`
+fallback, since neither program exists in a versioned `data_*.sql` seed
+file — Pablo created them directly through `new-program.html`'s
+`template_key` picker). Run its pre-check `SELECT` first to confirm it
+returns exactly those two programs before running the `UPDATE`s.
+
+## Master Data (Contacts, Companies, Products, Public Agencies) — migration_v44
+
+A standalone internal directory, separate from Initiatives/Financing/
+Projects — `app/master-data.html`, a single page with four tabs. Advisor/
+admin only, both in the UI (`INAPlatform.canManageMasterData()` — same
+advisor-or-admin bar as Roadmaps/Risks — gates the nav link and the page
+itself) and in RLS (`supabase/migration_v44_master_data.sql`): all four
+tables use the same select/insert/update/delete-all-advisor-or-admin
+pattern as `roadmap_templates`, with no "project owner read-only"
+carve-out, since none of this is scoped to a project a standard user
+submitted.
+
+**Why this exists.** `programs.financing_entity`, `projects.organization`
+and `profiles.organization` have always been free text — see the comment
+on `financing_entity` in `migration_v36_program_financing_entity.sql`:
+"no hay un registro cerrado de entidades financiadoras en la plataforma."
+Master Data adds that closed registry as its own catalog, so ENACOM
+advisors can keep a real directory of the people and organizations they
+deal with. **It's intentionally standalone for now** — Pablo's explicit
+choice — so `financing_entity`/`organization` are untouched and still free
+text. Wiring them to this catalog (e.g. turning `financing_entity` into a
+picker over Companies tagged `financial_entity`) is a possible future
+migration, not done here.
+
+**The four tables:**
+
+- `public.companies` — name, `types` (a `text[]`, multi-tag on purpose: a
+  company can be e.g. both `financial_entity` and `service_provider` at
+  once — `manufacturer` / `service_provider` / `financial_entity`),
+  country, website, notes.
+- `public.public_agencies` — name, `jurisdiction` (`national` /
+  `provincial` / `municipal` / `international`), country, notes.
+- `public.contacts` — full name, email, phone, and a **current position
+  only** (no history table — Pablo's explicit choice: `position_title`
+  plus `company_id` OR `public_agency_id`, enforced by the
+  `contacts_single_affiliation` CHECK so a contact can't be pinned to both
+  at once; if someone changes jobs, the same row gets edited). Both FKs are
+  nullable, so a contact can also have no affiliation yet.
+- `public.products` — name, an optional `company_id` (the
+  manufacturer/provider), category, description.
+
+**UI notes.** Each tab is an independent list + overlay create/edit form,
+following the same overlay pattern as `app/risk-matrix.html`
+(`.risk-table`/`.risk-form-overlay`/`.risk-form-panel`/`.field`). The tab
+switcher itself is new — `.md-tab`/`.md-tab.active` in `assets/style.css`.
+Company types and Public Agency jurisdiction use the existing
+`.chk-pill`/`.chk-group` checkbox/radio-pill pattern from
+`new-program.html`'s type/role pickers. A Contact's form has a 3-way
+"Current position at" radio (None / Company / Public Agency) that swaps in
+the matching `<select>`, populated from the Companies/Public Agencies
+already loaded — creating or editing a Company/Public Agency from their own
+tab immediately refreshes the Contacts/Products tabs too, since they embed
+the org's name via a Supabase join (`contacts(*, companies(...),
+public_agencies(...))`, `products(*, companies(...))`).
+
+**Files touched:** `supabase/migration_v44_master_data.sql` +
+`supabase/schema.sql` (the 4 tables + RLS), `assets/platform.js`
+(`COMPANY_TYPES`, `PUBLIC_AGENCY_JURISDICTIONS`,
+`canManageMasterData()`, and full CRUD helpers —
+`list/create/update/deleteCompany`, `...PublicAgency`, `...Contact`,
+`...Product`), `app/master-data.html` (new page), the standard nav block
+in all 14 other `app/*.html` pages that carry it (`#masterDataNavLink`,
+gated the same way as `#roadmapsNavLink`), `assets/style.css`
+(`.md-tab`), `assets/i18n.js` (`md.*` keys).
+
+**Contact filters + per-tab totals (added later, no migration).** With 188+
+contacts loaded from scanned business cards, the plain list stopped being
+skimmable, so the Contacts tab got the same `.filter-bar`/`.ffield`/
+`.fclear`/`.filter-count-row` components `app/dashboard.html` already used
+for its project filters: a live text search on `full_name` (`#cfName`), a
+`#cfCompany` dropdown (`companies.id`/`.name`), a `#cfAgency` dropdown
+(`public_agencies.id`/`.name`), and a `#cfCountry` dropdown built from the
+*distinct* `companies.country`/`public_agencies.country` values actually in
+use. Company and Public Agency are two separate dropdowns rather than one
+combined field — a contact belongs to at most one or the other
+(`contacts_single_affiliation` check constraint), so picking a value in
+one clears the other automatically. A contact has no country column of
+its own — it inherits whichever org it's affiliated to — so
+`INAPlatform.listContacts()` also selects `country` on both embeds
+(`companies(id, name, country)`, `public_agencies(id, name, country)`) to
+make that filter possible without a second query. `getFilteredContacts()`
+applies all four (AND'd) before `renderContactsTable()` draws the table;
+the `#contactsFilterCount` line under the filter bar reads "X of Y
+contacts" (same phrasing/pluralization as the dashboard's `#filterCount`).
+`populateContactFilters()` rebuilds all three dropdowns' options —
+preserving the current selection if it's still valid — every time
+`loadContacts()` runs, so a Company/Public Agency created or renamed
+elsewhere in the page shows up without a reload; `init()` also calls it
+once more right after its `Promise.all([...])`, since that call loads
+Companies/Agencies/Contacts in parallel and `loadContacts()` alone can't
+guarantee the other two have already landed.
+
+Each of the four tab headers (Contacts, Companies, Products, Public
+Agencies) also gained a small `(N)` total next to its title —
+`#contactsCount` shows the *unfiltered* total (the row count next to it
+already carries the filtered "X of Y"), the other three just show
+`companies.length`/`products.length`/`agencies.length` since those tabs
+have no filters yet.
+
+**Download PDF / Download Excel for the (filtered) Contacts list (added
+later, no migration).** Two buttons next to "+ New Contact" —
+`#contactsPdfBtn`/`#contactsExcelBtn` — export whatever `getFilteredContacts()`
+currently returns, so exporting after setting filters gives just that
+subset; clear the filters first for the full catalog. Both reuse the
+existing `activeContactsFiltersSummary()` helper (mirrors dashboard.html's
+`activeFiltersSummary()`) to note which filters were active in the
+output itself, since the exported file may be opened well after the
+on-screen filter bar is gone from view.
+- **PDF** is the same client-side "print, then Save as PDF from the
+  browser's print dialog" pattern as `app/dashboard.html`'s `#printListBtn`/
+  `#dashPrintView` (see that page's comment for the full rationale) —
+  not a true generated-binary PDF like the per-project jsPDF download.
+  `renderContactsPrintView()` builds a landscape `<table>` into the hidden
+  `#contactsPrintView` div (`class="print-only"`), then `window.print()`
+  runs. The `@media print` rules live in a page-scoped inline `<style>`
+  block in `<head>` (same reasoning as dashboard.html's: keeping it
+  page-scoped avoids colliding with `#tplPrintView`'s different, portrait
+  single-record layout in the shared stylesheet).
+- **Excel** is a genuine `.xlsx` (not CSV), built client-side via SheetJS
+  (`https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js`,
+  loaded only on this page — the one `<script>` tag added for it).
+  `XLSX.utils.aoa_to_sheet()` builds one sheet with a title row, the
+  active-filters summary, a blank row, then the header + data rows;
+  `XLSX.writeFile()` triggers the download as
+  `contactos_ina_<YYYY-MM-DD>.xlsx`.
+
+**"Admin" is a dropdown menu, and "Master Data" hangs off it as a second
+item.** `#adminNavMenu` — the same `.menu`/`.nav-menu`/`.menu-trigger`/
+`.menu-panel`/`.menu-item` component `app/project.html` already used for
+its "Project"/"Analysis" nav menus (see `assets/app.css`) — replaced the
+old plain "Admin" `<a>`. It first grew a single item, "User Management"
+(→ `admin.html`); Pablo then asked for Master Data to move into that same
+menu instead of sitting as its own top-level nav link, so
+`#masterDataMenuItem` (→ `master-data.html`) is now the panel's first row,
+above "User Management".
+
+The two items are gated independently, since they need different
+permissions — "User Management" is admin-only, "Master Data" is
+advisor-or-admin (`canManageMasterData()`) — so an advisor sees the
+"Admin" trigger and, inside it, only the Master Data row; an admin sees
+both. Each page's init code computes both booleans once and applies them
+to three elements: the `#adminNavMenu` wrapper (shown if either is true —
+it has to be visible for an advisor who only qualifies for Master Data),
+`#masterDataMenuItem` (advisor-or-admin), and `#adminUsersMenuItem`
+(admin-only). The open/close/outside-click/Escape wiring for the dropdown
+itself lives once in `assets/script.js` (guarded by
+`document.getElementById('adminNavMenu')`, so it's a no-op on every page
+that doesn't have it, including `project.html`, which keeps wiring its own
+nav menus separately). Adding another tool to this menu later is just one
+more gated `.menu-item` row in the 15 `app/*.html` pages that carry the
+header — no new JS.
+
+### Upload a Contact from a business card photo — migration_v45
+
+`app/master-data.html`'s Contacts tab has a "📇 Upload from business card"
+button, next to "+ New Contact". Picking an image sends it to the new
+`api/extract-business-card.js` serverless function, which asks Claude
+(vision) to read the card and returns `full_name`, `position_title`,
+`email`, `phone`, `org_name` and a best-effort `is_public_agency` guess.
+The (already-open, blank) Contact form gets pre-filled with those fields —
+**nothing is written to the database at this point**, Pablo always reviews
+and hits Save (or edits/cancels) like any other contact.
+
+**If the detected company/public agency isn't in Master Data yet**, the
+form doesn't silently create it — it shows a dashed amber "create this new
+company/agency" box under the Company/Public Agency select, pre-filled with
+the detected name (editable) and its type/jurisdiction picker, with a
+checked-by-default checkbox. It's only actually created (via
+`createCompany`/`createPublicAgency`) if that checkbox is still checked
+when Save is pressed — unchecking it, or picking an existing org from the
+dropdown instead, skips creation. This was Pablo's explicit call: "mostrarlo
+como sugerencia, yo confirmo antes de crear."
+
+**The card image itself is kept** — Pablo's explicit choice, so it can be
+opened again later — uploaded to Storage and linked via
+`contacts.business_card_path`. Rather than a new bucket, it reuses the
+existing `project-documents` bucket under a `master-data/contacts/{id}/`
+prefix (same "one bucket, prefix per feature" convention as
+`program_documents`'s `programs/` prefix), gated by three new advisor/admin
+storage policies (`master_data_upload/read/delete_advisor_or_admin` — see
+migration_v45's file header for why the existing `doc_*_own_folder`
+policies don't apply here: Master Data has no "owner" concept). Opening
+"View current card" (in the Contact form, when editing one that has an
+image) or the 📇 icon in the Contacts table generates a 1-hour signed URL
+on demand via `INAPlatform.getContactBusinessCardUrl()` — the first
+client-side use of `createSignedUrl()` in this codebase, since every other
+upload so far only ever needed to be read back server-side. The
+"Attach / replace card image" button inside the Contact form lets Pablo
+attach or swap a card on any contact, not just ones created via the scan
+flow — that path skips the AI extraction, it's upload-only.
+
+**Provider: Claude by default, or Groq's free tier if `LLM_PROVIDER=groq`.**
+Reading a photo requires a vision-capable model call, so unlike AI Analysis
+this doesn't fall back to just any `LLM_PROVIDER` value — of the providers
+wired up in this codebase, only two send images to a model: Anthropic
+(default/fallback here) and, since Groq added a multimodal open-weight
+model (Llama 4 Scout) to its free tier, Groq too. So `LLM_PROVIDER=groq` +
+`GROQ_API_KEY` (the same two variables used for free-tier AI Analysis, see
+"Using a free open-source model in development" above) now also covers
+this feature, via a separate `GROQ_VISION_MODEL` variable — nothing new to
+create if that's already set up. `LLM_PROVIDER=bedrock`/`local`/unset all
+fall back to `ANTHROPIC_API_KEY` here, since the Bedrock Llama 3.3 model
+and a generic local model aren't assumed to support vision. See
+`api/extract-business-card.js`'s file header for the full breakdown.
+
+**Setup (once):** run `supabase/migration_v45_contact_business_card.sql` in
+the Supabase SQL Editor (adds `contacts.business_card_path` + the 3 storage
+policies — no new bucket to create, it reuses `project-documents`, which
+already exists). Confirm `ANTHROPIC_API_KEY` is set in Vercel per the note
+above.
+
+**Files touched:** `supabase/migration_v45_contact_business_card.sql` +
+`supabase/schema.sql` (column + storage policies), `api/extract-business-card.js`
+(new), `assets/platform.js` (`extractBusinessCardUrl()`,
+`extractBusinessCard()`, `uploadContactBusinessCard()`,
+`getContactBusinessCardUrl()`, `business_card_path` support in
+`updateContact()`), `app/master-data.html` (scan button, card-attach
+control, "create new org" suggestion boxes, submit handler), `assets/style.css`
+(`.card-scan-status`, `.new-org-box`, `.chk-pill-inline`,
+`.card-pending-name`), `assets/i18n.js` (`md.contacts.scanCard` and
+related keys).
+
+## Configurable Roles & Permissions — migration_v46
+
+Beyond the three fixed platform roles (`user` / `advisor` / `admin`, stored
+in `profiles.role`), the platform now supports **custom roles** — created
+and managed by an admin (or by anyone granted the new "Gestión de Usuarios y
+Roles" permission, see below) in `app/roles.html` — that grant a standard
+user View and/or Edit access to specific parts of the platform, either
+across everything of that kind or only the rows they created themselves.
+
+**Why:** Pablo's request was to let Financing/Iniciativas data be managed by
+advisor/admin only (already close to true — see below), but generalized
+into a real system: *"se agrega el concepto de rol que tiene asociadas
+entidades con permiso de edición y visualización... se pueden crear roles
+que tengan permisos de visualización y/o edición de las diferentes entidades
+de la plataforma."*
+
+**The 7 entities** a role's permissions are defined against — one combined
+"Master Data" entity rather than splitting Contacts/Companies/Agencies/
+Products, per Pablo's call — are: **Iniciativas**, **Proyectos**,
+**Financiación**, **Roadmaps**, **Master Data**, **Matriz de Riesgos**, and
+**Gestión de Usuarios y Roles**. Iniciativas and Financiación both live in
+the same `programs` table (split by `program_role`), so a role's
+"Iniciativas" and "Financiación" permissions are genuinely independent —
+a role can see one and not the other.
+
+**Each (role, entity) pair has:**
+- `can_view` — see it at all.
+- `can_edit` — create/modify it (delete is deliberately **not** covered —
+  see "What this migration deliberately does NOT change" below).
+- `scope` — `'all'` (every row) or `'own'` (only rows the user themselves
+  created). This is a general flag available for *any* role/entity
+  combination, not hardcoded just for the default case below.
+
+**Admin and Advisor are unaffected "system roles".** They're still just
+`profiles.role = 'admin'/'advisor'` — not rows in the new `roles` table —
+and every one of their existing capabilities is preserved exactly:
+admin can edit anything, advisor can edit anything except user/role
+management. `profiles.custom_role_id` (the new column pointing into
+`roles`) is only ever consulted for `profiles.role = 'user'`.
+
+**The default "Usuario" role**, auto-created by this migration and marked
+`is_default_signup_role = true`, is what every new signup gets (via
+`handle_new_user()`) and replicates exactly what a standard user could
+already do before this migration:
+- Iniciativas: view yes, edit no, scope all (anyone can already see every
+  Program today — that didn't change).
+- Proyectos: view yes, edit yes, scope **own** (they can only see/edit
+  projects they themselves submitted — exactly today's behavior).
+- Every other entity: no row = no access, same as today (a standard user
+  has never been able to touch Financiación, Roadmaps, Master Data, Risk
+  Matrix, or user/role management).
+
+So running this migration changes **nothing** for any existing user until
+an admin actually creates a new custom role and assigns it to someone (or
+edits the "Usuario" role's own permissions) via `app/roles.html`.
+
+**What this migration DOES widen for Advisor/Admin:** Pablo's original,
+more specific ask — *"que solo el advisor y el admin puedan gestionar los
+datos de Financiación"* — surfaced a real gap: today an advisor can only
+edit a Program they personally created (`programs_update_own` has always
+been owner-only, no role check at all), not any Iniciativa/Financiación in
+general. This migration fixes that: advisor and admin can now
+create/edit **any** Iniciativa or Financiación program, not just their own.
+This is the one deliberate behavior change for existing roles; everything
+else about Admin/Advisor stays identical.
+
+**What this migration deliberately does NOT change, to keep regression risk
+near zero on a production government-adjacent platform:**
+- **Delete permissions are untouched everywhere.** The new system only
+  governs View and Edit (insert/update); every delete policy (project,
+  program, risk, roadmap, master data row) is exactly what it was before
+  this migration, byte for byte. A custom role can never gain delete
+  access it didn't already have.
+- **The "take a project" workflow is untouched.** An advisor still can't
+  edit a project directly unless they're its owner or have taken it
+  (`assigned_advisor_id`) — this migration does not let a custom role
+  bypass that and edit arbitrary projects.
+- **A project/risk/roadmap owner's existing read-only visibility into
+  their own project's Risks/Roadmap is untouched** — still hardcoded, not
+  routed through the new permission system.
+
+**Setup (once):** run `supabase/migration_v46_role_permissions.sql` in the
+Supabase SQL Editor. It's a single idempotent migration (creates `roles` +
+`role_permissions`, adds `profiles.custom_role_id`, adds the
+`has_entity_access()`/`can_view_entity()`/`can_edit_entity()` SQL functions,
+seeds the default "Usuario" role, and rewrites the affected RLS policies as
+supersets of what they were). No manual follow-up needed — every existing
+user keeps working exactly as before.
+
+**Using it:** go to Admin → Roles (`app/roles.html`, visible to admin or
+anyone granted "Gestión de Usuarios y Roles" edit access). "+ New Role"
+creates a role (name + description), "Edit permissions" opens its
+View/Edit/Scope matrix across the 7 entities (each checkbox/select saves
+immediately), and the "Assign custom role" table at the bottom lets you
+pick a custom role for any user still on the plain "Usuario" platform role
+(Admin/Advisor accounts don't use this — their access comes from
+`profiles.role` directly). "Set as default" changes which role new signups
+get; deleting a role in use just drops those users back to "no custom
+role" (no error), it doesn't touch their account.
+
+**Files touched:** `supabase/migration_v46_role_permissions.sql` (new) +
+`supabase/schema.sql` (mirrored end-state), `assets/platform.js`
+(`RBAC_ENTITIES`/`entityPermission()`, `getProfile()`'s new
+`custom_role` embed, rewritten `canManagePrograms()`/`canManageRoadmaps()`/
+`canManageRisks()`/`canManageMasterData()`, new `canManageUsers()`/
+`canViewEntity()`/`canEditEntity()`/`canEditRow()`, new `requireCanManageUsers()`,
+Roles CRUD — `listRoles()`, `createRole()`, `updateRole()`, `deleteRole()`,
+`setDefaultSignupRole()`, `upsertRolePermission()`, `assignCustomRole()`),
+`app/roles.html` (new), `app/admin.html` (gate switched from `requireAdmin()`
+to `requireCanManageUsers()`), a "Roles" link added to the Admin dropdown
+across every `app/*.html` page, `assets/i18n.js` (`roles.*` keys).
+
+## RBAC follow-up fixes: admin edit-everything + Roadmaps view-only — migration_v47
+
+After migration_v46 shipped, Pablo's literal spec — *"el usuario admin puede
+editar usuarios, roles y todos los datos de la plataforma. Los usuarios que
+no son advisor ni admin, no pueden editar roadmap, financing, solo
+visualizar"* — surfaced two remaining gaps against the already-built RBAC
+system. Both are UI/seed-data fixes; no RLS policy needed to change, since
+the database was already either correct or already more permissive than the
+UI allowed.
+
+**Gap 1 — admin couldn't edit a Program (Iniciativa/Financiación) it didn't
+own, from the UI.** `programs_update_own` in migration_v46 already lets
+advisor/admin update *any* program at the database level (see the RBAC
+section above — "advisor and admin can now create/edit any Iniciativa or
+Financiación program, not just their own"). But three UI entry points were
+still stricter than the database and silently blocked the very thing the
+RLS policy allows:
+- `app/financing-programs.html` and `app/initiatives.html` only rendered the
+  row-level Edit (✎) link for the owner (`${isOwner ? ... : ''}`), so an
+  admin/advisor viewing someone else's program had no Edit link to click at
+  all, even though submitting the form would have succeeded.
+- `app/new-program.html`'s edit-mode loader redirected anyone who wasn't the
+  program's owner straight back to the list, before they could even see the
+  form.
+
+Fix: both list pages now compute `canManagePrograms(profile)` (already
+existed in `platform.js` — true for advisor, admin, or a custom role granted
+edit on Iniciativas/Financiación) alongside the existing owner check, and
+show the Edit link when either is true. `new-program.html`'s redirect gate
+got the same `|| canManagePrograms(viewerProfile)` addition. Delete stays
+exactly as it was (owner or admin only) — not part of this request.
+
+**Gap 2 — standard users couldn't even *view* Roadmaps.** The "Usuario"
+default role's seed data in migration_v46 only covered Iniciativas and
+Proyectos; it never got a `roadmaps` row, so `has_entity_access()` fell back
+to its "no row = no access" default and blocked view, not just edit — the
+opposite of the request. Financing/Programs turned out to already be
+correctly view-only (a pre-existing `programs_select_all_authenticated` RLS
+policy predates the RBAC system and was never restricted), so no fix was
+needed there.
+
+Fix:
+- `supabase/migration_v47_roadmaps_view_for_default_role.sql` (new,
+  idempotent) inserts a `('roadmaps', can_view=true, can_edit=false, scope='all')`
+  row for whichever role has `is_default_signup_role = true` — looked up by
+  that flag rather than by name `'Usuario'`, in case an admin has since
+  renamed the role in `app/roles.html`. Seed data for custom roles lives
+  only in migration files, not in `schema.sql` (see the comment on
+  `role_permissions` there), so this migration is the only place this seed
+  exists — nothing to mirror.
+- `assets/platform.js` gained `canViewRoadmaps(profile)`, sitting next to the
+  existing `canManageRoadmaps(profile)` (which still gates create/edit/
+  delete controls, unchanged).
+- Every page's Roadmaps nav-link visibility switched from
+  `canManageRoadmaps()` to the new `canViewRoadmaps()` (14 pages via a
+  targeted `sed`, plus `app/roadmap-instance.html` and
+  `app/new-program.html` by hand — `project.html`'s *own*
+  `canManageRoadmaps()` calls were deliberately left alone, since those gate
+  an unrelated concern on that page, not nav visibility).
+- `app/roadmap-templates.html` (the template library + instance list page)
+  switched from redirecting non-editors away entirely to the
+  "view gates the page, edit gates the controls" pattern already used by
+  `financing-programs.html`: the page and both lists render for any
+  signed-in user now, while "New instance", "Create template", and the
+  per-template ✎/🗑 icons stay hidden unless `canManageRoadmaps()` is true.
+  `app/new-roadmap-template.html` (the actual create/edit template form) was
+  deliberately left as a hard edit-gated redirect — a standard user has no
+  reason to land there.
+
+**Setup:** run `supabase/migration_v47_roadmaps_view_for_default_role.sql`
+in the Supabase SQL Editor, after migration_v46. Idempotent, no other
+follow-up needed.
+
+**Files touched:** `supabase/migration_v47_roadmaps_view_for_default_role.sql`
+(new), `assets/platform.js` (`canViewRoadmaps()`, bumped to `?v=58` across
+every `app/*.html`), `app/financing-programs.html`, `app/initiatives.html`,
+`app/new-program.html` (admin/advisor edit-everything fix), `app/admin.html`,
+`app/assessment.html`, `app/dashboard.html`, `app/fsu-scoring.html`,
+`app/master-data.html`, `app/new-project.html`, `app/profile.html`,
+`app/project-template.html`, `app/risk-matrix.html`, `app/roles.html`,
+`app/roadmap-instance.html`, `app/roadmap-templates.html` (view-only
+Roadmaps fix).
+
+## User Management: unified role selector (native + custom roles)
+
+Pablo's request: *"En User Management permitir que el usuario Admin pueda
+editar todos los usuarios. Además mostrar todos los roles no solo los
+nativos a la hora de modificar el rol de un usuario."* Clarified with him
+that the "edit all users" half is specifically about the role/permissions
+selector — admin could already change any user's role except their own
+(that restriction, `prevent_role_self_change_trigger`, is deliberate and
+untouched); the actual gap was the second half.
+
+**The gap:** `app/admin.html`'s per-user role `<select>` only ever listed
+the 3 native platform roles (`user`/`advisor`/`admin`). Assigning a
+*custom* role (from the configurable RBAC system — see "Configurable Roles
+& Permissions" above) to a standard user required leaving admin.html
+entirely and going to `app/roles.html`'s separate "Assign custom role"
+table at the bottom of that page instead — an easy thing to miss, and two
+different places doing what feels like the same job.
+
+**The fix:** admin.html's role `<select>` is now a single dropdown with two
+`<optgroup>`s — "Native roles" (User/Advisor/Admin) and "Custom roles"
+(every row from the `roles` table, fetched via the existing `listRoles()`).
+Picking a native role clears the user's `custom_role_id`; picking a custom
+role sets `role:'user'` alongside it — both in one request, via the new
+`setUserRole(userId, { role, customRoleId })` in `platform.js` (sits next to
+the pre-existing `updateUserRole()`/`assignCustomRole()`, which still do
+single-column updates and are still used by `app/roles.html`'s own assign
+table — that page is unchanged, this just adds a second, more visible way to
+do the same thing from the main user list). The confirm dialog and the
+disabled-for-your-own-row behavior are unchanged. No RLS or migration
+changes were needed — `profiles_update_admin` already allows updating both
+columns together.
+
+**Files touched:** `assets/platform.js` (`setUserRole()`, bumped to `?v=59`
+across every `app/*.html`), `app/admin.html` (combined selector +
+`allRoles` fetch).
+
+## User Management: unify duplicate "Usuario" option + roles.html language switch fix
+
+Pablo, after the unified role selector above shipped: *"unificar usuario y
+user. En la pagina de roles no funciona bien el cambio de idioma."*
+
+**Unifying "Usuario":** the unified selector's "Native roles" group listed
+`user`/`advisor`/`admin`, and `platformRoleLabel('user')` renders as
+"Usuario" in Spanish — the exact same text as the seeded default custom
+role from migration_v46 (also named "Usuario" unless renamed), which now
+also appears in the same dropdown's "Custom roles" group. Two entries
+reading "Usuario" that mean different things (one is a truly-zero-access
+native role with no `custom_role_id`; the other is the real default role
+every standard user actually gets on signup) was exactly the confusion
+Pablo flagged. Confirmed with him the fix: remove `'user'` from the native
+group entirely (`app/admin.html`'s new `EDIT_NATIVE_ROLES = ['advisor',
+'admin']`, separate from the unrelated `ROLES` array that still powers the
+top filter dropdown) — "Usuario" now appears exactly once, from the custom
+roles list. A legacy row that somehow still has `role:'user'` and
+`custom_role_id: null` (zero access anywhere) isn't silently reassigned:
+`renderList()` adds a one-off fallback option ("Usuario (sin rol
+asignado)") only on that specific row so the select keeps showing its real
+state instead of defaulting to whatever option happens to render first.
+
+**roles.html language switch:** two separate bugs, both fixed:
+1. Its local `t(key, fallback)` helper checked `window.I18N && I18N[key]...`
+   — but `assets/i18n.js` declares `const I18N = {...}` at the top level of
+   its own `<script src>` file, which never attaches it to `window` (only
+   `var`/plain function declarations do that). `window.I18N` was therefore
+   always `undefined`, so `t()` silently always fell through to its English
+   fallback string, in either language. Fixed by referencing `I18N[key]`
+   directly — the same bare reference `assets/i18n.js`'s own `applyLang()`
+   already uses successfully (classic `<script>` tags share one global
+   lexical scope, so `I18N` is visible here regardless of not being a
+   `window` property).
+2. Even with `t()` fixed, nothing re-rendered the page's dynamically-built
+   tables (roles list, assign-custom-role list, permission matrix) when the
+   language toggle was clicked — `i18n.js`'s own listener only re-translates
+   static `[data-i18n]` markup, and roles.html had no listener of its own,
+   unlike `dashboard.html`/`initiatives.html`/`assessment.html`/
+   `project.html`, which already carry this same fix for the same reason.
+   Added a `.lang-btn` click listener that calls `renderRolesTable()` +
+   `renderAssignTable()`, and re-opens the permission matrix (if open) to
+   refresh its labels too.
+
+**Files touched:** `app/admin.html` (`EDIT_NATIVE_ROLES`, legacy-option
+fallback), `app/roles.html` (`t()` fix, `.lang-btn` listener). No database,
+RLS, or `platform.js` changes — both are pure UI fixes.
+
+## Fix: PDF text extraction failing on Vercel (`Cannot find module '@napi-rs/canvas'`)
+
+**Symptom:** with `LLM_PROVIDER` set to `groq`, `bedrock`, or `local`, AI
+Análisis (and/or "Autocompletar desde documentos") failed or hung when a PDF
+was attached, and Vercel's function logs showed:
+
+```
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- /var/task/node_modules/pdf-parse/dist/pdf-parse/cjs/index.cjs".
+```
+
+**Root cause:** `pdf-parse` 2.x (what `package.json` pinned before this fix)
+hard-depends on `@napi-rs/canvas` — a native Rust/napi addon distributed as
+separate prebuilt binary packages per OS/architecture (e.g.
+`@napi-rs/canvas-linux-x64-gnu`). Vercel's serverless bundler doesn't
+reliably detect and include the right platform binary for this kind of
+dependency (a well-known class of bug for native npm packages on
+Vercel/serverless in general), so the deployed function couldn't load it —
+`require('pdf-parse')` itself failed with `Cannot find module
+'@napi-rs/canvas'` on Vercel even though `npm install` had succeeded
+locally. Only the `groq`/`bedrock`/`local` providers hit this code path at
+all (Claude reads PDFs natively, so the default `anthropic` provider never
+touches `pdf-parse`), and `api/extract-template-data.js`'s "Autocompletar
+desde documentos" feature hits it regardless of provider.
+
+**Fix:** pinned `pdf-parse` to `1.1.4` instead of `2.4.5`. The 1.x line (a
+different, older, actively-maintained fork/rewrite lineage) is pure
+JavaScript with a single trivial dependency (`node-ensure`) — no native
+addon, nothing platform-specific to bundle, so this class of failure can't
+happen at all. The two files' PDF-extraction code was updated to match the
+1.x API, which is a plain promise-returning function rather than a class:
+
+```js
+// before (pdf-parse 2.x)
+const { PDFParse } = require('pdf-parse');
+const parser = new PDFParse({ data: fileBuffer });
+const extracted = await parser.getText();
+await parser.destroy();
+
+// after (pdf-parse 1.1.4)
+const pdfParse = require('pdf-parse');
+const extracted = await pdfParse(fileBuffer);
+```
+
+Verified by running the actual extraction against a real PDF from this
+project outside of Vercel: text comes out identical, no `@napi-rs/canvas`
+package anywhere in `node_modules` or `package-lock.json` after
+reinstalling.
+
+**Files touched:** `package.json` (`pdf-parse` 2.4.5 → 1.1.4),
+`api/analyze-project.js`, `api/extract-template-data.js` (both: rewritten
+extraction call + updated header comments). No database or `platform.js`
+changes. No redeploy step beyond the normal `npm install` + Vercel deploy —
+if you also run `local-server.js`, run `npm install` there too so its
+`node_modules` picks up 1.1.4.
+
 ## Known limitations (v1)
 
 - Document parsing is limited to PDF, PNG/JPEG and plain text/Markdown/CSV
@@ -686,9 +3620,13 @@ If the results page spins indefinitely instead of completing:
   Supabase (**Authentication → Users → select the user → MFA** tab) so they
   can sign back in and re-enroll.
 - Editing a project (via the pencil icon on the dashboard grid, or "Edit
-  Project" on the results page) is owner-only, including for advisors —
-  advisors can view any project but not modify it or re-trigger its
-  analysis.
+  Project" on the results page) is still owner-only, including for
+  advisors. Re-triggering the AI Analysis is different: since the "Take"
+  workflow action was added (`assigned_advisor_id`, migration_v12), an
+  advisor who has taken a project can also run/re-run its analysis — see
+  `app/project.html`'s `isAssignedAdvisor` and the matching server-side
+  check in `api/analyze-project.js`. An advisor who *hasn't* taken the
+  project can still only view it.
 - The dashboard's status column/filter shows the framework-derived stage
   (Concept Stage / Early Structuring / Advanced Structuring / Investment
   Ready) once an analysis completes, and the pipeline state (Submitted /
