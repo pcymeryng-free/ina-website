@@ -215,7 +215,17 @@ async function handler(req, res) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
         body: JSON.stringify({
           model: GROQ_VISION_MODEL || GROQ_VISION_MODEL_DEFAULT,
-          max_tokens: 500,
+          // Bumped from 500: with reasoning enabled, hidden reasoning
+          // tokens still count against max_tokens even though
+          // reasoning_format:'hidden' means they're never returned in the
+          // response — at 500 the model burned the entire budget thinking
+          // and never got to write the actual answer, so `content` came
+          // back as an empty string (a *second* failure mode after the
+          // <think>-tag one below, hit immediately after fixing that one).
+          // reasoning_effort:'none' below should make this moot (no
+          // reasoning tokens spent at all for this model), but the higher
+          // ceiling stays as headroom regardless.
+          max_tokens: 1024,
           temperature: 0,
           // The default vision model (qwen/qwen3.6-27b) is a reasoning
           // model that defaults to reasoning_format='raw' — its
@@ -225,6 +235,14 @@ async function handler(req, res) {
           // 'hidden' returns only the final answer, no reasoning at all —
           // exactly what's needed here since nothing downstream uses it.
           reasoning_format: 'hidden',
+          // Disables reasoning entirely for qwen3.6-27b (its only two
+          // reasoning_effort options are 'none'/'default' — see
+          // console.groq.com/docs/reasoning). This is a simple structured
+          // extraction task with no need for chain-of-thought, so this
+          // also means no reasoning tokens are spent at all, which is both
+          // faster/cheaper and removes any chance of the max_tokens budget
+          // getting eaten by hidden reasoning before an answer is written.
+          reasoning_effort: 'none',
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
             {
