@@ -2636,18 +2636,27 @@
       if (y + h > PAGE_H - 56) newPage();
     }
 
+    // Headings in this document use jsPDF's built-in 'times' (serif) family
+    // instead of 'helvetica', while body text (bodyText/bulletText/attrRow/
+    // miniBar below) stays on 'helvetica' (sans) — a lightweight echo of the
+    // site's actual brand pairing (Fraunces serif headings + IBM Plex Sans
+    // body, see assets/style.css --serif/--sans) without embedding the real
+    // webfont files, which this environment can't fetch directly (Google
+    // Fonts' CDN is network-blocked here). Pablo confirmed this trade-off
+    // explicitly. Scoped to generateProposalPdf() only — generateProjectPdf()
+    // (the other, "Descargar PDF" report) is untouched and stays all-Helvetica.
     function h2(text) {
       ensureSpace(60);
       if (y > 90) y += 18;
       chapterIndex += 1;
       attrRowIndex = 0;
       tocEntries.push({ title: text, page: pageNum });
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('times', 'bold');
       doc.setFontSize(20);
       doc.setTextColor(AMBER[0], AMBER[1], AMBER[2]);
       doc.text(String(chapterIndex).padStart(2, '0'), MARGIN, y + 9);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(17);
       doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
       doc.text(text, MARGIN + 40, y + 9);
       y += 22;
@@ -2659,8 +2668,8 @@
 
     function h3(text) {
       ensureSpace(18);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.8);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(10.5);
       doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
       doc.text(text, MARGIN, y);
       y += 13;
@@ -2779,8 +2788,8 @@
     doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
     doc.text(lang === 'es' ? 'PROPUESTA DE FINANCIAMIENTO' : 'FINANCING PROPOSAL', MARGIN, y);
     y += 20;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(17);
+    doc.setFont('times', 'bold');
+    doc.setFontSize(19);
     doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
     doc.splitTextToSize(currentProject.name || '', PAGE_W - MARGIN * 2).forEach((line) => {
       ensureSpace(20);
@@ -2801,8 +2810,8 @@
     // filled in once every chapter's real page number is known.
     const tocPageNum = pageNum;
     const tocY = y;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11.5);
+    doc.setFont('times', 'bold');
+    doc.setFontSize(12.5);
     doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
     doc.text(lang === 'es' ? 'Índice' : 'Contents', MARGIN, y);
     y += 24;
