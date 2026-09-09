@@ -74,6 +74,16 @@ function extractBusinessCardUrl() {
   return '/api/extract-business-card';
 }
 
+/* Same reasoning/hosting split as analyzeProjectUrl() above — see
+   api/generate-proposal.js, the "Generar borrador con IA" button behind
+   app/project.html's Investment Proposal editor section. */
+function generateProposalUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/generate-proposal`;
+  }
+  return '/api/generate-proposal';
+}
+
 /* ---------- Reference data (bilingual) ---------- */
 
 const ROLE_TYPES = [
@@ -5367,7 +5377,21 @@ const INAPlatform = {
      sums to something meaningful; totalPct can legitimately be less than
      100 (mix still being worked out) or, if someone overshoots, more than
      100 — callers (project.html) decide how to flag that, this just does
-     the arithmetic. */
+     the arithmetic.
+
+     FSU double-counting fix (Pablo's report, Sep 2026): the project's own
+     direct fsu_percentage/fsu_amount and an FSU-linked Program application's
+     own financing_percentage/financing_amount (e.g. applying to "FSU —
+     Créditos a Tasa Subsidiada (TASU)") represent the SAME pool of money,
+     not two separate ones — project.html's Financing tab already merges
+     them into one visual "Universal Service Fund (FSU)" block for exactly
+     this reason (see isFsuFinancingEntity() below). Simply adding both to
+     the total would double-count that money once a project applies to a
+     specific FSU program and fills in ITS share too. So: once at least one
+     FSU-linked program has its own saved share, that tracked share (or the
+     sum of them, if more than one) IS the FSU contribution to the total —
+     the direct project-level field is only used as a fallback while no FSU
+     program's share has been entered yet. */
   computeFinancingCoverage(project, projectPrograms) {
     const budget = project && project.budget_amount != null ? Number(project.budget_amount) : null;
     const pctOf = (amount) => (budget && budget > 0 && amount != null ? Math.round((Number(amount) / budget) * 100) : null);
@@ -5377,12 +5401,22 @@ const INAPlatform = {
       return derived != null ? derived : 0;
     };
 
-    const fsuPct = project ? effectivePct(project.fsu_percentage, project.fsu_amount) : 0;
     const otherPct = project ? effectivePct(project.other_financing_percentage, project.other_financing_amount) : 0;
     const programShares = (projectPrograms || [])
       .filter((row) => row.programs && row.programs.funding_stage !== 'preparation' && (row.financing_percentage != null || row.financing_amount != null))
-      .map((row) => ({ name: row.programs.name, pct: effectivePct(row.financing_percentage, row.financing_amount) }));
-    const programsPct = programShares.reduce((sum, s) => sum + s.pct, 0);
+      .map((row) => ({
+        name: row.programs.name,
+        pct: effectivePct(row.financing_percentage, row.financing_amount),
+        isFsu: this.isFsuFinancingEntity(row.programs.financing_entity),
+      }));
+    const fsuProgramShares = programShares.filter((s) => s.isFsu);
+    const fsuProgramsPct = fsuProgramShares.reduce((sum, s) => sum + s.pct, 0);
+    const fsuPct = fsuProgramShares.length
+      ? fsuProgramsPct
+      : (project ? effectivePct(project.fsu_percentage, project.fsu_amount) : 0);
+    // Non-FSU program shares only, to avoid adding the FSU ones a second
+    // time on top of fsuPct above.
+    const programsPct = programShares.reduce((sum, s) => sum + (s.isFsu ? 0 : s.pct), 0);
     return {
       fsuPct,
       otherPct,
@@ -5702,6 +5736,26 @@ const INAPlatform = {
       .delete()
       .eq('id', doc.id);
     if (error) throw error;
+  },
+
+  /* Signed URL (1 hour) to view/download an uploaded project or program
+     document — same pattern as getContactBusinessCardUrl() above (Master
+     Data), generalized here since project_documents/program_documents rows
+     both just store a .storage_path in the same private "project-documents"
+     bucket. Used by project.html's renderDocs() (modo consulta) and
+     new-project.html's renderExistingDocs() (modo edición) so clicking a
+     filename opens/previews the file instead of it being inert text.
+     No new RLS policy needed: the existing "doc_read_own_folder_or_advisor"
+     storage policy (schema.sql) already lets the doc's owner or any advisor
+     read it, which is exactly who can already see these two screens. */
+  async getDocumentUrl(storagePath) {
+    if (!storagePath) return null;
+    const { data, error } = await supabaseClient
+      .storage
+      .from('project-documents')
+      .createSignedUrl(storagePath, 3600);
+    if (error) throw error;
+    return data.signedUrl;
   },
 
   /* ---------- Shared field-answer pool + document autofill ----------
@@ -6597,7 +6651,13 @@ const INAPlatform = {
       body: JSON.stringify({ imageBase64, mediaType }),
     });
     const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(body.error || 'Card reading request failed.');
+    if (!res.ok) {
+      // Same fix as requestAnalysis() above — body.detail carries the
+      // actual diagnostic (e.g. the Groq/Anthropic error response) and was
+      // being silently dropped.
+      console.error('[extractBusinessCard] failed:', body.error, body.detail || body.raw || '');
+      throw new Error(body.error || 'Card reading request failed.');
+    }
     return body;
   },
 
@@ -6773,6 +6833,72 @@ const INAPlatform = {
       throw new Error(body.error || 'Analysis request failed.');
     }
     return body;
+  },
+
+  /* ---------- Investment Proposal document ----------
+     Pablo: "la plataforma INA tiene que generar un documento profesional
+     que incluya la propuesta definitiva y completa ... para presentar a
+     las entidades financieras". A separate, longer document from the
+     project summary "Descargar PDF" — see generateProposalPdf() in
+     app/project.html. Four narrative chapters (Introduction, Technical
+     Description, Benefits, Planning narrative) are AI-drafted on request
+     via api/generate-proposal.js, then reviewed/edited by the user and
+     explicitly saved — requestProposalDraft() below never writes to the
+     database itself, only updateProjectProposal() does, once the person
+     clicks Save. See supabase/migration_v50_investment_proposal.sql. */
+
+  /* Calls api/generate-proposal.js and returns its 8 bilingual fields
+     ({ introduction_es, introduction_en, technical_description_es, ... }).
+     No keepalive here (unlike requestAnalysis) — this is a normal
+     awaited request from a button click, not a fire-and-forget kicked off
+     right before a page navigation. */
+  async requestProposalDraft(projectId) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(generateProposalUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ projectId }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('[requestProposalDraft] failed:', body.error, body.detail || body.raw || '');
+      throw new Error(body.error || 'Proposal draft request failed.');
+    }
+    return body;
+  },
+
+  /* Persists the 4 chapters (both languages each) the person has reviewed/
+     edited in app/project.html's Investment Proposal section. Plain
+     .update() on projects — covered by the same RLS as every other project
+     field (owner, the assigned advisor, or an admin). `fields` uses the
+     same camelCase-in/snake_case-out convention as updateProject() above. */
+  async updateProjectProposal(projectId, {
+    introduction, introductionEn, technicalDescription, technicalDescriptionEn,
+    benefits, benefitsEn, planningNarrative, planningNarrativeEn,
+  } = {}) {
+    const { data, error } = await supabaseClient
+      .from('projects')
+      .update({
+        proposal_introduction: introduction != null ? introduction : null,
+        proposal_introduction_en: introductionEn != null ? introductionEn : null,
+        proposal_technical_description: technicalDescription != null ? technicalDescription : null,
+        proposal_technical_description_en: technicalDescriptionEn != null ? technicalDescriptionEn : null,
+        proposal_benefits: benefits != null ? benefits : null,
+        proposal_benefits_en: benefitsEn != null ? benefitsEn : null,
+        proposal_planning_narrative: planningNarrative != null ? planningNarrative : null,
+        proposal_planning_narrative_en: planningNarrativeEn != null ? planningNarrativeEn : null,
+        proposal_updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', projectId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
   },
 
   /* ---------- Edit locks (concurrent-edit prevention) ----------

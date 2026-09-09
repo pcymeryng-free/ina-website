@@ -3866,7 +3866,21 @@ const I18N = {
   "md.agencies.f.name": { "en": "Name", "es": "Nombre" },
   "md.agencies.f.jurisdiction": { "en": "Jurisdiction", "es": "Jurisdicción" },
   "md.agencies.f.country": { "en": "Country", "es": "País" },
-  "md.agencies.f.notes": { "en": "Notes", "es": "Notas" }
+  "md.agencies.f.notes": { "en": "Notes", "es": "Notas" },
+
+  /* Investment Proposal document — "Propuesta de Financiamiento (PDF)",
+     the formal document presented to financial institutions. See
+     supabase/migration_v50_investment_proposal.sql, api/generate-proposal.js
+     and generateProposalPdf()/proposalBlock in app/project.html. */
+  "pd.downloadProposal": { "en": "Financing Proposal (PDF)", "es": "Propuesta de Financiamiento (PDF)" },
+  "pd.proposal.title": { "en": "Investment Proposal", "es": "Propuesta de Inversión" },
+  "pd.proposal.help": { "en": "The formal document to present to financial institutions. Draft each chapter with AI, then review and edit freely — nothing saves until you click Save.", "es": "El documento formal a presentar ante entidades financieras. Redacte cada capítulo con IA y luego revise y edite libremente — nada se guarda hasta que haga clic en Guardar." },
+  "pd.proposal.draft": { "en": "Generate draft with AI", "es": "Generar borrador con IA" },
+  "pd.proposal.save": { "en": "Save", "es": "Guardar" },
+  "pd.proposal.introduction": { "en": "Introduction / Executive Summary", "es": "Introducción / Resumen Ejecutivo" },
+  "pd.proposal.technicalDescription": { "en": "Technical Description", "es": "Descripción Técnica" },
+  "pd.proposal.benefits": { "en": "Benefits", "es": "Beneficios" },
+  "pd.proposal.planning": { "en": "Planning", "es": "Planificación" }
 };
 const SELECT_OPTIONS = {"type": {"en": ["Government / Regulator", "Development Finance Institution", "Investor / Infrastructure Fund", "Technology Company", "Other"], "es": ["Gobierno / Regulador", "Institución de Financiamiento para el Desarrollo", "Inversor / Fondo de Infraestructura", "Empresa Tecnológica", "Otro"]}};
 
