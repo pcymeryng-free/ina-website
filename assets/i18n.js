@@ -3636,6 +3636,8 @@ const I18N = {
   "pd.close": { "en": "Close", "es": "Cerrar" },
   "pd.newProject": { "en": "New Project", "es": "Nuevo Proyecto" },
   "nav.project": { "en": "Project", "es": "Proyecto" },
+  "nav.documentation": { "en": "Documentation", "es": "Documentación" },
+  "nav.workflow": { "en": "Workflow", "es": "Flujo de Trabajo" },
   "nav.help": { "en": "Help", "es": "Ayuda" },
   "wf.actions.analysis": { "en": "Analysis", "es": "Análisis" },
   "wf.returnToNotAnalyzed": { "en": "Return to Not Analyzed", "es": "Devolver a No Analizado" },
