@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=21">
-<link rel="stylesheet" href="/assets/app.css?v=9">
+<link rel="stylesheet" href="/assets/style.css?v=22">
+<link rel="stylesheet" href="/assets/app.css?v=10">
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -27,7 +27,7 @@
           <a href="new-project.html" class="menu-item"><span data-i18n="pd.newProject">New Project</span></a>
           <a href="#" id="navEditLink" class="menu-item" style="display:none;"><span data-i18n="pd.editProject">Edit</span></a>
           <button type="button" id="navDownloadPdfBtn" class="menu-item"><span data-i18n="pd.downloadPdf">Download PDF</span></button>
-          <button type="button" id="navDownloadProposalBtn" class="menu-item" style="display:none;"><span data-i18n="pd.downloadProposal">Financing Proposal (PDF)</span></button>
+          <a href="#" id="navDownloadProposalBtn" class="menu-item" style="display:none;"><span data-i18n="pd.downloadProposal">Investment Proposal</span></a>
           <button type="button" id="navPromoteBtn" class="menu-item" style="display:none;"></button>
           <button type="button" id="navDemoteBtn" class="menu-item" style="display:none;"></button>
           <button type="button" id="navReturnToNotAnalyzedBtn" class="menu-item" style="display:none;"><span data-i18n="wf.returnToNotAnalyzed">Return to Not Analyzed</span></button>
@@ -98,7 +98,7 @@
             </button>
             <div class="menu-panel" id="actionsMenuPanel">
               <button type="button" id="downloadPdfBtn" class="menu-item"><span data-i18n="pd.downloadPdf">Download PDF</span></button>
-              <button type="button" id="downloadProposalBtn" class="menu-item" style="display:none;"><span data-i18n="pd.downloadProposal">Financing Proposal (PDF)</span></button>
+              <a href="#" id="downloadProposalBtn" class="menu-item" style="display:none;"><span data-i18n="pd.downloadProposal">Investment Proposal</span></a>
               <a href="#" id="editLink" class="menu-item" style="display:none;"><span data-i18n="pd.editProject">Edit</span></a>
               <button type="button" id="promoteBtn" class="menu-item" style="display:none;"></button>
               <button type="button" id="demoteBtn" class="menu-item" style="display:none;"></button>
@@ -305,43 +305,22 @@
            "Propuesta de Financiamiento (PDF)" document meant to be
            presented to financial institutions — see
            supabase/migration_v50_investment_proposal.sql,
-           api/generate-proposal.js and generateProposalPdf() below. Hidden
-           entirely for a viewer who can't edit the project (same bar as
-           Edit — owner, assigned advisor, or admin), since this is a
-           drafting workspace, not a read-only summary. Both languages'
-           text are kept in proposalDraft{} (see the script below) so
-           toggling the page's EN/ES language never loses whichever
-           language isn't currently shown in the textareas. -->
+           api/generate-proposal.js. Drafting, editing, previewing and
+           downloading all happen on their own dedicated screen,
+           app/investment-proposal.html (same split as the Risk Matrix's
+           inline summary + "Manage Risks" link above) — this block is
+           just a compact status card + entry point. Hidden entirely for a
+           viewer who can't edit the project (same bar as Edit — owner,
+           assigned advisor, or admin), since the editor itself is a
+           drafting workspace, not a read-only view. -->
       <div id="proposalBlock" class="info-block" style="margin-top:24px; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
           <div>
             <h4><span data-i18n="pd.proposal.title">Investment Proposal</span></h4>
-            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:640px;"><span data-i18n="pd.proposal.help">The formal document to present to financial institutions. Draft each chapter with AI, then review and edit freely — nothing saves until you click Save.</span></p>
+            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="prop.summary.help">The formal document to present to financial institutions — draft it with AI, edit, preview and download from its own screen.</span></p>
             <p id="proposalUpdatedAt" style="font-size:11.5px; color:var(--muted); margin-top:6px; display:none;"></p>
           </div>
-          <div style="display:flex; gap:8px; flex:0 0 auto; flex-wrap:wrap;">
-            <button type="button" id="proposalDraftBtn" class="btn ghost small"><span id="proposalDraftBtnLabel" data-i18n="pd.proposal.draft">Generate draft with AI</span></button>
-            <button type="button" id="proposalSaveBtn" class="btn small"><span data-i18n="pd.proposal.save">Save</span></button>
-          </div>
-        </div>
-
-        <div style="margin-top:18px; display:flex; flex-direction:column; gap:18px;">
-          <div class="field field-full">
-            <label for="proposalIntroduction"><span data-i18n="pd.proposal.introduction">Introduction / Executive Summary</span></label>
-            <textarea id="proposalIntroduction" style="min-height:140px;" placeholder=""></textarea>
-          </div>
-          <div class="field field-full">
-            <label for="proposalTechnicalDescription"><span data-i18n="pd.proposal.technicalDescription">Technical Description</span></label>
-            <textarea id="proposalTechnicalDescription" style="min-height:140px;" placeholder=""></textarea>
-          </div>
-          <div class="field field-full">
-            <label for="proposalBenefits"><span data-i18n="pd.proposal.benefits">Benefits</span></label>
-            <textarea id="proposalBenefits" style="min-height:140px;" placeholder=""></textarea>
-          </div>
-          <div class="field field-full">
-            <label for="proposalPlanningNarrative"><span data-i18n="pd.proposal.planning">Planning</span></label>
-            <textarea id="proposalPlanningNarrative" style="min-height:140px;" placeholder=""></textarea>
-          </div>
+          <a id="manageProposalBtn" href="#" class="btn ghost small" style="flex:0 0 auto;"><span data-i18n="prop.manage">Manage Proposal</span></a>
         </div>
       </div>
 
@@ -423,7 +402,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=52"></script>
+<script src="/assets/i18n.js?v=54"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <!-- pdf-lib: only used by generateProjectPdf() to splice real attached PDF
@@ -431,7 +410,7 @@
      another PDF's existing pages — see the "Anexos" section of that
      function). Everything else in the report still uses jsPDF alone. -->
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="/assets/platform.js?v=64"></script>
+<script src="/assets/platform.js?v=65"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -493,38 +472,15 @@
     });
   });
 
-  // Financing Proposal PDF — same busy-state pattern as downloadPdfBtn
-  // above. Both buttons stay display:none until init() decides the viewer
-  // may edit the proposal (canEditProposal — see below); a hidden button
-  // can't be clicked, so it's safe to wire this unconditionally here.
-  // captureProposalFields() first so whatever's on-screen right now (even
-  // unsaved) makes it into the exported document — generateProposalPdf()
-  // reads from proposalDraft, not from the DOM or the database.
+  // Investment Proposal — drafting, editing, previewing and downloading
+  // all live on their own dedicated screen now (app/investment-proposal.
+  // html, wired via manageProposalBtn/init() further down); these two nav
+  // entries are just shortcuts straight there. Both stay display:none
+  // until init() decides the viewer may edit the proposal.
   ['downloadProposalBtn', 'navDownloadProposalBtn'].forEach((id) => {
-    document.getElementById(id).addEventListener('click', () => {
-      const lang0 = INAPlatform.currentLang();
-      const btns = ['downloadProposalBtn', 'navDownloadProposalBtn'].map((bid) => document.getElementById(bid));
-      const originalLabels = btns.map((b) => b.querySelector('span') ? b.querySelector('span').textContent : b.textContent);
-      btns.forEach((b) => {
-        b.disabled = true;
-        const span = b.querySelector('span');
-        const label = lang0 === 'es' ? 'Generando…' : 'Generating…';
-        if (span) span.textContent = label; else b.textContent = label;
-      });
-      captureProposalFields();
-      generateProposalPdf().catch((e) => {
-        console.error('[generateProposalPdf] failed', e);
-        const lang = INAPlatform.currentLang();
-        alert((lang === 'es'
-          ? 'No se pudo generar la Propuesta de Financiamiento. Reintente; si el problema persiste, reporte este detalle: '
-          : "Couldn't generate the Financing Proposal. Please try again; if it persists, report this detail: ") + (e && e.message ? e.message : String(e)));
-      }).finally(() => {
-        btns.forEach((b, i) => {
-          b.disabled = false;
-          const span = b.querySelector('span');
-          if (span) span.textContent = originalLabels[i]; else b.textContent = originalLabels[i];
-        });
-      });
+    document.getElementById(id).addEventListener('click', (e) => {
+      e.preventDefault();
+      location.href = `investment-proposal.html?id=${projectId}`;
     });
   });
 
@@ -630,9 +586,7 @@
   // ordering.
   document.querySelectorAll('.lang-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      captureProposalFields();
       document.documentElement.setAttribute('lang', btn.getAttribute('data-lang'));
-      renderProposalFields();
       if (currentProject) renderProject(currentProject);
       if (currentProject) renderWorkflowActionsMenu(currentProject);
       if (currentAnalysis) renderAnalysis(currentAnalysis);
@@ -696,43 +650,6 @@
   // This project's Risk Matrix rows — see the Risk Matrix block below and
   // supabase/migration_v41_project_risks.sql.
   let currentRisks = [];
-  // Investment Proposal document — the four AI-draftable, user-editable
-  // narrative chapters, kept here (both languages at once) rather than
-  // read straight off currentProject, so unsaved edits in the visible
-  // language's textareas survive a language toggle (see
-  // captureProposalFields()/renderProposalFields() below) and so
-  // generateProposalPdf() always uses whatever's currently in the editor,
-  // not necessarily what's saved in the database yet.
-  let proposalDraft = {
-    introduction_es: '', introduction_en: '',
-    technical_description_es: '', technical_description_en: '',
-    benefits_es: '', benefits_en: '',
-    planning_narrative_es: '', planning_narrative_en: '',
-  };
-  const PROPOSAL_FIELD_IDS = {
-    introduction: 'proposalIntroduction',
-    technical_description: 'proposalTechnicalDescription',
-    benefits: 'proposalBenefits',
-    planning_narrative: 'proposalPlanningNarrative',
-  };
-  function renderProposalFields() {
-    const lang3 = INAPlatform.currentLang();
-    Object.keys(PROPOSAL_FIELD_IDS).forEach((key) => {
-      const el = document.getElementById(PROPOSAL_FIELD_IDS[key]);
-      if (el) el.value = proposalDraft[`${key}_${lang3}`] || '';
-    });
-  }
-  // Reads whatever's currently on-screen (the active UI language) back
-  // into proposalDraft — called before a language switch or a Save/PDF so
-  // in-progress edits are never silently dropped.
-  function captureProposalFields() {
-    const lang3 = INAPlatform.currentLang();
-    Object.keys(PROPOSAL_FIELD_IDS).forEach((key) => {
-      const el = document.getElementById(PROPOSAL_FIELD_IDS[key]);
-      if (el) proposalDraft[`${key}_${lang3}`] = el.value;
-    });
-  }
-
   function renderProject(p) {
     currentProject = p;
     document.getElementById('crumbName').textContent = p.name;
@@ -1589,8 +1506,9 @@
     // final page number) is known.
     const tocEntries = [];
 
-    // Same jsPDF-2.5.1-standard-font encoding bug as generateProposalPdf()
-    // (see that function's copy of this helper for the full explanation):
+    // Same jsPDF-2.5.1-standard-font encoding bug as the generateProposalPdf()
+    // in app/investment-proposal.html (see that page's copy of this helper
+    // for the full explanation):
     // "smart" typography (curly quotes, en/em dashes, non-breaking hyphens,
     // ellipsis) in user-typed or AI-generated text — project descriptions,
     // AI analysis rationale, risk titles — can make jsPDF mis-encode the
@@ -2583,609 +2501,6 @@
     }
   }
 
-  // ============================================================
-  // Investment Proposal ("Propuesta de Financiamiento") — a separate,
-  // longer document from generateProjectPdf() above, meant to be
-  // presented to financial institutions (IDB, USTDA, DFC, FSU, etc.) to
-  // request financing. Reuses the exact same jsPDF chapter helpers
-  // (h2/h3/bodyText/bulletText/attrRow/miniBar/newPage/ensureSpace/TOC/
-  // closing-page pattern) as generateProjectPdf(), duplicated here on
-  // purpose rather than shared — matching this codebase's own convention
-  // of intentional duplication between independent generation functions
-  // (see the AI-provider switch repeated across api/*.js). No Anexos
-  // chapter and no pdf-lib merge: Pablo explicitly did not want the raw
-  // attachment content in this document, so it's a plain doc.save() at
-  // the end, always. Chapters: Portada+Índice, Introducción, Descripción
-  // Técnica, Beneficios, Capítulo Financiero, Cumplimiento normativo/FSU,
-  // Matriz de Riesgos, Planificación, Equipo y Gobernanza, Cierre.
-  async function generateProposalPdf() {
-    if (!currentProject || !window.jspdf) return;
-    const lang = INAPlatform.currentLang();
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
-    const PAGE_W = doc.internal.pageSize.getWidth();
-    const PAGE_H = doc.internal.pageSize.getHeight();
-    const MARGIN = 54;
-    const NAVY = [11, 21, 38];
-    const AMBER = [217, 146, 46];
-    const AMBER_DEEP = [185, 116, 28];
-    const MUTED = [91, 102, 112];
-    const TEXT = [20, 20, 20];
-    const LINE = [221, 216, 206];
-
-    let y = 90;
-    let pageNum = 1;
-    let chapterIndex = 0;
-    let attrRowIndex = 0;
-    const tocEntries = [];
-
-    // AI-drafted (and hand-typed) text often contains "smart" typography —
-    // curly quotes, en/em dashes, non-breaking hyphens, ellipsis characters
-    // — and jsPDF 2.5.1's standard-font Tj encoder mishandles several of
-    // those code points: instead of mapping them through WinAnsiEncoding
-    // like it does for plain ASCII, it silently re-encodes the WHOLE
-    // string as UTF-16BE while still using the simple (non-Unicode) font
-    // resource, so the PDF viewer renders every character as two WinAnsi
-    // glyphs — a blank control byte plus the real letter — which is
-    // exactly the "space between every letter" bug Pablo reported.
-    // Normalizing to plain ASCII punctuation before any doc.text() call
-    // sidesteps the bug entirely. Applied to every text-drawing helper
-    // below plus the couple of doc.text() calls that draw raw
-    // AI/user-content strings directly (cover title, risk titles).
-    function sanitizeText(text) {
-      if (!text) return text;
-      return String(text)
-        .replace(/[‘’‚‛]/g, "'")
-        .replace(/[“”„‟]/g, '"')
-        .replace(/[‐‑‒–—]/g, '-')
-        .replace(/…/g, '...')
-        .replace(/[  -   ]/g, ' ')
-        .replace(/[​-‍﻿]/g, '');
-    }
-
-    function addHeaderBand() {
-      doc.setFillColor(NAVY[0], NAVY[1], NAVY[2]);
-      doc.rect(0, 0, PAGE_W, 64, 'F');
-      const logoH = 30;
-      try {
-        doc.addImage(INA_LOGO_DARK, 'PNG', MARGIN, (64 - logoH) / 2, logoH * INA_LOGO_RATIO, logoH);
-      } catch (e) {
-        console.error('[generateProposalPdf] INA_LOGO_DARK failed to embed, falling back to text', e);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.setTextColor(255, 255, 255);
-        doc.text('INA Platform', MARGIN, 40);
-      }
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(AMBER[0], AMBER[1], AMBER[2]);
-      doc.text(lang === 'es' ? 'PROPUESTA DE FINANCIAMIENTO' : 'FINANCING PROPOSAL', PAGE_W - MARGIN, 40, { align: 'right' });
-    }
-
-    function addFooter() {
-      doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
-      doc.setLineWidth(0.5);
-      doc.line(MARGIN, PAGE_H - 40, PAGE_W - MARGIN, PAGE_H - 40);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-      doc.text('international-network-advisors.com', MARGIN, PAGE_H - 26);
-    }
-
-    function newPage() {
-      addFooter();
-      doc.addPage();
-      pageNum += 1;
-      addHeaderBand();
-      y = 90;
-    }
-
-    function ensureSpace(h) {
-      if (y + h > PAGE_H - 56) newPage();
-    }
-
-    // Headings in this document use jsPDF's built-in 'times' (serif) family
-    // instead of 'helvetica', while body text (bodyText/bulletText/attrRow/
-    // miniBar below) stays on 'helvetica' (sans) — a lightweight echo of the
-    // site's actual brand pairing (Fraunces serif headings + IBM Plex Sans
-    // body, see assets/style.css --serif/--sans) without embedding the real
-    // webfont files, which this environment can't fetch directly (Google
-    // Fonts' CDN is network-blocked here). Pablo confirmed this trade-off
-    // explicitly. Scoped to generateProposalPdf() only — generateProjectPdf()
-    // (the other, "Descargar PDF" report) is untouched and stays all-Helvetica.
-    function h2(text) {
-      text = sanitizeText(text);
-      ensureSpace(60);
-      if (y > 90) y += 18;
-      chapterIndex += 1;
-      attrRowIndex = 0;
-      tocEntries.push({ title: text, page: pageNum });
-      doc.setFont('times', 'bold');
-      doc.setFontSize(20);
-      doc.setTextColor(AMBER[0], AMBER[1], AMBER[2]);
-      doc.text(String(chapterIndex).padStart(2, '0'), MARGIN, y + 9);
-      doc.setFont('times', 'bold');
-      doc.setFontSize(17);
-      doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-      doc.text(text, MARGIN + 40, y + 9);
-      y += 22;
-      doc.setDrawColor(AMBER[0], AMBER[1], AMBER[2]);
-      doc.setLineWidth(0.8);
-      doc.line(MARGIN, y, PAGE_W - MARGIN, y);
-      y += 26;
-    }
-
-    function h3(text) {
-      text = sanitizeText(text);
-      ensureSpace(18);
-      doc.setFont('times', 'bold');
-      doc.setFontSize(10.5);
-      doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-      doc.text(text, MARGIN, y);
-      y += 13;
-    }
-
-    function bodyText(text) {
-      text = sanitizeText(text);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9.5);
-      doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
-      const lines = doc.splitTextToSize(text || '', PAGE_W - MARGIN * 2);
-      lines.forEach((line) => {
-        ensureSpace(14);
-        doc.text(line, MARGIN, y);
-        y += 13.5;
-      });
-      y += 12;
-    }
-
-    function bulletText(text, indent) {
-      text = sanitizeText(text);
-      const ind = indent || 12;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
-      const lines = doc.splitTextToSize(text || '', PAGE_W - MARGIN * 2 - ind);
-      lines.forEach((line, i) => {
-        ensureSpace(13);
-        doc.text((i === 0 ? '•  ' : '   ') + line, MARGIN + ind, y);
-        y += 13;
-      });
-      y += 4;
-    }
-
-    const ATTR_LABEL_W = 150;
-    function attrRow(label, value) {
-      if (value == null || value === '') return;
-      label = sanitizeText(label);
-      value = sanitizeText(value);
-      ensureSpace(15);
-      const rowLines = doc.splitTextToSize(String(value), PAGE_W - MARGIN * 2 - ATTR_LABEL_W);
-      const rowH = 14 * rowLines.length;
-      if (attrRowIndex % 2 === 1) {
-        doc.setFillColor(246, 244, 239);
-        doc.rect(MARGIN - 4, y - 10, PAGE_W - MARGIN * 2 + 8, rowH, 'F');
-      }
-      attrRowIndex += 1;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-      doc.text(label, MARGIN, y);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9.5);
-      doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
-      doc.text(rowLines[0], MARGIN + ATTR_LABEL_W, y);
-      y += 14;
-      for (let i = 1; i < rowLines.length; i += 1) {
-        ensureSpace(14);
-        doc.text(rowLines[i], MARGIN + ATTR_LABEL_W, y);
-        y += 14;
-      }
-    }
-
-    function miniBar(label, pct, valueText) {
-      ensureSpace(16);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
-      const labelLines = doc.splitTextToSize(label || '', 165);
-      doc.text(labelLines[0] || '', MARGIN, y + 5);
-      const barX = MARGIN + 175;
-      const barW = PAGE_W - MARGIN - barX - 44;
-      doc.setFillColor(230, 230, 224);
-      doc.rect(barX, y - 2, barW, 7, 'F');
-      doc.setFillColor(AMBER[0], AMBER[1], AMBER[2]);
-      doc.rect(barX, y - 2, barW * (Math.max(0, Math.min(100, pct)) / 100), 7, 'F');
-      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-      doc.text(String(valueText), barX + barW + 8, y + 5);
-      y += 16;
-    }
-
-    function fsuInputText(key, fsu) {
-      const na = '—';
-      switch (key) {
-        case 'score_penetracion': {
-          const hogares = fsu.total_hogares != null ? fsu.total_hogares : na;
-          const accesos = fsu.accesos_fibra != null ? fsu.accesos_fibra : na;
-          const pct = fsu.penetracion_pct != null ? `${fsu.penetracion_pct}%` : na;
-          return lang === 'es'
-            ? `Total de hogares: ${hogares} · Accesos de fibra actuales: ${accesos} · Penetración calculada: ${pct}`
-            : `Total households: ${hogares} · Current fiber accesses: ${accesos} · Calculated penetration: ${pct}`;
-        }
-        case 'score_modelo_negocio':
-          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_MODELO_NEGOCIO_OPTIONS, fsu.modelo_negocio) || na;
-        case 'score_tecnologia':
-          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_TECNOLOGIA_OPTIONS, fsu.tecnologia) || na;
-        case 'score_velocidad': {
-          const v1 = fsu.velocidad_actual_mbps != null ? fsu.velocidad_actual_mbps : na;
-          const v2 = fsu.velocidad_propuesta_mbps != null ? fsu.velocidad_propuesta_mbps : na;
-          const pct = fsu.mejora_velocidad_pct != null ? `${fsu.mejora_velocidad_pct}%` : na;
-          return lang === 'es'
-            ? `Velocidad media actual: ${v1} Mbps · Velocidad propuesta: ${v2} Mbps · Mejora calculada: ${pct}`
-            : `Current average speed: ${v1} Mbps · Proposed speed: ${v2} Mbps · Calculated uplift: ${pct}`;
-        }
-        case 'score_salto_tecnologico':
-          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_SALTO_TECNOLOGICO_OPTIONS, fsu.salto_tecnologico) || na;
-        case 'score_densidad':
-          return (lang === 'es' ? 'Población de la localidad: ' : 'Locality population: ') + (fsu.poblacion_localidad != null ? fsu.poblacion_localidad : na);
-        case 'score_capacidad_tecnica':
-          return INAPlatform.fsuOptionLabel(INAPlatform.FSU_CAPACIDAD_TECNICA_OPTIONS, fsu.anos_capacidad_tecnica) || na;
-        default:
-          return '';
-      }
-    }
-
-    // ---- Portada ----
-    addHeaderBand();
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
-    doc.text(lang === 'es' ? 'PROPUESTA DE FINANCIAMIENTO' : 'FINANCING PROPOSAL', MARGIN, y);
-    y += 20;
-    doc.setFont('times', 'bold');
-    doc.setFontSize(19);
-    doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-    doc.splitTextToSize(sanitizeText(currentProject.name) || '', PAGE_W - MARGIN * 2).forEach((line) => {
-      ensureSpace(20);
-      doc.text(line, MARGIN, y);
-      y += 20;
-    });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-    doc.text(INAPlatform.projectTypeLabel(currentProject.project_type), MARGIN, y);
-    y += 10;
-    doc.setDrawColor(AMBER[0], AMBER[1], AMBER[2]);
-    doc.setLineWidth(1.2);
-    doc.line(MARGIN, y + 4, PAGE_W - MARGIN, y + 4);
-    y += 28;
-
-    // Reserve space for the índice — same mechanic as generateProjectPdf():
-    // filled in once every chapter's real page number is known.
-    const tocPageNum = pageNum;
-    const tocY = y;
-    doc.setFont('times', 'bold');
-    doc.setFontSize(12.5);
-    doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-    doc.text(lang === 'es' ? 'Índice' : 'Contents', MARGIN, y);
-    y += 24;
-    y += 9 * 16.5 + 10;
-
-    // ============================================================
-    // 1. Introducción / Resumen Ejecutivo
-    // ============================================================
-    h2(lang === 'es' ? 'Introducción y Resumen Ejecutivo' : 'Introduction and Executive Summary');
-    if (proposalDraft[`introduction_${lang}`]) {
-      bodyText(proposalDraft[`introduction_${lang}`]);
-    } else {
-      bodyText(lang === 'es'
-        ? 'Esta sección no fue redactada todavía. Vuelva a la ficha del proyecto y use "Generar borrador con IA" o escriba el texto manualmente.'
-        : 'This section hasn\'t been drafted yet. Go back to the project page and use "Generate draft with AI" or write the text manually.');
-    }
-
-    // ============================================================
-    // 2. Descripción Técnica
-    // ============================================================
-    h2(lang === 'es' ? 'Descripción Técnica' : 'Technical Description');
-    if (proposalDraft[`technical_description_${lang}`]) {
-      bodyText(proposalDraft[`technical_description_${lang}`]);
-    } else {
-      bodyText(lang === 'es'
-        ? 'Esta sección no fue redactada todavía.'
-        : "This section hasn't been drafted yet.");
-    }
-    y += 4;
-    attrRow(lang === 'es' ? 'Tipo de proyecto' : 'Project type', INAPlatform.projectTypeLabel(currentProject.project_type));
-    attrRow(lang === 'es' ? 'País' : 'Country', INAPlatform.countryLabel(currentProject.country));
-    attrRow(lang === 'es' ? 'Presupuesto total' : 'Total budget', INAPlatform.formatCurrency(currentProject.budget_amount));
-    attrRow(lang === 'es' ? 'Presupuesto total (USD)' : 'Total budget (USD)', INAPlatform.formatCurrencyUSD(currentProject.budget_amount_usd));
-    attrRow(lang === 'es' ? 'Duración' : 'Duration', INAPlatform.formatDuration(currentProject.duration_value, currentProject.duration_unit));
-    attrRow(lang === 'es' ? 'Complejidad' : 'Complexity', currentProject.complexity ? INAPlatform.complexityLabel(currentProject.complexity) : null);
-    attrRow(lang === 'es' ? 'Criticidad técnica' : 'Technical criticality', currentProject.technical_criticality ? INAPlatform.technicalCriticalityLabel(currentProject.technical_criticality) : null);
-
-    // ============================================================
-    // 3. Beneficios
-    // ============================================================
-    h2(lang === 'es' ? 'Beneficios' : 'Benefits');
-    if (proposalDraft[`benefits_${lang}`]) {
-      bodyText(proposalDraft[`benefits_${lang}`]);
-    } else {
-      bodyText(lang === 'es'
-        ? 'Esta sección no fue redactada todavía.'
-        : "This section hasn't been drafted yet.");
-    }
-    if (currentProject.beneficiary_count != null) {
-      y += 4;
-      attrRow(lang === 'es' ? 'Beneficiarios' : 'Beneficiaries', currentProject.beneficiary_count.toLocaleString(lang === 'es' ? 'es-AR' : 'en-US'));
-    }
-
-    // ============================================================
-    // 4. Capítulo Financiero — INAPlatform.computeFinancingCoverage() is
-    // the same single source of truth used across the platform.
-    // ============================================================
-    h2(lang === 'es' ? 'Capítulo Financiero' : 'Financial Chapter');
-    {
-      const { fsuPct, otherPct, programShares, totalPct } = INAPlatform.computeFinancingCoverage(currentProject, currentProjectPrograms);
-      const hasAnyFinancing = fsuPct > 0 || otherPct > 0 || programShares.length > 0
-        || currentProject.fsu_amount != null || currentProject.fsu_amount_usd != null
-        || currentProject.other_financing_amount != null;
-
-      attrRow(lang === 'es' ? 'Presupuesto total' : 'Total budget', INAPlatform.formatCurrency(currentProject.budget_amount));
-      attrRow(lang === 'es' ? 'Presupuesto total (USD)' : 'Total budget (USD)', INAPlatform.formatCurrencyUSD(currentProject.budget_amount_usd));
-      if (currentProject.budget_amount_usd != null && currentProject.exchange_rate != null) {
-        const arsEquiv = INAPlatform.usdToArs(currentProject.budget_amount_usd, currentProject.exchange_rate);
-        attrRow(lang === 'es' ? 'Equivalente en ARS (calculado)' : 'ARS equivalent (calculated)', arsEquiv != null ? INAPlatform.formatCurrency(arsEquiv) : null);
-      }
-      y += 4;
-
-      if (!hasAnyFinancing) {
-        bodyText(lang === 'es' ? 'Este proyecto todavía no tiene financiamiento cargado.' : 'This project has no financing loaded yet.');
-      } else {
-        miniBar(lang === 'es' ? 'Cobertura total del presupuesto' : 'Total budget coverage', totalPct, `${totalPct}%`);
-        y += 4;
-        if (fsuPct > 0 || currentProject.fsu_amount != null || currentProject.fsu_amount_usd != null) {
-          h3(lang === 'es' ? 'Fondo del Servicio Universal (FSU)' : 'Universal Service Fund (FSU)');
-          attrRow(lang === 'es' ? '% del presupuesto' : '% of budget', fsuPct > 0 ? `${fsuPct}%` : null);
-          attrRow(lang === 'es' ? 'Monto' : 'Amount', INAPlatform.formatCurrency(currentProject.fsu_amount));
-          attrRow(lang === 'es' ? 'Monto (USD)' : 'Amount (USD)', INAPlatform.formatCurrencyUSD(currentProject.fsu_amount_usd));
-          y += 4;
-        }
-        const otherProgramShares = programShares.filter((s) => !s.isFsu);
-        if (otherProgramShares.length) {
-          h3(lang === 'es' ? 'Programas de financiamiento' : 'Financing programs');
-          otherProgramShares.forEach((s) => bulletText(`${s.name} — ${s.pct}%`));
-          y += 4;
-        }
-        if (otherPct > 0 || currentProject.other_financing_amount != null) {
-          h3(lang === 'es' ? 'Otra fuente' : 'Other source');
-          attrRow(lang === 'es' ? '% del presupuesto' : '% of budget', otherPct > 0 ? `${otherPct}%` : null);
-          attrRow(lang === 'es' ? 'Monto' : 'Amount', INAPlatform.formatCurrency(currentProject.other_financing_amount));
-          attrRow(lang === 'es' ? 'Notas' : 'Notes', currentProject.other_financing_notes);
-          y += 4;
-        }
-      }
-
-      // Robustez del modelo financiero — from the latest AI/manual analysis,
-      // if one exists, so the financial narrative is backed by the same
-      // Investment Readiness Index™ dimension shown elsewhere on the
-      // platform rather than repeating it from scratch.
-      if (currentAnalysis) {
-        let data = currentAnalysis;
-        if (currentAnalysis.source === 'manual' && currentAnalysis.raw_model_output) {
-          try {
-            const manualAnswers = JSON.parse(currentAnalysis.raw_model_output);
-            const recomputed = INAPlatform.computeManualAssessment(
-              currentProject.project_type,
-              manualAnswers,
-              { beneficiaryCount: currentProject.beneficiary_count }
-            );
-            data = Object.assign({}, currentAnalysis, recomputed);
-          } catch (e) { /* fall back to the stored fields */ }
-        }
-        const localized = INAPlatform.localizeAnalysis(data, lang);
-        const dim = localized.dimensions && localized.dimensions.financial_robustness;
-        if (dim) {
-          h3(lang === 'es' ? 'Robustez del Modelo Financiero' : 'Financial Model Robustness');
-          if (typeof dim.score === 'number') {
-            miniBar(lang === 'es' ? 'Puntaje' : 'Score', dim.score, String(dim.score));
-          }
-          if (dim.rationale) bodyText(dim.rationale);
-        }
-      }
-    }
-
-    // ============================================================
-    // 5. Cumplimiento normativo / FSU
-    // ============================================================
-    if (currentFsu) {
-      h2(lang === 'es' ? 'Cumplimiento normativo / FSU' : 'Regulatory Compliance / FSU');
-      bodyText(lang === 'es'
-        ? 'Puntaje calculado según los criterios de elegibilidad del Fondo del Servicio Universal (Res. ENACOM 359/2025).'
-        : 'Score calculated per the Universal Service Fund eligibility criteria (ENACOM Resolution 359/2025).');
-      INAPlatform.FSU_CRITERIA_META.forEach((c) => {
-        ensureSpace(24);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9.5);
-        doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-        doc.text(INAPlatform.fsuCriterionLabel(c.key), MARGIN, y);
-        doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
-        doc.text(`${currentFsu[c.key]} / ${c.max}`, PAGE_W - MARGIN, y, { align: 'right' });
-        y += 12;
-        bulletText(fsuInputText(c.key, currentFsu), 8);
-        y += 4;
-      });
-      ensureSpace(22);
-      doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
-      doc.setLineWidth(0.5);
-      doc.line(MARGIN, y, PAGE_W - MARGIN, y);
-      y += 16;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-      doc.text(lang === 'es' ? 'Puntaje Total FSU' : 'Total FSU Score', MARGIN, y);
-      doc.text(`${currentFsu.score_total} / 100`, PAGE_W - MARGIN, y, { align: 'right' });
-      y += 24;
-    }
-
-    // ============================================================
-    // 6. Matriz de Riesgos
-    // ============================================================
-    if (currentRisks && currentRisks.length) {
-      h2(lang === 'es' ? 'Matriz de Riesgos' : 'Risk Matrix');
-      const bandLabels = lang === 'es'
-        ? { low: 'Bajo', medium: 'Medio', high: 'Alto', critical: 'Crítico' }
-        : { low: 'Low', medium: 'Medium', high: 'High', critical: 'Critical' };
-      const summary = INAPlatform.riskMatrixSummary(currentRisks);
-      ensureSpace(14);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9.5);
-      doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
-      const countsLine = ['critical', 'high', 'medium', 'low']
-        .map((band) => `${bandLabels[band]}: ${summary.counts[band] || 0}`)
-        .join('   ·   ');
-      doc.text(countsLine, MARGIN, y);
-      y += 20;
-      currentRisks.slice().sort((a, b) => b.risk_score - a.risk_score).forEach((r) => {
-        ensureSpace(20);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9.8);
-        doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-        doc.text(sanitizeText(r.title) || '', MARGIN, y);
-        doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
-        doc.text(`${r.risk_score} / 25 · ${INAPlatform.riskScoreBandLabel(r.risk_score)}`, PAGE_W - MARGIN, y, { align: 'right' });
-        y += 13;
-        bulletText(`${lang === 'es' ? 'Categoría' : 'Category'}: ${INAPlatform.riskCategoryLabel(r.category)}  ·  ${lang === 'es' ? 'Estado' : 'Status'}: ${INAPlatform.riskStatusLabel(r.status)}`, 8);
-        if (r.mitigation_measures) bulletText((lang === 'es' ? 'Mitigación: ' : 'Mitigation: ') + r.mitigation_measures, 8);
-        y += 6;
-      });
-    }
-
-    // ============================================================
-    // 7. Planificación
-    // ============================================================
-    h2(lang === 'es' ? 'Planificación' : 'Planning');
-    if (proposalDraft[`planning_narrative_${lang}`]) {
-      bodyText(proposalDraft[`planning_narrative_${lang}`]);
-    } else {
-      bodyText(lang === 'es'
-        ? 'Esta sección no fue redactada todavía.'
-        : "This section hasn't been drafted yet.");
-    }
-    if (currentRoadmaps && currentRoadmaps.length) {
-      y += 4;
-      h3(lang === 'es' ? 'Hojas de ruta activas' : 'Active roadmaps');
-      const statusLabels = lang === 'es'
-        ? { in_progress: 'En curso', completed: 'Completada', abandoned: 'Abandonada' }
-        : { in_progress: 'In progress', completed: 'Completed', abandoned: 'Abandoned' };
-      currentRoadmaps.forEach((g) => {
-        const entity = g.performing_entity_name
-          ? ` — ${g.performing_entity_name}${g.performing_entity_type ? ` (${INAPlatform.roadmapEntityTypeLabel(g.performing_entity_type)})` : ''}`
-          : '';
-        bulletText(`${g.name}${entity} · ${statusLabels[g.status] || g.status}`);
-      });
-    }
-
-    // ============================================================
-    // 8. Equipo y Gobernanza
-    // ============================================================
-    h2(lang === 'es' ? 'Equipo y Gobernanza' : 'Team and Governance');
-    if (currentProject.generating_entity_name) {
-      h3(lang === 'es' ? 'Entidad generadora' : 'Generating entity');
-      bodyText(currentProject.generating_entity_name + (currentProject.generating_entity_type ? ` (${INAPlatform.entityTypeLabel(currentProject.generating_entity_type)})` : ''));
-    }
-    if (currentProject.profiles && currentProject.profiles.full_name) {
-      h3(lang === 'es' ? 'Responsable del proyecto' : 'Project owner');
-      bodyText(currentProject.profiles.full_name + (currentProject.profiles.organization ? ` — ${currentProject.profiles.organization}` : ''));
-    }
-    if (currentProject.assigned_advisor && currentProject.assigned_advisor.full_name) {
-      h3(lang === 'es' ? 'Asesor de INA asignado' : 'Assigned INA advisor');
-      bodyText(currentProject.assigned_advisor.full_name + (currentProject.assigned_advisor.organization ? ` — ${currentProject.assigned_advisor.organization}` : ''));
-    }
-    if (!currentProject.generating_entity_name && !(currentProject.profiles && currentProject.profiles.full_name) && !(currentProject.assigned_advisor && currentProject.assigned_advisor.full_name)) {
-      bodyText(lang === 'es' ? 'No hay información de equipo/gobernanza cargada para este proyecto.' : 'No team/governance information is on file for this project.');
-    }
-
-    // ============================================================
-    // Cierre
-    // ============================================================
-    newPage();
-    y = 220;
-    try {
-      const logoH = 34;
-      doc.addImage(INA_LOGO_LIGHT, 'PNG', (PAGE_W - logoH * INA_LOGO_RATIO) / 2, y, logoH * INA_LOGO_RATIO, logoH);
-      y += logoH + 28;
-    } catch (e) {
-      console.error('[generateProposalPdf] INA_LOGO_LIGHT failed to embed on closing page, skipping it', e);
-    }
-    doc.setDrawColor(AMBER[0], AMBER[1], AMBER[2]);
-    doc.setLineWidth(1.2);
-    doc.line(PAGE_W / 2 - 40, y, PAGE_W / 2 + 40, y);
-    y += 26;
-    h3(lang === 'es' ? 'Elaborado por INA' : 'Prepared by INA');
-    bodyText(lang === 'es'
-      ? `Esta propuesta de financiamiento fue elaborada por INA (International Network Advisors) en el marco de un trabajo de consultoría para el proyecto "${currentProject.name || ''}", sobre la base de la información provista por el proponente y registrada en la plataforma INA. Su objetivo es presentar al proyecto ante entidades financieras para la obtención de financiamiento.`
-      : `This financing proposal was prepared by INA (International Network Advisors) as part of a consulting engagement for the "${currentProject.name || ''}" project, based on information provided by the proponent and recorded on the INA platform. Its purpose is to present the project to financial institutions in order to obtain financing.`);
-    h3(lang === 'es' ? 'Originalidad y uso del documento' : 'Originality and use of this document');
-    bodyText(lang === 'es'
-      ? 'El contenido de este documento — incluyendo su estructura, redacción, análisis y metodología (Investment Readiness Index™, Multilateral Finance Navigator™, FSU Scoring, entre otros) — es propiedad de INA (International Network Advisors) y del proponente del proyecto. Se entrega para uso exclusivo del destinatario en el marco de la evaluación de esta propuesta de financiamiento.'
-      : "This document's content — including its structure, drafting, analysis and methodology (Investment Readiness Index™, Multilateral Finance Navigator™, FSU Scoring, among others) — is the property of INA (International Network Advisors) and the project's proponent. It is provided for the recipient's exclusive use in evaluating this financing proposal.");
-    y += 10;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-    doc.text((lang === 'es' ? 'Generado el ' : 'Generated on ') + new Date().toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }), MARGIN, y);
-    addFooter();
-
-    // ---- Índice — drawn back onto the cover page now that every
-    // chapter's real page number is known. ----
-    try {
-      doc.setPage(tocPageNum);
-      let tocRowY = tocY + 24;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      tocEntries.forEach((entry) => {
-        doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
-        const pageLabel = String(entry.page);
-        const pageLabelW = doc.getTextWidth(pageLabel);
-        const titleMaxW = PAGE_W - MARGIN * 2 - pageLabelW - 14;
-        const titleLine = doc.splitTextToSize(entry.title, titleMaxW)[0];
-        doc.text(titleLine, MARGIN, tocRowY);
-        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-        const dotsW = PAGE_W - MARGIN * 2 - doc.getTextWidth(titleLine) - pageLabelW - 8;
-        if (dotsW > 6) {
-          const dotStr = '.'.repeat(Math.max(0, Math.floor(dotsW / doc.getTextWidth('.'))));
-          doc.text(dotStr, MARGIN + doc.getTextWidth(titleLine) + 4, tocRowY);
-        }
-        doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
-        doc.text(pageLabel, PAGE_W - MARGIN, tocRowY, { align: 'right' });
-        tocRowY += 16.5;
-      });
-    } catch (e) {
-      console.error('[generateProposalPdf] table of contents failed to draw, continuing without it', e);
-    }
-
-    // ---- Deferred page numbers ----
-    try {
-      const totalPages = doc.internal.getNumberOfPages();
-      for (let p = 1; p <= totalPages; p += 1) {
-        doc.setPage(p);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-        doc.text(
-          lang === 'es' ? `Página ${p} de ${totalPages}` : `Page ${p} of ${totalPages}`,
-          PAGE_W - MARGIN, PAGE_H - 26, { align: 'right' }
-        );
-      }
-    } catch (e) {
-      console.error('[generateProposalPdf] deferred page numbering failed, continuing without it', e);
-    }
-
-    const safeName = (currentProject.name || 'project').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'project';
-    doc.save(`INA_Propuesta_${safeName}.pdf`);
-  }
-
   async function runAnalysisAndPoll() {
     showPending();
     pollStartedAt = Date.now();
@@ -3775,25 +3090,20 @@
     // assigned-advisor-only rule: drafting proposal prose is a writing/
     // decision-support aid, not a change to the project record itself.
     // Hidden entirely for a viewer who can't edit — a read-only summary
-    // wouldn't be worth showing (that's what "Descargar PDF" already is).
+    // wouldn't be worth showing. Drafting/editing/previewing/downloading
+    // itself now all happens on its own screen, app/investment-proposal.
+    // html (see manageProposalBtn below) — this block is just the status
+    // card + entry point, same split as the Risk Matrix block above.
     const canEditProposal = isOwner || isAssignedAdvisor || isAdminForAnalysis;
     if (canEditProposal) {
       document.getElementById('proposalBlock').style.display = 'block';
+      const manageHref = `investment-proposal.html?id=${projectId}`;
+      document.getElementById('manageProposalBtn').href = manageHref;
       ['downloadProposalBtn', 'navDownloadProposalBtn'].forEach((id) => {
-        document.getElementById(id).style.display = 'inline-flex';
+        const el = document.getElementById(id);
+        el.href = manageHref;
+        el.style.display = 'inline-flex';
       });
-
-      proposalDraft = {
-        introduction_es: project.proposal_introduction || '',
-        introduction_en: project.proposal_introduction_en || '',
-        technical_description_es: project.proposal_technical_description || '',
-        technical_description_en: project.proposal_technical_description_en || '',
-        benefits_es: project.proposal_benefits || '',
-        benefits_en: project.proposal_benefits_en || '',
-        planning_narrative_es: project.proposal_planning_narrative || '',
-        planning_narrative_en: project.proposal_planning_narrative_en || '',
-      };
-      renderProposalFields();
       if (project.proposal_updated_at) {
         const updatedEl = document.getElementById('proposalUpdatedAt');
         const lang4 = INAPlatform.currentLang();
@@ -3801,84 +3111,6 @@
         updatedEl.textContent = (lang4 === 'es' ? 'Última actualización: ' : 'Last updated: ') + dateStr;
         updatedEl.style.display = 'block';
       }
-
-      // "Generate draft with AI" — calls api/generate-proposal.js (via
-      // INAPlatform.requestProposalDraft), which reads the project's own
-      // data/attachments and returns 8 bilingual fields. This only fills
-      // proposalDraft/the textareas — nothing is saved to the database
-      // until the person reviews the text and clicks Save.
-      const draftBtn = document.getElementById('proposalDraftBtn');
-      const draftBtnLabel = document.getElementById('proposalDraftBtnLabel');
-      draftBtn.addEventListener('click', async () => {
-        const lang5 = INAPlatform.currentLang();
-        const originalLabel = draftBtnLabel.textContent;
-        draftBtn.disabled = true;
-        draftBtnLabel.textContent = lang5 === 'es' ? 'Redactando…' : 'Drafting…';
-        try {
-          const result = await INAPlatform.requestProposalDraft(projectId);
-          proposalDraft = {
-            introduction_es: result.introduction_es || '',
-            introduction_en: result.introduction_en || '',
-            technical_description_es: result.technical_description_es || '',
-            technical_description_en: result.technical_description_en || '',
-            benefits_es: result.benefits_es || '',
-            benefits_en: result.benefits_en || '',
-            planning_narrative_es: result.planning_narrative_es || '',
-            planning_narrative_en: result.planning_narrative_en || '',
-          };
-          renderProposalFields();
-        } catch (err) {
-          alert(lang5 === 'es'
-            ? `No se pudo generar el borrador: ${err.message || err}`
-            : `Couldn't generate the draft: ${err.message || err}`);
-        } finally {
-          draftBtn.disabled = false;
-          draftBtnLabel.textContent = originalLabel;
-        }
-      });
-
-      // Save — persists whatever's currently on-screen (both languages,
-      // via captureProposalFields()) to projects.proposal_* /
-      // proposal_*_en. Plain .update(), covered by the same RLS as every
-      // other project field.
-      const saveBtn = document.getElementById('proposalSaveBtn');
-      saveBtn.addEventListener('click', async () => {
-        const lang6 = INAPlatform.currentLang();
-        const originalLabel = saveBtn.querySelector('span') ? saveBtn.querySelector('span').textContent : saveBtn.textContent;
-        captureProposalFields();
-        saveBtn.disabled = true;
-        const setLabel = (text) => {
-          const span = saveBtn.querySelector('span');
-          if (span) span.textContent = text; else saveBtn.textContent = text;
-        };
-        setLabel(lang6 === 'es' ? 'Guardando…' : 'Saving…');
-        try {
-          const updated = await INAPlatform.updateProjectProposal(projectId, {
-            introduction: proposalDraft.introduction_es,
-            introductionEn: proposalDraft.introduction_en,
-            technicalDescription: proposalDraft.technical_description_es,
-            technicalDescriptionEn: proposalDraft.technical_description_en,
-            benefits: proposalDraft.benefits_es,
-            benefitsEn: proposalDraft.benefits_en,
-            planningNarrative: proposalDraft.planning_narrative_es,
-            planningNarrativeEn: proposalDraft.planning_narrative_en,
-          });
-          currentProject = updated;
-          const updatedEl = document.getElementById('proposalUpdatedAt');
-          if (updated.proposal_updated_at) {
-            const dateStr = new Date(updated.proposal_updated_at).toLocaleString(lang6 === 'es' ? 'es-AR' : 'en-US');
-            updatedEl.textContent = (lang6 === 'es' ? 'Última actualización: ' : 'Last updated: ') + dateStr;
-            updatedEl.style.display = 'block';
-          }
-        } catch (err) {
-          alert(lang6 === 'es'
-            ? `No se pudo guardar la propuesta: ${err.message || err}`
-            : `Couldn't save the proposal: ${err.message || err}`);
-        } finally {
-          saveBtn.disabled = false;
-          setLabel(originalLabel);
-        }
-      });
     }
 
     // FSU Scoring block — shown for any viewer (owner or advisor) as long
