@@ -605,6 +605,19 @@ form.advisory .full{ grid-column: 1 / -1; }
 .risk-summary-label{ font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-top:8px; }
 @media (max-width:520px){ .risk-summary{ grid-template-columns:repeat(2, 1fr); max-width:none; } }
 
+/* Edit/Preview tabs — app/investment-proposal.html. Plain underline-style
+   tabs rather than a boxed/pill control, to match this app shell's overall
+   restrained, editorial look (see .btn/.menu-item for the same spirit). */
+.prop-tabs{ display:flex; gap:4px; border-bottom:1px solid var(--paper-line); }
+.prop-tab{
+  appearance:none; background:none; border:none; cursor:pointer;
+  padding:10px 4px 12px; margin-right:22px; font-family:var(--mono);
+  font-size:12px; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px;
+}
+.prop-tab:hover{ color:var(--text); }
+.prop-tab.active{ color:var(--text); border-bottom-color:var(--amber-deep); }
+
 .risk-top-card{
   display:flex; align-items:center; flex-wrap:wrap; gap:6px; font-size:13px; color:var(--text);
   padding:10px 14px; background:var(--paper-2); border:1px solid var(--paper-line); border-radius:8px;

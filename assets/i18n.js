@@ -3872,7 +3872,7 @@ const I18N = {
      the formal document presented to financial institutions. See
      supabase/migration_v50_investment_proposal.sql, api/generate-proposal.js
      and generateProposalPdf()/proposalBlock in app/project.html. */
-  "pd.downloadProposal": { "en": "Financing Proposal (PDF)", "es": "Propuesta de Financiamiento (PDF)" },
+  "pd.downloadProposal": { "en": "Investment Proposal", "es": "Propuesta de Financiamiento" },
   "pd.proposal.title": { "en": "Investment Proposal", "es": "Propuesta de Inversión" },
   "pd.proposal.help": { "en": "The formal document to present to financial institutions. Draft each chapter with AI, then review and edit freely — nothing saves until you click Save.", "es": "El documento formal a presentar ante entidades financieras. Redacte cada capítulo con IA y luego revise y edite libremente — nada se guarda hasta que haga clic en Guardar." },
   "pd.proposal.draft": { "en": "Generate draft with AI", "es": "Generar borrador con IA" },
@@ -3880,7 +3880,20 @@ const I18N = {
   "pd.proposal.introduction": { "en": "Introduction / Executive Summary", "es": "Introducción / Resumen Ejecutivo" },
   "pd.proposal.technicalDescription": { "en": "Technical Description", "es": "Descripción Técnica" },
   "pd.proposal.benefits": { "en": "Benefits", "es": "Beneficios" },
-  "pd.proposal.planning": { "en": "Planning", "es": "Planificación" }
+  "pd.proposal.planning": { "en": "Planning", "es": "Planificación" },
+
+  /* app/investment-proposal.html — the dedicated Investment Proposal
+     editor screen (draft with AI, edit, save, preview, download), split
+     out of project.html's inline proposalBlock. pd.proposal.* keys above
+     are reused for the field labels/draft-save buttons on that page. */
+  "prop.title": { "en": "Investment Proposal", "es": "Propuesta de Financiamiento" },
+  "prop.manage": { "en": "Manage Proposal", "es": "Gestionar Propuesta" },
+  "prop.summary.help": { "en": "The formal document to present to financial institutions — draft it with AI, edit, preview and download from its own screen.", "es": "El documento formal a presentar ante entidades financieras — redáctelo con IA, edítelo, previsualícelo y descárguelo desde su propia pantalla." },
+  "prop.tab.edit": { "en": "Edit", "es": "Editar" },
+  "prop.tab.preview": { "en": "Preview", "es": "Vista previa" },
+  "prop.download": { "en": "Download PDF", "es": "Descargar PDF" },
+  "prop.preview.help": { "en": "This is exactly what the downloaded PDF will look like — switch tabs or edit and preview again to see changes.", "es": "Así se verá exactamente el PDF descargado — cambie de pestaña o edite y vuelva a previsualizar para ver los cambios." },
+  "prop.preview.loading": { "en": "Rendering preview…", "es": "Generando vista previa…" }
 };
 const SELECT_OPTIONS = {"type": {"en": ["Government / Regulator", "Development Finance Institution", "Investor / Infrastructure Fund", "Technology Company", "Other"], "es": ["Gobierno / Regulador", "Institución de Financiamiento para el Desarrollo", "Inversor / Fondo de Infraestructura", "Empresa Tecnológica", "Otro"]}};
 
