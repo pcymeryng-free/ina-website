@@ -1589,6 +1589,25 @@
     // final page number) is known.
     const tocEntries = [];
 
+    // Same jsPDF-2.5.1-standard-font encoding bug as generateProposalPdf()
+    // (see that function's copy of this helper for the full explanation):
+    // "smart" typography (curly quotes, en/em dashes, non-breaking hyphens,
+    // ellipsis) in user-typed or AI-generated text — project descriptions,
+    // AI analysis rationale, risk titles — can make jsPDF mis-encode the
+    // whole line as broken UTF-16, rendering as a gap between every
+    // letter. Normalizing to plain ASCII punctuation before doc.text()
+    // sidesteps it.
+    function sanitizeText(text) {
+      if (!text) return text;
+      return String(text)
+        .replace(/[‘’‚‛]/g, "'")
+        .replace(/[“”„‟]/g, '"')
+        .replace(/[‐‑‒–—]/g, '-')
+        .replace(/…/g, '...')
+        .replace(/[\xa0 -   ]/g, ' ')
+        .replace(/[​-‍﻿]/g, '');
+    }
+
     // Runs on every single page (via newPage(), including the very first
     // one), so a bad image here would break the ENTIRE report, not just
     // one section. addImage() is wrapped defensively — if the embedded
@@ -1649,6 +1668,7 @@
     // *within* a chapter and don't force a page break either.
     function h2(text) {
       __mark('chapter start: ' + text);
+      text = sanitizeText(text);
       ensureSpace(60);
       // Extra breathing room above the chapter tab when it isn't starting
       // a fresh page (newPage() already resets y to a page-top position).
@@ -1675,6 +1695,7 @@
     }
 
     function h3(text) {
+      text = sanitizeText(text);
       ensureSpace(18);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9.8);
@@ -1684,6 +1705,7 @@
     }
 
     function bodyText(text) {
+      text = sanitizeText(text);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9.5);
       doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
@@ -1701,6 +1723,7 @@
     // it reads as a sub-item under the h3 above it, without needing a full
     // table layout for what's usually 2-4 short lines.
     function bulletText(text, indent) {
+      text = sanitizeText(text);
       const ind = indent || 12;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
@@ -1722,6 +1745,8 @@
     const ATTR_LABEL_W = 150;
     function attrRow(label, value) {
       if (value == null || value === '') return;
+      label = sanitizeText(label);
+      value = sanitizeText(value);
       ensureSpace(15);
       const rowLines = doc.splitTextToSize(String(value), PAGE_W - MARGIN * 2 - ATTR_LABEL_W);
       const rowH = 14 * rowLines.length;
@@ -1814,7 +1839,7 @@
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(17);
     doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-    doc.splitTextToSize(currentProject.name || '', PAGE_W - MARGIN * 2).forEach((line) => {
+    doc.splitTextToSize(sanitizeText(currentProject.name) || '', PAGE_W - MARGIN * 2).forEach((line) => {
       ensureSpace(20);
       doc.text(line, MARGIN, y);
       y += 20;
@@ -2178,7 +2203,7 @@
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9.8);
         doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-        doc.text(r.title || '', MARGIN, y);
+        doc.text(sanitizeText(r.title) || '', MARGIN, y);
         doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
         doc.text(`${r.risk_score} / 25 · ${INAPlatform.riskScoreBandLabel(r.risk_score)}`, PAGE_W - MARGIN, y, { align: 'right' });
         y += 13;
@@ -2595,6 +2620,30 @@
     let attrRowIndex = 0;
     const tocEntries = [];
 
+    // AI-drafted (and hand-typed) text often contains "smart" typography —
+    // curly quotes, en/em dashes, non-breaking hyphens, ellipsis characters
+    // — and jsPDF 2.5.1's standard-font Tj encoder mishandles several of
+    // those code points: instead of mapping them through WinAnsiEncoding
+    // like it does for plain ASCII, it silently re-encodes the WHOLE
+    // string as UTF-16BE while still using the simple (non-Unicode) font
+    // resource, so the PDF viewer renders every character as two WinAnsi
+    // glyphs — a blank control byte plus the real letter — which is
+    // exactly the "space between every letter" bug Pablo reported.
+    // Normalizing to plain ASCII punctuation before any doc.text() call
+    // sidesteps the bug entirely. Applied to every text-drawing helper
+    // below plus the couple of doc.text() calls that draw raw
+    // AI/user-content strings directly (cover title, risk titles).
+    function sanitizeText(text) {
+      if (!text) return text;
+      return String(text)
+        .replace(/[‘’‚‛]/g, "'")
+        .replace(/[“”„‟]/g, '"')
+        .replace(/[‐‑‒–—]/g, '-')
+        .replace(/…/g, '...')
+        .replace(/[  -   ]/g, ' ')
+        .replace(/[​-‍﻿]/g, '');
+    }
+
     function addHeaderBand() {
       doc.setFillColor(NAVY[0], NAVY[1], NAVY[2]);
       doc.rect(0, 0, PAGE_W, 64, 'F');
@@ -2646,6 +2695,7 @@
     // explicitly. Scoped to generateProposalPdf() only — generateProjectPdf()
     // (the other, "Descargar PDF" report) is untouched and stays all-Helvetica.
     function h2(text) {
+      text = sanitizeText(text);
       ensureSpace(60);
       if (y > 90) y += 18;
       chapterIndex += 1;
@@ -2667,6 +2717,7 @@
     }
 
     function h3(text) {
+      text = sanitizeText(text);
       ensureSpace(18);
       doc.setFont('times', 'bold');
       doc.setFontSize(10.5);
@@ -2676,6 +2727,7 @@
     }
 
     function bodyText(text) {
+      text = sanitizeText(text);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9.5);
       doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
@@ -2689,6 +2741,7 @@
     }
 
     function bulletText(text, indent) {
+      text = sanitizeText(text);
       const ind = indent || 12;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
@@ -2705,6 +2758,8 @@
     const ATTR_LABEL_W = 150;
     function attrRow(label, value) {
       if (value == null || value === '') return;
+      label = sanitizeText(label);
+      value = sanitizeText(value);
       ensureSpace(15);
       const rowLines = doc.splitTextToSize(String(value), PAGE_W - MARGIN * 2 - ATTR_LABEL_W);
       const rowH = 14 * rowLines.length;
@@ -2791,7 +2846,7 @@
     doc.setFont('times', 'bold');
     doc.setFontSize(19);
     doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-    doc.splitTextToSize(currentProject.name || '', PAGE_W - MARGIN * 2).forEach((line) => {
+    doc.splitTextToSize(sanitizeText(currentProject.name) || '', PAGE_W - MARGIN * 2).forEach((line) => {
       ensureSpace(20);
       doc.text(line, MARGIN, y);
       y += 20;
@@ -2996,7 +3051,7 @@
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9.8);
         doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-        doc.text(r.title || '', MARGIN, y);
+        doc.text(sanitizeText(r.title) || '', MARGIN, y);
         doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
         doc.text(`${r.risk_score} / 25 · ${INAPlatform.riskScoreBandLabel(r.risk_score)}`, PAGE_W - MARGIN, y, { align: 'right' });
         y += 13;
