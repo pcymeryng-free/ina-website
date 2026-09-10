@@ -375,7 +375,24 @@ async function handler(req, res) {
       return json(res, 502, { error: 'Could not parse proposal draft output', raw: rawText.slice(0, 2000) });
     }
 
-    const field = (key) => String(parsed[key] || '').slice(0, 6000);
+    // The model (especially Claude/Anthropic, the default provider) tends
+    // to write with "smart" typography — curly quotes, en/em dashes,
+    // non-breaking hyphens — which is normal, good prose. But the client's
+    // PDF export (generateProposalPdf() in app/project.html) uses jsPDF
+    // 2.5.1's built-in standard fonts, and that version has a real bug:
+    // certain of those code points make it mis-encode the ENTIRE line as
+    // broken UTF-16, rendering as a gap between every letter in the PDF.
+    // The client also defensively sanitizes at render time, but normalizing
+    // here too means the draft is clean everywhere it's used (textarea,
+    // DB, PDF) and isn't silently depending on jsPDF's quirks downstream.
+    const sanitizeText = (text) => String(text || '')
+      .replace(/[‘’‚‛]/g, "'")
+      .replace(/[“”„‟]/g, '"')
+      .replace(/[‐‑‒–—]/g, '-')
+      .replace(/…/g, '...')
+      .replace(/[  -   ]/g, ' ')
+      .replace(/[​-‍﻿]/g, '');
+    const field = (key) => sanitizeText(parsed[key]).slice(0, 6000);
     return json(res, 200, {
       ok: true,
       introduction_es: field('introduction_es'),
