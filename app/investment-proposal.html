@@ -138,6 +138,13 @@
   let currentFsu = null;
   let currentProjectPrograms = [];
   let currentRoadmaps = [];
+  // AI Financing Recommendation (migration_v55_financing_recommendations.sql
+  // / api/recommend-financing.js) — Pablo's request (Sep 2026) that the
+  // recommendation also be reflected in the Investment Proposal document.
+  // Loaded the same optional way as currentFsu/currentRisks: null/empty
+  // means "not generated yet", and the matching PDF section below is
+  // skipped entirely rather than showing an empty chapter.
+  let currentFinancingReco = null;
   let isOwner = false;
   let isAssignedAdvisor = false;
   let previewBlobUrl = null;
@@ -519,7 +526,11 @@
     doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
     doc.text(lang === 'es' ? 'Índice' : 'Contents', MARGIN, y);
     y += 24;
-    y += 9 * 16.5 + 10;
+    // Reserved rows = max possible chapters (was 8: Intro/Descripción/
+    // Beneficios/Financiero/Cumplimiento/Riesgos/Planificación/Equipo, +1
+    // buffer). Now 9 possible chapters since the AI Financing Recommendation
+    // chapter was added — kept the same +1 buffer on top.
+    y += 10 * 16.5 + 10;
 
     // ============================================================
     // 1. Introducción / Resumen Ejecutivo
@@ -711,7 +722,74 @@
     }
 
     // ============================================================
-    // 7. Planificación
+    // 7. Recomendación de Financiamiento IA — Pablo's request (Sep 2026)
+    // that the AI Financing Recommendation (app/project.html's "Financial
+    // recommendation" panel, migration_v55_financing_recommendations.sql /
+    // api/recommend-financing.js) also be reflected in this document.
+    // Skipped entirely if no recommendation has been generated yet for this
+    // project — same "optional chapter" convention as Cumplimiento/FSU
+    // (currentFsu) and Matriz de Riesgos (currentRisks) above.
+    // ============================================================
+    if (currentFinancingReco && ((lang === 'es' ? currentFinancingReco.recommended : currentFinancingReco.recommended_en) || []).length) {
+      h2(lang === 'es' ? 'Recomendación de Financiamiento IA' : 'AI Financing Recommendation');
+      const recoItems = (lang === 'es' ? currentFinancingReco.recommended : currentFinancingReco.recommended_en) || [];
+      const recoSummary = (lang === 'es' ? currentFinancingReco.summary : currentFinancingReco.summary_en) || '';
+      bodyText(lang === 'es'
+        ? 'Combinación de instrumentos/programas de financiación sugerida por IA a partir del perfil del proyecto, el financiamiento ya asegurado (FSU y programas ya aplicados) y el catálogo de programas registrados en la plataforma.'
+        : 'AI-suggested combination of financing instruments/programs, based on the project profile, financing already secured (FSU and already-applied programs), and the catalog of programs registered on the platform.');
+      // Same "already secured" context as the live panel in project.html
+      // (renderFinancingRecoCoverage()) — repeats the Capítulo Financiero
+      // totals here so this chapter reads standalone without flipping back.
+      {
+        const { fsuPct, otherPct, programShares, totalPct } = INAPlatform.computeFinancingCoverage(currentProject, currentProjectPrograms);
+        const hasAnyShare = fsuPct > 0 || otherPct > 0 || programShares.length > 0;
+        if (hasAnyShare) {
+          h3(lang === 'es' ? 'Financiamiento ya asegurado' : 'Financing already secured');
+          miniBar(lang === 'es' ? 'Cobertura total del presupuesto' : 'Total budget coverage', totalPct, `${totalPct}%`);
+          const parts = [];
+          if (fsuPct > 0) parts.push(`FSU ${fsuPct}%`);
+          programShares.filter((s) => !s.isFsu).forEach((s) => parts.push(`${s.name} ${s.pct}%`));
+          if (otherPct > 0) parts.push((lang === 'es' ? 'Otra fuente' : 'Other') + ` ${otherPct}%`);
+          if (parts.length) bulletText(parts.join(' · '));
+          y += 4;
+        }
+      }
+      if (recoSummary) {
+        h3(lang === 'es' ? 'Estrategia de combinación' : 'Combination strategy');
+        bodyText(recoSummary);
+      }
+      h3(lang === 'es' ? 'Instrumentos recomendados' : 'Recommended instruments');
+      recoItems.forEach((item) => {
+        ensureSpace(20);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.8);
+        doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+        doc.text(sanitizeText(item.name) || '', MARGIN, y);
+        doc.setTextColor(AMBER_DEEP[0], AMBER_DEEP[1], AMBER_DEEP[2]);
+        doc.text(`${item.fit_score}/100`, PAGE_W - MARGIN, y, { align: 'right' });
+        y += 13;
+        const stageLabel = item.funding_stage === 'preparation'
+          ? (lang === 'es' ? 'Preparación' : 'Preparation')
+          : (lang === 'es' ? 'Financiamiento' : 'Financing');
+        const metaLine = `${item.financing_entity ? item.financing_entity + ' · ' : ''}${stageLabel}${item.already_applied ? ` · ${lang === 'es' ? 'Ya aplicado' : 'Already applied'}` : ''}`;
+        bulletText(metaLine, 8);
+        if (item.rationale) bulletText(item.rationale, 8);
+        y += 6;
+      });
+      if (currentFinancingReco.updated_at) {
+        const dateStr = new Date(currentFinancingReco.updated_at).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
+        y += 2;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        ensureSpace(14);
+        doc.text((lang === 'es' ? 'Generado: ' : 'Generated: ') + dateStr, MARGIN, y);
+        y += 14;
+      }
+    }
+
+    // ============================================================
+    // 8. Planificación
     // ============================================================
     h2(lang === 'es' ? 'Planificación' : 'Planning');
     if (proposalDraft[`planning_narrative_${lang}`]) {
@@ -736,7 +814,7 @@
     }
 
     // ============================================================
-    // 8. Equipo y Gobernanza
+    // 9. Equipo y Gobernanza
     // ============================================================
     h2(lang === 'es' ? 'Equipo y Gobernanza' : 'Team and Governance');
     if (currentProject.generating_entity_name) {
@@ -1013,6 +1091,7 @@
       }
     } catch (e) { currentFsu = null; }
     try { currentRoadmaps = await INAPlatform.listRoadmapInstances(projectId); } catch (e) { currentRoadmaps = []; }
+    try { currentFinancingReco = await INAPlatform.getFinancingRecommendation(projectId); } catch (e) { currentFinancingReco = null; }
 
     proposalDraft = {
       introduction_es: currentProject.proposal_introduction || '',

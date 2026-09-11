@@ -207,6 +207,24 @@
           <button type="button" class="btn ghost small" id="financingRecoRunBtn" style="padding:6px 12px;"><span id="financingRecoRunBtnLabel" data-i18n="finreco.run">Generate recommendation</span></button>
         </h4>
         <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:640px;"><span data-i18n="finreco.help">Uses AI to pick the best combination of financing instruments/programs already registered on the platform (BID, DFC, FSU/TASU/FATIC, USTDA, capital markets, etc.) for this specific project.</span></p>
+
+        <!-- "Financiamiento ya asegurado" — Pablo's bug report (Sep 2026):
+             the recommendation panel showed the AI's suggested instruments
+             with no visible context of what's ALREADY covered (FSU +
+             already-applied Programs), making it look like the AI/the page
+             ignored that money entirely. Reuses the exact same
+             INAPlatform.computeFinancingCoverage() arithmetic as
+             #financingCoverage below (single source of truth) — this is
+             just a second, compact rendering of it, shown inline with the
+             recommendation instead of requiring a scroll down to the
+             Financing Programs block. See renderFinancingRecoCoverage(). -->
+        <div id="financingRecoCoverage" style="display:none; margin-top:14px; padding:12px 16px; border-radius:10px; background:var(--paper-2);">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <span id="financingRecoCoverageText" style="font-size:13px; font-weight:600;"></span>
+            <span id="financingRecoCoverageBreakdown" style="font-size:12px; color:var(--muted);"></span>
+          </div>
+        </div>
+
         <div id="financingRecoLoading" style="display:none; margin-top:14px; font-size:13px; color:var(--muted);"><span data-i18n="finreco.loading">Analyzing the best combination…</span></div>
         <div id="financingRecoEmpty" style="margin-top:14px; font-size:13px; color:var(--muted);"><span data-i18n="finreco.empty">No recommendation generated yet.</span></div>
         <div id="financingRecoResult" style="display:none; margin-top:14px;">
@@ -648,6 +666,7 @@
       if (currentDocs) renderDocs(currentDocs);
       if (currentProject) renderProgramApplications();
       if (currentFinancingReco) renderFinancingRecommendation();
+      else if (currentProject) renderFinancingRecoCoverage();
       if (currentRoadmaps.length || (currentProfile && INAPlatform.canManageRoadmaps(currentProfile))) renderRoadmaps();
       if (currentRisks.length || (currentProfile && INAPlatform.canManageRisks(currentProfile))) renderRiskMatrix();
     });
@@ -2872,12 +2891,25 @@
       await INAPlatform.removeProjectProgram(projectId, programId);
       currentProjectPrograms = currentProjectPrograms.filter((r) => r.program_id !== programId);
       renderProgramApplications();
+      // Same live-state reasoning as applyProgramFromPicker() above — a
+      // recommendation card for this program_id (if any) flips back to
+      // "Aplicar" immediately, since isApplied is derived from
+      // currentProjectPrograms, not a stored flag.
+      renderFinancingRecommendation();
     } catch (err) {
       alert((lang === 'es' ? 'No se pudo quitar la aplicación: ' : "Couldn't remove the application: ") + (err.message || err));
     }
   }
 
-  async function applyProgramFromPicker(programId) {
+  // financingPercentage (optional, Pablo's request sep 2026): when the
+  // caller already knows what % of budget this application should cover —
+  // e.g. the AI Financing Recommendation cards, which prefill it from the
+  // model's suggested_percentage but let the user edit it before clicking
+  // "Aplicar" — it's applied together with the association itself instead
+  // of requiring a separate Save step afterward. Left undefined for callers
+  // that don't have a % opinion yet (the plain "Programas de Financiamiento"
+  // dropdown below), preserving the exact previous behavior there.
+  async function applyProgramFromPicker(programId, financingPercentage) {
     const program = allProgramsForApply.find((pg) => pg.id === programId);
     if (!program) return;
     // A Program with a registered template (see PROGRAM_TEMPLATES in
@@ -2886,13 +2918,23 @@
     // redirects back here. A Program with no template is just a plain
     // association — apply directly and re-render in place.
     if (program.template_key && INAPlatform.programTemplateFor(program.template_key)) {
-      location.href = `project-template.html?mode=apply&project=${encodeURIComponent(projectId)}&program=${encodeURIComponent(program.id)}&ptpl=${encodeURIComponent(program.template_key)}`;
+      const pctParam = financingPercentage !== undefined && financingPercentage !== ''
+        ? `&pct=${encodeURIComponent(financingPercentage)}` : '';
+      location.href = `project-template.html?mode=apply&project=${encodeURIComponent(projectId)}&program=${encodeURIComponent(program.id)}&ptpl=${encodeURIComponent(program.template_key)}${pctParam}`;
       return;
     }
     try {
-      const row = await INAPlatform.applyToProgram(projectId, programId, {});
+      const applyOpts = {};
+      if (financingPercentage !== undefined && financingPercentage !== '') applyOpts.financingPercentage = financingPercentage;
+      const row = await INAPlatform.applyToProgram(projectId, programId, applyOpts);
       currentProjectPrograms.push(row);
       renderProgramApplications();
+      // The recommendation panel's "isApplied" state is derived live from
+      // currentProjectPrograms (see renderFinancingRecommendation() below),
+      // never from the stale already_applied flag stored at generation
+      // time — re-rendering here is enough to flip a card to "Ya aplicado"
+      // immediately, no extra state-syncing needed.
+      renderFinancingRecommendation();
     } catch (err) {
       const lang = INAPlatform.currentLang();
       alert((lang === 'es' ? 'No se pudo aplicar al programa: ' : "Couldn't apply to the program: ") + (err.message || err));
@@ -2922,7 +2964,49 @@
   // through the exact same code path as picking it from the "Programas de
   // Financiamiento" dropdown — no separate apply logic to keep in sync.
 
+  // Compact twin of renderFinancingCoverage() (below, in the Financing
+  // Programs block) — same INAPlatform.computeFinancingCoverage() call, just
+  // rendered inline in the AI Financing Recommendation panel so the "already
+  // secured" context is visible right next to the AI's suggestions, not only
+  // further down the page. Shown whenever the recommendation block itself is
+  // visible (canRunAnalysis), independent of whether a recommendation has
+  // actually been generated yet — the coverage is real project data, not
+  // part of the AI output.
+  function renderFinancingRecoCoverage() {
+    if (!currentProject) return;
+    const lang = INAPlatform.currentLang();
+    const wrap = document.getElementById('financingRecoCoverage');
+    const { fsuPct, otherPct, programShares, totalPct } = INAPlatform.computeFinancingCoverage(currentProject, currentProjectPrograms);
+
+    const hasAnyShare = fsuPct > 0 || otherPct > 0 || programShares.length > 0;
+    if (!hasAnyShare) {
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = 'block';
+
+    const text = document.getElementById('financingRecoCoverageText');
+    const breakdown = document.getElementById('financingRecoCoverageBreakdown');
+    const pctStr = `${totalPct}%`;
+    if (totalPct > 100) {
+      text.textContent = lang === 'es' ? `⚠ Financiamiento ya asegurado: ${pctStr} — supera el 100%` : `⚠ Financing already secured: ${pctStr} — exceeds 100%`;
+      text.style.color = '#a13a3a';
+    } else {
+      text.textContent = lang === 'es'
+        ? `Financiamiento ya asegurado: ${pctStr}${totalPct < 100 ? ` — resta cubrir ${100 - totalPct}%` : ''}`
+        : `Financing already secured: ${pctStr}${totalPct < 100 ? ` — ${100 - totalPct}% remaining` : ''}`;
+      text.style.color = 'var(--ink)';
+    }
+
+    const parts = [];
+    if (fsuPct > 0) parts.push(`FSU ${fsuPct}%`);
+    programShares.filter((s) => !s.isFsu).forEach((s) => parts.push(`${s.name} ${s.pct}%`));
+    if (otherPct > 0) parts.push((lang === 'es' ? 'Otra fuente' : 'Other') + ` ${otherPct}%`);
+    breakdown.textContent = parts.join(' · ');
+  }
+
   function renderFinancingRecommendation() {
+    renderFinancingRecoCoverage();
     const lang = INAPlatform.currentLang();
     const emptyEl = document.getElementById('financingRecoEmpty');
     const resultEl = document.getElementById('financingRecoResult');
@@ -2948,11 +3032,26 @@
     items.forEach((item) => {
       const div = document.createElement('div');
       div.style.cssText = 'padding:12px 14px; border:1px solid var(--paper-line); border-radius:10px;';
-      const stageLabel = item.funding_stage === 'preparation'
-        ? (lang === 'es' ? 'Preparación' : 'Preparation')
-        : (lang === 'es' ? 'Financiamiento' : 'Financing');
+      const isFinancingStage = item.funding_stage !== 'preparation';
+      const stageLabel = isFinancingStage
+        ? (lang === 'es' ? 'Financiamiento' : 'Financing')
+        : (lang === 'es' ? 'Preparación' : 'Preparation');
       const scoreClass = INAPlatform.scoreBandClass(item.fit_score);
-      const canApply = canManage && !item.already_applied;
+      // "Ya aplicado" is derived live from currentProjectPrograms, not from
+      // the already_applied flag saved on the recommendation at generation
+      // time (which goes stale the moment the user applies/removes a
+      // program without re-running the recommendation) — see
+      // applyProgramFromPicker()/removeProgramApplication() above, both of
+      // which just call this render function again after changing
+      // currentProjectPrograms.
+      const appliedRow = currentProjectPrograms.find((r) => r.program_id === item.program_id) || null;
+      const isApplied = !!appliedRow;
+      // Prefill priority: the application's OWN saved % (once applied) wins
+      // over the AI's suggested_percentage — same "what's really saved
+      // wins" principle as renderProgramApplicationRow()'s FSU prefill.
+      const pctValue = isApplied
+        ? (appliedRow.financing_percentage != null ? appliedRow.financing_percentage : '')
+        : (item.suggested_percentage != null ? item.suggested_percentage : '');
       div.innerHTML = `
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;">
           <div style="min-width:0;">
@@ -2961,17 +3060,38 @@
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
             <span class="status-pill ${scoreClass}" style="font-size:11.5px; padding:4px 10px;">${item.fit_score}/100</span>
-            ${item.already_applied
-              ? `<span style="font-size:11.5px; color:var(--muted);">✓ ${lang === 'es' ? 'Ya aplicado' : 'Already applied'}</span>`
-              : (canApply ? `<button type="button" class="btn ghost small" data-apply-reco="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Aplicar' : 'Apply'}</button>` : '')}
+            ${isApplied ? `<span style="font-size:11.5px; color:var(--muted);">✓ ${lang === 'es' ? 'Ya aplicado' : 'Already applied'}</span>` : ''}
           </div>
         </div>
         <p style="font-size:12.5px; color:var(--muted); margin-top:8px;">${item.rationale || ''}</p>
+        ${canManage ? `
+        <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--paper-line); flex-wrap:wrap;">
+          ${isFinancingStage ? `
+            <label style="font-size:12px; color:var(--muted);">${lang === 'es' ? '% del presupuesto' : '% of budget'}</label>
+            <input type="number" min="0" max="100" step="1" value="${pctValue}" data-reco-pct="${item.program_id}" style="width:64px; padding:5px 8px; font-size:12.5px;">
+          ` : ''}
+          ${isApplied
+            ? `${isFinancingStage ? `<button type="button" class="btn ghost small" data-reco-save-pct="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Guardar %' : 'Save %'}</button>` : ''}
+               <button type="button" class="btn ghost small" data-reco-unapply="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Desaplicar' : 'Unapply'}</button>`
+            : `<button type="button" class="btn ghost small" data-apply-reco="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Aplicar' : 'Apply'}</button>`}
+          <span data-reco-pct-status="${item.program_id}" style="font-size:11.5px; color:var(--muted);"></span>
+        </div>` : ''}
       `;
       list.appendChild(div);
     });
     list.querySelectorAll('[data-apply-reco]').forEach((btn) => {
-      btn.addEventListener('click', () => applyProgramFromPicker(btn.getAttribute('data-apply-reco')));
+      btn.addEventListener('click', () => {
+        const programId = btn.getAttribute('data-apply-reco');
+        const pctInput = list.querySelector(`[data-reco-pct="${programId}"]`);
+        const pct = pctInput && pctInput.value !== '' ? pctInput.value : undefined;
+        applyProgramFromPicker(programId, pct);
+      });
+    });
+    list.querySelectorAll('[data-reco-save-pct]').forEach((btn) => {
+      btn.addEventListener('click', () => saveRecoPercentage(btn.getAttribute('data-reco-save-pct')));
+    });
+    list.querySelectorAll('[data-reco-unapply]').forEach((btn) => {
+      btn.addEventListener('click', () => removeProgramApplication(btn.getAttribute('data-reco-unapply')));
     });
 
     const updatedEl = document.getElementById('financingRecoUpdatedAt');
@@ -2980,6 +3100,36 @@
       updatedEl.textContent = (lang === 'es' ? 'Generado: ' : 'Generated: ') + dateStr;
     } else {
       updatedEl.textContent = '';
+    }
+  }
+
+  // Saves an already-applied recommendation card's edited "% del
+  // presupuesto" — same INAPlatform.updateProjectProgramFinancing() call as
+  // the Financing Programs block's own saveFinancing(), just reading from
+  // the recommendation panel's own #financingRecoList input instead (kept
+  // separate from saveFinancing() so the two blocks' data-pct-input/
+  // data-reco-pct attributes never collide when the same program_id is
+  // rendered in both places at once).
+  async function saveRecoPercentage(programId) {
+    const lang = INAPlatform.currentLang();
+    const pctInput = document.querySelector(`#financingRecoList [data-reco-pct="${programId}"]`);
+    if (!pctInput) return;
+    try {
+      const updated = await INAPlatform.updateProjectProgramFinancing(projectId, programId, { percentage: pctInput.value });
+      currentProjectPrograms = currentProjectPrograms.map((r) => (r.program_id === programId ? updated : r));
+      renderProgramApplications();
+      // Re-render rebuilds #financingRecoList's DOM (including the status
+      // span), so re-query it fresh rather than reusing the pre-render
+      // `status` reference — same reasoning as everywhere else in this
+      // panel that a card's DOM isn't stable across a render call.
+      renderFinancingRecommendation();
+      const freshStatus = document.querySelector(`#financingRecoList [data-reco-pct-status="${programId}"]`);
+      if (freshStatus) {
+        freshStatus.textContent = lang === 'es' ? 'Guardado ✓' : 'Saved ✓';
+        setTimeout(() => { freshStatus.textContent = ''; }, 2500);
+      }
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo guardar el %: ' : "Couldn't save the %: ") + (err.message || err));
     }
   }
 

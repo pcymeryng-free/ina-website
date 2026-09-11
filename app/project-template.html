@@ -130,6 +130,12 @@
   const applyMode = params.get('mode') === 'apply';
   const applyProjectId = params.get('project');
   const applyProgramId = params.get('program');
+  // Optional % of budget carried over from the AI Financing Recommendation
+  // panel's "Aplicar" button (Pablo, sep 2026) — project.html's
+  // applyProgramFromPicker() appends &pct=<value> when the user edited (or
+  // just kept) the AI's suggested_percentage before applying a Program that
+  // happens to have a guided template. Only meaningful in applyMode.
+  const applyPct = params.get('pct');
 
   // "Prep mode" — reached from new-project.html's "Project preparation
   // funding" selector (?ptpl=<key>&prep=1), for a project that may not
@@ -478,10 +484,12 @@
       const submitBtn = document.getElementById('tplSubmit');
       submitBtn.disabled = true;
       try {
-        await INAPlatform.applyToProgram(applyProjectId, applyProgramId, {
+        const applyPayload = {
           templateAnswers: answers,
           notes: compiled,
-        });
+        };
+        if (applyPct != null && applyPct !== '') applyPayload.financingPercentage = applyPct;
+        await INAPlatform.applyToProgram(applyProjectId, applyProgramId, applyPayload);
         try { sessionStorage.removeItem(templateStorageKey); } catch (e2) { /* non-critical */ }
         location.href = returnUrl;
       } catch (err) {
