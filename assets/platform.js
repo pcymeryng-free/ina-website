@@ -5123,7 +5123,7 @@ const INAPlatform = {
      migration_v27_gestion_instances.sql) — purely informational, also used
      to suggest matching Roadmap templates whose allowed_entity_type
      matches. Both optional. */
-  async createProject({ name, projectType, programId, country, description, beneficiaryCount, generatingEntityName, generatingEntityType, durationValue, durationUnit, priority, technicalCriticality, fsuAmount, fsuAmountUsd, fsuScope, fsuPercentage, budgetAmount, budgetAmountUsd, exchangeRate, exchangeRateDate, complexity, otherFinancingPercentage, otherFinancingAmount, otherFinancingNotes }) {
+  async createProject({ name, projectType, programId, country, description, beneficiaryCount, generatingEntityName, generatingEntityType, durationValue, durationUnit, priority, technicalCriticality, fsuAmount, fsuAmountUsd, fsuScope, fsuPercentage, budgetAmount, budgetAmountUsd, exchangeRate, exchangeRateDate, complexity, otherFinancingPercentage, otherFinancingAmount, otherFinancingNotes, financingRequiredPercentage }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
@@ -5170,6 +5170,12 @@ const INAPlatform = {
         // fsu_amount/fsu_percentage).
         other_financing_amount: otherFinancingAmount === '' || otherFinancingAmount == null ? null : Number(otherFinancingAmount),
         other_financing_notes: otherFinancingNotes || null,
+        // % of budget_amount that actually needs external financing — see
+        // migration_v56_financing_required_percentage.sql. Set from
+        // new-project.html's simplified Financing step; everything else
+        // about HOW that % gets covered (FSU/Programs/other source) is
+        // decided afterward on app/project-financing.html.
+        financing_required_percentage: financingRequiredPercentage === '' || financingRequiredPercentage == null ? null : Number(financingRequiredPercentage),
       })
       .select()
       .single();
@@ -5181,7 +5187,7 @@ const INAPlatform = {
      projects_update_own RLS policy, so this silently fails for anyone
      else even if called). Resets status/readiness_stage so the caller can
      re-trigger analysis against the updated description. */
-  async updateProject(id, { name, projectType, programId, country, description, beneficiaryCount, generatingEntityName, generatingEntityType, durationValue, durationUnit, priority, technicalCriticality, fsuAmount, fsuAmountUsd, fsuScope, fsuPercentage, budgetAmount, budgetAmountUsd, exchangeRate, exchangeRateDate, complexity, otherFinancingPercentage, otherFinancingAmount, otherFinancingNotes }) {
+  async updateProject(id, { name, projectType, programId, country, description, beneficiaryCount, generatingEntityName, generatingEntityType, durationValue, durationUnit, priority, technicalCriticality, fsuAmount, fsuAmountUsd, fsuScope, fsuPercentage, budgetAmount, budgetAmountUsd, exchangeRate, exchangeRateDate, complexity, otherFinancingPercentage, otherFinancingAmount, otherFinancingNotes, financingRequiredPercentage }) {
     const { data, error } = await supabaseClient
       .from('projects')
       .update({
@@ -5209,10 +5215,44 @@ const INAPlatform = {
         other_financing_percentage: otherFinancingPercentage === '' || otherFinancingPercentage == null ? null : Number(otherFinancingPercentage),
         other_financing_amount: otherFinancingAmount === '' || otherFinancingAmount == null ? null : Number(otherFinancingAmount),
         other_financing_notes: otherFinancingNotes || null,
+        financing_required_percentage: financingRequiredPercentage === '' || financingRequiredPercentage == null ? null : Number(financingRequiredPercentage),
         status: 'submitted',
         readiness_stage: null,
         updated_at: new Date().toISOString(),
       })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Updates ONLY the direct financing fields (FSU amount/USD/scope/%, "other
+     source" %/amount/notes) — used by app/project-financing.html, which
+     manages these independently of the rest of the project record now that
+     financing management is split out of new-project.html (Pablo, sep
+     2026). Deliberately NOT updateProject(): that function overwrites every
+     project field (name/type/country/description/...) and, on every call,
+     resets status to 'submitted' and clears readiness_stage so a real
+     content edit triggers re-analysis — neither of those is appropriate
+     for "adjust the FSU % on the financing page", which shouldn't touch
+     workflow state at all. Only the keys actually passed are written (same
+     non-destructive partial-patch convention as
+     updateProjectProgramFinancing() below) — e.g. saving just fsuPercentage
+     leaves every other financing field on the row untouched. Owner or
+     assigned advisor only, same RLS as updateProject/applyToProgram. */
+  async updateProjectFinancing(id, { fsuAmount, fsuAmountUsd, fsuScope, fsuPercentage, otherFinancingPercentage, otherFinancingAmount, otherFinancingNotes } = {}) {
+    const updates = { updated_at: new Date().toISOString() };
+    if (fsuAmount !== undefined) updates.fsu_amount = fsuAmount === '' || fsuAmount == null ? null : Number(fsuAmount);
+    if (fsuAmountUsd !== undefined) updates.fsu_amount_usd = fsuAmountUsd === '' || fsuAmountUsd == null ? null : Number(fsuAmountUsd);
+    if (fsuScope !== undefined) updates.fsu_scope = fsuScope || null;
+    if (fsuPercentage !== undefined) updates.fsu_percentage = fsuPercentage === '' || fsuPercentage == null ? null : Number(fsuPercentage);
+    if (otherFinancingPercentage !== undefined) updates.other_financing_percentage = otherFinancingPercentage === '' || otherFinancingPercentage == null ? null : Number(otherFinancingPercentage);
+    if (otherFinancingAmount !== undefined) updates.other_financing_amount = otherFinancingAmount === '' || otherFinancingAmount == null ? null : Number(otherFinancingAmount);
+    if (otherFinancingNotes !== undefined) updates.other_financing_notes = otherFinancingNotes || null;
+    const { data, error } = await supabaseClient
+      .from('projects')
+      .update(updates)
       .eq('id', id)
       .select()
       .single();
@@ -5526,13 +5566,36 @@ const INAPlatform = {
     // Non-FSU program shares only, to avoid adding the FSU ones a second
     // time on top of fsuPct above.
     const programsPct = programShares.reduce((sum, s) => sum + (s.isFsu ? 0 : s.pct), 0);
+    const totalPct = fsuPct + otherPct + programsPct;
+    // requiredPct/remainingToRequiredPct (Pablo, sep 2026 — financing
+    // management split out of new-project.html): the TARGET
+    // app/project-financing.html's coverage bar tries to reach, from
+    // financing_required_percentage (see migration_v56) — defaults to 100
+    // when unset, via effectiveFinancingRequiredPercentage() below, so every
+    // project created before this field existed keeps behaving exactly like
+    // before (100% needs financing). remainingToRequiredPct can go negative
+    // once totalPct overshoots requiredPct — callers decide how to flag
+    // that, same "just the arithmetic" posture as totalPct vs. 100 above.
+    const requiredPct = this.effectiveFinancingRequiredPercentage(project);
     return {
       fsuPct,
       otherPct,
       programShares,
       programsPct,
-      totalPct: fsuPct + otherPct + programsPct,
+      totalPct,
+      requiredPct,
+      remainingToRequiredPct: requiredPct - totalPct,
     };
+  },
+
+  /* NULL/unset financing_required_percentage means "not specified", which
+     every caller treats as 100 (the whole budget needs external financing)
+     — see the column comment in supabase/schema.sql and
+     migration_v56_financing_required_percentage.sql. */
+  effectiveFinancingRequiredPercentage(project) {
+    return project && project.financing_required_percentage != null
+      ? Number(project.financing_required_percentage)
+      : 100;
   },
 
   /* Withdraws a project's application to a Program (owner or assigned

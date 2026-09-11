@@ -734,6 +734,58 @@ form.advisory .full{ grid-column: 1 / -1; }
   .project-row .icon-action-group{ justify-self:start; }
 }
 
+/* ---------- Financing Programs dashboard (app/financing-programs.html) ----------
+   Pablo, sep 2026: "la solapa de financing program debería manejarse como un
+   dashboard mostrando los programas de financiación de forma similar a los
+   proyectos". Reuses .dash-stats/.dash-stat, .filter-bar and .view-toggle
+   as-is (all generic already) — but NOT .project-row/.project-card, whose
+   grid-template-columns/child structure is hard-coded to a project row's
+   exact 5 siblings (icon+name+type, date, status pill, owner, actions) and
+   a program row's 3 siblings (main, project count, actions) don't map onto
+   it. .program-row/.program-card below are that dedicated shape instead;
+   .icon-action-group/.icon-btn/.fsu-pts/.type-tag are still shared as-is.
+   Each row/card's `main`/`pc-main` is itself an <a> to
+   financing-program.html?id=X — the project-count pill and actions are
+   built as SIBLING elements in the JS (never nested inside `main`'s
+   innerHTML), same anchor-nesting rule as dashboard.html's rows/cards. */
+.program-list{ display:flex; flex-direction:column; gap:1px; background:var(--paper-line); border:1px solid var(--paper-line); }
+.program-row{
+  background:var(--paper); padding:18px 24px; display:grid;
+  grid-template-columns: 1fr 130px auto; gap:18px; align-items:center;
+  border-left:3px solid transparent; transition: background-color .15s ease, border-left-color .15s ease;
+}
+.program-row:hover{ background:var(--paper-2); }
+.program-row[data-accent="fsu"]{ border-left-color: var(--amber); }
+.program-row[data-accent="preparation"]{ border-left-color: var(--ink); }
+.program-row[data-accent="financing"]{ border-left-color: var(--paper-line); }
+.program-row .main{ display:block; min-width:0; color:inherit; text-decoration:none; }
+.program-row .pgcount{ display:block; text-align:right; color:inherit; text-decoration:none; }
+.pgname{ font-size:15.5px; font-weight:500; overflow-wrap:break-word; }
+.pgmeta{ font-size:12.5px; color:var(--muted); margin-top:4px; display:flex; flex-wrap:wrap; align-items:center; gap:5px; }
+
+.program-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px; }
+.program-card{
+  background:var(--paper); border:1px solid var(--paper-line); padding:18px;
+  border-left:3px solid transparent; display:flex; flex-direction:column; gap:12px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.program-card:hover{ box-shadow:0 2px 10px rgba(11,21,38,.06); }
+.program-card[data-accent="fsu"]{ border-left-color: var(--amber); }
+.program-card[data-accent="preparation"]{ border-left-color: var(--ink); }
+.program-card[data-accent="financing"]{ border-left-color: var(--paper-line); }
+.program-card .pc-main{ display:block; color:inherit; text-decoration:none; }
+.program-card .pc-footer{
+  display:flex; align-items:center; color:inherit; text-decoration:none;
+  padding-top:12px; border-top:1px solid var(--paper-line); font-size:12.5px; color:var(--text);
+}
+.program-card .icon-action-group{ justify-self:auto; justify-content:flex-end; }
+@media (max-width:520px){ .program-grid{ grid-template-columns:1fr; } }
+@media (max-width:700px){
+  .program-row{ grid-template-columns:1fr; gap:10px; }
+  .program-row .pgcount{ text-align:left; }
+  .program-row .icon-action-group{ justify-self:start; }
+}
+
 /* ---------- Manual self-assessment questionnaire (Likert scale) ---------- */
 .assess-progress{
   font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.05em;
