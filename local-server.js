@@ -59,6 +59,7 @@ if (!process.env.LLM_PROVIDER) process.env.LLM_PROVIDER = 'local';
 
 const analyzeProjectHandler = require('./api/analyze-project');
 const extractTemplateDataHandler = require('./api/extract-template-data');
+const recommendFinancingHandler = require('./api/recommend-financing');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5050;
@@ -80,6 +81,7 @@ app.use((req, res, next) => {
 // path on any non-production hostname (see file header above).
 app.post('/api/analyze-project', analyzeProjectHandler);
 app.post('/api/extract-template-data', extractTemplateDataHandler);
+app.post('/api/recommend-financing', recommendFinancingHandler);
 
 // A handful of the same top-level redirects vercel.json defines in
 // production, so old-style bookmarks/links behave the same locally.

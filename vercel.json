@@ -16,6 +16,7 @@
     { "source": "/analyze-project", "destination": "/api/analyze-project" },
     { "source": "/extract-template-data", "destination": "/api/extract-template-data" },
     { "source": "/extract-business-card", "destination": "/api/extract-business-card" },
-    { "source": "/generate-proposal", "destination": "/api/generate-proposal" }
+    { "source": "/generate-proposal", "destination": "/api/generate-proposal" },
+    { "source": "/recommend-financing", "destination": "/api/recommend-financing" }
   ]
 }
