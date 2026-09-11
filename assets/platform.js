@@ -235,10 +235,73 @@ function riskScoreBandLabel(score, lang) {
    advisor/admin only, same access pattern as Roadmap Templates. Not yet
    wired into programs.financing_entity / projects.organization /
    profiles.organization, which stay free text for now. */
+// Deprecated as of migration_v52 — this was the original multi-tag
+// checkbox list (business-role + a first batch of sector tags, migration_v51).
+// The Companies form no longer writes to companies.types (superseded by the
+// single-select companies.industry / COMPANY_INDUSTRIES below), but the
+// column and this list are kept so companyTypeLabel()/companyTypesLabel()
+// can still render whatever legacy data existing rows carry.
 const COMPANY_TYPES = [
   { value: 'manufacturer', en: 'Manufacturer', es: 'Fabricante' },
   { value: 'service_provider', en: 'Service Provider', es: 'Proveedor de Servicios' },
   { value: 'financial_entity', en: 'Financial Entity', es: 'Entidad Financiera' },
+  { value: 'technology', en: 'Technology', es: 'Tecnología' },
+  { value: 'telecommunications', en: 'Telecommunications', es: 'Telecomunicaciones' },
+  { value: 'consulting', en: 'Consulting', es: 'Consultoría' },
+  { value: 'infrastructure_construction', en: 'Infrastructure / Construction', es: 'Infraestructura / Construcción' },
+  { value: 'energy', en: 'Energy', es: 'Energía' },
+  { value: 'investor_fund', en: 'Investor / Fund', es: 'Inversor / Fondo' },
+];
+
+// companies.industry (migration_v52) — a single-select dropdown replacing
+// the COMPANY_TYPES checkbox grid above. Pablo asked to merge the original
+// 9 COMPANY_TYPES values with a ~22-item industry list he supplied (a
+// standard sector classification, the kind used for KYC/sanctions-style
+// screening), pick exactly one per company, and enter it via a dropdown
+// instead of chips. "Telecommunications" appeared identically in both
+// source lists and was de-duplicated to the single 'telecommunications'
+// entry below; every other near-overlap (e.g. 'manufacturer' vs
+// 'manufacturing', 'infrastructure_construction' vs
+// 'construction_engineering') was kept as Pablo asked for a straight
+// merge, not a dedup pass. 'other' is a catch-all, consistent with
+// DOCUMENT_TYPES and similar closed lists elsewhere in the platform — kept
+// pinned last rather than sorted in, same convention as those other lists.
+// Alphabetized by English label (same convention as COUNTRIES_AMERICAS) per
+// Pablo's request; 'government_non_military' ("Sector público") was
+// removed per the same request — see migration_v53_remove_government_industry.sql
+// for the matching CHECK-constraint update and reclassification of any
+// company that had it set.
+const COMPANY_INDUSTRIES = [
+  { value: 'aerospace', en: 'Aerospace', es: 'Sector aeroespacial' },
+  { value: 'banking_finance_insurance', en: 'Banking, Finance and Insurance', es: 'Banca, finanzas y seguros' },
+  { value: 'broadcasting_entertainment', en: 'Broadcasting and Entertainment', es: 'Teledifusión y entretenimiento' },
+  { value: 'chemicals_petrochemicals', en: 'Chemicals / Petrochemicals', es: 'Química / petroquímica' },
+  { value: 'colocation_hosting_cloud', en: 'Colocation / Hosting / Cloud', es: 'Coubicación / hosting / nube' },
+  { value: 'construction_engineering', en: 'Construction and Engineering', es: 'Construcción e ingeniería' },
+  { value: 'consulting', en: 'Consulting', es: 'Consultoría' },
+  { value: 'education', en: 'Education', es: 'Educación' },
+  { value: 'energy', en: 'Energy', es: 'Energía' },
+  { value: 'financial_entity', en: 'Financial Entity', es: 'Entidad Financiera' },
+  { value: 'fire_alarms_security', en: 'Fire / Alarms / Security', es: 'Incendios / alarmas / seguridad' },
+  { value: 'healthcare_non_pharma', en: 'Healthcare (except pharmaceutical)', es: 'Atención sanitaria (excepto sector farmacéutico)' },
+  { value: 'infrastructure_construction', en: 'Infrastructure / Construction', es: 'Infraestructura / Construcción' },
+  { value: 'investor_fund', en: 'Investor / Fund', es: 'Inversor / Fondo' },
+  { value: 'manufacturer', en: 'Manufacturer', es: 'Fabricante' },
+  { value: 'manufacturing', en: 'Manufacturing', es: 'Manufactura' },
+  { value: 'maritime', en: 'Maritime', es: 'Naval' },
+  { value: 'military_defense', en: 'Military / Defense', es: 'Militar / defensa' },
+  { value: 'mining_metals', en: 'Mining / Metals', es: 'Minería / metales' },
+  { value: 'nuclear_energy', en: 'Nuclear Energy', es: 'Energía nuclear' },
+  { value: 'oil_gas_non_petrochemical', en: 'Oil and Gas (except petrochemical)', es: 'Petróleo y gas (excepto petroquímica)' },
+  { value: 'power_gas_transmission_distribution', en: 'Power and Gas Transmission and Distribution', es: 'Transmisión y distribución de energía / gas' },
+  { value: 'power_generation_non_nuclear', en: 'Power Generation (except nuclear)', es: 'Generación de energía (excepto nuclear)' },
+  { value: 'professional_services', en: 'Professional Services', es: 'Servicios profesionales' },
+  { value: 'retail_wholesale', en: 'Retail and Wholesale', es: 'Sector minorista y mayorista' },
+  { value: 'service_provider', en: 'Service Provider', es: 'Proveedor de Servicios' },
+  { value: 'technology', en: 'Technology', es: 'Tecnología' },
+  { value: 'telecommunications', en: 'Telecommunications', es: 'Telecomunicaciones' },
+  { value: 'transportation', en: 'Transportation', es: 'Transporte' },
+  { value: 'other', en: 'Other', es: 'Otro' },
 ];
 
 const PUBLIC_AGENCY_JURISDICTIONS = [
@@ -3816,25 +3879,52 @@ function computeManualAssessment(projectType, answers, { beneficiaryCount } = {}
 
 const FSU_SCORING_ELIGIBLE_TYPE = 'fiber_backbone_last_mile';
 
-/* The three FATIC (Financiamiento y Apoyo a Proveedores de Servicios de
-   TIC) program-level template_keys — see PROGRAM_TEMPLATES above. A
-   project applying under a Program tagged with any of these also unlocks
-   FSU Scoring, regardless of its own project_type. */
+/* Program-level template_keys — see PROGRAM_TEMPLATES above — whose
+   underlying financing line is FSU-funded, regardless of the applicant's
+   own project_type: the three FATIC (Financiamiento y Apoyo a Proveedores
+   de Servicios de TIC) lines, plus the "Red Mayorista Neutral" Program
+   (ENACOM Resolución 951/2025, WHOLESALE_NEUTRAL_NETWORK_PROGRAM_TEMPLATE
+   above — added to this list belatedly; it predates the FATIC lines but
+   was originally left out of this array, which meant a project applying
+   to it never unlocked FSU Scoring even though it's just as FSU-funded).
+   A project applying under a Program tagged with any of these also unlocks
+   FSU Scoring, whatever infrastructure category it's actually pursuing. */
 const FSU_SCORING_ELIGIBLE_PROGRAM_TEMPLATES = [
   'capital_markets_debt_financing',
   'tasu_subsidized_rate_credit',
   'fatic_general_equipment_provision',
+  'wholesale_neutral_network_program',
 ];
 
 /* Single source of truth for "does this project get the FSU Scoring tab?" —
-   used by app/project.html (to show/hide the link) and app/fsu-scoring.html
-   (to guard the page itself). `project` is a row from getProject()/
-   listProjects(), which embeds `programs(name, template_key)`. */
-function isFsuScoringEligible(project) {
+   used by app/project.html (to show/hide the link), app/fsu-scoring.html
+   (to guard the page itself), app/investment-proposal.html and
+   app/dashboard.html. `project` is a row from getProject()/listProjects(),
+   which embeds `programs(name, template_key)` — that's the project's
+   primary/preparation Program (projects.program_id).
+
+   `appliedPrograms` is optional: the array a caller gets from
+   listProjectPrograms(projectId)/listProjectProgramsForProjects(), i.e. the
+   Programs the project has actually *applied to* as financing lines
+   (project_programs — see migration_v21). A project can be FSU-funded via
+   either path independently — e.g. it applied to "FSU — Red Mayorista
+   Neutral" through "Aplicar a Programa" without ever setting that Program
+   as its primary one — so both are checked. Callers that haven't fetched
+   project_programs yet (or can't, e.g. an older cached call site) can omit
+   the second argument; this then only checks project_type/primary program,
+   same as before this was added. */
+function isFsuScoringEligible(project, appliedPrograms) {
   if (!project) return false;
   if (project.project_type === FSU_SCORING_ELIGIBLE_TYPE) return true;
   const templateKey = project.programs && project.programs.template_key;
-  return FSU_SCORING_ELIGIBLE_PROGRAM_TEMPLATES.includes(templateKey);
+  if (FSU_SCORING_ELIGIBLE_PROGRAM_TEMPLATES.includes(templateKey)) return true;
+  if (Array.isArray(appliedPrograms)) {
+    return appliedPrograms.some((row) => {
+      const appliedKey = row && row.programs && row.programs.template_key;
+      return FSU_SCORING_ELIGIBLE_PROGRAM_TEMPLATES.includes(appliedKey);
+    });
+  }
+  return false;
 }
 
 const FSU_MODELO_NEGOCIO_OPTIONS = [
@@ -4334,10 +4424,14 @@ const INAPlatform = {
   raciRoleLetter(value) { return raciRoleLetter(value); },
   COMPANY_TYPES,
   companyTypeLabel(value) { return labelFor(COMPANY_TYPES, value, currentLang()); },
-  /* types is companies.types (a text[]) — renders every tag, comma-joined. */
+  /* types is companies.types (a text[]) — renders every tag, comma-joined.
+     Deprecated alongside COMPANY_TYPES itself — kept only to render
+     pre-migration_v52 legacy data; new saves use companyIndustryLabel(). */
   companyTypesLabel(types) {
     return (types || []).map((t) => labelFor(COMPANY_TYPES, t, currentLang())).filter(Boolean).join(', ');
   },
+  COMPANY_INDUSTRIES,
+  companyIndustryLabel(value) { return labelFor(COMPANY_INDUSTRIES, value, currentLang()); },
   PUBLIC_AGENCY_JURISDICTIONS,
   publicAgencyJurisdictionLabel(value) { return labelFor(PUBLIC_AGENCY_JURISDICTIONS, value, currentLang()); },
   /* Guided project-submission templates (see PROJECT_TEMPLATES above).
@@ -5270,15 +5364,20 @@ const INAPlatform = {
 
   /* Batch version for dashboard.html's project grid — one query for every
      row instead of one per project. Returns a Map keyed by project_id, each
-     value the array of { program_id, programs: { name, funding_stage } }
-     rows for that project. */
+     value the array of { program_id, programs: { name, template_key,
+     funding_stage, financing_entity } } rows for that project.
+     template_key is included (in addition to the fields the umbrella-tag/
+     filter UI already used) so dashboard.html can also feed these rows into
+     isFsuScoringEligible(project, appliedPrograms) — see that function and
+     its PLATFORM_SETUP.md write-up for why applied financing programs, not
+     just a project's primary/preparation program, can unlock FSU Scoring. */
   async listProjectProgramsForProjects(projectIds) {
     const ids = (projectIds || []).filter(Boolean);
     const map = new Map();
     if (!ids.length) return map;
     const { data, error } = await supabaseClient
       .from('project_programs')
-      .select('project_id, program_id, programs(name, funding_stage, financing_entity)')
+      .select('project_id, program_id, programs(name, template_key, funding_stage, financing_entity)')
       .in('project_id', ids);
     if (error) throw error;
     (data || []).forEach((row) => {
@@ -6484,14 +6583,17 @@ const INAPlatform = {
     return data;
   },
 
-  async createCompany({ name, types, country, website, notes }) {
+  async createCompany({ name, industry, country, website, notes }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
       .from('companies')
       .insert({
         name,
-        types: types || [],
+        // industry (migration_v52) is the new single-select field — types
+        // (the old multi-tag array) is intentionally left at its default
+        // ('{}') on every new company; it's read-only legacy data now.
+        industry: industry || null,
         country: country || null,
         website: website || null,
         notes: notes || null,
@@ -6506,7 +6608,7 @@ const INAPlatform = {
   async updateCompany(id, patch) {
     const payload = { updated_at: new Date().toISOString() };
     if (patch.name !== undefined) payload.name = patch.name;
-    if (patch.types !== undefined) payload.types = patch.types || [];
+    if (patch.industry !== undefined) payload.industry = patch.industry || null;
     if (patch.country !== undefined) payload.country = patch.country || null;
     if (patch.website !== undefined) payload.website = patch.website || null;
     if (patch.notes !== undefined) payload.notes = patch.notes || null;
