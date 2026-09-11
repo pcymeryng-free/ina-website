@@ -116,7 +116,59 @@ function buildProgramsCatalog(programs) {
   }));
 }
 
-function buildProjectProfile(project) {
+// Same rule as INAPlatform.isFsuFinancingEntity() in assets/platform.js —
+// kept duplicated here (this file can't import a browser-oriented module)
+// rather than factored out, same tradeoff already accepted for the
+// <think>-strip/code-fence-strip JSON parsing logic shared with
+// api/extract-template-data.js.
+function isFsuFinancingEntity(value) {
+  return !!value && String(value).trim().toLowerCase() === 'enacom-fsu';
+}
+
+// Re-implementation, in plain Node, of INAPlatform.computeFinancingCoverage()
+// (assets/platform.js) — same inputs/outputs/arithmetic, including the FSU
+// double-counting fix (an FSU-linked Program's own saved share, once any
+// exists, supersedes the project's direct fsu_percentage/fsu_amount fields
+// rather than adding on top of them). Needed here because the model has to
+// be told the project's ACTUAL current financing coverage (not just a
+// yes/no "has FSU" flag) to avoid recommending instruments that duplicate
+// money already secured — see Pablo's bug report (Sep 2026) that the
+// recommendation ignored FSU + already-loaded financing entirely.
+function computeFinancingCoverage(project, projectPrograms) {
+  const budget = project && project.budget_amount != null ? Number(project.budget_amount) : null;
+  const pctOf = (amount) => (budget && budget > 0 && amount != null ? Math.round((Number(amount) / budget) * 100) : null);
+  const effectivePct = (explicitPct, amount) => {
+    if (explicitPct != null) return Number(explicitPct);
+    const derived = pctOf(amount);
+    return derived != null ? derived : 0;
+  };
+
+  const otherPct = project ? effectivePct(project.other_financing_percentage, project.other_financing_amount) : 0;
+  const programShares = (projectPrograms || [])
+    .filter((row) => row.programs && row.programs.funding_stage !== 'preparation' && (row.financing_percentage != null || row.financing_amount != null))
+    .map((row) => ({
+      program_id: row.program_id,
+      name: row.programs.name,
+      financing_entity: row.programs.financing_entity || null,
+      pct: effectivePct(row.financing_percentage, row.financing_amount),
+      isFsu: isFsuFinancingEntity(row.programs.financing_entity),
+    }));
+  const fsuProgramShares = programShares.filter((s) => s.isFsu);
+  const fsuProgramsPct = fsuProgramShares.reduce((sum, s) => sum + s.pct, 0);
+  const fsuPct = fsuProgramShares.length
+    ? fsuProgramsPct
+    : (project ? effectivePct(project.fsu_percentage, project.fsu_amount) : 0);
+  const programsPct = programShares.reduce((sum, s) => sum + (s.isFsu ? 0 : s.pct), 0);
+  return {
+    fsuPct,
+    otherPct,
+    programShares,
+    programsPct,
+    totalPct: fsuPct + otherPct + programsPct,
+  };
+}
+
+function buildProjectProfile(project, coverage, appliedProgramsDetail) {
   return {
     project_type: project.project_type,
     country: project.country,
@@ -130,8 +182,26 @@ function buildProjectProfile(project) {
     beneficiary_count: project.beneficiary_count,
     readiness_stage: project.readiness_stage || 'Not Analyzed',
     generating_entity_type: project.generating_entity_type,
-    already_has_fsu_direct: project.fsu_percentage != null || project.fsu_amount != null,
-    financing_already_applied_program_ids: project.__appliedProgramIds || [],
+
+    // Current financing coverage — the model must account for this instead
+    // of treating the project as if no financing existed yet (Pablo's bug
+    // report). Percent figures come from INAPlatform.computeFinancingCoverage's
+    // server-side twin above: they already resolve the "% vs. absolute
+    // amount" and "FSU direct field vs. FSU-linked Program share" precedence
+    // rules, so these numbers are ready to reason with as-is.
+    fsu_coverage_percent: coverage.fsuPct || 0,
+    fsu_scope: project.fsu_scope || null,
+    other_financing_coverage_percent: coverage.otherPct || 0,
+    other_financing_notes: project.other_financing_notes || null,
+    programs_coverage_percent: coverage.programsPct || 0,
+    total_coverage_percent: coverage.totalPct || 0,
+    remaining_financing_gap_percent: Math.max(0, 100 - (coverage.totalPct || 0)),
+
+    // Every Program already applied to (financing-stage AND preparation-
+    // stage), with its own saved share if one was entered, so the model can
+    // see not just "financing already applied" but WHAT and HOW MUCH.
+    financing_already_applied: appliedProgramsDetail,
+    financing_already_applied_program_ids: appliedProgramsDetail.map((r) => r.program_id),
   };
 }
 
@@ -142,14 +212,20 @@ You will be given: (1) a project's profile (type, country, budget, stage, financ
 
 Your task: recommend the best COMBINATION of these registered Programs for this project — not just the single best one. A good combination often mixes instrument TYPES that serve different purposes (e.g. a preparation/feasibility-study grant now, PLUS a financing instrument for later; or a debt instrument PLUS a political-risk-insurance/guarantee instrument that makes that same debt cheaper/safer, since insurance and guarantee instruments don't compete with financing instruments — they de-risk them).
 
+CRITICAL — account for financing already secured:
+The project profile includes fsu_coverage_percent, other_financing_coverage_percent, programs_coverage_percent, total_coverage_percent, remaining_financing_gap_percent, and a financing_already_applied list (each with name, financing_entity, funding_stage, and its own financing_percentage/financing_amount already loaded on the project). Do NOT treat this project as if it had no financing yet:
+- If total_coverage_percent is already high (e.g. 80%+) and remaining_financing_gap_percent is small, your recommendations and summary must reflect that most of the budget is already covered — recommend at most complementary/risk-mitigation instruments for the remaining gap, or explicitly say in the summary that the current mix is close to fully covering the budget and no major additional instrument is needed.
+- If an FSU-linked instrument (fsu_coverage_percent > 0, or an FSU-linked entry already in financing_already_applied) is already covering part of the budget, do not recommend a second FSU-linked Program (the platform only allows one per project — see the FSU rule below) and do not describe the project as lacking FSU financing.
+- Always reference the actual remaining_financing_gap_percent in summary_es/summary_en (e.g. "resta cubrir un X% del presupuesto") rather than a generic statement.
+
 Rules:
 - Only recommend Programs whose "types" array includes the project's project_type, OR whose types array is empty (generic/type-agnostic Programs).
-- The platform enforces at most ONE FSU-linked financing-stage Program per project (any Program whose financing_entity contains "ENACOM-FSU", "FSU", or is itself an FSU-adjacent instrument like TASU/FATIC/CIP/Emergencias/Red Mayorista Neutral) — if you recommend one, do not recommend a second one from that same FSU-linked group; pick the single best-fitting one instead.
-- A Program already in financing_already_applied_program_ids can still be recommended (e.g. to confirm it's a good fit, or to recommend adding a complementary one alongside it) — the caller will mark it as "already applied" for display.
-- Recommend at most ${MAX_RECOMMENDED} Programs, ordered by fit_score descending (0-100, how well each one fits THIS specific project — consider type eligibility, budget size, country, stage of maturity, and whether the instrument's purpose — preparation vs. implementation financing vs. risk mitigation — matches where this project actually is right now).
-- If fewer than ${MAX_RECOMMENDED} Programs genuinely fit well, recommend fewer rather than padding the list with poor fits.
+- The platform enforces at most ONE FSU-linked financing-stage Program per project (any Program whose financing_entity contains "ENACOM-FSU", "FSU", or is itself an FSU-adjacent instrument like TASU/FATIC/CIP/Emergencias/Red Mayorista Neutral) — if fsu_coverage_percent > 0 or financing_already_applied already contains an FSU-linked Program, do NOT recommend any other FSU-linked Program at all; otherwise, if you do recommend one, recommend only the single best-fitting one.
+- A Program already in financing_already_applied can still be recommended (e.g. to confirm it's a good fit, or to recommend adding a complementary one alongside it) — the caller will mark it as "already applied" for display. Use its already-loaded financing_percentage/financing_amount (if any) to judge whether topping it up or replacing it makes sense, rather than recommending a duplicate-purpose instrument.
+- Recommend at most ${MAX_RECOMMENDED} Programs, ordered by fit_score descending (0-100, how well each one fits THIS specific project — consider type eligibility, budget size, country, stage of maturity, remaining_financing_gap_percent, and whether the instrument's purpose — preparation vs. implementation financing vs. risk mitigation — matches where this project actually is right now).
+- If fewer than ${MAX_RECOMMENDED} Programs genuinely fit well, recommend fewer rather than padding the list with poor fits. If remaining_financing_gap_percent is 0 or very small, it is correct to recommend very few (or zero) additional financing-stage Programs.
 - rationale_es / rationale_en: 1-3 concise sentences each, specific to why THIS Program fits THIS project (not generic boilerplate).
-- summary_es / summary_en: 2-4 sentences explaining the overall combination strategy — how the recommended instruments work together as a set.
+- summary_es / summary_en: 2-4 sentences explaining the overall combination strategy — how the recommended instruments work together as a set, and how they relate to what's already secured (total_coverage_percent / remaining_financing_gap_percent).
 
 Respond with ONLY a single valid JSON object — no markdown code fences, no commentary — in this exact shape:
 {
@@ -262,14 +338,28 @@ async function handler(req, res) {
     );
     const programsById = new Map((programs || []).map((p) => [p.id, p]));
 
+    // Embed the linked program's name/financing_entity/funding_stage (not
+    // just program_id) plus this application's own financing_percentage/
+    // financing_amount — needed both for the applied-programs list AND to
+    // feed computeFinancingCoverage() below, which needs the same shape
+    // INAPlatform.computeFinancingCoverage() consumes client-side.
     const appliedRows = await supabaseRest(
-      `/project_programs?project_id=eq.${projectId}&select=program_id`,
+      `/project_programs?project_id=eq.${projectId}&select=program_id,financing_percentage,financing_amount,programs(name,financing_entity,funding_stage)`,
       { serviceKey: SUPABASE_SERVICE_ROLE_KEY, supabaseUrl: SUPABASE_URL }
     );
     const appliedProgramIds = new Set((appliedRows || []).map((r) => r.program_id));
 
-    project.__appliedProgramIds = Array.from(appliedProgramIds);
-    const projectProfile = buildProjectProfile(project);
+    const coverage = computeFinancingCoverage(project, appliedRows || []);
+    const appliedProgramsDetail = (appliedRows || []).map((r) => ({
+      program_id: r.program_id,
+      name: r.programs && r.programs.name,
+      financing_entity: (r.programs && r.programs.financing_entity) || null,
+      funding_stage: r.programs && r.programs.funding_stage,
+      financing_percentage: r.financing_percentage != null ? Number(r.financing_percentage) : null,
+      financing_amount: r.financing_amount != null ? Number(r.financing_amount) : null,
+    }));
+
+    const projectProfile = buildProjectProfile(project, coverage, appliedProgramsDetail);
     const catalog = buildProgramsCatalog(programs);
 
     const systemPrompt = buildSystemPrompt();
