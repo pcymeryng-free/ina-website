@@ -351,7 +351,7 @@ async function handler(req, res) {
     // excludes umbrella Iniciativas (see programs.program_role in
     // schema.sql), which are never a funding source themselves.
     const programs = await supabaseRest(
-      `/programs?program_role=eq.financing&select=id,name,financing_entity,funding_stage,types,description`,
+      `/programs?program_role=eq.financing&select=id,name,name_en,financing_entity,funding_stage,types,description`,
       { serviceKey: SUPABASE_SERVICE_ROLE_KEY, supabaseUrl: SUPABASE_URL }
     );
     const programsById = new Map((programs || []).map((p) => [p.id, p]));
@@ -546,7 +546,11 @@ async function handler(req, res) {
       });
       recommendedEn.push({
         program_id: pg.id,
-        name: pg.name,
+        // Optional programs.name_en (migration_v57_program_name_en.sql) —
+        // falls back to the original name, same convention as
+        // INAPlatform.programDisplayName() in assets/platform.js, kept
+        // duplicated here since this file can't import that browser module.
+        name: pg.name_en || pg.name,
         financing_entity: pg.financing_entity || null,
         funding_stage: pg.funding_stage,
         fit_score: fitScore,
