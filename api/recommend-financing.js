@@ -227,10 +227,28 @@ Rules:
 - rationale_es / rationale_en: 1-3 concise sentences each, specific to why THIS Program fits THIS project (not generic boilerplate).
 - summary_es / summary_en: 2-4 sentences explaining the overall combination strategy — how the recommended instruments work together as a set, and how they relate to what's already secured (total_coverage_percent / remaining_financing_gap_percent).
 
+suggested_percentage (Pablo's request, sep 2026 — propose the % of budget for
+each instrument too, not just pick it): for every recommended Program whose
+funding_stage is "financing" (NOT "preparation" — a preparation/feasibility
+grant doesn't fund a share of the implementation budget, so always use null
+for those), propose an integer 0-100 = what % of the project's total budget
+this specific instrument should realistically cover, given remaining_
+financing_gap_percent and what the OTHER recommended financing-stage
+instruments in the same list are also proposed to cover. When two or more
+recommended financing-stage instruments are meant to be combined together
+(complementary, e.g. debt + a guarantee that only covers part of the debt),
+their suggested_percentage values should roughly sum to remaining_financing_
+gap_percent or less — do not casually propose percentages that add up to far
+more than 100% once total_coverage_percent is included. When two instruments
+are alternatives to each other (recommend either one OR the other, not both),
+say so explicitly in their rationale and it's fine for both to independently
+propose a similar percentage covering most/all of the remaining gap. This is
+a starting suggestion only — the user can edit it before applying.
+
 Respond with ONLY a single valid JSON object — no markdown code fences, no commentary — in this exact shape:
 {
   "recommended": [
-    { "program_id": "<uuid from the catalog>", "fit_score": <integer 0-100>, "rationale_es": "<spanish>", "rationale_en": "<english>" }
+    { "program_id": "<uuid from the catalog>", "fit_score": <integer 0-100>, "suggested_percentage": <integer 0-100 or null>, "rationale_es": "<spanish>", "rationale_en": "<english>" }
   ],
   "summary_es": "<spanish>",
   "summary_en": "<english>"
@@ -376,6 +394,7 @@ async function handler(req, res) {
         recommended: top.map((p, i) => ({
           program_id: p.id,
           fit_score: 80 - i * 10,
+          suggested_percentage: p.funding_stage === 'preparation' ? null : Math.max(10, 40 - i * 10),
           rationale_es: '[SIMULADO] Recomendación de ejemplo, sin llamada a un modelo real.',
           rationale_en: '[SIMULATED] Example recommendation, no real model call made.',
         })),
@@ -506,12 +525,22 @@ async function handler(req, res) {
       if (!pg) return;
       const fitScore = Math.max(0, Math.min(100, Math.round(Number(r.fit_score) || 0)));
       const alreadyApplied = appliedProgramIds.has(pg.id);
+      // Only financing-stage instruments get a meaningful % of budget — a
+      // preparation/feasibility grant (funding_stage === 'preparation')
+      // never gets one, same rule as computeFinancingCoverage()/
+      // renderProgramApplicationRow() elsewhere on the platform, enforced
+      // here regardless of what the model returned.
+      const rawPct = pg.funding_stage === 'preparation' ? null : r.suggested_percentage;
+      const suggestedPercentage = rawPct == null || rawPct === '' || Number.isNaN(Number(rawPct))
+        ? null
+        : Math.max(0, Math.min(100, Math.round(Number(rawPct))));
       recommended.push({
         program_id: pg.id,
         name: pg.name,
         financing_entity: pg.financing_entity || null,
         funding_stage: pg.funding_stage,
         fit_score: fitScore,
+        suggested_percentage: suggestedPercentage,
         rationale: String(r.rationale_es || '').slice(0, 1000),
         already_applied: alreadyApplied,
       });
@@ -521,6 +550,7 @@ async function handler(req, res) {
         financing_entity: pg.financing_entity || null,
         funding_stage: pg.funding_stage,
         fit_score: fitScore,
+        suggested_percentage: suggestedPercentage,
         rationale: String(r.rationale_en || r.rationale_es || '').slice(0, 1000),
         already_applied: alreadyApplied,
       });
