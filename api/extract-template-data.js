@@ -53,6 +53,23 @@ const MAX_CHARS_PER_DOC = 6000;
 const MAX_TOTAL_CHARS = 30000;
 const MAX_FIELDS_PER_REQUEST = 60;
 
+// The model call's own max_tokens (see the 4 provider branches below) was
+// originally 2000 — too tight once a template's first autofill run sends
+// most/all of its fields at once (autofillTemplateAnswers() in
+// assets/platform.js only omits fields already in the shared pool, so on a
+// brand-new project the very first template opened can easily send
+// MAX_FIELDS_PER_REQUEST fields at once — DATACENTER_TEMPLATE and
+// SUBMARINE_CABLE_TEMPLATE alone are each around 60-70 fields, several
+// `textarea`). The model has to emit one JSON entry per field even for the
+// nulls, so a large template's response routinely exceeded 2000 tokens and
+// got cut off mid-object — valid-looking output that then failed
+// `JSON.parse` below with exactly the "Could not parse extraction output"
+// error surfaced to the user. Raised to 6000 (still comfortably under
+// every configured provider's per-call ceiling) so a full
+// MAX_FIELDS_PER_REQUEST-sized response — worst case, ~60 fields including
+// a dozen-plus verbose textareas — has real headroom instead of routinely
+// brushing the limit.
+
 function json(res, status, body) {
   res.status(status).setHeader('Content-Type', 'application/json');
   res.end(JSON.stringify(body));
@@ -327,7 +344,7 @@ async function handler(req, res) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
         body: JSON.stringify({
           model: GROQ_MODEL || GROQ_MODEL_DEFAULT,
-          max_tokens: 2000,
+          max_tokens: 6000,
           temperature: 0,
           messages: [
             { role: 'system', content: systemPrompt },
@@ -355,7 +372,7 @@ async function handler(req, res) {
         },
         body: JSON.stringify({
           model: LOCAL_LLM_MODEL,
-          max_tokens: 2000,
+          max_tokens: 6000,
           temperature: 0,
           messages: [
             { role: 'system', content: systemPrompt },
@@ -381,7 +398,7 @@ async function handler(req, res) {
           modelId: BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT,
           system: [{ text: systemPrompt }],
           messages: [{ role: 'user', content: [{ text: userContent }] }],
-          inferenceConfig: { maxTokens: 2000, temperature: 0 },
+          inferenceConfig: { maxTokens: 6000, temperature: 0 },
         }));
         const outputContent = (bedrockRes.output && bedrockRes.output.message && bedrockRes.output.message.content) || [];
         rawText = outputContent.map((b) => b.text || '').join('');
@@ -402,7 +419,7 @@ async function handler(req, res) {
         },
         body: JSON.stringify({
           model: CLAUDE_MODEL || 'claude-sonnet-5',
-          max_tokens: 2000,
+          max_tokens: 6000,
           temperature: 0,
           system: systemPrompt,
           messages: [{ role: 'user', content: userContent }],
@@ -423,7 +440,19 @@ async function handler(req, res) {
       // comment/fix in api/analyze-project.js and
       // api/extract-business-card.js for why.
       const withoutThink = rawText.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '');
-      const cleaned = withoutThink.trim().replace(/^```json\s*/i, '').replace(/```$/, '');
+      let cleaned = withoutThink.trim().replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+      // Defensive trim to the outer { ... } object even though the prompt
+      // says "ONLY a single valid JSON object, no commentary" — some
+      // providers/models still occasionally wrap it in a stray sentence
+      // ("Here is the extracted data: {...}") that the code-fence strip
+      // above doesn't catch. Slicing from the first "{" to the last "}"
+      // recovers those without touching well-formed output at all (a
+      // response that's already just "{...}" slices to itself).
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+      }
       parsed = JSON.parse(cleaned);
     } catch (e) {
       console.error('[extract-template-data] could not parse model output as JSON:', e, '\nraw output (first 2000 chars):', rawText.slice(0, 2000));
