@@ -5919,7 +5919,18 @@ const INAPlatform = {
       body: JSON.stringify({ projectId, fields }),
     });
     const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(body.error || 'Autocomplete request failed.');
+    if (!res.ok) {
+      // body.raw (the model's actual, unparseable output — present on the
+      // "Could not parse extraction output" 502 from api/extract-template-
+      // data.js) and body.detail (present on a provider request failure)
+      // are logged here rather than thrown, same pattern as
+      // requestAnalysis()'s matching fix — so the real cause is visible in
+      // DevTools Console even though the thrown Error (caught by
+      // app/project-template.html's setAutofillStatus()) only ever shows
+      // the short body.error string to the user.
+      if (body.raw || body.detail) console.error('[extractTemplateFieldsFromDocuments] failed:', body.error, body.raw || body.detail);
+      throw new Error(body.error || 'Autocomplete request failed.');
+    }
     return body;
   },
 
