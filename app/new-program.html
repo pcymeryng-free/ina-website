@@ -69,7 +69,7 @@
     <div id="editLockBanner" class="lock-banner" style="display:none; max-width:640px;"></div>
 
     <form id="programForm" style="max-width:640px; margin-top:36px;">
-      <div class="field" style="margin-top:0;"><label for="pgName"><span data-i18n="prog.f.name">Program name</span></label><input id="pgName" type="text" required></div>
+      <div class="field" style="margin-top:0;"><label for="pgName"><span id="pgNameLabel" data-i18n="prog.f.name">Program name</span></label><input id="pgName" type="text" required></div>
       <div class="field" style="margin-top:18px;"><label for="pgOrg"><span data-i18n="prog.f.org">Presenting organization</span></label><input id="pgOrg" type="text" required></div>
       <div class="field" style="margin-top:18px;">
         <label><span data-i18n="prog.f.orgType">Organization type</span></label>
@@ -83,7 +83,7 @@
            convention is the exact value "ENACOM-FSU" — that's what lets
            app/project.html group these together with a project's own FSU
            financing fields in one block. -->
-      <div class="field" style="margin-top:18px;">
+      <div class="field" style="margin-top:18px;" id="financingEntityField">
         <label for="pgFinancingEntity"><span data-i18n="prog.f.financingEntity">Financing entity (optional)</span></label>
         <input id="pgFinancingEntity" type="text" placeholder="BID, CAF, Banco Nación, ENACOM-FSU…">
         <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.financingEntity.help">The institution that actually finances this program — not the presenting organization above. For Universal Service Fund programs, use exactly "ENACOM-FSU" so it groups correctly on the project's Financing tab.</span></p>
@@ -106,7 +106,7 @@
            shown before "What does this program fund?" — that question
            doesn't apply to an Initiative, so picking 'umbrella' here hides
            it entirely (see renderProgramRoleOptions() below). -->
-      <div class="field" style="margin-top:18px;">
+      <div class="field" style="margin-top:18px;" id="programRoleField">
         <label><span data-i18n="prog.f.role">Role</span></label>
         <div class="chk-group" id="programRoleOptions"></div>
         <p style="font-size:12px; color:var(--muted); margin-top:8px;" id="programRoleHelp"><span data-i18n="prog.f.role.help">"Financing program" is a real funding source (FSU, BID, CAF, USTDA…), selectable when a project applies for financing. "Initiative" just groups several separately-financed projects under one effort — e.g. Atlántico-Pacífico bundling a fiber backbone, a submarine cable and a datacenter as three independent projects. An Initiative funds nothing itself.</span></p>
@@ -117,11 +117,11 @@
         <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.fundingStage.help">"Project financing" (default) funds the project's implementation, like FSU or a multilateral loan. "Project preparation" funds elaborating/structuring the project itself before it's finished — e.g. a USTDA feasibility-study grant.</span></p>
       </div>
       <div class="field" style="margin-top:18px;">
-        <label><span data-i18n="prog.f.types">Program type(s)</span></label>
+        <label><span id="programTypesLabel" data-i18n="prog.f.types">Program type(s)</span></label>
         <div class="chk-group" id="programTypesOptions"></div>
-        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.types.help">Select every infrastructure type this program is expected to cover — a Program can span several, unlike an individual project.</span></p>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span id="programTypesHelp" data-i18n="prog.f.types.help">Select every infrastructure type this program is expected to cover — a Program can span several, unlike an individual project.</span></p>
       </div>
-      <div class="field" style="margin-top:18px;">
+      <div class="field" style="margin-top:18px;" id="templateField">
         <label for="pgTemplate"><span data-i18n="prog.f.template">Program template (optional)</span></label>
         <select id="pgTemplate"></select>
         <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.template.help">If this program follows a standardized ENACOM financing line (e.g. a debt-instrument line under a Universal Service Fund program), pick its template — anyone submitting a project under this program then gets a guided, standardized form to apply.</span></p>
@@ -157,9 +157,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=55"></script>
+<script src="/assets/i18n.js?v=59"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=65"></script>
+<script src="/assets/platform.js?v=69"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -209,6 +209,26 @@
       : (financing ? 'New Financing Program' : 'New Initiative');
     document.getElementById('pageTitle').innerHTML = `<span data-i18n="${titleKey}">${titleText}</span>`;
     document.getElementById('crumbLabel').innerHTML = `<span data-i18n="${titleKey}">${titleText}</span>`;
+
+    // "Program name" only makes sense for a financing program — for an
+    // Initiative, relabel to "Initiative name" so it's clear this is the
+    // Initiative's own name, not, say, one of its member projects'.
+    const nameKey = financing ? 'prog.f.name' : 'init.f.name';
+    const nameText = financing ? 'Program name' : 'Initiative name';
+    document.getElementById('pgNameLabel').outerHTML = `<span id="pgNameLabel" data-i18n="${nameKey}">${nameText}</span>`;
+
+    // "Program type(s)" → "Initiative components" for an Initiative — these
+    // are the infrastructure types the Initiative spans (e.g. Atlántico-
+    // Pacífico's fiber backbone + submarine cable + datacenter), which reads
+    // more naturally as "components" than as a financing program's "types".
+    const typesKey = financing ? 'prog.f.types' : 'init.f.types';
+    const typesText = financing ? 'Program type(s)' : 'Initiative components';
+    document.getElementById('programTypesLabel').outerHTML = `<span id="programTypesLabel" data-i18n="${typesKey}">${typesText}</span>`;
+    const typesHelpKey = financing ? 'prog.f.types.help' : 'init.f.types.help';
+    const typesHelpText = financing
+      ? 'Select every infrastructure type this program is expected to cover — a Program can span several, unlike an individual project.'
+      : 'Select every infrastructure type this Initiative is expected to cover — like EPECH\'s "Atlántico-Pacífico," which spans a fiber backbone, a submarine cable and a datacenter as its components.';
+    document.getElementById('programTypesHelp').outerHTML = `<span id="programTypesHelp" data-i18n="${typesHelpKey}">${typesHelpText}</span>`;
 
     if (!isEdit) {
       document.getElementById('pageLede').innerHTML = financing
@@ -260,7 +280,14 @@
     return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
   }
 
-  const lang = INAPlatform.currentLang();
+  // NOT a const — see the matching comment in initiatives.html/dashboard.html/
+  // project.html/assessment.html. Captured once at load, this stayed frozen
+  // on language toggle and left the Program type(s) checkboxes and the
+  // Program template dropdown showing stale-language labels (both build
+  // their option text directly from this variable rather than re-reading
+  // INAPlatform.currentLang() each time) — the .lang-btn listener further
+  // below keeps it in sync and re-renders everything that reads it.
+  let lang = INAPlatform.currentLang();
   const ORG_TYPES = ['public', 'private'];
 
   function renderOrgTypeOptions(selected) {
@@ -310,7 +337,7 @@
         <span class="type-tag">${INAPlatform.programRoleLabel(lockedRole)}</span>
       `;
       document.getElementById('programRoleHelp').style.display = 'none';
-      updateFundingStageFieldVisibility();
+      updateRoleDependentFieldsVisibility();
       return;
     }
     el.innerHTML = PROGRAM_ROLES.map((v, i) => `
@@ -319,17 +346,44 @@
         <span>${INAPlatform.programRoleLabel(v)}</span>
       </label>
     `).join('');
-    updateFundingStageFieldVisibility();
+    updateRoleDependentFieldsVisibility();
   }
-  function updateFundingStageFieldVisibility() {
+  // Four fields only make sense for a real Financing Program, not an
+  // Initiative (umbrella role): the role picker itself (programRoleField —
+  // Pablo's call: on the Initiatives page, this field is just noise, since
+  // arriving via "Create Initiative" already implies it and an Initiative
+  // shouldn't need reclassifying back and forth through this form), "what
+  // does this fund" (fundingStageField — meaningless for a program that
+  // funds nothing itself), the financing entity (financingEntityField — who
+  // puts up the money; an Initiative just groups projects, it isn't itself
+  // a funding source), and the guided-form template (templateField —
+  // templates exist so a project applying to a specific financing line
+  // gets a standardized form; an Initiative has no such application flow).
+  // Hides all four for 'umbrella' and clears the three with a value, so
+  // switching a program's role to Initiative (or loading one that predates
+  // this fix, or that had legacy data from before the role split) can't
+  // silently keep/save financing-specific data that no longer applies. One
+  // consequence: once a program is viewed as an Initiative, there's no way
+  // back to 'financing' through this form (the picker that would do it is
+  // exactly what's hidden) — reclassifying that way is intentionally not
+  // supported here anymore.
+  function updateRoleDependentFieldsVisibility() {
     // Reads the DOM element directly rather than the `form` variable below
     // (declared later in this script) — this runs at render time, before
     // that declaration executes.
     const role = (new FormData(document.getElementById('programForm'))).get('programRole') || 'financing';
-    document.getElementById('fundingStageField').style.display = role === 'umbrella' ? 'none' : '';
+    const isUmbrella = role === 'umbrella';
+    document.getElementById('programRoleField').style.display = isUmbrella ? 'none' : '';
+    document.getElementById('fundingStageField').style.display = isUmbrella ? 'none' : '';
+    document.getElementById('financingEntityField').style.display = isUmbrella ? 'none' : '';
+    document.getElementById('templateField').style.display = isUmbrella ? 'none' : '';
+    if (isUmbrella) {
+      document.getElementById('pgFinancingEntity').value = '';
+      document.getElementById('pgTemplate').value = '';
+    }
   }
   renderProgramRoleOptions();
-  document.getElementById('programRoleOptions').addEventListener('change', updateFundingStageFieldVisibility);
+  document.getElementById('programRoleOptions').addEventListener('change', updateRoleDependentFieldsVisibility);
   applyRoleContext(lockedRole || 'umbrella');
 
   /* Declared program types — checkboxes from the same catalog as
@@ -483,6 +537,40 @@
   const note = document.getElementById('pgNote');
   const submitBtn = document.getElementById('pgSubmit');
 
+  // Keeps `lang` (and everything built from it — Program type(s) checkboxes,
+  // the Program template dropdown, existing-attachment delete tooltips) in
+  // sync on EN/ES toggle. assets/i18n.js's own .lang-btn listener only
+  // re-scans [data-i18n]-tagged elements — it has no idea this page builds
+  // several sections dynamically in plain JS. Same fix as
+  // initiatives.html/dashboard.html/project.html/assessment.html.
+  //
+  // document.documentElement.setAttribute('lang', ...) below is NOT
+  // redundant with what i18n.js's own .lang-btn listener does a moment
+  // later: listeners on the same element run in registration order, and
+  // this inline script runs (and attaches its listener) before
+  // DOMContentLoaded fires, which is when i18n.js attaches its own —
+  // so without setting it here too, renderOrgTypeOptions()/
+  // renderFundingStageOptions()/renderProgramRoleOptions() (all of which
+  // read INAPlatform.currentLang(), i.e. this attribute, not the local
+  // `lang` var) would run one click behind, showing Organization Type /
+  // Funding Stage / Role in the *previous* language while the rest of the
+  // page had already switched — exactly the "reversed" language bug
+  // reported for Organization Type. Same fix as project.html.
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      lang = btn.getAttribute('data-lang');
+      document.documentElement.setAttribute('lang', lang);
+      const selectedOrgType = (new FormData(form)).get('orgType');
+      renderOrgTypeOptions(selectedOrgType);
+      const selectedFundingStage = (new FormData(form)).get('fundingStage');
+      renderFundingStageOptions(selectedFundingStage);
+      renderProgramRoleOptions(lockedRole || (new FormData(form)).get('programRole'));
+      renderProgramTypeOptions();
+      renderProgramTemplateOptions();
+      renderExistingPgDocs();
+    });
+  });
+
   async function init() {
     if (!INAPlatform.isConfigured()) {
       note.textContent = 'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
@@ -548,16 +636,23 @@
         lockResult = { acquired: true, locked_by: null, locked_by_name: null, locked_at: null };
       }
 
+      const editedRole = program.program_role || 'financing';
+      const editedIsUmbrella = editedRole === 'umbrella';
       document.getElementById('pgName').value = program.name || '';
       document.getElementById('pgOrg').value = program.organization || '';
-      document.getElementById('pgFinancingEntity').value = program.financing_entity || '';
+      // An Initiative doesn't have a financing entity or a template (see
+      // updateRoleDependentFieldsVisibility() above) — if this program
+      // predates that rule (or was switched to 'umbrella' after having
+      // financing-specific data), don't repopulate those now-hidden fields
+      // from it.
+      document.getElementById('pgFinancingEntity').value = editedIsUmbrella ? '' : (program.financing_entity || '');
       document.getElementById('pgDesc').value = program.description || '';
       renderOrgTypeOptions(program.organization_type);
-      renderProgramRoleOptions(program.program_role || 'financing');
+      renderProgramRoleOptions(editedRole);
       renderFundingStageOptions(program.funding_stage || 'financing');
       typesChecked = new Set(program.types || []);
       renderProgramTypeOptions();
-      renderProgramTemplateOptions(program.template_key || '');
+      renderProgramTemplateOptions(editedIsUmbrella ? '' : (program.template_key || ''));
 
       try {
         existingPgDocs = (await INAPlatform.listProgramDocuments(editId)) || [];

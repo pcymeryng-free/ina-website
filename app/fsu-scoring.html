@@ -138,9 +138,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=55"></script>
+<script src="/assets/i18n.js?v=59"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=65"></script>
+<script src="/assets/platform.js?v=69"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -297,15 +297,23 @@
     } catch (e) { /* non-critical */ }
 
     const project = await INAPlatform.getProject(projectId);
+    // Applied financing programs (project_programs) — needed because
+    // isFsuScoringEligible() also unlocks FSU Scoring for a project that
+    // applied to an FSU-funded Program (e.g. Red Mayorista Neutral) via
+    // "Aplicar a Programa" on project.html, not just when that Program is
+    // set as the project's primary/preparation program.
+    let appliedPrograms = [];
+    try { appliedPrograms = await INAPlatform.listProjectPrograms(projectId); } catch (e) { appliedPrograms = []; }
     // FSU Scoring is available to the owner, or to the advisor who has
     // taken this project (assigned_advisor_id — see
     // migration_v19_advisor_edit_taken_project.sql for the matching RLS
     // change on fsu_scoring's insert/update policies), and only applies to
-    // fiber-to-the-home / last-mile projects, or any project applying
-    // under a FATIC Program (Mercado de Capitales, TASU, or the general/
-    // equipment línea) — see INAPlatform.isFsuScoringEligible.
+    // fiber-to-the-home / last-mile projects, or any project whose primary
+    // Program or any applied financing Program is FSU-funded (Mercado de
+    // Capitales, TASU, FATIC general/equipment línea, or Red Mayorista
+    // Neutral) — see INAPlatform.isFsuScoringEligible.
     let fsuEligible = false;
-    try { fsuEligible = INAPlatform.isFsuScoringEligible(project); } catch (e) { fsuEligible = false; }
+    try { fsuEligible = INAPlatform.isFsuScoringEligible(project, appliedPrograms); } catch (e) { fsuEligible = false; }
     const canScore = project.user_id === session.user.id
       || (!!project.assigned_advisor_id && project.assigned_advisor_id === session.user.id);
     if (!canScore || !fsuEligible) {

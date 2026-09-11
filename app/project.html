@@ -430,7 +430,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=55"></script>
+<script src="/assets/i18n.js?v=59"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <!-- pdf-lib: only used by generateProjectPdf() to splice real attached PDF
@@ -438,7 +438,7 @@
      another PDF's existing pages — see the "Anexos" section of that
      function). Everything else in the report still uses jsPDF alone. -->
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="/assets/platform.js?v=65"></script>
+<script src="/assets/platform.js?v=69"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -640,17 +640,17 @@
   // loads; see setAiAnalysisBtn() below and api/analyze-project.js's
   // matching server-side check.
   let isAssignedAdvisor = false;
-  // Whether AI Analysis can be run at all right now. The OWNER still needs
-  // the project to have already left Not Analyzed (readiness_stage set via
-  // their own self-assessment first — a brand new project only offers
-  // Self-Assessment until they run it once). An assigned ADVISOR, or any
-  // ADMIN (profiles.role === 'admin', regardless of whether they've
-  // "taken" this specific project), has no such restriction — either can
-  // run AI Analysis at any stage, including before any self-assessment
-  // exists, since for them it's a decision-support tool rather than the
-  // thing that starts the pipeline (see the matching server-side exemption
-  // in api/analyze-project.js and PLATFORM_SETUP.md's "AI Analysis at any
-  // stage (advisor/admin)" note).
+  // Whether AI Analysis can be run at all right now. Owner, assigned
+  // ADVISOR, or any ADMIN (profiles.role === 'admin', regardless of
+  // whether they've "taken" this specific project) can all run it at any
+  // workflow stage, including a brand new project that's still Not
+  // Analyzed and has no self-assessment yet — see the matching
+  // server-side check in api/analyze-project.js and PLATFORM_SETUP.md's
+  // "Analysis available at any workflow stage" note. (Until this was
+  // relaxed per Pablo's request, the owner specifically needed
+  // readiness_stage already set — i.e. their own self-assessment run
+  // first — before AI Analysis unlocked; advisor/admin never had that
+  // restriction.)
   let canRunAnalysis = false;
   let pollStartedAt = null;
   const POLL_TIMEOUT_MS = 90000; // give up and show a retry-able error after ~90s
@@ -1402,16 +1402,15 @@
   // label/style/enabled-state reflect the project's current analysis
   // status, replacing what used to be three separate buttons scattered
   // across the notAnalyzed/pending/error panels further down the page.
-  // The owner can trigger analysis once the project has left Not Analyzed
-  // (their own self-assessment first); the advisor currently assigned to
-  // the project (having "taken" it — see isAssignedAdvisor above), or any
-  // admin at all (no "take" required — see isAdminForAnalysis in init()),
-  // can trigger it at ANY stage, including while still Not Analyzed — all
+  // The owner, the advisor currently assigned to the project (having
+  // "taken" it — see isAssignedAdvisor above), or any admin at all (no
+  // "take" required — see isAdminForAnalysis in init()), can all trigger
+  // it at ANY workflow stage, including while still Not Analyzed — all
   // gated by canRunAnalysis (set in init()) and enforced again
-  // server-side in api/analyze-project.js. It stays hidden for a
+  // server-side in api/analyze-project.js. It stays hidden only for a
   // non-admin advisor just browsing who hasn't taken this specific
-  // project, and for the owner while the project is still Not Analyzed
-  // (Self-Assessment is the only action offered to them then).
+  // project (and, naturally, for anyone who isn't signed in as the
+  // owner/advisor/admin at all).
   function setAiAnalysisBtn(state) {
     // Drives both the body "Analysis" menu's button and its nav-header
     // twin (#navAiAnalysisBtn) together — same state, same behavior.
@@ -3010,20 +3009,38 @@
 
     isOwner = project.user_id === session.user.id;
     isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === session.user.id;
-    // Owner: gated on readiness_stage (must self-assess first). Assigned
-    // advisor, or any admin (regardless of assignment — an admin
-    // shouldn't have to "Take project" first just to run a read): always
-    // allowed, any stage — see the comment on canRunAnalysis's declaration
-    // above and the matching server-side check in api/analyze-project.js.
+    // Owner, assigned advisor, or any admin (regardless of assignment — an
+    // admin shouldn't have to "Take project" first just to run a read): all
+    // allowed at any workflow stage, including while still Not Analyzed —
+    // per Pablo's request that Self-Assessment/AI Analysis/FSU Scoring be
+    // available "en cualquier momento y estado del workflow". The owner
+    // used to need readiness_stage already set (i.e. their own
+    // self-assessment run first) before AI Analysis unlocked; that
+    // prerequisite is gone — see the matching server-side change in
+    // api/analyze-project.js (it used to 409 on exactly this condition).
     const isAdminForAnalysis = currentProfile && INAPlatform.isAdmin(currentProfile);
-    canRunAnalysis = (isOwner && !!project.readiness_stage) || isAssignedAdvisor || isAdminForAnalysis;
+    canRunAnalysis = isOwner || isAssignedAdvisor || isAdminForAnalysis;
+
+    // Fetched here (earlier than the "Programas de Financiamiento" block
+    // below needs it) because isFsuScoringEligible() below now also checks
+    // *applied* financing programs (project_programs), not just the
+    // project's primary/preparation program — e.g. a project that applied
+    // to "FSU — Red Mayorista Neutral" via "Aplicar a Programa" wouldn't
+    // otherwise unlock FSU Scoring, since that application never touches
+    // projects.program_id. See PLATFORM_SETUP.md's FSU Scoring section.
+    try {
+      [allProgramsForApply, currentProjectPrograms] = await Promise.all([
+        INAPlatform.listPrograms(),
+        INAPlatform.listProjectPrograms(projectId),
+      ]);
+    } catch (e) { allProgramsForApply = []; currentProjectPrograms = []; /* non-critical — block just shows empty */ }
 
     // Guarded rather than called inline below: if an older cached copy of
     // assets/platform.js (no isFsuScoringEligible yet) is ever served
     // alongside a newer project.html, this must not throw and blank out
     // the whole page — it should just fail closed (no FSU tab) instead.
     let fsuEligible = false;
-    try { fsuEligible = INAPlatform.isFsuScoringEligible(project); } catch (e) { fsuEligible = false; }
+    try { fsuEligible = INAPlatform.isFsuScoringEligible(project, currentProjectPrograms); } catch (e) { fsuEligible = false; }
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('projectContent').style.display = 'block';
@@ -3143,8 +3160,9 @@
 
     // FSU Scoring block — shown for any viewer (owner or advisor) as long
     // as the project is FSU-eligible (fiber_backbone_last_mile type, or
-    // applying under a FATIC Program — see INAPlatform.isFsuScoringEligible)
-    // AND a score has actually been saved; getFsuScoring() returns null
+    // its primary/preparation Program or any applied financing Program is
+    // FSU-funded — see INAPlatform.isFsuScoringEligible) AND a score has
+    // actually been saved; getFsuScoring() returns null
     // (not an error) when none exists yet.
     if (fsuEligible) {
       try {
@@ -3167,12 +3185,8 @@
     currentDocs = docs;
     renderDocs(docs);
 
-    try {
-      [allProgramsForApply, currentProjectPrograms] = await Promise.all([
-        INAPlatform.listPrograms(),
-        INAPlatform.listProjectPrograms(projectId),
-      ]);
-    } catch (e) { allProgramsForApply = []; currentProjectPrograms = []; /* non-critical — block just shows empty */ }
+    // allProgramsForApply/currentProjectPrograms were already fetched above
+    // (needed earlier for the FSU Scoring eligibility check) — just render.
     renderProgramApplications();
 
     // Roadmaps — visible to the owner read-only once at least one
