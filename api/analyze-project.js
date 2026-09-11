@@ -471,20 +471,20 @@ async function handler(req, res) {
     const isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === user.id;
     if (!isOwner && !isAssignedAdvisor && !isAdminCaller) return json(res, 403, { error: 'Not your project' });
 
-    // Workflow guard (migration_v20_workflow_promote_demote.sql), owner
-    // path only: for the OWNER, AI Analysis isn't offered while the
-    // project is still Not Analyzed (readiness_stage null) — it only
-    // becomes available once their own self-assessment has moved it to
-    // Concept Stage. An assigned ADVISOR, or any ADMIN (regardless of
-    // assignment), is exempt from this guard: either can run AI Analysis
-    // at any stage, including before any self-assessment exists, since for
-    // them it's a decision-support tool independent of whether the owner
-    // has self-assessed yet (see the matching client-side gate in
-    // app/project.html's canRunAnalysis and PLATFORM_SETUP.md's "AI
-    // Analysis at any stage (advisor/admin)" note).
-    if (!project.readiness_stage && !isAssignedAdvisor && !isAdminCaller) {
-      return json(res, 409, { error: 'This project needs the owner’s self-assessment before AI Analysis can run.' });
-    }
+    // No workflow-stage guard here on purpose. Until this was relaxed per
+    // Pablo's request ("en cualquier momento y estado del workflow se debe
+    // habilitar los análisis Self, AI y si aplica FSU Scoring"), the OWNER
+    // specifically couldn't run AI Analysis while the project was still Not
+    // Analyzed (readiness_stage null) — it only unlocked once their own
+    // self-assessment had moved it to Concept Stage; an assigned ADVISOR or
+    // any ADMIN was always exempt. Now owner/advisor/admin can all run it
+    // at any stage, including before any self-assessment exists — see the
+    // matching client-side change in app/project.html's canRunAnalysis and
+    // PLATFORM_SETUP.md's "Analysis available at any workflow stage" note.
+    // (readiness_stage still gets bootstrapped to 'Concept Stage' below on
+    // first analysis if it was null — see projectUpdate.readiness_stage
+    // further down — so a project analyzed before any self-assessment
+    // still leaves Not Analyzed correctly.)
 
     await supabaseRest(`/projects?id=eq.${projectId}`, {
       method: 'PATCH',
