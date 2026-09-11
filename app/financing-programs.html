@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=23">
+<link rel="stylesheet" href="/assets/style.css?v=24">
 <link rel="stylesheet" href="/assets/app.css?v=10">
 </head>
 <body class="app-body">
@@ -61,10 +61,52 @@
     <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
 
     <div id="programsBody" style="display:none; margin-top:24px;">
-      <div id="programList" style="display:flex; flex-direction:column; gap:14px;"></div>
+      <div class="dash-stats reveal" id="progStats"></div>
 
-      <div class="empty-state" id="emptyState" style="display:none; margin-top:18px;">
-        <div class="ei"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.5"/></svg></div>
+      <div class="filter-bar">
+        <div class="ffield">
+          <label for="fOrgType"><span data-i18n="prog.f.orgType">Organization type</span></label>
+          <select id="fOrgType"></select>
+        </div>
+        <div class="ffield">
+          <label for="fFundingStage"><span data-i18n="progfin.filter.fundingStage">Funding stage</span></label>
+          <select id="fFundingStage"></select>
+        </div>
+        <div class="ffield">
+          <label for="fProjectType"><span data-i18n="progfin.filter.projectType">Covers project type</span></label>
+          <select id="fProjectType"></select>
+        </div>
+        <div class="ffield" style="flex:1 1 200px;">
+          <label for="fSearch"><span data-i18n="dash.filter.search">Search</span></label>
+          <input type="search" id="fSearch" placeholder="">
+        </div>
+        <button type="button" class="fclear" id="fClear"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+      </div>
+
+      <div class="filter-count-row">
+        <p class="filter-count" id="filterCount"></p>
+        <!-- List/Grid layout toggle — see viewMode/setViewMode() in the
+             script below. Persisted in localStorage, same pattern as
+             dashboard.html's project list. -->
+        <div class="view-toggle" role="group" aria-label="View">
+          <button type="button" class="view-toggle-btn" data-view="list" title="List view">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <button type="button" class="view-toggle-btn" data-view="grid" title="Grid view">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="programList" class="program-list"></div>
+
+      <div class="empty-state" id="noMatchState" style="display:none;">
+        <div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/></svg></div>
+        <p style="font-size:14.5px; color:var(--text);"><span data-i18n="progfin.filter.none">No financing programs match the current filters.</span></p>
+        <button type="button" class="btn ghost" style="margin-top:18px;" id="fClear2"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+      </div>
+
+      <div class="empty-state" id="emptyState" style="display:none;">
         <p><span data-i18n="progfin.empty">No financing programs yet — create one above, or leave the financing pickers blank on individual projects.</span></p>
       </div>
     </div>
@@ -77,9 +119,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=60"></script>
+<script src="/assets/i18n.js?v=62"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=71"></script>
+<script src="/assets/platform.js?v=72"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -90,22 +132,15 @@
     location.href = 'login.html';
   });
 
-  document.querySelectorAll('.lang-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const newLang = btn.getAttribute('data-lang');
-      document.documentElement.setAttribute('lang', newLang);
-      lang = newLang;
-      if (allPrograms.length) renderList();
-    });
-  });
-
   function initials(name) {
     return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
   }
 
-  // NOT a const — see the matching comment in programs.html. Same
-  // stale-lang-capture fix, needed here for the same reason (this page also
-  // builds its list dynamically in plain JS, no [data-i18n] on any of it).
+  // NOT a const — assets/i18n.js's own .lang-btn listener only re-translates
+  // [data-i18n]-tagged elements; this whole dashboard (stats, filters, rows/
+  // cards) is built dynamically in plain JS, so the listener below has to
+  // re-render it explicitly after the language actually switches. Same
+  // stale-lang-capture fix already applied to dashboard.html/project.html.
   let lang = INAPlatform.currentLang();
 
   let allPrograms = [];
@@ -114,7 +149,7 @@
   let currentIsAdmin = false;
   // Broader than currentIsAdmin — also true for advisor, and for a custom
   // role granted can_edit on 'initiatives' or 'financing'. Gates the Edit
-  // link so admin/advisor can edit any program, not just their own.
+  // icon so admin/advisor can edit any program, not just their own.
   let currentCanManagePrograms = false;
   // programId -> Set of project ids. For a financing program this comes
   // almost entirely from project_programs (a project "applies to" FSU/BID/
@@ -127,9 +162,9 @@
     return (programProjectIds.get(programId) || new Set()).size;
   }
 
-  /* Same rationale as programs.html's programTypes() — prefer the owner's
-     declared list (pg.types), falling back to deriving it from member
-     projects for older programs saved before that field existed. */
+  /* Prefer the owner's declared list (pg.types), falling back to deriving
+     it from member projects for older programs saved before that field
+     existed. */
   function programTypes(pg) {
     if (pg.types && pg.types.length) return pg.types;
     const types = allProjects
@@ -138,56 +173,251 @@
     return Array.from(new Set(types));
   }
 
-  function renderList() {
-    const list = document.getElementById('programList');
-    list.innerHTML = '';
-    document.getElementById('emptyState').style.display = allPrograms.length ? 'none' : 'block';
+  // Border accent — same visual language as dashboard.html's project-row/
+  // project-card accents, just keyed off funding_stage/financing_entity
+  // instead of workflow status: an FSU-linked program gets the strongest
+  // (amber) accent since it's the single most scrutinized funding source on
+  // the platform, a preparation-stage program gets the neutral ink accent,
+  // and every other financing-stage program gets the default amber-soft look
+  // via the plain 'financing' accent.
+  function accentFor(pg) {
+    if (INAPlatform.isFsuFinancingEntity(pg.financing_entity)) return 'fsu';
+    if (pg.funding_stage === 'preparation') return 'preparation';
+    return 'financing';
+  }
 
-    allPrograms.forEach((pg) => {
+  const fOrgType = document.getElementById('fOrgType');
+  const fFundingStage = document.getElementById('fFundingStage');
+  const fProjectType = document.getElementById('fProjectType');
+  const fSearch = document.getElementById('fSearch');
+
+  function renderStats() {
+    const total = allPrograms.length;
+    const financing = allPrograms.filter((pg) => (pg.funding_stage || 'financing') === 'financing').length;
+    const preparation = allPrograms.filter((pg) => pg.funding_stage === 'preparation').length;
+    const fsu = allPrograms.filter((pg) => INAPlatform.isFsuFinancingEntity(pg.financing_entity)).length;
+
+    const labels = {
+      'progfin.stats.total': { en: 'Total Programs', es: 'Programas Totales' },
+      'progfin.stats.financing': { en: 'Project Financing', es: 'Financiamiento de Proyecto' },
+      'progfin.stats.preparation': { en: 'Preparation Funding', es: 'Financiamiento de Elaboración' },
+      'progfin.stats.fsu': { en: 'FSU-linked', es: 'Vinculados a FSU' },
+    };
+    const el = document.getElementById('progStats');
+    el.innerHTML = [
+      { n: total, key: 'progfin.stats.total' },
+      { n: financing, key: 'progfin.stats.financing' },
+      { n: preparation, key: 'progfin.stats.preparation' },
+      { n: fsu, key: 'progfin.stats.fsu' },
+    ].map((s) => `
+      <div class="dash-stat">
+        <div class="dsn">${s.n}</div>
+        <div class="dsl" data-i18n="${s.key}">${labels[s.key][lang]}</div>
+      </div>
+    `).join('');
+  }
+
+  function populateFilterOptions() {
+    const allLabel = lang === 'es' ? 'Todos' : 'All';
+
+    fOrgType.innerHTML = '';
+    fOrgType.appendChild(new Option(allLabel, ''));
+    ['public', 'private'].forEach((v) => {
+      fOrgType.appendChild(new Option(INAPlatform.programOrgTypeLabel(v), v));
+    });
+
+    fFundingStage.innerHTML = '';
+    fFundingStage.appendChild(new Option(allLabel, ''));
+    ['financing', 'preparation'].forEach((v) => {
+      fFundingStage.appendChild(new Option(INAPlatform.programFundingStageLabel(v), v));
+    });
+
+    fProjectType.innerHTML = '';
+    fProjectType.appendChild(new Option(allLabel, ''));
+    INAPlatform.PROJECT_TYPES.forEach((t) => {
+      fProjectType.appendChild(new Option(t[lang] || t.en, t.value));
+    });
+
+    fSearch.placeholder = lang === 'es' ? 'Nombre del programa u organismo…' : 'Program name or organization…';
+  }
+
+  function applyFilters(list) {
+    const orgType = fOrgType.value;
+    const fundingStage = fFundingStage.value;
+    const projectType = fProjectType.value;
+    const q = fSearch.value.trim().toLowerCase();
+
+    return list.filter((pg) => {
+      if (orgType && pg.organization_type !== orgType) return false;
+      if (fundingStage && (pg.funding_stage || 'financing') !== fundingStage) return false;
+      if (projectType && !programTypes(pg).includes(projectType)) return false;
+      if (q) {
+        const hay = `${pg.name} ${pg.organization}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function buildActions(pg, canEdit, canDelete) {
+    const actions = document.createElement('div');
+    actions.className = 'icon-action-group';
+
+    const viewEl = document.createElement('a');
+    viewEl.href = `dashboard.html?program=${pg.id}`;
+    viewEl.className = 'icon-btn';
+    viewEl.title = lang === 'es' ? 'Ver Proyectos' : 'View Projects';
+    viewEl.textContent = '📁';
+    actions.appendChild(viewEl);
+
+    if (canEdit) {
+      const editEl = document.createElement('a');
+      editEl.href = `new-program.html?id=${pg.id}`;
+      editEl.className = 'icon-btn';
+      editEl.title = lang === 'es' ? 'Editar programa' : 'Edit program';
+      editEl.textContent = '✎';
+      actions.appendChild(editEl);
+    }
+    if (canDelete) {
+      const deleteEl = document.createElement('button');
+      deleteEl.type = 'button';
+      deleteEl.className = 'icon-btn icon-btn-delete';
+      deleteEl.title = lang === 'es' ? 'Eliminar programa' : 'Delete program';
+      deleteEl.textContent = '🗑';
+      deleteEl.addEventListener('click', () => deleteProgram(pg));
+      actions.appendChild(deleteEl);
+    }
+    return actions;
+  }
+
+  function mainInnerHtml(pg) {
+    const types = programTypes(pg);
+    const typeTags = types.map((t) => `<span class="type-tag">${INAPlatform.projectTypeLabel(t)}</span>`).join(' ');
+    const badges = [
+      `<span class="type-tag">${INAPlatform.programOrgTypeLabel(pg.organization_type)}</span>`,
+      `<span class="type-tag funding-stage-tag funding-stage-${pg.funding_stage || 'financing'}">${INAPlatform.programFundingStageLabel(pg.funding_stage || 'financing')}</span>`,
+    ];
+    if (pg.financing_entity) {
+      badges.push(`<span class="type-tag financing-entity-tag${INAPlatform.isFsuFinancingEntity(pg.financing_entity) ? ' financing-entity-fsu' : ''}" title="${lang === 'es' ? 'Entidad financiadora' : 'Financing entity'}">${lang === 'es' ? 'Financia' : 'Finances'}: ${pg.financing_entity}</span>`);
+    }
+    return `
+      <div class="pgname">${pg.name}</div>
+      <div class="pgmeta">${pg.organization} ${badges.join(' ')}</div>
+      ${typeTags ? `<div style="margin-top:7px; display:flex; flex-wrap:wrap; gap:5px;">${typeTags}</div>` : ''}
+    `;
+  }
+
+  // 'list' (default, dense rows) or 'grid' (cards) — same toggle pattern as
+  // dashboard.html's project list, persisted separately so the two pages'
+  // preferences don't clash.
+  let viewMode = localStorage.getItem('inaFinancingProgramsViewMode') === 'grid' ? 'grid' : 'list';
+
+  function setViewMode(mode) {
+    viewMode = mode;
+    localStorage.setItem('inaFinancingProgramsViewMode', mode);
+    document.querySelectorAll('.view-toggle-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-view') === mode);
+    });
+    renderList();
+  }
+
+  function renderList() {
+    const filtered = applyFilters(allPrograms);
+    const list = document.getElementById('programList');
+    const noMatch = document.getElementById('noMatchState');
+    const count = document.getElementById('filterCount');
+
+    list.innerHTML = '';
+    list.className = viewMode === 'grid' ? 'program-grid' : 'program-list';
+
+    const countLabel = lang === 'es'
+      ? `${filtered.length} de ${allPrograms.length} programa${allPrograms.length === 1 ? '' : 's'}`
+      : `${filtered.length} of ${allPrograms.length} program${allPrograms.length === 1 ? '' : 's'}`;
+    count.textContent = countLabel;
+
+    if (!filtered.length) {
+      list.style.display = 'none';
+      noMatch.style.display = 'block';
+      return;
+    }
+    noMatch.style.display = 'none';
+    list.style.display = viewMode === 'grid' ? 'grid' : 'flex';
+
+    if (viewMode === 'grid') {
+      renderGridCards(filtered, list);
+    } else {
+      renderListRows(filtered, list);
+    }
+  }
+
+  // Row layout — every other clickable element (project-count pill, actions)
+  // is built as a SIBLING of `main`, never embedded inside its innerHTML
+  // string: `main` is itself an <a>, and a literal <a>/<button> nested
+  // inside another <a>'s innerHTML gets silently closed by the browser at
+  // that point, breaking the click target. Same fix already applied
+  // throughout dashboard.html's renderListRows()/renderGridCards().
+  function renderListRows(filtered, list) {
+    filtered.forEach((pg) => {
+      const row = document.createElement('div');
+      row.className = 'program-row';
+      row.setAttribute('data-accent', accentFor(pg));
+
+      const isOwner = pg.user_id === currentUserId;
+      const canEdit = isOwner || currentCanManagePrograms;
+      const canDelete = isOwner || currentIsAdmin;
       const count = projectCount(pg.id);
       const countLabel = lang === 'es'
         ? `${count} ${count === 1 ? 'proyecto' : 'proyectos'}`
         : `${count} ${count === 1 ? 'project' : 'projects'}`;
-      const isOwner = pg.user_id === currentUserId;
-      const canDelete = isOwner || currentIsAdmin;
-      const canEdit = isOwner || currentCanManagePrograms;
-      const types = programTypes(pg);
-      const typeTags = types
-        .map((t) => `<span class="type-tag">${INAPlatform.projectTypeLabel(t)}</span>`)
-        .join(' ');
 
-      // Every program on this page is a real financing source (see the
-      // isFinancingProgram() filter in init() below), so the badge is
-      // always the funding-stage one — never the umbrella role badge that
-      // programs.html shows.
-      const row = document.createElement('div');
-      row.className = 'info-block';
-      row.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
-          <div style="min-width:0;">
-            <h4 style="margin-bottom:4px;">${pg.name}</h4>
-            <p style="font-size:13px; color:var(--muted);">${pg.organization} <span class="type-tag" style="margin-left:4px;">${INAPlatform.programOrgTypeLabel(pg.organization_type)}</span> <span class="type-tag funding-stage-tag funding-stage-${pg.funding_stage || 'financing'}" style="margin-left:4px;">${INAPlatform.programFundingStageLabel(pg.funding_stage || 'financing')}</span>${pg.financing_entity ? ` <span class="type-tag financing-entity-tag${INAPlatform.isFsuFinancingEntity(pg.financing_entity) ? ' financing-entity-fsu' : ''}" style="margin-left:4px;" title="${lang === 'es' ? 'Entidad financiadora' : 'Financing entity'}">${lang === 'es' ? 'Financia' : 'Finances'}: ${pg.financing_entity}</span>` : ''}</p>
-          </div>
-          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <span class="fsu-pts">${countLabel}</span>
-            <a href="dashboard.html?program=${pg.id}" class="btn ghost small"><span data-i18n="prog.viewProjects">View Projects</span></a>
-            <div class="icon-action-group">
-              ${canEdit ? `<a href="new-program.html?id=${pg.id}" class="icon-btn" title="${lang === 'es' ? 'Editar programa' : 'Edit program'}">✎</a>` : ''}
-              ${canDelete ? `<button type="button" class="icon-btn icon-btn-delete" data-delete="${pg.id}" title="${lang === 'es' ? 'Eliminar programa' : 'Delete program'}">🗑</button>` : ''}
-            </div>
-          </div>
-        </div>
-        ${typeTags ? `<div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:5px;">${typeTags}</div>` : ''}
-        ${pg.description ? `<p style="margin-top:12px; font-size:13.5px; color:var(--muted); white-space:pre-wrap;">${pg.description}</p>` : ''}
-      `;
+      const main = document.createElement('a');
+      main.href = `financing-program.html?id=${pg.id}`;
+      main.className = 'main';
+      main.innerHTML = mainInnerHtml(pg);
+
+      const countEl = document.createElement('a');
+      countEl.href = `financing-program.html?id=${pg.id}`;
+      countEl.className = 'pgcount';
+      countEl.innerHTML = `<span class="fsu-pts">${countLabel}</span>`;
+
+      const actions = buildActions(pg, canEdit, canDelete);
+
+      row.appendChild(main);
+      row.appendChild(countEl);
+      row.appendChild(actions);
       list.appendChild(row);
     });
+  }
 
-    list.querySelectorAll('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const pg = allPrograms.find((p) => p.id === btn.getAttribute('data-delete'));
-        if (pg) deleteProgram(pg);
-      });
+  function renderGridCards(filtered, list) {
+    filtered.forEach((pg) => {
+      const card = document.createElement('div');
+      card.className = 'program-card';
+      card.setAttribute('data-accent', accentFor(pg));
+
+      const isOwner = pg.user_id === currentUserId;
+      const canEdit = isOwner || currentCanManagePrograms;
+      const canDelete = isOwner || currentIsAdmin;
+      const count = projectCount(pg.id);
+      const countLabel = lang === 'es'
+        ? `${count} ${count === 1 ? 'proyecto' : 'proyectos'}`
+        : `${count} ${count === 1 ? 'project' : 'projects'}`;
+
+      const main = document.createElement('a');
+      main.href = `financing-program.html?id=${pg.id}`;
+      main.className = 'pc-main';
+      main.innerHTML = mainInnerHtml(pg);
+      card.appendChild(main);
+
+      const footer = document.createElement('a');
+      footer.href = `financing-program.html?id=${pg.id}`;
+      footer.className = 'pc-footer';
+      footer.innerHTML = `<span>${countLabel}</span>`;
+      card.appendChild(footer);
+
+      card.appendChild(buildActions(pg, canEdit, canDelete));
+
+      list.appendChild(card);
     });
   }
 
@@ -206,6 +436,12 @@
       await INAPlatform.deleteProgram(pg.id);
       allPrograms = allPrograms.filter((p) => p.id !== pg.id);
       allProjects = allProjects.map((p) => (p.program_id === pg.id ? { ...p, program_id: null } : p));
+      if (!allPrograms.length) {
+        document.getElementById('programsBody').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+        return;
+      }
+      renderStats();
       renderList();
     } catch (err) {
       alert(lang === 'es'
@@ -213,6 +449,40 @@
         : `Couldn't delete the program: ${err.message || err}`);
     }
   }
+
+  function clearFilters() {
+    fOrgType.value = '';
+    fFundingStage.value = '';
+    fProjectType.value = '';
+    fSearch.value = '';
+    renderList();
+  }
+
+  [fOrgType, fFundingStage, fProjectType].forEach((el) => el.addEventListener('change', renderList));
+  fSearch.addEventListener('input', renderList);
+  document.getElementById('fClear').addEventListener('click', clearFilters);
+  document.getElementById('fClear2').addEventListener('click', clearFilters);
+
+  document.querySelectorAll('.view-toggle-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.getAttribute('data-view') === viewMode);
+    btn.addEventListener('click', () => setViewMode(btn.getAttribute('data-view')));
+  });
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const newLang = btn.getAttribute('data-lang');
+      document.documentElement.setAttribute('lang', newLang);
+      lang = newLang;
+      if (!allPrograms.length) return;
+      const saved = { orgType: fOrgType.value, fundingStage: fFundingStage.value, projectType: fProjectType.value };
+      renderStats();
+      populateFilterOptions();
+      fOrgType.value = saved.orgType;
+      fFundingStage.value = saved.fundingStage;
+      fProjectType.value = saved.projectType;
+      renderList();
+    });
+  });
 
   async function init() {
     if (!INAPlatform.isConfigured()) {
@@ -231,11 +501,6 @@
       document.getElementById('appUser').style.display = 'flex';
       currentIsAdmin = INAPlatform.isAdmin(profile);
       currentCanManagePrograms = INAPlatform.canManagePrograms(profile);
-      // NOT the same as currentIsAdmin above — that one stays a strict
-      // isAdmin() check because it also gates the delete button in
-      // renderList() (see canDelete). Nav/menu visibility for User
-      // Management + Roles is deliberately wider: canManageUsers() also
-      // passes for a custom role granted the 'user_management' permission.
       const canManageUsersNav = INAPlatform.canManageUsers(profile);
       const canMasterData = INAPlatform.canManageMasterData(profile);
       if (canManageUsersNav || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
@@ -253,12 +518,18 @@
     } catch (e) { /* non-critical */ }
 
     let fetchedPrograms;
-    [fetchedPrograms, allProjects] = await Promise.all([
-      INAPlatform.listPrograms(),
-      INAPlatform.listProjects(),
-    ]);
+    try {
+      [fetchedPrograms, allProjects] = await Promise.all([
+        INAPlatform.listPrograms(),
+        INAPlatform.listProjects(),
+      ]);
+    } catch (e) {
+      document.getElementById('loadingState').textContent =
+        (INAPlatform.currentLang() === 'es' ? 'No se pudieron cargar los programas: ' : 'Could not load the programs: ') + (e.message || e);
+      return;
+    }
     // This page is financing-only — multi-project umbrellas live on
-    // programs.html instead. See migration_v43_program_role.sql.
+    // initiatives.html instead. See migration_v43_program_role.sql.
     allPrograms = fetchedPrograms.filter((pg) => INAPlatform.isFinancingProgram(pg));
 
     // Build the umbrella (program_id) + applications (project_programs)
@@ -276,7 +547,19 @@
     } catch (e) { /* non-critical — umbrella-only counts still show */ }
 
     document.getElementById('loadingState').style.display = 'none';
+
+    if (!allPrograms.length) {
+      document.getElementById('emptyState').style.display = 'block';
+      document.getElementById('programsBody').style.display = 'block';
+      document.getElementById('progStats').style.display = 'none';
+      document.querySelector('.filter-bar').style.display = 'none';
+      document.querySelector('.filter-count-row').style.display = 'none';
+      return;
+    }
+
     document.getElementById('programsBody').style.display = 'block';
+    renderStats();
+    populateFilterOptions();
     renderList();
   }
   init();

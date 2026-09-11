@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=23">
+<link rel="stylesheet" href="/assets/style.css?v=24">
 <link rel="stylesheet" href="/assets/app.css?v=10">
 </head>
 <body class="app-body">
@@ -30,6 +30,13 @@
           <a href="dashboard.html" class="menu-item"><span data-i18n="pd.close">Close</span></a>
         </div>
       </div>
+      <!-- Financiación (Pablo, sep 2026): "agregarla en el menú entre
+           Project y Documentación como una tarea a realizar una vez dado
+           de alta el proyecto" — a single link, not a dropdown (same
+           pattern as navHelpLink), since app/project-financing.html is one
+           destination, not several actions. href is set to include this
+           project's id in init() below. -->
+      <a href="#" id="navFinancingLink" class="nav-menu-trigger"><span data-i18n="pf.nav">Financing</span></a>
       <div class="menu nav-menu" id="navDocsMenu">
         <button type="button" class="nav-menu-trigger menu-trigger" id="navDocsMenuBtn" aria-haspopup="true" aria-expanded="false">
           <span data-i18n="nav.documentation">Documentation</span><span class="menu-caret">▾</span>
@@ -90,7 +97,6 @@
             <a href="#" id="fsuLink" class="menu-item" style="display:none;"><span data-i18n="fsu.cta">FSU Scoring</span></a>
             <a href="#" id="assessLink" class="menu-item" style="display:none;"><span data-i18n="assess.cta">Self-Assessment</span></a>
             <button type="button" id="aiAnalysisBtn" class="menu-item" style="display:none;"><span id="aiAnalysisBtnLabel" data-i18n="pd.startAnalysis">AI Analysis</span></button>
-            <button type="button" id="financingRecoMenuBtn" class="menu-item" style="display:none;"><span data-i18n="finreco.cta">Financing Recommendation</span></button>
           </div>
         </div>
       </div>
@@ -190,68 +196,24 @@
         <div id="docsList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
       </div>
 
-      <!-- AI Financing Recommendation (Pablo, sep 2026): "para cualquier
-           proyecto nuevo o ya ingresado agregar una nueva funcionalidad que
-           permita utilizar IA para elegir la mejor combinación de
-           instrumentos/programas de financiación existentes en la
-           plataforma". Same gate as AI Analysis (canRunAnalysis — owner,
-           assigned advisor, or any admin, any workflow stage). Sits right
-           before the Financing Programs block below since "Aplicar" on a
-           recommended card feeds directly into that block's existing
-           applyProgramFromPicker() flow. See
-           migration_v55_financing_recommendations.sql and
-           api/recommend-financing.js. -->
-      <div id="financingRecommendationBlock" class="info-block" style="margin-top:24px; display:none;">
-        <h4 style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <span data-i18n="finreco.title">AI Financing Recommendation</span>
-          <button type="button" class="btn ghost small" id="financingRecoRunBtn" style="padding:6px 12px;"><span id="financingRecoRunBtnLabel" data-i18n="finreco.run">Generate recommendation</span></button>
-        </h4>
-        <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:640px;"><span data-i18n="finreco.help">Uses AI to pick the best combination of financing instruments/programs already registered on the platform (BID, DFC, FSU/TASU/FATIC, USTDA, capital markets, etc.) for this specific project.</span></p>
-
-        <!-- "Financiamiento ya asegurado" — Pablo's bug report (Sep 2026):
-             the recommendation panel showed the AI's suggested instruments
-             with no visible context of what's ALREADY covered (FSU +
-             already-applied Programs), making it look like the AI/the page
-             ignored that money entirely. Reuses the exact same
-             INAPlatform.computeFinancingCoverage() arithmetic as
-             #financingCoverage below (single source of truth) — this is
-             just a second, compact rendering of it, shown inline with the
-             recommendation instead of requiring a scroll down to the
-             Financing Programs block. See renderFinancingRecoCoverage(). -->
-        <div id="financingRecoCoverage" style="display:none; margin-top:14px; padding:12px 16px; border-radius:10px; background:var(--paper-2);">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-            <span id="financingRecoCoverageText" style="font-size:13px; font-weight:600;"></span>
-            <span id="financingRecoCoverageBreakdown" style="font-size:12px; color:var(--muted);"></span>
+      <!-- Financing — AI recommendation, FSU, financing Programs and "other
+           source" all moved out to their own dedicated screen,
+           app/project-financing.html (Pablo, sep 2026: "la gestión de
+           financiación separarla de la edición del proyecto... agregarla en
+           el menú... como una tarea a realizar una vez dado de alta el
+           proyecto"). This block is just a compact coverage summary +
+           entry point — same split as the Investment Proposal/Risk Matrix
+           blocks below (see proposalBlock). Visible to any viewer (the
+           destination page itself gates editing to owner/assigned advisor/
+           admin); populated by renderFinancingSummary() below. -->
+      <div id="financingSummaryBlock" class="info-block" style="margin-top:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div>
+            <h4><span data-i18n="pf.title">Financing Management</span></h4>
+            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pf.summary.help">AI-assisted recommendation, FSU, financing programs and other sources — manage the full financing mix from its own screen.</span></p>
           </div>
+          <a id="manageFinancingBtn" href="#" class="btn ghost small" style="flex:0 0 auto;"><span data-i18n="pf.manage">Manage Financing</span></a>
         </div>
-
-        <div id="financingRecoLoading" style="display:none; margin-top:14px; font-size:13px; color:var(--muted);"><span data-i18n="finreco.loading">Analyzing the best combination…</span></div>
-        <div id="financingRecoEmpty" style="margin-top:14px; font-size:13px; color:var(--muted);"><span data-i18n="finreco.empty">No recommendation generated yet.</span></div>
-        <div id="financingRecoResult" style="display:none; margin-top:14px;">
-          <p id="financingRecoSummary" style="font-size:13px; color:var(--ink); max-width:640px; margin-bottom:14px;"></p>
-          <div id="financingRecoList" style="display:flex; flex-direction:column; gap:10px;"></div>
-          <p id="financingRecoUpdatedAt" style="font-size:11.5px; color:var(--muted); margin-top:12px;"></p>
-        </div>
-      </div>
-
-      <!-- Financing Programs — a project can apply to a Program that funds
-           ELABORATING it (e.g. USTDA), and separately to one or more
-           Programs that finance the project itself (e.g. FSU + BID
-           together). Independent of the project's Initiative (the umbrella
-           program_id tag shown in the header meta line above — see
-           app/initiatives.html; an Initiative funds nothing itself, so it
-           never appears in this block). See
-           supabase/migration_v21_program_funding_stage_and_applications.sql. -->
-      <div id="programsBlock" class="info-block" style="margin-top:24px;">
-        <h4><span data-i18n="pd.programs.title">Financing Programs</span></h4>
-        <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pd.programs.help">Apply this project to funding for elaborating it (e.g. USTDA), and to one or more programs financing the project itself (e.g. FSU, BID).</span></p>
-
-        <!-- Financing mix coverage summary — migration_v35_financing_mix.sql.
-             FSU % + every financing-stage Program's % (below) + the "other
-             source" % (otherFinancingBlock above), added up against 100%.
-             Populated by renderFinancingCoverage(); hidden until at least
-             one share is actually set (a brand-new project with nothing
-             filled in yet has nothing meaningful to sum). -->
         <div id="financingCoverage" style="margin-top:14px; padding:12px 16px; border-radius:10px; background:var(--paper-2); display:none;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <span id="financingCoverageText" style="font-size:13px; font-weight:600;"></span>
@@ -259,63 +221,6 @@
           </div>
           <div style="margin-top:8px; height:6px; background:var(--paper-line); border-radius:100px; overflow:hidden;">
             <div id="financingCoverageBar" style="height:100%; background:var(--amber); border-radius:100px; transition:width .2s ease;"></div>
-          </div>
-        </div>
-
-        <div style="margin-top:18px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-            <h5 class="h-card" style="font-size:13px;"><span data-i18n="pd.programs.preparation">Project preparation funding</span></h5>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <select id="preparationProgramPicker" style="display:none;"></select>
-              <button type="button" class="btn ghost small" id="addPreparationProgramBtn" style="display:none;"><span data-i18n="pd.programs.apply">Apply to program</span></button>
-            </div>
-          </div>
-          <div id="preparationProgramsList" style="margin-top:10px; display:flex; flex-direction:column; gap:10px;"></div>
-          <p id="preparationProgramsEmpty" style="font-size:13px; color:var(--muted); margin-top:8px;"><span data-i18n="pd.programs.preparation.empty">Not applied to any project-preparation funding yet.</span></p>
-        </div>
-
-        <div style="margin-top:22px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-            <h5 class="h-card" style="font-size:13px;"><span data-i18n="pd.programs.financing">Project financing</span></h5>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <select id="financingProgramPicker" style="display:none;"></select>
-              <button type="button" class="btn ghost small" id="addFinancingProgramBtn" style="display:none;"><span data-i18n="pd.programs.apply">Apply to program</span></button>
-            </div>
-          </div>
-
-          <!-- FSU group — see migration_v36_program_financing_entity.sql.
-               Combines the project's own direct FSU fields (fsu_amount/
-               fsu_scope/fsu_percentage, populated in renderProject()) with
-               any Program application whose financing_entity matches
-               "ENACOM-FSU" (INAPlatform.isFsuFinancingEntity(), applied in
-               renderProgramApplications()) — everything FSU-related lives
-               in one visual block, per Pablo's request to group them. -->
-          <div id="fsuFinancingGroup" class="financing-group" style="margin-top:16px;">
-            <h6 class="financing-group-title"><span data-i18n="pd.fsuAttr.title">Universal Service Fund (FSU)</span></h6>
-            <div id="fsuAttrBlock" style="display:none;">
-              <p id="fsuAttrAmount" style="font-size:14px; color:var(--ink); display:none;"></p>
-              <p id="fsuAttrAmountUsd" style="font-size:14px; color:var(--ink); display:none;"></p>
-              <p id="fsuAttrPercentage" style="font-size:14px; color:var(--ink); display:none;"></p>
-              <p id="fsuAttrScope" style="font-size:14px; color:var(--muted); white-space:pre-wrap; margin-top:4px; display:none;"></p>
-            </div>
-            <div id="fsuProgramsList" style="margin-top:8px; display:flex; flex-direction:column; gap:10px;"></div>
-            <p id="fsuFinancingEmpty" style="font-size:13px; color:var(--muted); margin-top:8px;"><span data-i18n="pd.programs.fsuGroup.empty">No FSU financing registered for this project yet.</span></p>
-          </div>
-
-          <!-- "Other financing sources" group — every financing-stage
-               Program application that isn't FSU-linked, plus the
-               project's own "other financing" fields
-               (other_financing_percentage/other_financing_notes, see
-               migration_v35_financing_mix.sql). -->
-          <div id="otherFinancingGroup" class="financing-group" style="margin-top:14px;">
-            <h6 class="financing-group-title"><span data-i18n="pd.otherFinancing.title">Other Financing Source</span></h6>
-            <div id="otherFinancingBlock" style="display:none;">
-              <p id="otherFinancingAmount" style="font-size:14px; color:var(--ink); display:none;"></p>
-              <p id="otherFinancingPercentage" style="font-size:14px; color:var(--ink); display:none;"></p>
-              <p id="otherFinancingNotesText" style="font-size:14px; color:var(--muted); white-space:pre-wrap; margin-top:4px; display:none;"></p>
-            </div>
-            <div id="otherProgramsList" style="margin-top:8px; display:flex; flex-direction:column; gap:10px;"></div>
-            <p id="otherFinancingEmpty" style="font-size:13px; color:var(--muted); margin-top:8px;"><span data-i18n="pd.programs.otherGroup.empty">No other financing sources registered for this project yet.</span></p>
           </div>
         </div>
       </div>
@@ -475,7 +380,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=60"></script>
+<script src="/assets/i18n.js?v=62"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <!-- pdf-lib: only used by generateProjectPdf() to splice real attached PDF
@@ -483,7 +388,7 @@
      another PDF's existing pages — see the "Anexos" section of that
      function). Everything else in the report still uses jsPDF alone. -->
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="/assets/platform.js?v=71"></script>
+<script src="/assets/platform.js?v=72"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -664,9 +569,7 @@
       if (currentProject) renderWorkflowActionsMenu(currentProject);
       if (currentAnalysis) renderAnalysis(currentAnalysis);
       if (currentDocs) renderDocs(currentDocs);
-      if (currentProject) renderProgramApplications();
-      if (currentFinancingReco) renderFinancingRecommendation();
-      else if (currentProject) renderFinancingRecoCoverage();
+      if (currentProject) renderFinancingSummary();
       if (currentRoadmaps.length || (currentProfile && INAPlatform.canManageRoadmaps(currentProfile))) renderRoadmaps();
       if (currentRisks.length || (currentProfile && INAPlatform.canManageRisks(currentProfile))) renderRiskMatrix();
     });
@@ -711,16 +614,14 @@
   let currentProfile = null; // the VIEWER's own profile (role/id), not the project owner's
   let currentWorkflowEvents = [];
   let currentFsu = null; // set when an FSU score exists — see the FSU block below and generateProjectPdf()
-  // AI Financing Recommendation — null until generated at least once. See
-  // the financingRecommendationBlock markup above and
-  // renderFinancingRecommendation() below.
-  let currentFinancingReco = null;
   // Every Program this project has applied to (project_programs, each with
-  // its Program embedded) and every Program on the platform (for the
-  // "Apply to program" pickers) — see the Financing Programs block below
-  // and supabase/migration_v21_program_funding_stage_and_applications.sql.
+  // its Program embedded) — needed by renderFinancingSummary() and
+  // generateProjectPdf() via INAPlatform.computeFinancingCoverage(). Full
+  // financing management (applying to Programs, FSU, "other source", AI
+  // recommendation) now lives on app/project-financing.html; this page just
+  // reads the same data to show a compact summary — see manageFinancingBtn/
+  // navFinancingLink below for the link to that page.
   let currentProjectPrograms = [];
-  let allProgramsForApply = [];
   // This project's "Roadmaps" checklist (project_roadmaps rows) and every
   // roadmap_templates entry matching its project_type (or generic/any-type
   // templates) — see the Roadmaps block below and
@@ -748,82 +649,11 @@
     document.getElementById('pdesc').textContent = p.description;
     renderAttrs(p);
 
-    // FSU amount/scope/percentage block — see
-    // migration_v33_project_attributes.sql and
-    // migration_v35_financing_mix.sql (fsu_percentage).
-    const fsuAttrBlock = document.getElementById('fsuAttrBlock');
-    const fsuAttrAmount = document.getElementById('fsuAttrAmount');
-    const fsuAttrAmountUsd = document.getElementById('fsuAttrAmountUsd');
-    const fsuAttrPercentage = document.getElementById('fsuAttrPercentage');
-    const fsuAttrScope = document.getElementById('fsuAttrScope');
-    const hasFsuAmount = p.fsu_amount != null;
-    const hasFsuAmountUsd = p.fsu_amount_usd != null;
-    const hasFsuPercentage = p.fsu_percentage != null;
-    const hasFsuScope = !!p.fsu_scope;
-    fsuAttrBlock.style.display = (hasFsuAmount || hasFsuAmountUsd || hasFsuPercentage || hasFsuScope) ? 'block' : 'none';
-    if (hasFsuAmount) {
-      fsuAttrAmount.textContent = (lang === 'es' ? 'Monto solicitado: ' : 'Amount requested: ')
-        + 'ARS ' + Number(p.fsu_amount).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
-      fsuAttrAmount.style.display = 'block';
-    } else {
-      fsuAttrAmount.style.display = 'none';
-    }
-    // USD twin of the FSU amount above, plus the ARS-equivalent computed
-    // from exchange_rate (display-only) — see migration_v38_usd_amounts.sql.
-    if (hasFsuAmountUsd) {
-      let text = (lang === 'es' ? 'Monto solicitado (USD): ' : 'Amount requested (USD): ')
-        + INAPlatform.formatCurrencyUSD(p.fsu_amount_usd);
-      const arsEquiv = INAPlatform.usdToArs(p.fsu_amount_usd, p.exchange_rate);
-      if (arsEquiv != null) {
-        text += ` (${lang === 'es' ? 'equiv.' : 'equiv.'} ${INAPlatform.formatCurrency(arsEquiv)})`;
-      }
-      fsuAttrAmountUsd.textContent = text;
-      fsuAttrAmountUsd.style.display = 'block';
-    } else {
-      fsuAttrAmountUsd.style.display = 'none';
-    }
-    if (hasFsuPercentage) {
-      fsuAttrPercentage.textContent = (lang === 'es' ? 'Cubre: ' : 'Covers: ') + `${p.fsu_percentage}% ` + (lang === 'es' ? 'del presupuesto total' : 'of the total budget');
-      fsuAttrPercentage.style.display = 'block';
-    } else {
-      fsuAttrPercentage.style.display = 'none';
-    }
-    if (hasFsuScope) {
-      fsuAttrScope.textContent = p.fsu_scope;
-      fsuAttrScope.style.display = 'block';
-    } else {
-      fsuAttrScope.style.display = 'none';
-    }
-
-    // "Other financing source" block — migration_v35_financing_mix.sql +
-    // migration_v37_financing_amounts.sql (other_financing_amount).
-    const otherFinancingBlock = document.getElementById('otherFinancingBlock');
-    const otherFinancingAmountEl = document.getElementById('otherFinancingAmount');
-    const otherFinancingPercentage = document.getElementById('otherFinancingPercentage');
-    const otherFinancingNotesText = document.getElementById('otherFinancingNotesText');
-    const hasOtherAmount = p.other_financing_amount != null;
-    const hasOtherPct = p.other_financing_percentage != null;
-    const hasOtherNotes = !!p.other_financing_notes;
-    otherFinancingBlock.style.display = (hasOtherAmount || hasOtherPct || hasOtherNotes) ? 'block' : 'none';
-    if (hasOtherAmount) {
-      otherFinancingAmountEl.textContent = (lang === 'es' ? 'Monto: ' : 'Amount: ')
-        + 'ARS ' + Number(p.other_financing_amount).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
-      otherFinancingAmountEl.style.display = 'block';
-    } else {
-      otherFinancingAmountEl.style.display = 'none';
-    }
-    if (hasOtherPct) {
-      otherFinancingPercentage.textContent = (lang === 'es' ? 'Cubre: ' : 'Covers: ') + `${p.other_financing_percentage}% ` + (lang === 'es' ? 'del presupuesto total' : 'of the total budget');
-      otherFinancingPercentage.style.display = 'block';
-    } else {
-      otherFinancingPercentage.style.display = 'none';
-    }
-    if (hasOtherNotes) {
-      otherFinancingNotesText.textContent = p.other_financing_notes;
-      otherFinancingNotesText.style.display = 'block';
-    } else {
-      otherFinancingNotesText.style.display = 'none';
-    }
+    // FSU/other-financing direct fields, and the Financing Programs list,
+    // no longer render inline here — see app/project-financing.html and
+    // renderFinancingSummary() below, which only needs
+    // INAPlatform.computeFinancingCoverage()'s totals, not each field
+    // individually.
 
     const pill = document.getElementById('statusPill');
     pill.textContent = INAPlatform.effectiveStatusLabel(p);
@@ -2622,191 +2452,20 @@
     }
   }
 
-  /* ---------- Financing Programs (multi-program apply) ----------
-     See supabase/migration_v21_program_funding_stage_and_applications.sql.
-     currentProjectPrograms holds this project's applications (each row's
-     .programs is the embedded Program — name/template_key/funding_stage);
-     allProgramsForApply holds every Program on the platform, used to
-     populate the "Apply to program" pickers below (excluding Programs
-     already applied to). Available to owner or assigned advisor only —
-     same gate as editing the project itself. */
-  // prefillFromProjectFsu: true when this row is the project's ONLY applied
-  // FSU-linked program and it has no saved %/amount of its own yet — see
-  // the caller (renderProgramApplications()) for how that's determined.
-  // Purely a display convenience for an empty row: shows the project's
-  // already-entered direct FSU %/amount (fsuAttrAmount/fsuAttrPercentage
-  // above, populated in renderProject()) as an editable starting point
-  // instead of a blank field, so Pablo doesn't have to re-type a number he
-  // already entered elsewhere. Nothing is saved until the Save button is
-  // clicked — and once it is, computeFinancingCoverage() stops counting the
-  // project-level field separately (see its comment), so this never
-  // double-counts.
-  function renderProgramApplicationRow(row, prefillFromProjectFsu) {
-    const lang = INAPlatform.currentLang();
-    const pg = row.programs || {};
-    const canManage = isOwner || isAssignedAdvisor;
-    const appliedDate = row.applied_at
-      ? new Date(row.applied_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US')
-      : '';
-    // A program with a template_key can always be (re)opened to fill in or
-    // edit its guided intake — including when the application was created
-    // elsewhere without answers yet (e.g. new-project.html's "Project
-    // financing program(s)" checkboxes, which just record the association).
-    // applyToProgram() is an upsert (unique(project_id, program_id)), so
-    // reopening an already-applied program here safely overwrites its
-    // existing answers rather than duplicating the row.
-    const hasTemplate = canManage && pg.template_key && INAPlatform.programTemplateFor(pg.template_key);
-    const fillHref = hasTemplate
-      ? `project-template.html?mode=apply&project=${encodeURIComponent(projectId)}&program=${encodeURIComponent(row.program_id)}&ptpl=${encodeURIComponent(pg.template_key)}`
-      : '#';
-    // Financing mix (migration_v35_financing_mix.sql +
-    // migration_v37_financing_amounts.sql): only financing-stage
-    // applications get a "% del presupuesto" / "Monto" control — a
-    // preparation-stage one (e.g. USTDA) funds elaborating the project, not
-    // a share of its implementation cost, so neither field is ever
-    // meaningful there and the inputs are simply not rendered for those
-    // rows. Either field can be filled in, independently — same convention
-    // as the project-level FSU amount/%.
-    const isFinancingStage = pg.funding_stage !== 'preparation';
-    const rowHasOwnShare = row.financing_percentage != null || row.financing_amount != null;
-    const doPrefill = prefillFromProjectFsu && !rowHasOwnShare && currentProject
-      && (currentProject.fsu_percentage != null || currentProject.fsu_amount != null);
-    const pct = row.financing_percentage != null ? row.financing_percentage
-      : (doPrefill && currentProject.fsu_percentage != null ? currentProject.fsu_percentage : '');
-    const amt = row.financing_amount != null ? row.financing_amount
-      : (doPrefill && currentProject.fsu_amount != null ? currentProject.fsu_amount : '');
-    const div = document.createElement('div');
-    div.style.cssText = 'padding:12px 14px; border:1px solid var(--paper-line); border-radius:10px;';
-    div.innerHTML = `
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-        <div style="min-width:0;">
-          <strong style="font-size:13.5px;">${pg.name || ''}</strong>
-          <p style="font-size:12px; color:var(--muted); margin-top:2px;">${appliedDate}</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          ${hasTemplate ? `<a href="${fillHref}" class="btn ghost small" style="padding:6px 12px;">${row.notes ? (lang === 'es' ? 'Editar template' : 'Edit template') : (lang === 'es' ? 'Completar template' : 'Fill template')}</a>` : ''}
-          ${canManage ? `<button type="button" class="icon-btn icon-btn-delete" data-remove-program="${row.program_id}" title="${lang === 'es' ? 'Quitar aplicación' : 'Remove application'}">🗑</button>` : ''}
-        </div>
-      </div>
-      ${row.notes ? `<p style="font-size:12.5px; color:var(--muted); margin-top:8px; white-space:pre-wrap;">${row.notes}</p>` : ''}
-      ${isFinancingStage ? `
-      <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--paper-line); flex-wrap:wrap;">
-        <label style="font-size:12px; color:var(--muted);">${lang === 'es' ? '% del presupuesto' : '% of budget'}</label>
-        <input type="number" min="0" max="100" step="1" value="${pct}" data-pct-input="${row.program_id}" style="width:64px; padding:5px 8px; font-size:12.5px;" ${canManage ? '' : 'disabled'}>
-        <label style="font-size:12px; color:var(--muted);">${lang === 'es' ? 'Monto (ARS)' : 'Amount (ARS)'}</label>
-        <input type="number" min="0" step="1" value="${amt}" data-amt-input="${row.program_id}" style="width:120px; padding:5px 8px; font-size:12.5px;" ${canManage ? '' : 'disabled'}>
-        ${canManage ? `<button type="button" class="btn ghost small" data-financing-save="${row.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Guardar' : 'Save'}</button>` : ''}
-        <span data-financing-status="${row.program_id}" style="font-size:11.5px; color:var(--muted);"></span>
-      </div>
-      ${doPrefill ? `<p style="font-size:11.5px; color:var(--muted); margin-top:4px;">${lang === 'es' ? '💡 Prellenado con el % / monto de FSU del proyecto — revisá y guardá para confirmarlo en esta línea.' : '💡 Prefilled from the project’s overall FSU %/amount — review and save to confirm it for this line.'}</p>` : ''}` : ''}
-    `;
-    return div;
-  }
-
-  function renderProgramApplications() {
-    const prepList = document.getElementById('preparationProgramsList');
-    const fsuList = document.getElementById('fsuProgramsList');
-    const otherList = document.getElementById('otherProgramsList');
-    prepList.innerHTML = '';
-    fsuList.innerHTML = '';
-    otherList.innerHTML = '';
-
-    const prepRows = currentProjectPrograms.filter((r) => r.programs && r.programs.funding_stage === 'preparation');
-    const finRows = currentProjectPrograms.filter((r) => !r.programs || r.programs.funding_stage !== 'preparation');
-    // Split financing-stage applications into the FSU group vs everything
-    // else — see migration_v36_program_financing_entity.sql and
-    // INAPlatform.isFsuFinancingEntity(). Grouped alongside the project's
-    // own FSU/other-source fields (populated in renderProject(), same
-    // #fsuAttrBlock/#otherFinancingBlock ids, now nested inside the two
-    // group containers in the markup above).
-    const fsuRows = finRows.filter((r) => INAPlatform.isFsuFinancingEntity(r.programs && r.programs.financing_entity));
-    const otherRows = finRows.filter((r) => !INAPlatform.isFsuFinancingEntity(r.programs && r.programs.financing_entity));
-
-    // Only prefill when there's exactly one applied FSU program — with two
-    // or more, copying the same project-wide amount into every row would
-    // read as if that money were assigned multiple times over.
-    const prefillFsu = fsuRows.length === 1;
-    prepRows.forEach((r) => prepList.appendChild(renderProgramApplicationRow(r)));
-    fsuRows.forEach((r) => fsuList.appendChild(renderProgramApplicationRow(r, prefillFsu)));
-    otherRows.forEach((r) => otherList.appendChild(renderProgramApplicationRow(r)));
-
-    document.getElementById('preparationProgramsEmpty').style.display = prepRows.length ? 'none' : 'block';
-    // A group's "empty" note only shows when it truly has nothing — no
-    // program rows AND no project-level field set (fsuAttrBlock/
-    // otherFinancingBlock already toggle their own display in
-    // renderProject(), which always runs before this function).
-    const fsuAttrVisible = document.getElementById('fsuAttrBlock').style.display !== 'none';
-    const otherAttrVisible = document.getElementById('otherFinancingBlock').style.display !== 'none';
-    document.getElementById('fsuFinancingEmpty').style.display = (fsuRows.length || fsuAttrVisible) ? 'none' : 'block';
-    document.getElementById('otherFinancingEmpty').style.display = (otherRows.length || otherAttrVisible) ? 'none' : 'block';
-
-    [prepList, fsuList, otherList].forEach((list) => {
-      list.querySelectorAll('[data-remove-program]').forEach((btn) => {
-        btn.addEventListener('click', () => removeProgramApplication(btn.getAttribute('data-remove-program')));
-      });
-    });
-
-    // Financing mix (migration_v35_financing_mix.sql +
-    // migration_v37_financing_amounts.sql): wire each financing-stage
-    // row's combined "% del presupuesto" / "Monto" Save button (now split
-    // across the FSU/Other lists).
-    [fsuList, otherList].forEach((list) => {
-      list.querySelectorAll('[data-financing-save]').forEach((btn) => {
-        btn.addEventListener('click', () => saveFinancing(btn.getAttribute('data-financing-save')));
-      });
-    });
-
-    updateApplyPickers();
-    renderFinancingCoverage();
-  }
-
-  // Saves whatever's currently in a program application row's % and Monto
-  // inputs — both are sent together on every click (rather than only the
-  // one that changed), so clearing a field to blank and clicking Save does
-  // clear it on the server, unlike the "only touch what's explicitly
-  // passed" pattern used by applyToProgram()/reconcileProgramApplications()
-  // in new-project.html. That distinction is deliberate: this is an
-  // explicit, single-purpose Save click on a fully visible pair of inputs,
-  // so "what you see is what gets saved" is the more intuitive behavior
-  // here.
-  async function saveFinancing(programId) {
-    const lang = INAPlatform.currentLang();
-    const pctInput = document.querySelector(`[data-pct-input="${programId}"]`);
-    const amtInput = document.querySelector(`[data-amt-input="${programId}"]`);
-    const status = document.querySelector(`[data-financing-status="${programId}"]`);
-    if (!pctInput && !amtInput) return;
-    try {
-      const updated = await INAPlatform.updateProjectProgramFinancing(projectId, programId, {
-        percentage: pctInput ? pctInput.value : undefined,
-        amount: amtInput ? amtInput.value : undefined,
-      });
-      const idx = currentProjectPrograms.findIndex((r) => r.program_id === programId);
-      if (idx !== -1) currentProjectPrograms[idx] = updated;
-      if (status) {
-        status.textContent = lang === 'es' ? 'Guardado ✓' : 'Saved ✓';
-        setTimeout(() => { status.textContent = ''; }, 2500);
-      }
-      renderFinancingCoverage();
-    } catch (err) {
-      alert((lang === 'es' ? 'No se pudo guardar el financiamiento: ' : "Couldn't save the financing: ") + (err.message || err));
-    }
-  }
-
-  // Financing mix coverage summary — migration_v35_financing_mix.sql. Sums
-  // the FSU's share, every financing-stage Program's saved share, and the
-  // "other source" share, then shows a small bar + text against 100%. See
-  // #financingCoverage in the markup above and
-  // INAPlatform.computeFinancingCoverage() in assets/platform.js (single
-  // source of truth for the arithmetic, also usable elsewhere later).
-  function renderFinancingCoverage() {
+  /* ---------- Financing summary (Pablo, sep 2026) ----------
+     Full financing management (FSU, applying to Programs, "other source",
+     AI recommendation) moved to its own screen, app/project-financing.html
+     — reached via navFinancingLink in the header and manageFinancingBtn in
+     financingSummaryBlock below. All that's left here is a compact,
+     read-only coverage summary — same INAPlatform.computeFinancingCoverage()
+     arithmetic as that page, just rendered inline so a viewer doesn't have
+     to leave this page to see roughly where the project stands. */
+  function renderFinancingSummary() {
     if (!currentProject) return;
     const lang = INAPlatform.currentLang();
     const wrap = document.getElementById('financingCoverage');
-    const { fsuPct, otherPct, programShares, totalPct } = INAPlatform.computeFinancingCoverage(currentProject, currentProjectPrograms);
+    const { fsuPct, otherPct, programShares, totalPct, requiredPct } = INAPlatform.computeFinancingCoverage(currentProject, currentProjectPrograms);
 
-    // Nothing to show until at least one share is actually set — a brand
-    // new project with an empty financing mix shouldn't display "0% of
-    // budget covered" as if that were meaningful data.
     const hasAnyShare = fsuPct > 0 || otherPct > 0 || programShares.length > 0;
     if (!hasAnyShare) {
       wrap.style.display = 'none';
@@ -2822,343 +2481,23 @@
     if (totalPct > 100) {
       text.textContent = lang === 'es' ? `⚠ ${pctStr} del presupuesto asignado — supera el 100%` : `⚠ ${pctStr} of budget assigned — exceeds 100%`;
       text.style.color = '#a13a3a';
-    } else if (totalPct === 100) {
-      text.textContent = lang === 'es' ? `${pctStr} del presupuesto cubierto` : `${pctStr} of budget covered`;
+    } else if (totalPct >= requiredPct) {
+      text.textContent = lang === 'es' ? `✓ Objetivo alcanzado: ${pctStr} asignado (se requiere financiar ${requiredPct}%)` : `✓ Target reached: ${pctStr} assigned (${requiredPct}% needs financing)`;
       text.style.color = 'var(--ink)';
     } else {
-      text.textContent = lang === 'es' ? `${pctStr} del presupuesto cubierto — resta ${100 - totalPct}%` : `${pctStr} of budget covered — ${100 - totalPct}% remaining`;
+      text.textContent = lang === 'es' ? `${pctStr} del presupuesto cubierto — resta ${requiredPct - totalPct}% para el objetivo` : `${pctStr} of budget covered — ${requiredPct - totalPct}% remaining to the target`;
       text.style.color = 'var(--ink)';
     }
 
     const parts = [];
     if (fsuPct > 0) parts.push(`FSU ${fsuPct}%`);
-    // FSU-linked program shares (e.g. TASU) are already folded into fsuPct
-    // above — see the double-counting fix in
-    // INAPlatform.computeFinancingCoverage() — so listing them again here
-    // by name would make it look like the same money was counted twice.
-    // Only list non-FSU program shares individually.
     programShares.filter((s) => !s.isFsu).forEach((s) => parts.push(`${s.name} ${s.pct}%`));
     if (otherPct > 0) parts.push((lang === 'es' ? 'Otra fuente' : 'Other') + ` ${otherPct}%`);
     breakdown.textContent = parts.join(' · ');
 
     bar.style.width = `${Math.min(totalPct, 100)}%`;
-    bar.style.background = totalPct > 100 ? '#a13a3a' : 'var(--amber)';
+    bar.style.background = totalPct > 100 ? '#a13a3a' : (totalPct >= requiredPct ? '#3a8a5c' : 'var(--amber)');
   }
-
-  function updateApplyPickers() {
-    const lang = INAPlatform.currentLang();
-    const canManage = isOwner || isAssignedAdvisor;
-    const appliedIds = new Set(currentProjectPrograms.map((r) => r.program_id));
-    // Business rule (Pablo, sep 2026): a project can only apply to ONE FSU
-    // financing line at a time — see enforce_single_fsu_program() in
-    // migration_v48. Already-applied programs are excluded from the picker
-    // below regardless (appliedIds), so this only matters for the case
-    // where the project already has some OTHER FSU-linked program applied:
-    // every remaining FSU program gets excluded too, since applying to one
-    // would be rejected by the DB trigger anyway. Non-FSU financiers (BID,
-    // CAF, USTDA...) are never affected by this.
-    const hasFsuApplied = currentProjectPrograms.some((r) => r.programs && r.programs.funding_stage !== 'preparation' && INAPlatform.isFsuFinancingEntity(r.programs.financing_entity));
-    ['preparation', 'financing'].forEach((stage) => {
-      const picker = document.getElementById(stage === 'preparation' ? 'preparationProgramPicker' : 'financingProgramPicker');
-      const addBtn = document.getElementById(stage === 'preparation' ? 'addPreparationProgramBtn' : 'addFinancingProgramBtn');
-      const available = allProgramsForApply.filter((pg) => (pg.funding_stage || 'financing') === stage
-        && !appliedIds.has(pg.id)
-        && !INAPlatform.isUmbrellaProgram(pg)
-        && !(stage === 'financing' && hasFsuApplied && INAPlatform.isFsuFinancingEntity(pg.financing_entity)));
-      picker.innerHTML = '';
-      const placeholder = document.createElement('option');
-      placeholder.value = '';
-      placeholder.textContent = lang === 'es' ? '— Elegí un programa —' : '— Choose a program —';
-      picker.appendChild(placeholder);
-      available.forEach((pg) => {
-        const opt = document.createElement('option');
-        opt.value = pg.id;
-        opt.textContent = pg.name;
-        picker.appendChild(opt);
-      });
-      picker.style.display = 'none';
-      addBtn.style.display = canManage && available.length ? 'inline-flex' : 'none';
-    });
-  }
-
-  async function removeProgramApplication(programId) {
-    const lang = INAPlatform.currentLang();
-    const msg = lang === 'es'
-      ? '¿Quitar la aplicación a este programa? Si había respuestas de un template guardadas, se pierden.'
-      : "Remove the application to this program? Any saved template answers will be lost.";
-    if (!confirm(msg)) return;
-    try {
-      await INAPlatform.removeProjectProgram(projectId, programId);
-      currentProjectPrograms = currentProjectPrograms.filter((r) => r.program_id !== programId);
-      renderProgramApplications();
-      // Same live-state reasoning as applyProgramFromPicker() above — a
-      // recommendation card for this program_id (if any) flips back to
-      // "Aplicar" immediately, since isApplied is derived from
-      // currentProjectPrograms, not a stored flag.
-      renderFinancingRecommendation();
-    } catch (err) {
-      alert((lang === 'es' ? 'No se pudo quitar la aplicación: ' : "Couldn't remove the application: ") + (err.message || err));
-    }
-  }
-
-  // financingPercentage (optional, Pablo's request sep 2026): when the
-  // caller already knows what % of budget this application should cover —
-  // e.g. the AI Financing Recommendation cards, which prefill it from the
-  // model's suggested_percentage but let the user edit it before clicking
-  // "Aplicar" — it's applied together with the association itself instead
-  // of requiring a separate Save step afterward. Left undefined for callers
-  // that don't have a % opinion yet (the plain "Programas de Financiamiento"
-  // dropdown below), preserving the exact previous behavior there.
-  async function applyProgramFromPicker(programId, financingPercentage) {
-    const program = allProgramsForApply.find((pg) => pg.id === programId);
-    if (!program) return;
-    // A Program with a registered template (see PROGRAM_TEMPLATES in
-    // assets/platform.js) hands off to project-template.html's "apply
-    // mode" for a guided intake form; it saves the application itself and
-    // redirects back here. A Program with no template is just a plain
-    // association — apply directly and re-render in place.
-    if (program.template_key && INAPlatform.programTemplateFor(program.template_key)) {
-      const pctParam = financingPercentage !== undefined && financingPercentage !== ''
-        ? `&pct=${encodeURIComponent(financingPercentage)}` : '';
-      location.href = `project-template.html?mode=apply&project=${encodeURIComponent(projectId)}&program=${encodeURIComponent(program.id)}&ptpl=${encodeURIComponent(program.template_key)}${pctParam}`;
-      return;
-    }
-    try {
-      const applyOpts = {};
-      if (financingPercentage !== undefined && financingPercentage !== '') applyOpts.financingPercentage = financingPercentage;
-      const row = await INAPlatform.applyToProgram(projectId, programId, applyOpts);
-      currentProjectPrograms.push(row);
-      renderProgramApplications();
-      // The recommendation panel's "isApplied" state is derived live from
-      // currentProjectPrograms (see renderFinancingRecommendation() below),
-      // never from the stale already_applied flag stored at generation
-      // time — re-rendering here is enough to flip a card to "Ya aplicado"
-      // immediately, no extra state-syncing needed.
-      renderFinancingRecommendation();
-    } catch (err) {
-      const lang = INAPlatform.currentLang();
-      alert((lang === 'es' ? 'No se pudo aplicar al programa: ' : "Couldn't apply to the program: ") + (err.message || err));
-    }
-  }
-
-  ['preparation', 'financing'].forEach((stage) => {
-    const addBtn = document.getElementById(stage === 'preparation' ? 'addPreparationProgramBtn' : 'addFinancingProgramBtn');
-    const picker = document.getElementById(stage === 'preparation' ? 'preparationProgramPicker' : 'financingProgramPicker');
-    addBtn.addEventListener('click', () => {
-      const showing = picker.style.display !== 'none';
-      picker.style.display = showing ? 'none' : 'inline-block';
-      if (!showing) picker.focus();
-    });
-    picker.addEventListener('change', () => {
-      const val = picker.value;
-      picker.style.display = 'none';
-      if (val) applyProgramFromPicker(val);
-    });
-  });
-
-  /* ---------- AI Financing Recommendation ---------- */
-  // See financingRecommendationBlock in the markup above and
-  // INAPlatform.requestFinancingRecommendation()/getFinancingRecommendation()/
-  // api/recommend-financing.js. Cards reuse applyProgramFromPicker() (just
-  // above) for the "Aplicar" action, so a recommended Program is applied
-  // through the exact same code path as picking it from the "Programas de
-  // Financiamiento" dropdown — no separate apply logic to keep in sync.
-
-  // Compact twin of renderFinancingCoverage() (below, in the Financing
-  // Programs block) — same INAPlatform.computeFinancingCoverage() call, just
-  // rendered inline in the AI Financing Recommendation panel so the "already
-  // secured" context is visible right next to the AI's suggestions, not only
-  // further down the page. Shown whenever the recommendation block itself is
-  // visible (canRunAnalysis), independent of whether a recommendation has
-  // actually been generated yet — the coverage is real project data, not
-  // part of the AI output.
-  function renderFinancingRecoCoverage() {
-    if (!currentProject) return;
-    const lang = INAPlatform.currentLang();
-    const wrap = document.getElementById('financingRecoCoverage');
-    const { fsuPct, otherPct, programShares, totalPct } = INAPlatform.computeFinancingCoverage(currentProject, currentProjectPrograms);
-
-    const hasAnyShare = fsuPct > 0 || otherPct > 0 || programShares.length > 0;
-    if (!hasAnyShare) {
-      wrap.style.display = 'none';
-      return;
-    }
-    wrap.style.display = 'block';
-
-    const text = document.getElementById('financingRecoCoverageText');
-    const breakdown = document.getElementById('financingRecoCoverageBreakdown');
-    const pctStr = `${totalPct}%`;
-    if (totalPct > 100) {
-      text.textContent = lang === 'es' ? `⚠ Financiamiento ya asegurado: ${pctStr} — supera el 100%` : `⚠ Financing already secured: ${pctStr} — exceeds 100%`;
-      text.style.color = '#a13a3a';
-    } else {
-      text.textContent = lang === 'es'
-        ? `Financiamiento ya asegurado: ${pctStr}${totalPct < 100 ? ` — resta cubrir ${100 - totalPct}%` : ''}`
-        : `Financing already secured: ${pctStr}${totalPct < 100 ? ` — ${100 - totalPct}% remaining` : ''}`;
-      text.style.color = 'var(--ink)';
-    }
-
-    const parts = [];
-    if (fsuPct > 0) parts.push(`FSU ${fsuPct}%`);
-    programShares.filter((s) => !s.isFsu).forEach((s) => parts.push(`${s.name} ${s.pct}%`));
-    if (otherPct > 0) parts.push((lang === 'es' ? 'Otra fuente' : 'Other') + ` ${otherPct}%`);
-    breakdown.textContent = parts.join(' · ');
-  }
-
-  function renderFinancingRecommendation() {
-    renderFinancingRecoCoverage();
-    const lang = INAPlatform.currentLang();
-    const emptyEl = document.getElementById('financingRecoEmpty');
-    const resultEl = document.getElementById('financingRecoResult');
-    if (!currentFinancingReco) {
-      emptyEl.style.display = 'block';
-      resultEl.style.display = 'none';
-      return;
-    }
-    emptyEl.style.display = 'none';
-    resultEl.style.display = 'block';
-
-    const items = (lang === 'es' ? currentFinancingReco.recommended : currentFinancingReco.recommended_en) || [];
-    document.getElementById('financingRecoSummary').textContent = (lang === 'es' ? currentFinancingReco.summary : currentFinancingReco.summary_en) || '';
-
-    const list = document.getElementById('financingRecoList');
-    list.innerHTML = '';
-    // "Aplicar" is only offered to whoever can actually manage the
-    // Financing Programs block below (owner or assigned advisor) — same
-    // bar as its own addFinancingProgramBtn/addPreparationProgramBtn, even
-    // though canRunAnalysis (which gates seeing this whole block) is
-    // broader and also includes any admin just viewing.
-    const canManage = isOwner || isAssignedAdvisor;
-    items.forEach((item) => {
-      const div = document.createElement('div');
-      div.style.cssText = 'padding:12px 14px; border:1px solid var(--paper-line); border-radius:10px;';
-      const isFinancingStage = item.funding_stage !== 'preparation';
-      const stageLabel = isFinancingStage
-        ? (lang === 'es' ? 'Financiamiento' : 'Financing')
-        : (lang === 'es' ? 'Preparación' : 'Preparation');
-      const scoreClass = INAPlatform.scoreBandClass(item.fit_score);
-      // "Ya aplicado" is derived live from currentProjectPrograms, not from
-      // the already_applied flag saved on the recommendation at generation
-      // time (which goes stale the moment the user applies/removes a
-      // program without re-running the recommendation) — see
-      // applyProgramFromPicker()/removeProgramApplication() above, both of
-      // which just call this render function again after changing
-      // currentProjectPrograms.
-      const appliedRow = currentProjectPrograms.find((r) => r.program_id === item.program_id) || null;
-      const isApplied = !!appliedRow;
-      // Prefill priority: the application's OWN saved % (once applied) wins
-      // over the AI's suggested_percentage — same "what's really saved
-      // wins" principle as renderProgramApplicationRow()'s FSU prefill.
-      const pctValue = isApplied
-        ? (appliedRow.financing_percentage != null ? appliedRow.financing_percentage : '')
-        : (item.suggested_percentage != null ? item.suggested_percentage : '');
-      div.innerHTML = `
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <div style="min-width:0;">
-            <strong style="font-size:13.5px;">${item.name || ''}</strong>
-            <p style="font-size:12px; color:var(--muted); margin-top:2px;">${item.financing_entity ? item.financing_entity + ' · ' : ''}${stageLabel}</p>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-            <span class="status-pill ${scoreClass}" style="font-size:11.5px; padding:4px 10px;">${item.fit_score}/100</span>
-            ${isApplied ? `<span style="font-size:11.5px; color:var(--muted);">✓ ${lang === 'es' ? 'Ya aplicado' : 'Already applied'}</span>` : ''}
-          </div>
-        </div>
-        <p style="font-size:12.5px; color:var(--muted); margin-top:8px;">${item.rationale || ''}</p>
-        ${canManage ? `
-        <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--paper-line); flex-wrap:wrap;">
-          ${isFinancingStage ? `
-            <label style="font-size:12px; color:var(--muted);">${lang === 'es' ? '% del presupuesto' : '% of budget'}</label>
-            <input type="number" min="0" max="100" step="1" value="${pctValue}" data-reco-pct="${item.program_id}" style="width:64px; padding:5px 8px; font-size:12.5px;">
-          ` : ''}
-          ${isApplied
-            ? `${isFinancingStage ? `<button type="button" class="btn ghost small" data-reco-save-pct="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Guardar %' : 'Save %'}</button>` : ''}
-               <button type="button" class="btn ghost small" data-reco-unapply="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Desaplicar' : 'Unapply'}</button>`
-            : `<button type="button" class="btn ghost small" data-apply-reco="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Aplicar' : 'Apply'}</button>`}
-          <span data-reco-pct-status="${item.program_id}" style="font-size:11.5px; color:var(--muted);"></span>
-        </div>` : ''}
-      `;
-      list.appendChild(div);
-    });
-    list.querySelectorAll('[data-apply-reco]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const programId = btn.getAttribute('data-apply-reco');
-        const pctInput = list.querySelector(`[data-reco-pct="${programId}"]`);
-        const pct = pctInput && pctInput.value !== '' ? pctInput.value : undefined;
-        applyProgramFromPicker(programId, pct);
-      });
-    });
-    list.querySelectorAll('[data-reco-save-pct]').forEach((btn) => {
-      btn.addEventListener('click', () => saveRecoPercentage(btn.getAttribute('data-reco-save-pct')));
-    });
-    list.querySelectorAll('[data-reco-unapply]').forEach((btn) => {
-      btn.addEventListener('click', () => removeProgramApplication(btn.getAttribute('data-reco-unapply')));
-    });
-
-    const updatedEl = document.getElementById('financingRecoUpdatedAt');
-    if (currentFinancingReco.updated_at) {
-      const dateStr = new Date(currentFinancingReco.updated_at).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
-      updatedEl.textContent = (lang === 'es' ? 'Generado: ' : 'Generated: ') + dateStr;
-    } else {
-      updatedEl.textContent = '';
-    }
-  }
-
-  // Saves an already-applied recommendation card's edited "% del
-  // presupuesto" — same INAPlatform.updateProjectProgramFinancing() call as
-  // the Financing Programs block's own saveFinancing(), just reading from
-  // the recommendation panel's own #financingRecoList input instead (kept
-  // separate from saveFinancing() so the two blocks' data-pct-input/
-  // data-reco-pct attributes never collide when the same program_id is
-  // rendered in both places at once).
-  async function saveRecoPercentage(programId) {
-    const lang = INAPlatform.currentLang();
-    const pctInput = document.querySelector(`#financingRecoList [data-reco-pct="${programId}"]`);
-    if (!pctInput) return;
-    try {
-      const updated = await INAPlatform.updateProjectProgramFinancing(projectId, programId, { percentage: pctInput.value });
-      currentProjectPrograms = currentProjectPrograms.map((r) => (r.program_id === programId ? updated : r));
-      renderProgramApplications();
-      // Re-render rebuilds #financingRecoList's DOM (including the status
-      // span), so re-query it fresh rather than reusing the pre-render
-      // `status` reference — same reasoning as everywhere else in this
-      // panel that a card's DOM isn't stable across a render call.
-      renderFinancingRecommendation();
-      const freshStatus = document.querySelector(`#financingRecoList [data-reco-pct-status="${programId}"]`);
-      if (freshStatus) {
-        freshStatus.textContent = lang === 'es' ? 'Guardado ✓' : 'Saved ✓';
-        setTimeout(() => { freshStatus.textContent = ''; }, 2500);
-      }
-    } catch (err) {
-      alert((lang === 'es' ? 'No se pudo guardar el %: ' : "Couldn't save the %: ") + (err.message || err));
-    }
-  }
-
-  async function runFinancingRecommendation() {
-    const lang = INAPlatform.currentLang();
-    const btn = document.getElementById('financingRecoRunBtn');
-    const loadingEl = document.getElementById('financingRecoLoading');
-    const emptyEl = document.getElementById('financingRecoEmpty');
-    const resultEl = document.getElementById('financingRecoResult');
-    btn.disabled = true;
-    loadingEl.style.display = 'block';
-    emptyEl.style.display = 'none';
-    resultEl.style.display = 'none';
-    try {
-      currentFinancingReco = await INAPlatform.requestFinancingRecommendation(projectId);
-      renderFinancingRecommendation();
-    } catch (err) {
-      alert((lang === 'es' ? 'No se pudo generar la recomendación: ' : "Couldn't generate the recommendation: ") + (err.message || err));
-      emptyEl.style.display = 'block';
-    } finally {
-      btn.disabled = false;
-      loadingEl.style.display = 'none';
-    }
-  }
-
-  document.getElementById('financingRecoRunBtn').addEventListener('click', runFinancingRecommendation);
-  document.getElementById('financingRecoMenuBtn').addEventListener('click', () => {
-    document.getElementById('financingRecommendationBlock').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
 
   /* ---------- Roadmaps ---------- */
   // canManageRoadmaps() is advisor/admin-only (not owner, not even
@@ -3307,11 +2646,8 @@
     // otherwise unlock FSU Scoring, since that application never touches
     // projects.program_id. See PLATFORM_SETUP.md's FSU Scoring section.
     try {
-      [allProgramsForApply, currentProjectPrograms] = await Promise.all([
-        INAPlatform.listPrograms(),
-        INAPlatform.listProjectPrograms(projectId),
-      ]);
-    } catch (e) { allProgramsForApply = []; currentProjectPrograms = []; /* non-critical — block just shows empty */ }
+      currentProjectPrograms = await INAPlatform.listProjectPrograms(projectId);
+    } catch (e) { currentProjectPrograms = []; /* non-critical — summary just shows empty */ }
 
     // Guarded rather than called inline below: if an older cached copy of
     // assets/platform.js (no isFsuScoringEligible yet) is ever served
@@ -3458,27 +2794,19 @@
       } catch (e) { /* non-critical */ }
     }
 
-    // AI Financing Recommendation — same gate as AI Analysis (canRunAnalysis:
-    // owner, assigned advisor, or any admin), any workflow stage. The block
-    // itself (not just its contents) stays hidden for a viewer who can't
-    // trigger it — same convention as proposalBlock above.
-    if (canRunAnalysis) {
-      document.getElementById('financingRecommendationBlock').style.display = 'block';
-      document.getElementById('financingRecoMenuBtn').style.display = 'flex';
-      try {
-        currentFinancingReco = await INAPlatform.getFinancingRecommendation(projectId);
-      } catch (e) { currentFinancingReco = null; /* non-critical — block just shows the empty state */ }
-      renderFinancingRecommendation();
-    }
+    // Financing summary + link to app/project-financing.html — the full
+    // management screen (FSU, applying to Programs, "other source", AI
+    // recommendation) now lives there; this page just links to it and
+    // shows a compact read-only coverage summary via renderFinancingSummary()
+    // below (called after renderProject() sets currentProject).
+    document.getElementById('manageFinancingBtn').href = `project-financing.html?id=${projectId}`;
+    document.getElementById('navFinancingLink').href = `project-financing.html?id=${projectId}`;
 
     renderProject(project);
     renderWorkflowActionsMenu(project);
     currentDocs = docs;
     renderDocs(docs);
-
-    // allProgramsForApply/currentProjectPrograms were already fetched above
-    // (needed earlier for the FSU Scoring eligibility check) — just render.
-    renderProgramApplications();
+    renderFinancingSummary();
 
     // Roadmaps — visible to the owner read-only once at least one
     // instance exists; visible to an advisor/admin always (even empty),

@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Financing Management — INA Platform" data-i18n-es="Gestión de Financiación — Plataforma INA">Financing Management — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Manage this project's financing mix: AI recommendation, FSU, financing programs and other sources, kept under 100% of the budget." data-i18n-es="Gestioná la mezcla de financiación del proyecto: recomendación IA, FSU, programas de financiamiento y otras fuentes, sin superar el 100% del presupuesto." content="Manage this project's financing mix.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=24">
+<link rel="stylesheet" href="/assets/app.css?v=10">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
+      <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+          <a href="roles.html" id="rolesMenuItem" class="menu-item" style="display:none;"><span data-i18n="roles.nav">Roles</span></a>
+        </div>
+      </div>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><a href="#" id="crumbProject">…</a><span>/</span><span><span data-i18n="pf.title">Financing Management</span></span></div>
+    <span class="eyebrow"><span data-i18n="fw.f6.kicker">Decision Engine</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="pf.title">Financing Management</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:680px;"><span data-i18n="pf.help">A task to complete once the project is registered: pick the financing mix — FSU, financing programs, other sources — with AI-assisted recommendations, without exceeding 100% of the budget.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="financingBody" style="display:none; margin-top:24px;">
+
+      <!-- Budget + coverage summary — target-aware via
+           INAPlatform.computeFinancingCoverage()'s requiredPct/
+           remainingToRequiredPct (migration_v56_financing_required_percentage.sql).
+           requiredPct is the % of the budget that actually needs external
+           financing (defaults to 100 when unset) — the goal this bar tries
+           to reach, distinct from totalPct (how much is currently
+           allocated) and from the hard 100%-of-budget ceiling enforced by
+           blockIfOverBudget() below. -->
+      <div id="budgetBlock" class="info-block">
+        <h4><span data-i18n="pf.budget.title">Project Budget</span></h4>
+        <div class="attrs-grid" id="budgetGrid"></div>
+        <p style="font-size:12px; color:var(--muted); margin-top:10px;"><span data-i18n="pf.budget.editHint">To change the budget amounts or the % that needs financing, edit the project itself.</span> <a href="#" id="editProjectLink"><span data-i18n="pd.editProject">Edit</span></a></p>
+
+        <div id="financingCoverage" style="margin-top:18px; padding:12px 16px; border-radius:10px; background:var(--paper-2); display:none;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <span id="financingCoverageText" style="font-size:13px; font-weight:600;"></span>
+            <span id="financingCoverageBreakdown" style="font-size:12px; color:var(--muted);"></span>
+          </div>
+          <div style="margin-top:8px; height:6px; background:var(--paper-line); border-radius:100px; overflow:hidden; position:relative;">
+            <div id="financingCoverageBar" style="height:100%; background:var(--amber); border-radius:100px; transition:width .2s ease;"></div>
+            <div id="financingCoverageTarget" style="position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink); display:none;" title=""></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Financing Recommendation (moved from project.html — Pablo, sep
+           2026: "que muestre una pantalla donde se incluya las funciones de
+           recomendación de financiación y que el usuario pueda elegir de
+           acuerdo a su criterio"). Same gate as AI Analysis on project.html
+           (canManage — owner, assigned advisor, or any admin). See
+           migration_v55_financing_recommendations.sql and
+           api/recommend-financing.js. -->
+      <div id="financingRecommendationBlock" class="info-block" style="margin-top:24px; display:none;">
+        <h4 style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <span data-i18n="finreco.title">AI Financing Recommendation</span>
+          <button type="button" class="btn ghost small" id="financingRecoRunBtn" style="padding:6px 12px; display:none;"><span id="financingRecoRunBtnLabel" data-i18n="finreco.run">Generate recommendation</span></button>
+        </h4>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:640px;"><span data-i18n="finreco.help">Uses AI to pick the best combination of financing instruments/programs already registered on the platform (BID, DFC, FSU/TASU/FATIC, USTDA, capital markets, etc.) for this specific project.</span></p>
+
+        <div id="financingRecoLoading" style="display:none; margin-top:14px; font-size:13px; color:var(--muted);"><span data-i18n="finreco.loading">Analyzing the best combination…</span></div>
+        <div id="financingRecoEmpty" style="margin-top:14px; font-size:13px; color:var(--muted);"><span data-i18n="finreco.empty">No recommendation generated yet.</span></div>
+        <div id="financingRecoResult" style="display:none; margin-top:14px;">
+          <p id="financingRecoSummary" style="font-size:13px; color:var(--ink); max-width:640px; margin-bottom:14px;"></p>
+          <div id="financingRecoList" style="display:flex; flex-direction:column; gap:10px;"></div>
+          <p id="financingRecoUpdatedAt" style="font-size:11.5px; color:var(--muted); margin-top:12px;"></p>
+        </div>
+      </div>
+
+      <!-- FSU — direct project-level fields (amount ARS/USD, scope, %),
+           moved as-is from new-project.html's old Financing step. Now
+           editable right here via INAPlatform.updateProjectFinancing()
+           (a lightweight partial-patch, distinct from updateProject() —
+           see the comment on that function in assets/platform.js — so
+           adjusting these never resets the project's workflow status). -->
+      <div id="fsuBlock2" class="info-block" style="margin-top:24px;">
+        <h4><span data-i18n="pd.fsuAttr.title">Universal Service Fund (FSU)</span></h4>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pf.fsu.help">The project's own direct FSU share — independent of applying to a specific FSU-linked Program below (only one FSU-linked Program can be applied at a time).</span></p>
+        <div style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px 24px;">
+          <div class="field">
+            <label for="pfFsuAmount"><span data-i18n="pf.fsu.amount">FSU amount requested (ARS)</span></label>
+            <input id="pfFsuAmount" type="number" min="0" step="1">
+          </div>
+          <div class="field">
+            <label for="pfFsuAmountUsd"><span data-i18n="pf.fsu.amountUsd">FSU amount requested (USD)</span></label>
+            <input id="pfFsuAmountUsd" type="number" min="0" step="1">
+          </div>
+          <div class="field">
+            <label for="pfFsuPercentage"><span data-i18n="pf.fsu.percentage">FSU covers (% of budget)</span></label>
+            <input id="pfFsuPercentage" type="number" min="0" max="100" step="1">
+          </div>
+          <div class="field" style="grid-column:1 / -1;">
+            <label for="pfFsuScope"><span data-i18n="pf.fsu.scope">FSU scope / notes</span></label>
+            <textarea id="pfFsuScope" style="min-height:80px;"></textarea>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+          <button type="button" class="btn small" id="saveFsuBtn"><span data-i18n="pf.save">Save</span></button>
+          <span id="fsuSaveStatus" style="font-size:12px; color:var(--muted);"></span>
+        </div>
+
+        <div id="fsuProgramsList" style="margin-top:16px; display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+
+      <!-- Financing Programs — apply this project to a Program that funds
+           ELABORATING it (preparation stage, e.g. USTDA), and separately to
+           one or more Programs that finance the project itself (financing
+           stage, e.g. BID, CAF). Moved as-is from project.html's old
+           programsBlock. -->
+      <div id="programsBlock" class="info-block" style="margin-top:24px;">
+        <h4><span data-i18n="pd.programs.title">Financing Programs</span></h4>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pd.programs.help">Apply this project to funding for elaborating it (e.g. USTDA), and to one or more programs financing the project itself (e.g. FSU, BID).</span></p>
+
+        <div style="margin-top:18px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <h5 class="h-card" style="font-size:13px;"><span data-i18n="pd.programs.preparation">Project preparation funding</span></h5>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <select id="preparationProgramPicker" style="display:none;"></select>
+              <button type="button" class="btn ghost small" id="addPreparationProgramBtn" style="display:none;"><span data-i18n="pd.programs.apply">Apply to program</span></button>
+            </div>
+          </div>
+          <div id="preparationProgramsList" style="margin-top:10px; display:flex; flex-direction:column; gap:10px;"></div>
+          <p id="preparationProgramsEmpty" style="font-size:13px; color:var(--muted); margin-top:8px;"><span data-i18n="pd.programs.preparation.empty">Not applied to any project-preparation funding yet.</span></p>
+        </div>
+
+        <div style="margin-top:22px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <h5 class="h-card" style="font-size:13px;"><span data-i18n="pd.programs.financing">Project financing</span></h5>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <select id="financingProgramPicker" style="display:none;"></select>
+              <button type="button" class="btn ghost small" id="addFinancingProgramBtn" style="display:none;"><span data-i18n="pd.programs.apply">Apply to program</span></button>
+            </div>
+          </div>
+          <div id="otherProgramsList" style="margin-top:10px; display:flex; flex-direction:column; gap:10px;"></div>
+          <p id="otherProgramsEmpty" style="font-size:13px; color:var(--muted); margin-top:8px;"><span data-i18n="pd.programs.otherGroup.empty">No other financing sources registered for this project yet.</span></p>
+        </div>
+      </div>
+
+      <!-- "Other financing source" — the project's own free-text/other
+           share, moved as-is from new-project.html's old Financing step.
+           Also editable here via updateProjectFinancing(). -->
+      <div id="otherFinancingGroup" class="info-block" style="margin-top:24px;">
+        <h4><span data-i18n="pd.otherFinancing.title">Other Financing Source</span></h4>
+        <div style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px 24px;">
+          <div class="field">
+            <label for="pfOtherFinancingPercentage"><span data-i18n="pf.other.percentage">Covers (% of budget)</span></label>
+            <input id="pfOtherFinancingPercentage" type="number" min="0" max="100" step="1">
+          </div>
+          <div class="field">
+            <label for="pfOtherFinancingAmount"><span data-i18n="pf.other.amount">Amount (ARS)</span></label>
+            <input id="pfOtherFinancingAmount" type="number" min="0" step="1">
+          </div>
+          <div class="field" style="grid-column:1 / -1;">
+            <label for="pfOtherFinancingNotes"><span data-i18n="pf.other.notes">Notes</span></label>
+            <textarea id="pfOtherFinancingNotes" style="min-height:80px;"></textarea>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+          <button type="button" class="btn small" id="saveOtherFinancingBtn"><span data-i18n="pf.save">Save</span></button>
+          <span id="otherFinancingSaveStatus" style="font-size:12px; color:var(--muted);"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=62"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=72"></script>
+<script src="/assets/script.js?v=14"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  const params = new URLSearchParams(location.search);
+  const projectId = params.get('id');
+  let currentProject = null;
+  let currentProfile = null;
+  let currentProjectPrograms = [];
+  let allProgramsForApply = [];
+  let currentFinancingReco = null;
+  let isOwner = false;
+  let isAssignedAdvisor = false;
+  let canManage = false;
+
+  /* ---------- Hard 100% block (Pablo, sep 2026: "controlar que los
+     porcentajes no superen el 100%") ----------
+     Rather than reimplementing computeFinancingCoverage()'s arithmetic
+     (including its FSU-double-counting-avoidance logic), every save/apply
+     action below builds a shallow hypothetical copy of currentProject/
+     currentProjectPrograms with the candidate value substituted in, calls
+     the real INAPlatform.computeFinancingCoverage() on that copy, and
+     rejects the action outright if totalPct would exceed 100 (with a small
+     rounding tolerance) — reusing exact production logic instead of a
+     second, possibly-diverging calculation. Always capped against 100% of
+     the total budget, never against the (possibly lower)
+     financing_required_percentage target — that field is guidance for the
+     coverage bar above, not a second ceiling. */
+  function hypotheticalTotalPct({ projectOverrides, programOverride } = {}) {
+    const projectCopy = Object.assign({}, currentProject, projectOverrides || {});
+    let programsCopy = currentProjectPrograms;
+    if (programOverride) {
+      const { programId, percentage, amount, programMeta } = programOverride;
+      const idx = currentProjectPrograms.findIndex((r) => r.program_id === programId);
+      if (idx !== -1) {
+        programsCopy = currentProjectPrograms.map((r, i) => (i === idx ? Object.assign({}, r, {
+          financing_percentage: percentage !== undefined ? (percentage === '' || percentage == null ? null : Number(percentage)) : r.financing_percentage,
+          financing_amount: amount !== undefined ? (amount === '' || amount == null ? null : Number(amount)) : r.financing_amount,
+        }) : r));
+      } else {
+        programsCopy = currentProjectPrograms.concat([{
+          program_id: programId,
+          financing_percentage: percentage === '' || percentage == null ? null : Number(percentage),
+          financing_amount: amount === '' || amount == null ? null : Number(amount),
+          programs: programMeta || {},
+        }]);
+      }
+    }
+    return INAPlatform.computeFinancingCoverage(projectCopy, programsCopy).totalPct;
+  }
+
+  // Returns true (and alerts) if the projected total would exceed 100% of
+  // the budget — callers should bail out of the save/apply without calling
+  // the server. 0.5 tolerance absorbs rounding from computeFinancingCoverage's
+  // Math.round() on amount-derived %, so 100.0 exactly never false-positives.
+  function blockIfOverBudget(totalPct) {
+    const lang = INAPlatform.currentLang();
+    if (totalPct > 100.5) {
+      alert(lang === 'es'
+        ? `No se puede guardar: el total asignado sería ${totalPct}% del presupuesto — supera el 100%. Ajustá los porcentajes o montos antes de continuar.`
+        : `Can't save: the total assigned would be ${totalPct}% of the budget — that exceeds 100%. Adjust the percentages or amounts before continuing.`);
+      return true;
+    }
+    return false;
+  }
+
+  /* ---------- Budget + coverage summary ---------- */
+  function renderBudget(p) {
+    const lang = INAPlatform.currentLang();
+    const grid = document.getElementById('budgetGrid');
+    const items = [];
+    if (p.budget_amount != null) items.push([lang === 'es' ? 'Presupuesto (ARS)' : 'Budget (ARS)', INAPlatform.formatCurrency(p.budget_amount)]);
+    if (p.budget_amount_usd != null) items.push([lang === 'es' ? 'Presupuesto (USD)' : 'Budget (USD)', INAPlatform.formatCurrencyUSD(p.budget_amount_usd)]);
+    const requiredPct = INAPlatform.effectiveFinancingRequiredPercentage(p);
+    items.push([lang === 'es' ? '% que requiere financiación' : '% that needs financing', `${requiredPct}%`]);
+    grid.innerHTML = items.map(([label, value]) => `
+      <div class="attr-item">
+        <span class="attr-item-label">${label}</span>
+        <span class="attr-item-value">${value}</span>
+      </div>`).join('');
+    document.getElementById('editProjectLink').href = `new-project.html?id=${projectId}`;
+  }
+
+  function renderFinancingCoverage() {
+    if (!currentProject) return;
+    const lang = INAPlatform.currentLang();
+    const wrap = document.getElementById('financingCoverage');
+    const { fsuPct, otherPct, programShares, totalPct, requiredPct } = INAPlatform.computeFinancingCoverage(currentProject, currentProjectPrograms);
+
+    const hasAnyShare = fsuPct > 0 || otherPct > 0 || programShares.length > 0;
+    if (!hasAnyShare) {
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = 'block';
+
+    const text = document.getElementById('financingCoverageText');
+    const breakdown = document.getElementById('financingCoverageBreakdown');
+    const bar = document.getElementById('financingCoverageBar');
+    const target = document.getElementById('financingCoverageTarget');
+
+    const pctStr = `${totalPct}%`;
+    if (totalPct > 100) {
+      text.textContent = lang === 'es' ? `⚠ ${pctStr} del presupuesto asignado — supera el 100%` : `⚠ ${pctStr} of budget assigned — exceeds 100%`;
+      text.style.color = '#a13a3a';
+    } else if (totalPct >= requiredPct) {
+      text.textContent = lang === 'es' ? `✓ Objetivo alcanzado: ${pctStr} asignado (se requiere financiar ${requiredPct}%)` : `✓ Target reached: ${pctStr} assigned (${requiredPct}% needs financing)`;
+      text.style.color = 'var(--ink)';
+    } else {
+      text.textContent = lang === 'es'
+        ? `${pctStr} del presupuesto cubierto — resta ${requiredPct - totalPct}% para alcanzar el objetivo (${requiredPct}% requerido)`
+        : `${pctStr} of budget covered — ${requiredPct - totalPct}% remaining to reach the target (${requiredPct}% required)`;
+      text.style.color = 'var(--ink)';
+    }
+
+    const parts = [];
+    if (fsuPct > 0) parts.push(`FSU ${fsuPct}%`);
+    programShares.filter((s) => !s.isFsu).forEach((s) => parts.push(`${s.name} ${s.pct}%`));
+    if (otherPct > 0) parts.push((lang === 'es' ? 'Otra fuente' : 'Other') + ` ${otherPct}%`);
+    breakdown.textContent = parts.join(' · ');
+
+    bar.style.width = `${Math.min(totalPct, 100)}%`;
+    bar.style.background = totalPct > 100 ? '#a13a3a' : (totalPct >= requiredPct ? '#3a8a5c' : 'var(--amber)');
+
+    if (requiredPct > 0 && requiredPct < 100) {
+      target.style.display = 'block';
+      target.style.left = `${requiredPct}%`;
+      target.title = (lang === 'es' ? 'Objetivo: ' : 'Target: ') + `${requiredPct}%`;
+    } else {
+      target.style.display = 'none';
+    }
+  }
+
+  /* ---------- FSU direct fields ---------- */
+  function renderFsuFields(p) {
+    document.getElementById('pfFsuAmount').value = p.fsu_amount != null ? p.fsu_amount : '';
+    document.getElementById('pfFsuAmountUsd').value = p.fsu_amount_usd != null ? p.fsu_amount_usd : '';
+    document.getElementById('pfFsuPercentage').value = p.fsu_percentage != null ? p.fsu_percentage : '';
+    document.getElementById('pfFsuScope').value = p.fsu_scope || '';
+    ['pfFsuAmount', 'pfFsuAmountUsd', 'pfFsuPercentage', 'pfFsuScope', 'pfOtherFinancingPercentage', 'pfOtherFinancingAmount', 'pfOtherFinancingNotes'].forEach((id) => {
+      document.getElementById(id).disabled = !canManage;
+    });
+    document.getElementById('saveFsuBtn').style.display = canManage ? 'inline-flex' : 'none';
+    document.getElementById('saveOtherFinancingBtn').style.display = canManage ? 'inline-flex' : 'none';
+  }
+
+  function renderOtherFinancingFields(p) {
+    document.getElementById('pfOtherFinancingPercentage').value = p.other_financing_percentage != null ? p.other_financing_percentage : '';
+    document.getElementById('pfOtherFinancingAmount').value = p.other_financing_amount != null ? p.other_financing_amount : '';
+    document.getElementById('pfOtherFinancingNotes').value = p.other_financing_notes || '';
+  }
+
+  document.getElementById('saveFsuBtn').addEventListener('click', async () => {
+    const lang = INAPlatform.currentLang();
+    const status = document.getElementById('fsuSaveStatus');
+    const fsuAmount = document.getElementById('pfFsuAmount').value;
+    const fsuAmountUsd = document.getElementById('pfFsuAmountUsd').value;
+    const fsuPercentage = document.getElementById('pfFsuPercentage').value;
+    const fsuScope = document.getElementById('pfFsuScope').value;
+
+    const projected = hypotheticalTotalPct({ projectOverrides: { fsu_percentage: fsuPercentage === '' ? null : Number(fsuPercentage), fsu_amount: fsuAmount === '' ? null : Number(fsuAmount) } });
+    if (blockIfOverBudget(projected)) return;
+
+    try {
+      currentProject = await INAPlatform.updateProjectFinancing(projectId, { fsuAmount, fsuAmountUsd, fsuScope, fsuPercentage });
+      renderFinancingCoverage();
+      status.textContent = lang === 'es' ? 'Guardado ✓' : 'Saved ✓';
+      setTimeout(() => { status.textContent = ''; }, 2500);
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo guardar: ' : "Couldn't save: ") + (err.message || err));
+    }
+  });
+
+  document.getElementById('saveOtherFinancingBtn').addEventListener('click', async () => {
+    const lang = INAPlatform.currentLang();
+    const status = document.getElementById('otherFinancingSaveStatus');
+    const otherFinancingPercentage = document.getElementById('pfOtherFinancingPercentage').value;
+    const otherFinancingAmount = document.getElementById('pfOtherFinancingAmount').value;
+    const otherFinancingNotes = document.getElementById('pfOtherFinancingNotes').value;
+
+    const projected = hypotheticalTotalPct({ projectOverrides: { other_financing_percentage: otherFinancingPercentage === '' ? null : Number(otherFinancingPercentage), other_financing_amount: otherFinancingAmount === '' ? null : Number(otherFinancingAmount) } });
+    if (blockIfOverBudget(projected)) return;
+
+    try {
+      currentProject = await INAPlatform.updateProjectFinancing(projectId, { otherFinancingPercentage, otherFinancingAmount, otherFinancingNotes });
+      renderFinancingCoverage();
+      status.textContent = lang === 'es' ? 'Guardado ✓' : 'Saved ✓';
+      setTimeout(() => { status.textContent = ''; }, 2500);
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo guardar: ' : "Couldn't save: ") + (err.message || err));
+    }
+  });
+
+  /* ---------- Financing Programs (moved from project.html as-is) ---------- */
+  function renderProgramApplicationRow(row, prefillFromProjectFsu) {
+    const lang = INAPlatform.currentLang();
+    const pg = row.programs || {};
+    const appliedDate = row.applied_at
+      ? new Date(row.applied_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US')
+      : '';
+    const hasTemplate = canManage && pg.template_key && INAPlatform.programTemplateFor(pg.template_key);
+    const fillHref = hasTemplate
+      ? `project-template.html?mode=apply&project=${encodeURIComponent(projectId)}&program=${encodeURIComponent(row.program_id)}&ptpl=${encodeURIComponent(pg.template_key)}`
+      : '#';
+    const isFinancingStage = pg.funding_stage !== 'preparation';
+    const rowHasOwnShare = row.financing_percentage != null || row.financing_amount != null;
+    const doPrefill = prefillFromProjectFsu && !rowHasOwnShare && currentProject
+      && (currentProject.fsu_percentage != null || currentProject.fsu_amount != null);
+    const pct = row.financing_percentage != null ? row.financing_percentage
+      : (doPrefill && currentProject.fsu_percentage != null ? currentProject.fsu_percentage : '');
+    const amt = row.financing_amount != null ? row.financing_amount
+      : (doPrefill && currentProject.fsu_amount != null ? currentProject.fsu_amount : '');
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:12px 14px; border:1px solid var(--paper-line); border-radius:10px;';
+    div.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div style="min-width:0;">
+          <strong style="font-size:13.5px;">${pg.name || ''}</strong>
+          <p style="font-size:12px; color:var(--muted); margin-top:2px;">${appliedDate}</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          ${hasTemplate ? `<a href="${fillHref}" class="btn ghost small" style="padding:6px 12px;">${row.notes ? (lang === 'es' ? 'Editar template' : 'Edit template') : (lang === 'es' ? 'Completar template' : 'Fill template')}</a>` : ''}
+          ${canManage ? `<button type="button" class="icon-btn icon-btn-delete" data-remove-program="${row.program_id}" title="${lang === 'es' ? 'Quitar aplicación' : 'Remove application'}">🗑</button>` : ''}
+        </div>
+      </div>
+      ${row.notes ? `<p style="font-size:12.5px; color:var(--muted); margin-top:8px; white-space:pre-wrap;">${row.notes}</p>` : ''}
+      ${isFinancingStage ? `
+      <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--paper-line); flex-wrap:wrap;">
+        <label style="font-size:12px; color:var(--muted);">${lang === 'es' ? '% del presupuesto' : '% of budget'}</label>
+        <input type="number" min="0" max="100" step="1" value="${pct}" data-pct-input="${row.program_id}" style="width:64px; padding:5px 8px; font-size:12.5px;" ${canManage ? '' : 'disabled'}>
+        <label style="font-size:12px; color:var(--muted);">${lang === 'es' ? 'Monto (ARS)' : 'Amount (ARS)'}</label>
+        <input type="number" min="0" step="1" value="${amt}" data-amt-input="${row.program_id}" style="width:120px; padding:5px 8px; font-size:12.5px;" ${canManage ? '' : 'disabled'}>
+        ${canManage ? `<button type="button" class="btn ghost small" data-financing-save="${row.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Guardar' : 'Save'}</button>` : ''}
+        <span data-financing-status="${row.program_id}" style="font-size:11.5px; color:var(--muted);"></span>
+      </div>
+      ${doPrefill ? `<p style="font-size:11.5px; color:var(--muted); margin-top:4px;">${lang === 'es' ? '💡 Prellenado con el % / monto de FSU del proyecto — revisá y guardá para confirmarlo en esta línea.' : '💡 Prefilled from the project’s overall FSU %/amount — review and save to confirm it for this line.'}</p>` : ''}` : ''}
+    `;
+    return div;
+  }
+
+  function renderProgramApplications() {
+    const prepList = document.getElementById('preparationProgramsList');
+    const fsuList = document.getElementById('fsuProgramsList');
+    const otherList = document.getElementById('otherProgramsList');
+    prepList.innerHTML = '';
+    fsuList.innerHTML = '';
+    otherList.innerHTML = '';
+
+    const prepRows = currentProjectPrograms.filter((r) => r.programs && r.programs.funding_stage === 'preparation');
+    const finRows = currentProjectPrograms.filter((r) => !r.programs || r.programs.funding_stage !== 'preparation');
+    const fsuRows = finRows.filter((r) => INAPlatform.isFsuFinancingEntity(r.programs && r.programs.financing_entity));
+    const otherRows = finRows.filter((r) => !INAPlatform.isFsuFinancingEntity(r.programs && r.programs.financing_entity));
+
+    const prefillFsu = fsuRows.length === 1;
+    prepRows.forEach((r) => prepList.appendChild(renderProgramApplicationRow(r)));
+    fsuRows.forEach((r) => fsuList.appendChild(renderProgramApplicationRow(r, prefillFsu)));
+    otherRows.forEach((r) => otherList.appendChild(renderProgramApplicationRow(r)));
+
+    document.getElementById('preparationProgramsEmpty').style.display = prepRows.length ? 'none' : 'block';
+    document.getElementById('otherProgramsEmpty').style.display = otherRows.length ? 'none' : 'block';
+
+    [prepList, fsuList, otherList].forEach((list) => {
+      list.querySelectorAll('[data-remove-program]').forEach((btn) => {
+        btn.addEventListener('click', () => removeProgramApplication(btn.getAttribute('data-remove-program')));
+      });
+    });
+    [fsuList, otherList].forEach((list) => {
+      list.querySelectorAll('[data-financing-save]').forEach((btn) => {
+        btn.addEventListener('click', () => saveFinancing(btn.getAttribute('data-financing-save')));
+      });
+    });
+
+    updateApplyPickers();
+    renderFinancingCoverage();
+  }
+
+  async function saveFinancing(programId) {
+    const lang = INAPlatform.currentLang();
+    const pctInput = document.querySelector(`[data-pct-input="${programId}"]`);
+    const amtInput = document.querySelector(`[data-amt-input="${programId}"]`);
+    const status = document.querySelector(`[data-financing-status="${programId}"]`);
+    if (!pctInput && !amtInput) return;
+
+    const projected = hypotheticalTotalPct({ programOverride: { programId, percentage: pctInput ? pctInput.value : undefined, amount: amtInput ? amtInput.value : undefined } });
+    if (blockIfOverBudget(projected)) return;
+
+    try {
+      const updated = await INAPlatform.updateProjectProgramFinancing(projectId, programId, {
+        percentage: pctInput ? pctInput.value : undefined,
+        amount: amtInput ? amtInput.value : undefined,
+      });
+      const idx = currentProjectPrograms.findIndex((r) => r.program_id === programId);
+      if (idx !== -1) currentProjectPrograms[idx] = updated;
+      if (status) {
+        status.textContent = lang === 'es' ? 'Guardado ✓' : 'Saved ✓';
+        setTimeout(() => { status.textContent = ''; }, 2500);
+      }
+      renderFinancingCoverage();
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo guardar el financiamiento: ' : "Couldn't save the financing: ") + (err.message || err));
+    }
+  }
+
+  function updateApplyPickers() {
+    const lang = INAPlatform.currentLang();
+    const appliedIds = new Set(currentProjectPrograms.map((r) => r.program_id));
+    // Business rule (Pablo, sep 2026, migration_v48): a project can only
+    // apply to ONE FSU financing line at a time.
+    const hasFsuApplied = currentProjectPrograms.some((r) => r.programs && r.programs.funding_stage !== 'preparation' && INAPlatform.isFsuFinancingEntity(r.programs.financing_entity));
+    ['preparation', 'financing'].forEach((stage) => {
+      const picker = document.getElementById(stage === 'preparation' ? 'preparationProgramPicker' : 'financingProgramPicker');
+      const addBtn = document.getElementById(stage === 'preparation' ? 'addPreparationProgramBtn' : 'addFinancingProgramBtn');
+      const available = allProgramsForApply.filter((pg) => (pg.funding_stage || 'financing') === stage
+        && !appliedIds.has(pg.id)
+        && !INAPlatform.isUmbrellaProgram(pg)
+        && !(stage === 'financing' && hasFsuApplied && INAPlatform.isFsuFinancingEntity(pg.financing_entity)));
+      picker.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = lang === 'es' ? '— Elegí un programa —' : '— Choose a program —';
+      picker.appendChild(placeholder);
+      available.forEach((pg) => {
+        const opt = document.createElement('option');
+        opt.value = pg.id;
+        opt.textContent = pg.name;
+        picker.appendChild(opt);
+      });
+      picker.style.display = 'none';
+      addBtn.style.display = canManage && available.length ? 'inline-flex' : 'none';
+    });
+  }
+
+  async function removeProgramApplication(programId) {
+    const lang = INAPlatform.currentLang();
+    const msg = lang === 'es'
+      ? '¿Quitar la aplicación a este programa? Si había respuestas de un template guardadas, se pierden.'
+      : "Remove the application to this program? Any saved template answers will be lost.";
+    if (!confirm(msg)) return;
+    try {
+      await INAPlatform.removeProjectProgram(projectId, programId);
+      currentProjectPrograms = currentProjectPrograms.filter((r) => r.program_id !== programId);
+      renderProgramApplications();
+      renderFinancingRecommendation();
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo quitar la aplicación: ' : "Couldn't remove the application: ") + (err.message || err));
+    }
+  }
+
+  async function applyProgramFromPicker(programId, financingPercentage) {
+    const program = allProgramsForApply.find((pg) => pg.id === programId);
+    if (!program) return;
+
+    const projected = hypotheticalTotalPct({ programOverride: { programId, percentage: financingPercentage, programMeta: program } });
+    if (blockIfOverBudget(projected)) return;
+
+    if (program.template_key && INAPlatform.programTemplateFor(program.template_key)) {
+      const pctParam = financingPercentage !== undefined && financingPercentage !== ''
+        ? `&pct=${encodeURIComponent(financingPercentage)}` : '';
+      location.href = `project-template.html?mode=apply&project=${encodeURIComponent(projectId)}&program=${encodeURIComponent(program.id)}&ptpl=${encodeURIComponent(program.template_key)}${pctParam}`;
+      return;
+    }
+    try {
+      const applyOpts = {};
+      if (financingPercentage !== undefined && financingPercentage !== '') applyOpts.financingPercentage = financingPercentage;
+      const row = await INAPlatform.applyToProgram(projectId, programId, applyOpts);
+      currentProjectPrograms.push(row);
+      renderProgramApplications();
+      renderFinancingRecommendation();
+    } catch (err) {
+      const lang = INAPlatform.currentLang();
+      alert((lang === 'es' ? 'No se pudo aplicar al programa: ' : "Couldn't apply to the program: ") + (err.message || err));
+    }
+  }
+
+  ['preparation', 'financing'].forEach((stage) => {
+    const addBtn = document.getElementById(stage === 'preparation' ? 'addPreparationProgramBtn' : 'addFinancingProgramBtn');
+    const picker = document.getElementById(stage === 'preparation' ? 'preparationProgramPicker' : 'financingProgramPicker');
+    addBtn.addEventListener('click', () => {
+      const showing = picker.style.display !== 'none';
+      picker.style.display = showing ? 'none' : 'inline-block';
+      if (!showing) picker.focus();
+    });
+    picker.addEventListener('change', () => {
+      const val = picker.value;
+      picker.style.display = 'none';
+      if (val) applyProgramFromPicker(val);
+    });
+  });
+
+  /* ---------- AI Financing Recommendation (moved from project.html) ---------- */
+  function renderFinancingRecommendation() {
+    const lang = INAPlatform.currentLang();
+    const emptyEl = document.getElementById('financingRecoEmpty');
+    const resultEl = document.getElementById('financingRecoResult');
+    if (!currentFinancingReco) {
+      emptyEl.style.display = 'block';
+      resultEl.style.display = 'none';
+      return;
+    }
+    emptyEl.style.display = 'none';
+    resultEl.style.display = 'block';
+
+    const items = (lang === 'es' ? currentFinancingReco.recommended : currentFinancingReco.recommended_en) || [];
+    document.getElementById('financingRecoSummary').textContent = (lang === 'es' ? currentFinancingReco.summary : currentFinancingReco.summary_en) || '';
+
+    const list = document.getElementById('financingRecoList');
+    list.innerHTML = '';
+    items.forEach((item) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'padding:12px 14px; border:1px solid var(--paper-line); border-radius:10px;';
+      const isFinancingStage = item.funding_stage !== 'preparation';
+      const stageLabel = isFinancingStage
+        ? (lang === 'es' ? 'Financiamiento' : 'Financing')
+        : (lang === 'es' ? 'Preparación' : 'Preparation');
+      const scoreClass = INAPlatform.scoreBandClass(item.fit_score);
+      const appliedRow = currentProjectPrograms.find((r) => r.program_id === item.program_id) || null;
+      const isApplied = !!appliedRow;
+      const pctValue = isApplied
+        ? (appliedRow.financing_percentage != null ? appliedRow.financing_percentage : '')
+        : (item.suggested_percentage != null ? item.suggested_percentage : '');
+      div.innerHTML = `
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div style="min-width:0;">
+            <strong style="font-size:13.5px;">${item.name || ''}</strong>
+            <p style="font-size:12px; color:var(--muted); margin-top:2px;">${item.financing_entity ? item.financing_entity + ' · ' : ''}${stageLabel}</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+            <span class="status-pill ${scoreClass}" style="font-size:11.5px; padding:4px 10px;">${item.fit_score}/100</span>
+            ${isApplied ? `<span style="font-size:11.5px; color:var(--muted);">✓ ${lang === 'es' ? 'Ya aplicado' : 'Already applied'}</span>` : ''}
+          </div>
+        </div>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:8px;">${item.rationale || ''}</p>
+        ${canManage ? `
+        <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--paper-line); flex-wrap:wrap;">
+          ${isFinancingStage ? `
+            <label style="font-size:12px; color:var(--muted);">${lang === 'es' ? '% del presupuesto' : '% of budget'}</label>
+            <input type="number" min="0" max="100" step="1" value="${pctValue}" data-reco-pct="${item.program_id}" style="width:64px; padding:5px 8px; font-size:12.5px;">
+          ` : ''}
+          ${isApplied
+            ? `${isFinancingStage ? `<button type="button" class="btn ghost small" data-reco-save-pct="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Guardar %' : 'Save %'}</button>` : ''}
+               <button type="button" class="btn ghost small" data-reco-unapply="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Desaplicar' : 'Unapply'}</button>`
+            : `<button type="button" class="btn ghost small" data-apply-reco="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Aplicar' : 'Apply'}</button>`}
+          <span data-reco-pct-status="${item.program_id}" style="font-size:11.5px; color:var(--muted);"></span>
+        </div>` : ''}
+      `;
+      list.appendChild(div);
+    });
+    list.querySelectorAll('[data-apply-reco]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const programId = btn.getAttribute('data-apply-reco');
+        const pctInput = list.querySelector(`[data-reco-pct="${programId}"]`);
+        const pct = pctInput && pctInput.value !== '' ? pctInput.value : undefined;
+        applyProgramFromPicker(programId, pct);
+      });
+    });
+    list.querySelectorAll('[data-reco-save-pct]').forEach((btn) => {
+      btn.addEventListener('click', () => saveRecoPercentage(btn.getAttribute('data-reco-save-pct')));
+    });
+    list.querySelectorAll('[data-reco-unapply]').forEach((btn) => {
+      btn.addEventListener('click', () => removeProgramApplication(btn.getAttribute('data-reco-unapply')));
+    });
+
+    const updatedEl = document.getElementById('financingRecoUpdatedAt');
+    if (currentFinancingReco.updated_at) {
+      const dateStr = new Date(currentFinancingReco.updated_at).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
+      updatedEl.textContent = (lang === 'es' ? 'Generado: ' : 'Generated: ') + dateStr;
+    } else {
+      updatedEl.textContent = '';
+    }
+  }
+
+  async function saveRecoPercentage(programId) {
+    const lang = INAPlatform.currentLang();
+    const pctInput = document.querySelector(`#financingRecoList [data-reco-pct="${programId}"]`);
+    if (!pctInput) return;
+
+    const projected = hypotheticalTotalPct({ programOverride: { programId, percentage: pctInput.value } });
+    if (blockIfOverBudget(projected)) return;
+
+    try {
+      const updated = await INAPlatform.updateProjectProgramFinancing(projectId, programId, { percentage: pctInput.value });
+      currentProjectPrograms = currentProjectPrograms.map((r) => (r.program_id === programId ? updated : r));
+      renderProgramApplications();
+      renderFinancingRecommendation();
+      const freshStatus = document.querySelector(`#financingRecoList [data-reco-pct-status="${programId}"]`);
+      if (freshStatus) {
+        freshStatus.textContent = lang === 'es' ? 'Guardado ✓' : 'Saved ✓';
+        setTimeout(() => { freshStatus.textContent = ''; }, 2500);
+      }
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo guardar el %: ' : "Couldn't save the %: ") + (err.message || err));
+    }
+  }
+
+  async function runFinancingRecommendation() {
+    const lang = INAPlatform.currentLang();
+    const btn = document.getElementById('financingRecoRunBtn');
+    const loadingEl = document.getElementById('financingRecoLoading');
+    const emptyEl = document.getElementById('financingRecoEmpty');
+    const resultEl = document.getElementById('financingRecoResult');
+    btn.disabled = true;
+    loadingEl.style.display = 'block';
+    emptyEl.style.display = 'none';
+    resultEl.style.display = 'none';
+    try {
+      currentFinancingReco = await INAPlatform.requestFinancingRecommendation(projectId);
+      renderFinancingRecommendation();
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo generar la recomendación: ' : "Couldn't generate the recommendation: ") + (err.message || err));
+      emptyEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      loadingEl.style.display = 'none';
+    }
+  }
+
+  document.getElementById('financingRecoRunBtn').addEventListener('click', runFinancingRecommendation);
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setTimeout(() => {
+        if (currentProject) {
+          renderBudget(currentProject);
+          renderFinancingCoverage();
+        }
+        renderProgramApplications();
+        renderFinancingRecommendation();
+      }, 0);
+    });
+  });
+
+  async function init() {
+    if (!projectId) { location.href = 'dashboard.html'; return; }
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      currentProfile = profile;
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      const canAdminUsers = INAPlatform.canManageUsers(profile);
+      const canMasterData = INAPlatform.canManageMasterData(profile);
+      if (canAdminUsers || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
+      if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
+      if (canAdminUsers) document.getElementById('adminUsersMenuItem').style.display = 'flex';
+      if (canAdminUsers) document.getElementById('rolesMenuItem').style.display = 'flex';
+      if (INAPlatform.canViewRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    let project;
+    try {
+      project = await INAPlatform.getProject(projectId);
+    } catch (e) {
+      document.getElementById('loadingState').textContent =
+        (INAPlatform.currentLang() === 'es' ? 'No se pudo cargar el proyecto: ' : 'Could not load the project: ') + (e.message || e);
+      return;
+    }
+    currentProject = project;
+
+    isOwner = project.user_id === session.user.id;
+    isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === session.user.id;
+    const isAdminViewer = currentProfile && INAPlatform.isAdmin(currentProfile);
+    canManage = isOwner || isAssignedAdvisor || isAdminViewer;
+
+    try {
+      [allProgramsForApply, currentProjectPrograms] = await Promise.all([
+        INAPlatform.listPrograms(),
+        INAPlatform.listProjectPrograms(projectId),
+      ]);
+    } catch (e) { allProgramsForApply = []; currentProjectPrograms = []; /* non-critical */ }
+
+    document.getElementById('crumbProject').href = `project.html?id=${projectId}`;
+    document.getElementById('crumbProject').textContent = project.name;
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('financingBody').style.display = 'block';
+
+    renderBudget(project);
+    renderFsuFields(project);
+    renderOtherFinancingFields(project);
+
+    // AI Financing Recommendation — visible to any viewer (same as the
+    // Financing Programs list below), but only whoever can manage the
+    // project's financing (canManage) can trigger generating a new one.
+    document.getElementById('financingRecommendationBlock').style.display = 'block';
+    document.getElementById('financingRecoRunBtn').style.display = canManage ? 'inline-flex' : 'none';
+    try {
+      currentFinancingReco = await INAPlatform.getFinancingRecommendation(projectId);
+    } catch (e) { currentFinancingReco = null; /* non-critical */ }
+    renderFinancingRecommendation();
+
+    renderProgramApplications();
+    renderFinancingCoverage();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

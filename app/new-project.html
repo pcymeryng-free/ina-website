@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=23">
+<link rel="stylesheet" href="/assets/style.css?v=24">
 <link rel="stylesheet" href="/assets/app.css?v=10">
 </head>
 <body class="app-body">
@@ -143,39 +143,6 @@
 
         <div class="field" style="margin-top:18px;"><label for="pbeneficiaries"><span data-i18n="np.f.beneficiaries">Beneficiaries reached (households, optional)</span></label><input id="pbeneficiaries" type="number" min="0" step="1">
           <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.beneficiaries.help">For last-mile/universal-access projects — the number of households, businesses or public establishments the project reaches. Strengthens the case for Universal Service Fund financing.</span></p>
-        </div>
-
-        <!-- Total project budget — see
-             migration_v34_project_budget_complexity.sql. Distinct from the
-             FSU amount field in the Financing section (step 3) below: this
-             is the project's total estimated cost regardless of financing
-             source; FSU amount is specifically the slice requested from the
-             Universal Service Fund mechanism. -->
-        <div class="field" style="margin-top:18px;">
-          <label for="pBudgetAmount"><span data-i18n="np.f.budget">Total estimated budget (ARS, optional)</span></label>
-          <input id="pBudgetAmount" type="number" min="0" step="1">
-        </div>
-
-        <!-- USD twin of the budget above, plus the shared exchange rate —
-             see migration_v38_usd_amounts.sql. Many source documents
-             (pliegos, carpetas técnicas, planillas de seguimiento) quote
-             figures in dollars; loading that figure here avoids guessing
-             an ARS conversion. exchange_rate is shared with the FSU USD
-             amount in the Financing section (step 3) below — load it once
-             and INA computes an ARS-equivalent for both on project.html. -->
-        <div class="field" style="margin-top:18px;">
-          <label for="pBudgetAmountUsd"><span data-i18n="np.f.budgetUsd">Total estimated budget (USD, optional)</span></label>
-          <input id="pBudgetAmountUsd" type="number" min="0" step="1">
-          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.budgetUsd.help">Independent of the ARS figure above — fill in either, or both, if the source document quotes dollars.</span></p>
-        </div>
-        <div class="field" style="margin-top:18px;">
-          <label for="pExchangeRate"><span data-i18n="np.f.exchangeRate">Exchange rate used (ARS per USD, optional)</span></label>
-          <input id="pExchangeRate" type="number" min="0" step="0.01">
-          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.exchangeRate.help">Shared by the budget and FSU dollar amounts on this project — used only to show an ARS-equivalent, never written into the ARS fields automatically.</span></p>
-        </div>
-        <div class="field" style="margin-top:18px;">
-          <label for="pExchangeRateDate"><span data-i18n="np.f.exchangeRateDate">Exchange rate date (optional)</span></label>
-          <input id="pExchangeRateDate" type="date">
         </div>
 
         <!-- Estimated duration (value + unit), priority, technical
@@ -331,105 +298,57 @@
         <p class="contact-note" data-save-note style="margin-top:10px; min-height:18px;"></p>
       </div>
 
-      <!-- STEP 3 — Financing, and only financing: which program(s) fund
-           this project's PREPARATION (elaborating/structuring it before
-           it's finished, e.g. a USTDA feasibility-study grant) vs. which
-           program(s) fund its EXECUTION (implementation, e.g. CAF + BID
-           each covering a share) — deliberately kept as two clearly
-           separated groups, never merged into one list. Neither is the
-           "Initiative" field (that's organizational, not a funding source —
-           see step 1 above). Saved as project_programs rows right
-           after the project is created/updated — see
-           reconcileProgramApplications() below and
-           supabase/migration_v21_program_funding_stage_and_applications.sql. -->
+      <!-- STEP 3 — Financing, simplified (Pablo, sep 2026): "en la parte de
+           Financing, incluir solo el monto total del proyecto en pesos y
+           dólares y el % requerido de financiación. La gestión de
+           financiación separarla de la edición del proyecto." Everything
+           about HOW the budget actually gets financed — FSU, applying to
+           registered Programs (preparation or execution), any "other
+           source" — used to live here too; it's now managed entirely on
+           app/project-financing.html instead, reachable from project.html's
+           nav once the project exists (there's no project id yet for any of
+           that during initial creation anyway). All this step keeps is the
+           total cost (ARS/USD, moved here from what used to be step 1) and
+           the new financing_required_percentage — see
+           migration_v56_financing_required_percentage.sql. -->
       <div class="wizard-panel" data-step="3">
-        <div>
-          <h5 class="h-card" style="font-size:13px;"><span data-i18n="pd.programs.preparation">Project preparation funding</span></h5>
-          <div class="field" style="margin-top:10px;">
-            <label for="pPrepProgram"><span data-i18n="np.f.prepProgram">Project preparation funding (optional)</span></label>
-            <select id="pPrepProgram"></select>
-            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.prepProgram.help">A program that funds elaborating/structuring this project itself before it's finished — e.g. a USTDA feasibility-study grant.</span></p>
-            <!-- Its guided template (if any) is filled in from the
-                 Templates section (4), via prepTemplateOfferCard. -->
-          </div>
+        <div class="field">
+          <label for="pBudgetAmount"><span data-i18n="np.f.budget">Total estimated budget (ARS, optional)</span></label>
+          <input id="pBudgetAmount" type="number" min="0" step="1">
         </div>
 
-        <div style="margin-top:32px; padding-top:28px; border-top:1px solid var(--paper-line);">
-          <h5 class="h-card" style="font-size:13px;"><span data-i18n="pd.programs.financing">Project financing</span></h5>
-          <div class="field" style="margin-top:10px;">
-            <label><span data-i18n="np.f.financingPrograms">Project financing program(s) (optional)</span></label>
-            <div class="chk-group" id="financingProgramsOptions"></div>
-            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.financingPrograms.help">Select every program financing this project, if more than one — e.g. CAF and BID each funding a share of it.</span></p>
-            <p style="font-size:12px; color:var(--muted); margin-top:4px;"><span data-i18n="np.f.financingPrograms.amountHelp">For each selected program, enter its share as a % of the total budget, an amount in ARS, or both.</span></p>
-          </div>
+        <!-- USD twin of the budget above, plus the shared exchange rate —
+             see migration_v38_usd_amounts.sql. Many source documents
+             (pliegos, carpetas técnicas, planillas de seguimiento) quote
+             figures in dollars; loading that figure here avoids guessing
+             an ARS conversion. -->
+        <div class="field" style="margin-top:18px;">
+          <label for="pBudgetAmountUsd"><span data-i18n="np.f.budgetUsd">Total estimated budget (USD, optional)</span></label>
+          <input id="pBudgetAmountUsd" type="number" min="0" step="1">
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.budgetUsd.help">Independent of the ARS figure above — fill in either, or both, if the source document quotes dollars.</span></p>
+        </div>
+        <div class="field" style="margin-top:18px;">
+          <label for="pExchangeRate"><span data-i18n="np.f.exchangeRate">Exchange rate used (ARS per USD, optional)</span></label>
+          <input id="pExchangeRate" type="number" min="0" step="0.01">
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.exchangeRate.help">Shared by the budget and FSU dollar amounts on this project — used only to show an ARS-equivalent, never written into the ARS fields automatically.</span></p>
+        </div>
+        <div class="field" style="margin-top:18px;">
+          <label for="pExchangeRateDate"><span data-i18n="np.f.exchangeRateDate">Exchange rate date (optional)</span></label>
+          <input id="pExchangeRateDate" type="date">
         </div>
 
-        <!-- Universal Service Fund (FSU) amount/scope — distinct from the
-             umbrella-program checkboxes above and from
-             shared_field_answers.monto_total_solicitado (a guided template's
-             total project budget). This is specifically what's being
-             requested from the FSU as one financing mechanism among several
-             — see migration_v33_project_attributes.sql and
-             USF_SUGGESTION/isFsuScoringEligible in assets/platform.js. -->
-        <div style="margin-top:32px; padding-top:28px; border-top:1px solid var(--paper-line);">
-          <h5 class="h-card" style="font-size:13px;"><span data-i18n="np.f.fsuSection">Universal Service Fund (FSU)</span></h5>
-          <div class="field" style="margin-top:10px;">
-            <label for="pFsuAmount"><span data-i18n="np.f.fsuAmount">FSU amount requested (ARS, optional)</span></label>
-            <input id="pFsuAmount" type="number" min="0" step="1">
-          </div>
-          <!-- USD twin — see migration_v38_usd_amounts.sql. Shares the
-               exchange rate entered in the budget section (step 1) above. -->
-          <div class="field" style="margin-top:18px;">
-            <label for="pFsuAmountUsd"><span data-i18n="np.f.fsuAmountUsd">FSU amount requested (USD, optional)</span></label>
-            <input id="pFsuAmountUsd" type="number" min="0" step="1">
-          </div>
-          <div class="field" style="margin-top:18px;">
-            <label for="pFsuScope"><span data-i18n="np.f.fsuScope">FSU scope (optional)</span></label>
-            <textarea id="pFsuScope" style="min-height:80px;" placeholder=""></textarea>
-            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.fsuScope.help">What the FSU financing would cover — localities, households, services.</span></p>
-          </div>
-          <!-- Financing mix (migration_v35_financing_mix.sql): what SHARE
-               of the total budget the FSU would cover — a project can be
-               financed by FSU + one or more other sources, each covering a
-               percentage, together not exceeding 100%. fsu_scope above
-               already describes WHAT part/stage FSU covers in words (often
-               "a first stage"); this is the same idea expressed as a
-               number, so the mix can be checked against 100% on
-               project.html. -->
-          <div class="field" style="margin-top:18px;">
-            <label for="pFsuPercentage"><span data-i18n="np.f.fsuPercentage">FSU share of total budget (%, optional)</span></label>
-            <input id="pFsuPercentage" type="number" min="0" max="100" step="1">
-            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.fsuPercentage.help">What percentage of the total budget the FSU would cover — e.g. 40 if it funds a first stage worth 40% of the project.</span></p>
-          </div>
+        <!-- New (migration_v56): the TARGET app/project-financing.html's
+             coverage bar tries to reach — e.g. 70 if 30% is already
+             confirmed own capital/equity and doesn't need to be raised.
+             Left blank = 100 (the whole budget needs financing), same as
+             every project created before this field existed. -->
+        <div class="field" style="margin-top:18px;">
+          <label for="pFinancingRequiredPercentage"><span data-i18n="np.f.financingRequiredPercentage">% of budget that needs financing (optional)</span></label>
+          <input id="pFinancingRequiredPercentage" type="number" min="0" max="100" step="1">
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.financingRequiredPercentage.help">Leave blank if the entire budget needs to be raised. Enter a lower number if part of it is already confirmed own capital/equity — e.g. 70 if 30% is already covered.</span></p>
         </div>
 
-        <!-- Financing mix, continued: the remainder covered by a source
-             that isn't the FSU and isn't a Program registered on the
-             platform — own funds, a one-off credit line, etc. See
-             migration_v35_financing_mix.sql. Each registered financing
-             Program's own share is entered next to its checkbox above
-             instead (financingProgramsPercentages). -->
-        <div style="margin-top:32px; padding-top:28px; border-top:1px solid var(--paper-line);">
-          <h5 class="h-card" style="font-size:13px;"><span data-i18n="np.f.otherFinancingSection">Other financing source</span></h5>
-          <p style="font-size:12px; color:var(--muted); margin-top:4px;"><span data-i18n="np.f.otherFinancingSection.help">For any remaining share not covered by the FSU or a Program registered above — e.g. the proponent's own funds, or a credit line not modeled as a Program.</span></p>
-          <div class="field" style="margin-top:14px;">
-            <label for="pOtherFinancingPercentage"><span data-i18n="np.f.otherFinancingPercentage">Share of total budget (%, optional)</span></label>
-            <input id="pOtherFinancingPercentage" type="number" min="0" max="100" step="1">
-          </div>
-          <!-- Same share, as an absolute amount instead of a % — see
-               migration_v37_financing_amounts.sql. Independent of the %
-               field above (fill in either, or both), same convention as
-               the FSU amount/% pair above. -->
-          <div class="field" style="margin-top:18px;">
-            <label for="pOtherFinancingAmount"><span data-i18n="np.f.otherFinancingAmount">Amount (ARS, optional)</span></label>
-            <input id="pOtherFinancingAmount" type="number" min="0" step="1">
-          </div>
-          <div class="field" style="margin-top:18px;">
-            <label for="pOtherFinancingNotes"><span data-i18n="np.f.otherFinancingNotes">Source description (optional)</span></label>
-            <textarea id="pOtherFinancingNotes" style="min-height:60px;" placeholder=""></textarea>
-            <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.otherFinancingNotes.help">E.g. "Own funds from the Cooperative" or "Banco Nación credit line, not a registered Program."</span></p>
-          </div>
-        </div>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:24px; padding-top:20px; border-top:1px solid var(--paper-line);"><span data-i18n="np.f.financingManagement.hint">Applying to FSU, BID, CAF, USTDA or any other registered financing program — and getting an AI-generated financing recommendation — happens afterward, from the project's own "Financiación" section.</span></p>
 
         <div class="wizard-nav">
           <button type="button" class="btn ghost" id="step3BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
@@ -472,16 +391,6 @@
           <button type="button" id="useProgramTemplateBtn" class="btn ghost small"><span data-i18n="np.f.useProgramTemplate">Fill using this program's template</span></button>
         </div>
 
-        <!-- Shown only when the preparation-funding program picked in
-             Financing (pPrepProgram) has its own guided template — see
-             updatePrepProgramTemplateBtnVisibility() below. -->
-        <div class="template-offer-card" id="prepTemplateOfferCard" style="display:none; margin-top:16px;">
-          <p style="font-size:14px; margin:0 0 6px;"><span data-i18n="np.wizard.step4.prep.lede">The project preparation funding program selected in Financing has its own guided template.</span></p>
-          <p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;"><span data-i18n="np.f.templateForPrepProgram">Corresponds to the project-preparation funding program:</span> <strong id="prepTemplateOfferName"></strong></p>
-          <button type="button" id="usePrepProgramTemplateBtn" class="btn ghost small"><span data-i18n="np.f.useProgramTemplate">Fill using this program's template</span></button>
-          <p id="prepTemplateFilledNote" style="display:none; font-size:12px; color:var(--amber-deep); margin-top:8px;"><span data-i18n="np.f.prepTemplateFilled">✓ Template filled in — it will be saved when you submit.</span></p>
-        </div>
-
         <p id="editNote" style="font-size:12.5px; color:var(--amber-deep); margin-top:18px; display:none;"><span data-i18n="np.edit.reanalyze">Saving changes clears the current analysis — run the Investment Readiness Index&trade; again manually from the project page afterwards.</span></p>
 
         <div class="wizard-nav">
@@ -501,9 +410,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=60"></script>
+<script src="/assets/i18n.js?v=62"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=71"></script>
+<script src="/assets/platform.js?v=72"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -730,8 +639,6 @@
         opt.textContent = pg.name;
         sel.appendChild(opt);
       });
-    renderPrepProgramOptions('');
-    renderFinancingProgramOptions();
   }
 
   // Initiative *names* are user-entered data, not translated — only the "No
@@ -740,187 +647,6 @@
     const sel = document.getElementById('pprogram');
     if (sel.options.length && sel.options[0].value === '') {
       sel.options[0].textContent = lang === 'es' ? 'Sin iniciativa' : 'No initiative';
-    }
-    const prepSel = document.getElementById('pPrepProgram');
-    if (prepSel.options.length && prepSel.options[0].value === '') {
-      prepSel.options[0].textContent = lang === 'es' ? 'Sin financiamiento de elaboración' : 'No preparation funding';
-    }
-  }
-
-  /* Which program(s) actually FUND this project — separate from the
-     "Initiative" field above. Preparation funding (e.g. USTDA) is
-     single-select, since normally only one entity funds elaborating a
-     project; project financing (e.g. CAF + BID together) is multi-select,
-     since more than one program can each cover a share. Both are backed by
-     project_programs, applied/reconciled on submit — see
-     reconcileProgramApplications() below. */
-  let financingProgramsChecked = new Set();
-  // Financing mix (migration_v35_financing_mix.sql): % of the project's
-  // total budget each checked financing-stage Program covers — keyed by
-  // program id, only meaningful/shown for programs currently checked in
-  // financingProgramsChecked above. Applied via applyToProgram's
-  // financingPercentage option in reconcileProgramApplications() on
-  // submit. FSU's own share is a separate project-level field (pFsuPercentage
-  // below), not part of this map.
-  let financingProgramsPercentages = new Map();
-  // Same share, as an absolute amount (ARS) instead of a % — see
-  // migration_v37_financing_amounts.sql. Independent of
-  // financingProgramsPercentages above; a checked program can have either,
-  // both, or neither filled in.
-  let financingProgramsAmounts = new Map();
-  // Existing applications when editing a project (fetched in init() below)
-  // — used both to pre-select the fields above and, on submit, to diff
-  // against what's now selected so reconcileProgramApplications() only
-  // adds/removes what actually changed, preserving any template answers
-  // already saved on an application that's still checked.
-  let existingProjectPrograms = [];
-
-  // Set by restoreTemplateDraftIfAny() below when the user has just come
-  // back from filling in the preparation program's guided template (see
-  // usePrepProgramTemplateBtn below) — carries the answers through to
-  // reconcileProgramApplications() on submit, since project-template.html
-  // in this "prep" mode saves nothing itself (unlike apply mode on
-  // project.html, there's no project id yet for a brand-new project to
-  // attach a project_programs row to).
-  let pendingPrepTemplateProgramId = null;
-  let pendingPrepTemplateAnswers = null;
-  let pendingPrepTemplateCompiled = '';
-
-  function renderPrepProgramOptions(selected) {
-    const sel = document.getElementById('pPrepProgram');
-    const prev = selected !== undefined ? selected : sel.value;
-    sel.innerHTML = '';
-    const noneOpt = document.createElement('option');
-    noneOpt.value = '';
-    noneOpt.textContent = lang === 'es' ? 'Sin financiamiento de elaboración' : 'No preparation funding';
-    sel.appendChild(noneOpt);
-    programsCache
-      .filter((pg) => pg.funding_stage === 'preparation' && !INAPlatform.isUmbrellaProgram(pg))
-      .forEach((pg) => {
-        const opt = document.createElement('option');
-        opt.value = pg.id;
-        opt.textContent = pg.name;
-        sel.appendChild(opt);
-      });
-    sel.value = prev || '';
-  }
-
-  function renderFinancingProgramOptions() {
-    const el = document.getElementById('financingProgramsOptions');
-    const financing = programsCache.filter((pg) => (pg.funding_stage || 'financing') === 'financing' && !INAPlatform.isUmbrellaProgram(pg));
-    const pctLabel = lang === 'es' ? '% del presupuesto' : '% of budget';
-    const amtLabel = lang === 'es' ? 'Monto (ARS)' : 'Amount (ARS)';
-    // Business rule (Pablo, sep 2026): a project can only be financed by ONE
-    // FSU line at a time (TASU, FATIC, Red Mayorista Neutral, C.I.P...., any
-    // Program with financing_entity = 'ENACOM-FSU') — it can still combine
-    // that one FSU line with any number of OTHER financiers (BID, CAF,
-    // USTDA...) without limit. Enforced here by disabling every OTHER FSU
-    // program's checkbox once one is checked (also enforced at the DB level
-    // — see enforce_single_fsu_program() in migration_v48 — this is just the
-    // UI-side guard so the user sees why before hitting submit).
-    const checkedFsuProgram = financing.find((pg) => financingProgramsChecked.has(pg.id) && INAPlatform.isFsuFinancingEntity(pg.financing_entity));
-    const fsuLockedTitle = checkedFsuProgram
-      ? (lang === 'es'
-        ? `Un proyecto solo puede aplicar a una línea de financiamiento del FSU a la vez. Ya está aplicado a "${checkedFsuProgram.name}" — quitá esa selección primero para elegir otra.`
-        : `A project can only apply to one FSU financing line at a time. It's already applied to "${checkedFsuProgram.name}" — uncheck that one first to pick a different FSU line.`)
-      : '';
-    el.innerHTML = financing.map((pg) => {
-      const checked = financingProgramsChecked.has(pg.id);
-      const isFsu = INAPlatform.isFsuFinancingEntity(pg.financing_entity);
-      const lockedByOtherFsu = isFsu && !checked && !!checkedFsuProgram;
-      const pct = financingProgramsPercentages.has(pg.id) ? financingProgramsPercentages.get(pg.id) : '';
-      const amt = financingProgramsAmounts.has(pg.id) ? financingProgramsAmounts.get(pg.id) : '';
-      // Both number inputs are SIBLINGs of the <label>, not nested inside
-      // it — nesting them would make clicks inside a number field also
-      // toggle the checkbox (implicit label activation), which is exactly
-      // the kind of thing that's aggravating to debug in a checkbox list.
-      return `
-      <div class="chk-pill-row" style="display:inline-flex; align-items:center; gap:6px; ${lockedByOtherFsu ? 'opacity:.5;' : ''}">
-        <label class="chk-pill" ${lockedByOtherFsu ? `title="${fsuLockedTitle}"` : ''}>
-          <input type="checkbox" value="${pg.id}" ${checked ? 'checked' : ''} ${lockedByOtherFsu ? 'disabled' : ''}>
-          <span>${pg.name}</span>
-        </label>
-        ${checked ? `<input type="number" min="0" max="100" step="1" value="${pct}" data-pct-for="${pg.id}" placeholder="${pctLabel}" title="${pctLabel}" style="width:60px; padding:6px 8px; font-size:12px;">` : ''}
-        ${checked ? `<input type="number" min="0" step="1" value="${amt}" data-amt-for="${pg.id}" placeholder="${amtLabel}" title="${amtLabel}" style="width:110px; padding:6px 8px; font-size:12px;">` : ''}
-      </div>`;
-    }).join('');
-    el.querySelectorAll('[data-pct-for]').forEach((inp) => {
-      inp.addEventListener('change', () => {
-        const id = inp.getAttribute('data-pct-for');
-        if (inp.value === '') financingProgramsPercentages.delete(id);
-        else financingProgramsPercentages.set(id, inp.value);
-      });
-    });
-    el.querySelectorAll('[data-amt-for]').forEach((inp) => {
-      inp.addEventListener('change', () => {
-        const id = inp.getAttribute('data-amt-for');
-        if (inp.value === '') financingProgramsAmounts.delete(id);
-        else financingProgramsAmounts.set(id, inp.value);
-      });
-    });
-  }
-  document.getElementById('financingProgramsOptions').addEventListener('change', (e) => {
-    if (e.target.type !== 'checkbox') return;
-    if (e.target.checked) financingProgramsChecked.add(e.target.value);
-    else {
-      financingProgramsChecked.delete(e.target.value);
-      financingProgramsPercentages.delete(e.target.value);
-      financingProgramsAmounts.delete(e.target.value);
-    }
-    renderFinancingProgramOptions();
-  });
-
-  // Applies/withdraws applications so project_programs matches what's
-  // selected above — called right after the project is created/updated
-  // (needs a real project id). Diffs against existingProjectPrograms
-  // (empty for a brand-new project) so an application that's still
-  // selected is left untouched (any template answers already filled in
-  // from project.html survive), rather than blindly re-applying everyone.
-  // Every call is independently try/caught — a failure here shouldn't
-  // block the project itself from having saved successfully.
-  async function reconcileProgramApplications(projectId) {
-    const desired = new Set();
-    const prepId = document.getElementById('pPrepProgram').value;
-    if (prepId) desired.add(prepId);
-    financingProgramsChecked.forEach((id) => desired.add(id));
-
-    const existingIds = new Set(existingProjectPrograms.map((r) => r.program_id));
-
-    for (const id of existingIds) {
-      if (!desired.has(id)) {
-        try { await INAPlatform.removeProjectProgram(projectId, id); } catch (e) { /* non-critical */ }
-      }
-    }
-    for (const id of desired) {
-      // The preparation program's template was just filled in above
-      // (pendingPrepTemplateProgramId matches) — attach those answers
-      // whether this is a brand-new application or one that already
-      // existed (applyToProgram() upserts), so re-filling the template on
-      // an edit also saves the update.
-      const hasFreshAnswers = pendingPrepTemplateProgramId && pendingPrepTemplateProgramId === id && pendingPrepTemplateAnswers;
-      const isNew = !existingIds.has(id);
-      // Financing mix (migration_v35_financing_mix.sql +
-      // migration_v37_financing_amounts.sql) — the % and/or amount entered
-      // next to a checked financing-program checkbox above, if any. Only
-      // ever set for entries in financingProgramsChecked/
-      // financingProgramsPercentages/financingProgramsAmounts; the single
-      // preparation-funding pick (pPrepProgram) never has either.
-      const pct = financingProgramsPercentages.has(id) ? financingProgramsPercentages.get(id) : undefined;
-      const amt = financingProgramsAmounts.has(id) ? financingProgramsAmounts.get(id) : undefined;
-      if (isNew || hasFreshAnswers) {
-        const payload = hasFreshAnswers
-          ? { templateAnswers: pendingPrepTemplateAnswers, notes: pendingPrepTemplateCompiled }
-          : {};
-        if (pct !== undefined) payload.financingPercentage = pct;
-        if (amt !== undefined) payload.financingAmount = amt;
-        try { await INAPlatform.applyToProgram(projectId, id, payload); } catch (e) { /* non-critical */ }
-      } else if (pct !== undefined || amt !== undefined) {
-        // Already applied and nothing else about it changed here — just
-        // update the share via the dedicated method so template_answers/
-        // notes already saved on this application (e.g. from project.html)
-        // aren't touched.
-        try { await INAPlatform.updateProjectProgramFinancing(projectId, id, { percentage: pct, amount: amt }); } catch (e) { /* non-critical */ }
-      }
     }
   }
 
@@ -937,7 +663,6 @@
       updateProgramPlaceholderLang();
       renderExistingDocs();
       updateTemplateBtnVisibility();
-      renderFinancingProgramOptions();
       if (lastLockResult) showEditLockBanner(lastLockResult);
     });
   });
@@ -975,7 +700,6 @@
   // restore) doesn't fire 'change', so every place that sets it also calls
   // this directly rather than relying solely on the listener.
   const programSelect = document.getElementById('pprogram');
-  const prepProgramSelect = document.getElementById('pPrepProgram');
   const useProgramTemplateBtn = document.getElementById('useProgramTemplateBtn');
   const programTemplateOfferCard = document.getElementById('programTemplateOfferCard');
   const programTemplateOfferName = document.getElementById('programTemplateOfferName');
@@ -1012,18 +736,12 @@
       durationUnit: durationUnitSelect.value,
       priority: prioritySelect.value,
       technicalCriticality: criticalitySelect.value,
-      fsuAmount: document.getElementById('pFsuAmount').value,
-      fsuAmountUsd: document.getElementById('pFsuAmountUsd').value,
-      fsuScope: document.getElementById('pFsuScope').value,
-      fsuPercentage: document.getElementById('pFsuPercentage').value,
       budgetAmount: document.getElementById('pBudgetAmount').value,
       budgetAmountUsd: document.getElementById('pBudgetAmountUsd').value,
       exchangeRate: document.getElementById('pExchangeRate').value,
       exchangeRateDate: document.getElementById('pExchangeRateDate').value,
       complexity: complexitySelect.value,
-      otherFinancingPercentage: document.getElementById('pOtherFinancingPercentage').value,
-      otherFinancingAmount: document.getElementById('pOtherFinancingAmount').value,
-      otherFinancingNotes: document.getElementById('pOtherFinancingNotes').value,
+      financingRequiredPercentage: document.getElementById('pFinancingRequiredPercentage').value,
     };
     sessionStorage.setItem('inaTemplateDraft', JSON.stringify(draft));
     sessionStorage.setItem('inaTemplateReturnUrl', activeProjectId ? `new-project.html?id=${activeProjectId}` : 'new-project.html');
@@ -1055,96 +773,17 @@
       durationUnit: durationUnitSelect.value,
       priority: prioritySelect.value,
       technicalCriticality: criticalitySelect.value,
-      fsuAmount: document.getElementById('pFsuAmount').value,
-      fsuAmountUsd: document.getElementById('pFsuAmountUsd').value,
-      fsuScope: document.getElementById('pFsuScope').value,
-      fsuPercentage: document.getElementById('pFsuPercentage').value,
       budgetAmount: document.getElementById('pBudgetAmount').value,
       budgetAmountUsd: document.getElementById('pBudgetAmountUsd').value,
       exchangeRate: document.getElementById('pExchangeRate').value,
       exchangeRateDate: document.getElementById('pExchangeRateDate').value,
       complexity: complexitySelect.value,
-      otherFinancingPercentage: document.getElementById('pOtherFinancingPercentage').value,
-      otherFinancingAmount: document.getElementById('pOtherFinancingAmount').value,
-      otherFinancingNotes: document.getElementById('pOtherFinancingNotes').value,
+      financingRequiredPercentage: document.getElementById('pFinancingRequiredPercentage').value,
     };
     sessionStorage.setItem('inaTemplateDraft', JSON.stringify(draft));
     sessionStorage.setItem('inaTemplateReturnUrl', activeProjectId ? `new-project.html?id=${activeProjectId}` : 'new-project.html');
     const projectParam = activeProjectId ? `&project=${encodeURIComponent(activeProjectId)}` : '';
     location.href = `project-template.html?ptpl=${encodeURIComponent(program.template_key)}${projectParam}`;
-  });
-
-  // "Fill using this program's template" for the preparation-funding
-  // selector above — same draft-save round trip as useProgramTemplateBtn,
-  // but with ?prep=1 added: project-template.html saves the answers under
-  // separate sessionStorage keys instead of compiling them into the
-  // project's description (a preparation-funding application's answers
-  // belong on its own project_programs row, not blended into the general
-  // project description) — see restoreTemplateDraftIfAny() below, which
-  // reads them back into pendingPrepTemplateAnswers for
-  // reconcileProgramApplications() to attach on submit.
-  const usePrepProgramTemplateBtn = document.getElementById('usePrepProgramTemplateBtn');
-  const prepTemplateOfferCard = document.getElementById('prepTemplateOfferCard');
-  const prepTemplateOfferName = document.getElementById('prepTemplateOfferName');
-  // prepTemplateOfferCard lives in the Templates section (4) too — same
-  // idea as programTemplateOfferCard above, but for the preparation-funding
-  // program picked in Financing (section 3).
-  function updatePrepProgramTemplateBtnVisibility() {
-    const program = programsCache.find((pg) => pg.id === prepProgramSelect.value);
-    const template = program && program.template_key ? INAPlatform.programTemplateFor(program.template_key) : null;
-    usePrepProgramTemplateBtn.style.display = template ? 'inline-flex' : 'none';
-    if (prepTemplateOfferCard) prepTemplateOfferCard.style.display = template ? 'block' : 'none';
-    // Names the exact preparation-funding Program this card's template
-    // belongs to (plain text, as entered on new-program.html).
-    if (prepTemplateOfferName) prepTemplateOfferName.textContent = template && program ? program.name : '';
-  }
-  prepProgramSelect.addEventListener('change', () => {
-    updatePrepProgramTemplateBtnVisibility();
-    // Selecting a different preparation program invalidates any
-    // just-filled answers that were for the previous one.
-    if (pendingPrepTemplateProgramId && pendingPrepTemplateProgramId !== prepProgramSelect.value) {
-      pendingPrepTemplateProgramId = null;
-      pendingPrepTemplateAnswers = null;
-      pendingPrepTemplateCompiled = '';
-      document.getElementById('prepTemplateFilledNote').style.display = 'none';
-    }
-  });
-
-  usePrepProgramTemplateBtn.addEventListener('click', () => {
-    const program = programsCache.find((pg) => pg.id === prepProgramSelect.value);
-    if (!program || !program.template_key) return;
-    const draft = {
-      name: document.getElementById('pname').value,
-      projectType: typeSelect.value,
-      programId: document.getElementById('pprogram').value,
-      prepProgramId: prepProgramSelect.value,
-      financingProgramIds: Array.from(financingProgramsChecked),
-      country: countrySelect.value,
-      beneficiaries: document.getElementById('pbeneficiaries').value,
-      description: document.getElementById('pdesc').value,
-      entityName: document.getElementById('pEntityName').value,
-      entityType: entityTypeSelect.value,
-      durationValue: document.getElementById('pDurationValue').value,
-      durationUnit: durationUnitSelect.value,
-      priority: prioritySelect.value,
-      technicalCriticality: criticalitySelect.value,
-      fsuAmount: document.getElementById('pFsuAmount').value,
-      fsuAmountUsd: document.getElementById('pFsuAmountUsd').value,
-      fsuScope: document.getElementById('pFsuScope').value,
-      fsuPercentage: document.getElementById('pFsuPercentage').value,
-      budgetAmount: document.getElementById('pBudgetAmount').value,
-      budgetAmountUsd: document.getElementById('pBudgetAmountUsd').value,
-      exchangeRate: document.getElementById('pExchangeRate').value,
-      exchangeRateDate: document.getElementById('pExchangeRateDate').value,
-      complexity: complexitySelect.value,
-      otherFinancingPercentage: document.getElementById('pOtherFinancingPercentage').value,
-      otherFinancingAmount: document.getElementById('pOtherFinancingAmount').value,
-      otherFinancingNotes: document.getElementById('pOtherFinancingNotes').value,
-    };
-    sessionStorage.setItem('inaTemplateDraft', JSON.stringify(draft));
-    sessionStorage.setItem('inaTemplateReturnUrl', activeProjectId ? `new-project.html?id=${activeProjectId}` : 'new-project.html');
-    const projectParam = activeProjectId ? `&project=${encodeURIComponent(activeProjectId)}` : '';
-    location.href = `project-template.html?ptpl=${encodeURIComponent(program.template_key)}&prep=1${projectParam}`;
   });
 
   // Restores the draft saved above when this page is reloaded on the way
@@ -1162,11 +801,6 @@
         if (draft.name) document.getElementById('pname').value = draft.name;
         if (draft.projectType) { typeSelect.value = draft.projectType; updateTemplateBtnVisibility(); }
         if (draft.programId) { programSelect.value = draft.programId; updateProgramTemplateBtnVisibility(); }
-        if (draft.prepProgramId) { renderPrepProgramOptions(draft.prepProgramId); updatePrepProgramTemplateBtnVisibility(); }
-        if (draft.financingProgramIds) {
-          financingProgramsChecked = new Set(draft.financingProgramIds);
-          renderFinancingProgramOptions();
-        }
         if (draft.country) {
           countrySelect.value = draft.country;
           if (countrySelect.value !== draft.country) {
@@ -1185,18 +819,12 @@
         if (draft.durationUnit) durationUnitSelect.value = draft.durationUnit;
         if (draft.priority) prioritySelect.value = draft.priority;
         if (draft.technicalCriticality) criticalitySelect.value = draft.technicalCriticality;
-        if (draft.fsuAmount) document.getElementById('pFsuAmount').value = draft.fsuAmount;
-        if (draft.fsuAmountUsd) document.getElementById('pFsuAmountUsd').value = draft.fsuAmountUsd;
-        if (draft.fsuScope) document.getElementById('pFsuScope').value = draft.fsuScope;
-        if (draft.fsuPercentage) document.getElementById('pFsuPercentage').value = draft.fsuPercentage;
         if (draft.budgetAmount) document.getElementById('pBudgetAmount').value = draft.budgetAmount;
         if (draft.budgetAmountUsd) document.getElementById('pBudgetAmountUsd').value = draft.budgetAmountUsd;
         if (draft.exchangeRate) document.getElementById('pExchangeRate').value = draft.exchangeRate;
         if (draft.exchangeRateDate) document.getElementById('pExchangeRateDate').value = draft.exchangeRateDate;
         if (draft.complexity) complexitySelect.value = draft.complexity;
-        if (draft.otherFinancingPercentage) document.getElementById('pOtherFinancingPercentage').value = draft.otherFinancingPercentage;
-        if (draft.otherFinancingAmount) document.getElementById('pOtherFinancingAmount').value = draft.otherFinancingAmount;
-        if (draft.otherFinancingNotes) document.getElementById('pOtherFinancingNotes').value = draft.otherFinancingNotes;
+        if (draft.financingRequiredPercentage) document.getElementById('pFinancingRequiredPercentage').value = draft.financingRequiredPercentage;
       } catch (e) { /* ignore malformed draft */ }
       sessionStorage.removeItem('inaTemplateDraft');
     }
@@ -1209,23 +837,13 @@
       sessionStorage.removeItem('inaTemplateCompiledDescription');
     }
 
-    // The preparation program's template (see usePrepProgramTemplateBtn
-    // above) — kept in memory rather than written into the form, since it
-    // belongs on that program's own project_programs application, not the
-    // project description. reconcileProgramApplications() attaches it on
-    // submit; the note below just confirms to the user that it's queued.
-    const prepCompiled = sessionStorage.getItem('inaPrepTemplateCompiled');
-    const prepAnswersRaw = sessionStorage.getItem('inaPrepTemplateAnswers');
-    if (prepCompiled || prepAnswersRaw) {
-      pendingPrepTemplateProgramId = prepProgramSelect.value;
-      pendingPrepTemplateCompiled = prepCompiled || '';
-      try { pendingPrepTemplateAnswers = prepAnswersRaw ? JSON.parse(prepAnswersRaw) : null; } catch (e) { pendingPrepTemplateAnswers = null; }
-      sessionStorage.removeItem('inaPrepTemplateCompiled');
-      sessionStorage.removeItem('inaPrepTemplateAnswers');
-      if (pendingPrepTemplateAnswers) {
-        document.getElementById('prepTemplateFilledNote').style.display = 'block';
-      }
-    }
+    // Preparation-funding program selection + its guided-template answers
+    // (usePrepProgramTemplateBtn, reconcileProgramApplications) used to be
+    // restored here too — both moved out along with all financing
+    // management to app/project-financing.html, so any leftover
+    // sessionStorage keys from an old in-flight draft are just discarded.
+    sessionStorage.removeItem('inaPrepTemplateCompiled');
+    sessionStorage.removeItem('inaPrepTemplateAnswers');
     sessionStorage.removeItem('inaTemplateReturnUrl');
   }
 
@@ -1480,9 +1098,9 @@
     // collected in this section (name/type/entity/description/program/
     // country/beneficiaries — every non-financing project attribute) so
     // step 2's document uploads have a real project id to attach to.
-    // Financing (preparation/execution programs) lives in step 3 and is
-    // reconciled separately on the final submit via
-    // reconcileProgramApplications() — see below.
+    // Financing is now just budget totals + % required, collected in step
+    // 3 as part of this same project record — applying to Programs, FSU,
+    // and "other source" all live on app/project-financing.html instead.
     const btn = document.getElementById('step1NextBtn');
     btn.disabled = true;
     noteEl.textContent = lang === 'es' ? 'Creando proyecto…' : 'Creating project…';
@@ -1629,46 +1247,17 @@
       durationUnitSelect.value = project.duration_unit || '';
       prioritySelect.value = project.priority || '';
       criticalitySelect.value = project.technical_criticality || '';
-      document.getElementById('pFsuAmount').value = project.fsu_amount != null ? project.fsu_amount : '';
-      document.getElementById('pFsuAmountUsd').value = project.fsu_amount_usd != null ? project.fsu_amount_usd : '';
-      document.getElementById('pFsuScope').value = project.fsu_scope || '';
-      document.getElementById('pFsuPercentage').value = project.fsu_percentage != null ? project.fsu_percentage : '';
       document.getElementById('pBudgetAmount').value = project.budget_amount != null ? project.budget_amount : '';
       document.getElementById('pBudgetAmountUsd').value = project.budget_amount_usd != null ? project.budget_amount_usd : '';
       document.getElementById('pExchangeRate').value = project.exchange_rate != null ? project.exchange_rate : '';
       document.getElementById('pExchangeRateDate').value = project.exchange_rate_date || '';
       complexitySelect.value = project.complexity || '';
-      document.getElementById('pOtherFinancingPercentage').value = project.other_financing_percentage != null ? project.other_financing_percentage : '';
-      document.getElementById('pOtherFinancingAmount').value = project.other_financing_amount != null ? project.other_financing_amount : '';
-      document.getElementById('pOtherFinancingNotes').value = project.other_financing_notes || '';
+      document.getElementById('pFinancingRequiredPercentage').value = project.financing_required_percentage != null ? project.financing_required_percentage : '';
 
       try {
         existingDocs = (await INAPlatform.listDocuments(editId)) || [];
         renderExistingDocs();
       } catch (e) { /* non-critical */ }
-
-      try {
-        existingProjectPrograms = (await INAPlatform.listProjectPrograms(editId)) || [];
-      } catch (e) { existingProjectPrograms = []; /* non-critical */ }
-      const prepRow = existingProjectPrograms.find((r) => r.programs && r.programs.funding_stage === 'preparation');
-      renderPrepProgramOptions(prepRow ? prepRow.program_id : '');
-      updatePrepProgramTemplateBtnVisibility();
-      const financingRows = existingProjectPrograms.filter((r) => !r.programs || r.programs.funding_stage !== 'preparation');
-      financingProgramsChecked = new Set(financingRows.map((r) => r.program_id));
-      // Prefill each checked program's % from its saved financing_percentage
-      // (migration_v35_financing_mix.sql), if it has one.
-      financingProgramsPercentages = new Map(
-        financingRows
-          .filter((r) => r.financing_percentage != null)
-          .map((r) => [r.program_id, r.financing_percentage])
-      );
-      // Same prefill, for the amount alternative — migration_v37_financing_amounts.sql.
-      financingProgramsAmounts = new Map(
-        financingRows
-          .filter((r) => r.financing_amount != null)
-          .map((r) => [r.program_id, r.financing_amount])
-      );
-      renderFinancingProgramOptions();
 
       if (lockResult.acquired) {
         stopEditLockHeartbeat = INAPlatform.startEditLockHeartbeat('project', editId);
@@ -1727,18 +1316,12 @@
         durationUnit: durationUnitSelect.value,
         priority: prioritySelect.value,
         technicalCriticality: criticalitySelect.value,
-        fsuAmount: document.getElementById('pFsuAmount').value,
-        fsuAmountUsd: document.getElementById('pFsuAmountUsd').value,
-        fsuScope: document.getElementById('pFsuScope').value,
-        fsuPercentage: document.getElementById('pFsuPercentage').value,
         budgetAmount: document.getElementById('pBudgetAmount').value,
         budgetAmountUsd: document.getElementById('pBudgetAmountUsd').value,
         exchangeRate: document.getElementById('pExchangeRate').value,
         exchangeRateDate: document.getElementById('pExchangeRateDate').value,
         complexity: complexitySelect.value,
-        otherFinancingPercentage: document.getElementById('pOtherFinancingPercentage').value,
-        otherFinancingAmount: document.getElementById('pOtherFinancingAmount').value,
-        otherFinancingNotes: document.getElementById('pOtherFinancingNotes').value,
+        financingRequiredPercentage: document.getElementById('pFinancingRequiredPercentage').value,
       };
 
       // The project record always already exists by the time this handler
@@ -1746,10 +1329,10 @@
       // from editing an existing one (activeProjectId = editId from the
       // start) — so this is always a save-in-place, never a fresh insert.
       // Documents were uploaded immediately back in step 2, so there's no
-      // pending-files loop left to run here.
+      // pending-files loop left to run here. Financing management (FSU,
+      // applying to Programs, "other source") now lives entirely on
+      // app/project-financing.html — nothing left to reconcile here.
       const project = await INAPlatform.updateProject(activeProjectId, payload);
-
-      await reconcileProgramApplications(project.id);
 
       setSaveNote(lang2 === 'es' ? 'Proyecto enviado.' : 'Project submitted.');
 
