@@ -557,6 +557,18 @@ form.advisory .full{ grid-column: 1 / -1; }
 .score-badge.stage-advanced{ background:var(--amber); color:var(--ink); border:1px solid var(--amber-deep); }
 .score-badge.stage-ready{ background:var(--ink); color:var(--amber); border:1px solid var(--ink); }
 
+/* AI Financing Recommendation dashboard badge — financingRecoBadgeHtml() in
+   dashboard.html. Unlike the .stage-* score badges above (a <span>, colored
+   by value), this one is a clickable <a> straight to the recommendation
+   section on project.html, so it needs its own non-underlined/pointer
+   treatment on top of the shared .score-badge pill shape — plus a distinct
+   accent color so it doesn't read as just another score. */
+.score-badge.finreco{
+  text-decoration:none; cursor:pointer;
+  background:var(--amber-soft); color:var(--amber-deep); border:1px solid var(--amber);
+}
+.score-badge.finreco:hover{ background:var(--amber); color:var(--ink); }
+
 /* Budget/duration/complexity/technical-criticality tags — see attrTagsHtml()
    in dashboard.html. Plain-text tags for budget/duration; complexity and
    technical criticality additionally get a .tier-pill low/medium/high color

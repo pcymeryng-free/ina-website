@@ -84,6 +84,16 @@ function generateProposalUrl() {
   return '/api/generate-proposal';
 }
 
+/* Same reasoning/hosting split as analyzeProjectUrl() above — see
+   api/recommend-financing.js, the "AI financing combination" feature
+   (see requestFinancingRecommendation() below). */
+function recommendFinancingUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/recommend-financing`;
+  }
+  return '/api/recommend-financing';
+}
+
 /* ---------- Reference data (bilingual) ---------- */
 
 const ROLE_TYPES = [
@@ -6946,6 +6956,78 @@ const INAPlatform = {
       throw new Error(body.error || 'Analysis request failed.');
     }
     return body;
+  },
+
+  /* ---------- AI Financing Recommendation ----------
+     Pablo (sep 2026): "para cualquier proyecto nuevo o ya ingresado agregar
+     una nueva funcionalidad que permita utilizar IA para elegir la mejor
+     combinación de instrumentos/programas de financiación existentes en la
+     plataforma y mostrarlos en el dashboard de proyectos." api/recommend-
+     financing.js does the actual work (fetches the project + the full
+     Programs catalog, asks the configured LLM provider for the best
+     combination, writes the result) — see that file's header comment. One
+     row per project in public.financing_recommendations (overwritten on
+     every re-run, same convention as FSU Scoring), unlike AI Analysis'
+     append-only history. See migration_v55_financing_recommendations.sql. */
+
+  /* Triggers a (re-)run and returns the saved row. No keepalive — this is a
+     normal awaited button click on project.html, not a fire-and-forget
+     right before navigating away (unlike requestAnalysis()). */
+  async requestFinancingRecommendation(projectId) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(recommendFinancingUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ projectId }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      // Same diagnostic-logging pattern as requestAnalysis() above — see
+      // its comment for why body.detail/body.raw get logged here instead
+      // of silently dropped.
+      console.error('[requestFinancingRecommendation] failed:', body.error, body.detail || body.raw || '');
+      throw new Error(body.error || 'Financing recommendation request failed.');
+    }
+    return body.recommendation;
+  },
+
+  /* Reads the cached recommendation for one project (project.html) —
+     RLS-protected direct read, no serverless round-trip needed for this
+     (only the write goes through the endpoint, since only that side needs
+     the service-role key to call the model and read the full Programs
+     catalog regardless of RLS). Returns null if none has been generated
+     yet. */
+  async getFinancingRecommendation(projectId) {
+    const { data, error } = await supabaseClient
+      .from('financing_recommendations')
+      .select('*')
+      .eq('project_id', projectId)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Batch version for dashboard.html's project grid — one query for every
+     visible row instead of one per project, same pattern as
+     listAnalysesForProjects()/listProjectProgramsForProjects() above.
+     Returns a Map keyed by project_id, each value the row's
+     { recommended, recommended_en, summary, summary_en, updated_at }
+     (only what the dashboard badge needs, not raw_model_output). */
+  async listFinancingRecommendationsForProjects(projectIds) {
+    const ids = (projectIds || []).filter(Boolean);
+    const map = new Map();
+    if (!ids.length) return map;
+    const { data, error } = await supabaseClient
+      .from('financing_recommendations')
+      .select('project_id, recommended, recommended_en, summary, summary_en, updated_at')
+      .in('project_id', ids);
+    if (error) throw error;
+    (data || []).forEach((row) => map.set(row.project_id, row));
+    return map;
   },
 
   /* ---------- Investment Proposal document ----------
