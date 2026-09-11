@@ -380,7 +380,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=62"></script>
+<script src="/assets/i18n.js?v=63"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <!-- pdf-lib: only used by generateProjectPdf() to splice real attached PDF
@@ -388,7 +388,7 @@
      another PDF's existing pages — see the "Anexos" section of that
      function). Everything else in the report still uses jsPDF alone. -->
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="/assets/platform.js?v=72"></script>
+<script src="/assets/platform.js?v=73"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -636,7 +636,7 @@
     document.getElementById('ptypeLabel').textContent = INAPlatform.projectTypeLabel(p.project_type);
     document.getElementById('pname').textContent = p.name;
     const lang = INAPlatform.currentLang();
-    const programText = p.programs && p.programs.name ? ` · ${p.programs.name}` : '';
+    const programText = p.programs && p.programs.name ? ` · ${INAPlatform.programDisplayName(p.programs, lang)}` : '';
     const entityText = p.generating_entity_name
       ? ` · ${p.generating_entity_name}${p.generating_entity_type ? ` (${INAPlatform.entityTypeLabel(p.generating_entity_type)})` : ''}`
       : '';
@@ -1702,7 +1702,7 @@
     h2(lang === 'es' ? 'Datos principales' : 'Key data');
     attrRow(lang === 'es' ? 'País' : 'Country', INAPlatform.countryLabel(currentProject.country));
     if (currentProject.programs && currentProject.programs.name) {
-      attrRow(lang === 'es' ? 'Iniciativa' : 'Program', currentProject.programs.name);
+      attrRow(lang === 'es' ? 'Iniciativa' : 'Program', INAPlatform.programDisplayName(currentProject.programs, lang));
     }
     if (currentProject.generating_entity_name) {
       attrRow(
@@ -1769,7 +1769,7 @@
           attrRow(lang === 'es' ? 'Monto' : 'Amount', INAPlatform.formatCurrency(currentProject.fsu_amount));
           attrRow(lang === 'es' ? 'Monto (USD)' : 'Amount (USD)', INAPlatform.formatCurrencyUSD(currentProject.fsu_amount_usd));
           attrRow(lang === 'es' ? 'Alcance' : 'Scope', currentProject.fsu_scope);
-          const fsuProgramNames = programShares.filter((s) => s.isFsu).map((s) => s.name);
+          const fsuProgramNames = programShares.filter((s) => s.isFsu).map((s) => INAPlatform.programDisplayName({ name: s.name, name_en: s.nameEn }, lang));
           if (fsuProgramNames.length) {
             attrRow(lang === 'es' ? 'Línea FSU aplicada' : 'Applied FSU line', fsuProgramNames.join(', '));
           }
@@ -1779,7 +1779,7 @@
         const otherProgramShares = programShares.filter((s) => !s.isFsu);
         if (otherProgramShares.length) {
           h3(lang === 'es' ? 'Programas de financiamiento' : 'Financing programs');
-          otherProgramShares.forEach((s) => bulletText(`${s.name} — ${s.pct}%`));
+          otherProgramShares.forEach((s) => bulletText(`${INAPlatform.programDisplayName({ name: s.name, name_en: s.nameEn }, lang)} — ${s.pct}%`));
           y += 4;
         }
 
@@ -1793,7 +1793,7 @@
 
         if (prepRows.length) {
           h3(lang === 'es' ? 'Programas de preparación / elaboración de proyecto' : 'Project-preparation programs');
-          prepRows.forEach((r) => bulletText((r.programs && r.programs.name) || ''));
+          prepRows.forEach((r) => bulletText((r.programs && r.programs.name) ? INAPlatform.programDisplayName(r.programs, lang) : ''));
           y += 4;
         }
       }
@@ -2491,7 +2491,7 @@
 
     const parts = [];
     if (fsuPct > 0) parts.push(`FSU ${fsuPct}%`);
-    programShares.filter((s) => !s.isFsu).forEach((s) => parts.push(`${s.name} ${s.pct}%`));
+    programShares.filter((s) => !s.isFsu).forEach((s) => parts.push(`${INAPlatform.programDisplayName({ name: s.name, name_en: s.nameEn }, lang)} ${s.pct}%`));
     if (otherPct > 0) parts.push((lang === 'es' ? 'Otra fuente' : 'Other') + ` ${otherPct}%`);
     breakdown.textContent = parts.join(' · ');
 
