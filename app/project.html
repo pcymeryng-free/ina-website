@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=22">
+<link rel="stylesheet" href="/assets/style.css?v=23">
 <link rel="stylesheet" href="/assets/app.css?v=10">
 </head>
 <body class="app-body">
@@ -90,6 +90,7 @@
             <a href="#" id="fsuLink" class="menu-item" style="display:none;"><span data-i18n="fsu.cta">FSU Scoring</span></a>
             <a href="#" id="assessLink" class="menu-item" style="display:none;"><span data-i18n="assess.cta">Self-Assessment</span></a>
             <button type="button" id="aiAnalysisBtn" class="menu-item" style="display:none;"><span id="aiAnalysisBtnLabel" data-i18n="pd.startAnalysis">AI Analysis</span></button>
+            <button type="button" id="financingRecoMenuBtn" class="menu-item" style="display:none;"><span data-i18n="finreco.cta">Financing Recommendation</span></button>
           </div>
         </div>
       </div>
@@ -187,6 +188,32 @@
       <div id="docsBlock" style="margin-top:24px; display:none;">
         <h4 style="font-size:14px;"><span data-i18n="pd.documents">Supporting Documents</span></h4>
         <div id="docsList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
+      </div>
+
+      <!-- AI Financing Recommendation (Pablo, sep 2026): "para cualquier
+           proyecto nuevo o ya ingresado agregar una nueva funcionalidad que
+           permita utilizar IA para elegir la mejor combinación de
+           instrumentos/programas de financiación existentes en la
+           plataforma". Same gate as AI Analysis (canRunAnalysis — owner,
+           assigned advisor, or any admin, any workflow stage). Sits right
+           before the Financing Programs block below since "Aplicar" on a
+           recommended card feeds directly into that block's existing
+           applyProgramFromPicker() flow. See
+           migration_v55_financing_recommendations.sql and
+           api/recommend-financing.js. -->
+      <div id="financingRecommendationBlock" class="info-block" style="margin-top:24px; display:none;">
+        <h4 style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <span data-i18n="finreco.title">AI Financing Recommendation</span>
+          <button type="button" class="btn ghost small" id="financingRecoRunBtn" style="padding:6px 12px;"><span id="financingRecoRunBtnLabel" data-i18n="finreco.run">Generate recommendation</span></button>
+        </h4>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:640px;"><span data-i18n="finreco.help">Uses AI to pick the best combination of financing instruments/programs already registered on the platform (BID, DFC, FSU/TASU/FATIC, USTDA, capital markets, etc.) for this specific project.</span></p>
+        <div id="financingRecoLoading" style="display:none; margin-top:14px; font-size:13px; color:var(--muted);"><span data-i18n="finreco.loading">Analyzing the best combination…</span></div>
+        <div id="financingRecoEmpty" style="margin-top:14px; font-size:13px; color:var(--muted);"><span data-i18n="finreco.empty">No recommendation generated yet.</span></div>
+        <div id="financingRecoResult" style="display:none; margin-top:14px;">
+          <p id="financingRecoSummary" style="font-size:13px; color:var(--ink); max-width:640px; margin-bottom:14px;"></p>
+          <div id="financingRecoList" style="display:flex; flex-direction:column; gap:10px;"></div>
+          <p id="financingRecoUpdatedAt" style="font-size:11.5px; color:var(--muted); margin-top:12px;"></p>
+        </div>
       </div>
 
       <!-- Financing Programs — a project can apply to a Program that funds
@@ -430,7 +457,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=59"></script>
+<script src="/assets/i18n.js?v=60"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <!-- pdf-lib: only used by generateProjectPdf() to splice real attached PDF
@@ -438,7 +465,7 @@
      another PDF's existing pages — see the "Anexos" section of that
      function). Everything else in the report still uses jsPDF alone. -->
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="/assets/platform.js?v=69"></script>
+<script src="/assets/platform.js?v=71"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -620,6 +647,7 @@
       if (currentAnalysis) renderAnalysis(currentAnalysis);
       if (currentDocs) renderDocs(currentDocs);
       if (currentProject) renderProgramApplications();
+      if (currentFinancingReco) renderFinancingRecommendation();
       if (currentRoadmaps.length || (currentProfile && INAPlatform.canManageRoadmaps(currentProfile))) renderRoadmaps();
       if (currentRisks.length || (currentProfile && INAPlatform.canManageRisks(currentProfile))) renderRiskMatrix();
     });
@@ -664,6 +692,10 @@
   let currentProfile = null; // the VIEWER's own profile (role/id), not the project owner's
   let currentWorkflowEvents = [];
   let currentFsu = null; // set when an FSU score exists — see the FSU block below and generateProjectPdf()
+  // AI Financing Recommendation — null until generated at least once. See
+  // the financingRecommendationBlock markup above and
+  // renderFinancingRecommendation() below.
+  let currentFinancingReco = null;
   // Every Program this project has applied to (project_programs, each with
   // its Program embedded) and every Program on the platform (for the
   // "Apply to program" pickers) — see the Financing Programs block below
@@ -2882,6 +2914,102 @@
     });
   });
 
+  /* ---------- AI Financing Recommendation ---------- */
+  // See financingRecommendationBlock in the markup above and
+  // INAPlatform.requestFinancingRecommendation()/getFinancingRecommendation()/
+  // api/recommend-financing.js. Cards reuse applyProgramFromPicker() (just
+  // above) for the "Aplicar" action, so a recommended Program is applied
+  // through the exact same code path as picking it from the "Programas de
+  // Financiamiento" dropdown — no separate apply logic to keep in sync.
+
+  function renderFinancingRecommendation() {
+    const lang = INAPlatform.currentLang();
+    const emptyEl = document.getElementById('financingRecoEmpty');
+    const resultEl = document.getElementById('financingRecoResult');
+    if (!currentFinancingReco) {
+      emptyEl.style.display = 'block';
+      resultEl.style.display = 'none';
+      return;
+    }
+    emptyEl.style.display = 'none';
+    resultEl.style.display = 'block';
+
+    const items = (lang === 'es' ? currentFinancingReco.recommended : currentFinancingReco.recommended_en) || [];
+    document.getElementById('financingRecoSummary').textContent = (lang === 'es' ? currentFinancingReco.summary : currentFinancingReco.summary_en) || '';
+
+    const list = document.getElementById('financingRecoList');
+    list.innerHTML = '';
+    // "Aplicar" is only offered to whoever can actually manage the
+    // Financing Programs block below (owner or assigned advisor) — same
+    // bar as its own addFinancingProgramBtn/addPreparationProgramBtn, even
+    // though canRunAnalysis (which gates seeing this whole block) is
+    // broader and also includes any admin just viewing.
+    const canManage = isOwner || isAssignedAdvisor;
+    items.forEach((item) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'padding:12px 14px; border:1px solid var(--paper-line); border-radius:10px;';
+      const stageLabel = item.funding_stage === 'preparation'
+        ? (lang === 'es' ? 'Preparación' : 'Preparation')
+        : (lang === 'es' ? 'Financiamiento' : 'Financing');
+      const scoreClass = INAPlatform.scoreBandClass(item.fit_score);
+      const canApply = canManage && !item.already_applied;
+      div.innerHTML = `
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div style="min-width:0;">
+            <strong style="font-size:13.5px;">${item.name || ''}</strong>
+            <p style="font-size:12px; color:var(--muted); margin-top:2px;">${item.financing_entity ? item.financing_entity + ' · ' : ''}${stageLabel}</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+            <span class="status-pill ${scoreClass}" style="font-size:11.5px; padding:4px 10px;">${item.fit_score}/100</span>
+            ${item.already_applied
+              ? `<span style="font-size:11.5px; color:var(--muted);">✓ ${lang === 'es' ? 'Ya aplicado' : 'Already applied'}</span>`
+              : (canApply ? `<button type="button" class="btn ghost small" data-apply-reco="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Aplicar' : 'Apply'}</button>` : '')}
+          </div>
+        </div>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:8px;">${item.rationale || ''}</p>
+      `;
+      list.appendChild(div);
+    });
+    list.querySelectorAll('[data-apply-reco]').forEach((btn) => {
+      btn.addEventListener('click', () => applyProgramFromPicker(btn.getAttribute('data-apply-reco')));
+    });
+
+    const updatedEl = document.getElementById('financingRecoUpdatedAt');
+    if (currentFinancingReco.updated_at) {
+      const dateStr = new Date(currentFinancingReco.updated_at).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
+      updatedEl.textContent = (lang === 'es' ? 'Generado: ' : 'Generated: ') + dateStr;
+    } else {
+      updatedEl.textContent = '';
+    }
+  }
+
+  async function runFinancingRecommendation() {
+    const lang = INAPlatform.currentLang();
+    const btn = document.getElementById('financingRecoRunBtn');
+    const loadingEl = document.getElementById('financingRecoLoading');
+    const emptyEl = document.getElementById('financingRecoEmpty');
+    const resultEl = document.getElementById('financingRecoResult');
+    btn.disabled = true;
+    loadingEl.style.display = 'block';
+    emptyEl.style.display = 'none';
+    resultEl.style.display = 'none';
+    try {
+      currentFinancingReco = await INAPlatform.requestFinancingRecommendation(projectId);
+      renderFinancingRecommendation();
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo generar la recomendación: ' : "Couldn't generate the recommendation: ") + (err.message || err));
+      emptyEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      loadingEl.style.display = 'none';
+    }
+  }
+
+  document.getElementById('financingRecoRunBtn').addEventListener('click', runFinancingRecommendation);
+  document.getElementById('financingRecoMenuBtn').addEventListener('click', () => {
+    document.getElementById('financingRecommendationBlock').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
   /* ---------- Roadmaps ---------- */
   // canManageRoadmaps() is advisor/admin-only (not owner, not even
   // "assigned advisor only" — ANY advisor/admin can start/advance ANY
@@ -3178,6 +3306,19 @@
           }
         }
       } catch (e) { /* non-critical */ }
+    }
+
+    // AI Financing Recommendation — same gate as AI Analysis (canRunAnalysis:
+    // owner, assigned advisor, or any admin), any workflow stage. The block
+    // itself (not just its contents) stays hidden for a viewer who can't
+    // trigger it — same convention as proposalBlock above.
+    if (canRunAnalysis) {
+      document.getElementById('financingRecommendationBlock').style.display = 'block';
+      document.getElementById('financingRecoMenuBtn').style.display = 'flex';
+      try {
+        currentFinancingReco = await INAPlatform.getFinancingRecommendation(projectId);
+      } catch (e) { currentFinancingReco = null; /* non-critical — block just shows the empty state */ }
+      renderFinancingRecommendation();
     }
 
     renderProject(project);
