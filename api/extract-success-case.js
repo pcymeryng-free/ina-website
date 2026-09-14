@@ -278,7 +278,15 @@ async function handler(req, res) {
       serviceKey: SUPABASE_SERVICE_ROLE_KEY,
     });
     if (!pdfBuffer) return json(res, 400, { error: "Couldn't download the uploaded PDF." });
-    if (pdfBuffer.length > 25 * 1024 * 1024) {
+    // Raised from 25MB to 40MB (sep 2026, same round as the storagePath
+    // rewrite above): this cap used to sit right under Vercel's ~4.5MB
+    // request-body ceiling as a defensive belt-and-suspenders check, but now
+    // that the PDF arrives via a Storage download rather than the request
+    // body, that ceiling no longer applies here — Pablo hit this on a real
+    // case-study PDF just over 25MB. 40MB stays comfortably under Supabase
+    // Storage's default per-file upload limit and Vercel's function memory/
+    // duration budget for pdf-parse.
+    if (pdfBuffer.length > 40 * 1024 * 1024) {
       return json(res, 400, { error: 'PDF too large. Please use a smaller file.' });
     }
 

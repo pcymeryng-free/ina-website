@@ -334,7 +334,11 @@ async function handler(req, res) {
         serviceKey: SUPABASE_SERVICE_ROLE_KEY,
       });
       if (!pdfBuffer) { skipped.push(`${fileName} (couldn't download)`); continue; }
-      if (pdfBuffer.length > 25 * 1024 * 1024) {
+      // Raised from 25MB to 40MB per file (sep 2026, same round as the
+      // storagePath rewrite above) — see extract-success-case.js's matching
+      // comment: this cap no longer needs to sit under Vercel's request-body
+      // ceiling now that files arrive via Storage download, not the body.
+      if (pdfBuffer.length > 40 * 1024 * 1024) {
         skipped.push(`${fileName} (too large)`);
         continue;
       }
