@@ -290,14 +290,29 @@
            project. Hidden entirely (like Roadmaps/Risk Matrix above) only
            while nothing has loaded yet — always shown once cases exist or
            the viewer can add one, even with zero links, since "add your
-           first reference case" is itself a useful prompt here. -->
+           first reference case" is itself a useful prompt here.
+
+           "Browse Library" deliberately does NOT open in a new tab
+           (no target="_blank") — Pablo, sep 2026: "si elijo Browse Library
+           va a la pantalla de login". The session is stored in
+           sessionStorage, not localStorage (see the comment above
+           supabaseClient in platform.js — a deliberate sep-2026 choice so
+           closing the browser always forces a fresh sign-in), and
+           sessionStorage is never shared with a newly opened tab even on
+           the same origin. A new tab therefore has no session at all and
+           success-cases.html's requireAuth() bounces it straight to
+           login.html — this looked like a broken link but was really the
+           per-tab session design colliding with target="_blank". Opening
+           in the same tab inherits the existing sessionStorage session, so
+           it works; the user can use the browser's own back button (or the
+           app nav) to return to the project. -->
       <div id="successCasesBlock" class="info-block" style="margin-top:24px; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
           <div>
             <h4><span data-i18n="pd.sc.title">Reference Success Cases</span></h4>
             <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pd.sc.help">Real-world cases this project is based on or takes as a reference.</span></p>
           </div>
-          <a href="success-cases.html" target="_blank" rel="noopener" class="btn ghost small"><span data-i18n="pd.sc.browse">Browse Library</span></a>
+          <a href="success-cases.html" class="btn ghost small"><span data-i18n="pd.sc.browse">Browse Library</span></a>
         </div>
 
         <div id="scLinkedList" class="sc-linked-list" style="margin-top:14px;"></div>
@@ -431,7 +446,7 @@
      another PDF's existing pages — see the "Anexos" section of that
      function). Everything else in the report still uses jsPDF alone. -->
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="/assets/platform.js?v=79"></script>
+<script src="/assets/platform.js?v=80"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
