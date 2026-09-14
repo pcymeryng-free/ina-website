@@ -61,6 +61,7 @@ const analyzeProjectHandler = require('./api/analyze-project');
 const extractTemplateDataHandler = require('./api/extract-template-data');
 const recommendFinancingHandler = require('./api/recommend-financing');
 const extractSuccessCaseHandler = require('./api/extract-success-case');
+const extractProjectDataHandler = require('./api/extract-project-data');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5050;
@@ -69,8 +70,10 @@ const PORT = Number(process.env.PORT) || 5050;
 // case-study PDF as base64 in the request body (same shape as
 // api/extract-business-card.js's photo upload) — a base64-encoded PDF a
 // few MB in size would have exceeded the old 2mb JSON body limit before
-// even reaching the handler's own MAX_BASE64_LENGTH check.
-app.use(express.json({ limit: '20mb' }));
+// even reaching the handler's own MAX_BASE64_LENGTH check. Bumped again to
+// 40mb (still sep 2026) for api/extract-project-data.js, which can carry
+// SEVERAL base64 PDFs in one request (MAX_FILES=5 there).
+app.use(express.json({ limit: '40mb' }));
 
 // Never statically serve source/config files that shouldn't be reachable
 // over HTTP, even though this server is only ever meant to be bound to
@@ -89,6 +92,7 @@ app.post('/api/analyze-project', analyzeProjectHandler);
 app.post('/api/extract-template-data', extractTemplateDataHandler);
 app.post('/api/recommend-financing', recommendFinancingHandler);
 app.post('/api/extract-success-case', extractSuccessCaseHandler);
+app.post('/api/extract-project-data', extractProjectDataHandler);
 
 // A handful of the same top-level redirects vercel.json defines in
 // production, so old-style bookmarks/links behave the same locally.

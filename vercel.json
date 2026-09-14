@@ -18,6 +18,7 @@
     { "source": "/extract-business-card", "destination": "/api/extract-business-card" },
     { "source": "/generate-proposal", "destination": "/api/generate-proposal" },
     { "source": "/recommend-financing", "destination": "/api/recommend-financing" },
-    { "source": "/extract-success-case", "destination": "/api/extract-success-case" }
+    { "source": "/extract-success-case", "destination": "/api/extract-success-case" },
+    { "source": "/extract-project-data", "destination": "/api/extract-project-data" }
   ]
 }
