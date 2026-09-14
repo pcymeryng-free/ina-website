@@ -4,9 +4,12 @@
  * every path except pdf-parse — same lazy-require pattern as
  * api/analyze-project.js, see below).
  *
- * Drafts the four narrative chapters of the Investment Proposal document
- * (Introduction/Executive Summary, Technical Description, Benefits, and a
- * Planning/Implementation narrative) — the full, formal document meant to
+ * Drafts the five narrative chapters of the Investment Proposal document
+ * (Executive Summary, Introduction, Technical Description, Benefits, and a
+ * Planning/Implementation narrative — Executive Summary and Introduction
+ * are separate fields/chapters as of migration_v58, shown as two
+ * consecutive pages in the PDF rather than one merged chapter) — the full,
+ * formal document meant to
  * be presented to financial institutions (multilateral development banks,
  * USTDA, DFC, Universal Service Funds, etc.) to request financing. This is
  * a SEPARATE, longer document from the existing "Descargar PDF" project
@@ -41,18 +44,20 @@ const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
 
 const SYSTEM_PROMPT = `You are a senior infrastructure-finance writer at INA (International Network Advisors), drafting chapters of a formal Investment Proposal document. This document will be presented to financial institutions — multilateral development banks (e.g. IDB), development finance institutions (USTDA, DFC), Universal Service Funds, or commercial/institutional capital — to request financing for the project described to you. Write persuasively but honestly: ground every claim in the actual project data given, never invent figures, and flag genuine gaps as areas the sponsor should still address rather than glossing over them.
 
-You will be given the project's core data (name, type, country, description, budget, duration), its financing mix so far, any Investment Readiness Index™ analysis on file (scores/rationale across 8 dimensions), its risk register, its active implementation roadmaps, and possibly supporting documents. Draft FOUR chapters:
+You will be given the project's core data (name, type, country, description, budget, duration), its financing mix so far, any Investment Readiness Index™ analysis on file (scores/rationale across 8 dimensions), its risk register, its active implementation roadmaps, and possibly supporting documents. Draft FIVE chapters:
 
-1. INTRODUCTION / EXECUTIVE SUMMARY — 3-5 paragraphs. Frame the project, its strategic rationale, its sponsor, and why it merits financing. This is what a reviewer reads first — it should stand alone.
-2. TECHNICAL DESCRIPTION — 3-5 paragraphs. Describe the technical scope, approach and key specifications, drawing on the project type and description given. Be specific to THIS project, not generic boilerplate about the sector.
-3. BENEFITS — 2-4 paragraphs. Expected impact: beneficiaries reached, service improvement, economic/social value, alignment with public policy objectives where relevant. Use the beneficiary count if given.
-4. PLANNING NARRATIVE — 2-3 paragraphs. Describe the implementation approach and phasing at a narrative level (the document will separately list the concrete roadmap steps already on file — don't repeat them verbatim, synthesize the approach instead).
+1. EXECUTIVE SUMMARY — 2-3 tight paragraphs. The single stand-alone page a busy reviewer reads first and may be the ONLY page they read closely: what the project is, how much financing it needs and for what, and the single strongest reason it merits approval. Do not repeat this chapter's content verbatim in the Introduction below — this is a distillation, not a preview.
+2. INTRODUCTION — 3-5 paragraphs. Frame the project in full: its context, strategic rationale, sponsor, and why it merits financing, in more depth than the Executive Summary above. Assume the reader already saw the Executive Summary, so build on it rather than restating it.
+3. TECHNICAL DESCRIPTION — 3-5 paragraphs. Describe the technical scope, approach and key specifications, drawing on the project type and description given. Be specific to THIS project, not generic boilerplate about the sector.
+4. BENEFITS — 2-4 paragraphs. Expected impact: beneficiaries reached, service improvement, economic/social value, alignment with public policy objectives where relevant. Use the beneficiary count if given.
+5. PLANNING NARRATIVE — 2-3 paragraphs. Describe the implementation approach and phasing at a narrative level (the document will separately list the concrete roadmap steps already on file — don't repeat them verbatim, synthesize the approach instead).
 
 INA's platform serves both Spanish- and English-speaking users, so every chapter must be written TWICE — once in Spanish (the "_es" field) and once in English (the "_en" field). Write natural, idiomatic prose in each language (not a literal translation of one from the other), but keep the underlying content and claims identical in both.
 
 Respond with ONLY a single valid JSON object — no markdown code fences, no commentary before or after — matching exactly this shape:
 
 {
+  "executive_summary_es": "<...>", "executive_summary_en": "<...>",
   "introduction_es": "<...>", "introduction_en": "<...>",
   "technical_description_es": "<...>", "technical_description_en": "<...>",
   "benefits_es": "<...>", "benefits_en": "<...>",
@@ -296,6 +301,8 @@ async function handler(req, res) {
     let rawText;
     if (provider === 'bedrock-mock') {
       rawText = JSON.stringify({
+        executive_summary_es: `[SIMULADO — no se llamó a ningún modelo] Resumen ejecutivo de ejemplo para "${project.name}".`,
+        executive_summary_en: `[SIMULATED — no model was called] Placeholder executive summary for "${project.name}".`,
         introduction_es: `[SIMULADO — no se llamó a ningún modelo] Borrador de introducción de ejemplo para "${project.name}".`,
         introduction_en: `[SIMULATED — no model was called] Placeholder introduction draft for "${project.name}".`,
         technical_description_es: '[SIMULADO] Descripción técnica de ejemplo.',
@@ -395,6 +402,8 @@ async function handler(req, res) {
     const field = (key) => sanitizeText(parsed[key]).slice(0, 6000);
     return json(res, 200, {
       ok: true,
+      executive_summary_es: field('executive_summary_es'),
+      executive_summary_en: field('executive_summary_en'),
       introduction_es: field('introduction_es'),
       introduction_en: field('introduction_en'),
       technical_description_es: field('technical_description_es'),
