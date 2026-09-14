@@ -61,7 +61,27 @@
          are either "create new" or an uncontested edit. -->
     <div id="editLockBanner" class="lock-banner" style="display:none; max-width:640px;"></div>
 
-    <form id="projectForm" style="max-width:640px; margin-top:36px;">
+    <!-- Pablo, sep 2026: "cuando se carga un proyecto nuevo se debe tener
+         la opción de hacerlo desde uno o varios PDF y que un agente lea
+         los documentos y obtenga todos los atributos posibles. Luego,
+         permitir la edición de los datos como hasta ahora." Same
+         direct-upload shape as new-success-case.html's "Cargar desde un
+         documento PDF" box (nothing saved to Storage — the project doesn't
+         exist yet), extended to accept several files at once
+         (api/extract-project-data.js concatenates their text before one
+         model call). Prefills as many Step 1 + Step 3 fields as the
+         documents state; everything below stays exactly as editable as
+         always. Create-mode only — hidden when editing an existing project
+         (see isEdit further down). -->
+    <div class="new-org-box" id="pPdfUploadBlock" style="max-width:640px; margin-top:36px;">
+      <label style="margin-bottom:8px; display:block;"><span data-i18n="np.f.uploadPdf">Load from one or several PDF documents</span></label>
+      <p style="font-size:12px; color:var(--muted); margin:0 0 10px;"><span data-i18n="np.f.uploadPdf.help">Upload the project's technical folder, terms of reference or any descriptive PDF — an AI agent will read them and pre-fill as many fields below as possible. Review and complete anything missing by hand before continuing.</span></p>
+      <button type="button" class="btn ghost small" id="pUploadPdfBtn"><span data-i18n="np.f.uploadPdf.btn">📄 Upload PDF(s)</span></button>
+      <input type="file" id="pPdfInput" accept="application/pdf,.pdf" multiple style="display:none;">
+      <p id="pPdfStatus" style="font-size:12.5px; margin-top:10px; display:none;"></p>
+    </div>
+
+    <form id="projectForm" style="max-width:640px; margin-top:24px;">
 
       <!-- Same 4-section interface for creating AND editing a project — one
            .wizard-panel visible at a time: 1) project (name/type/entity/
@@ -411,9 +431,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=67"></script>
+<script src="/assets/i18n.js?v=68"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=77"></script>
+<script src="/assets/platform.js?v=78"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -605,6 +625,97 @@
   const complexitySelect = document.getElementById('pComplexity');
   function renderComplexityOptions() { renderTierOptions(complexitySelect, INAPlatform.COMPLEXITY_LABELS); }
   renderComplexityOptions();
+
+  // ---- Load from one or several PDF(s) (Pablo, sep 2026 — see the
+  // comment above pPdfUploadBlock). Same fileToBase64()/prefill pattern as
+  // new-success-case.html's single-PDF box, extended to read multiple
+  // files and hand them all to api/extract-project-data.js in one call —
+  // it concatenates their text server-side before a single model call, so
+  // this only ever needs one round trip regardless of file count. All
+  // <select>s above are already populated by this point (every
+  // render*Options() call above runs synchronously at load), so setting
+  // .value directly on any of them here just works. ----
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result || '';
+        const comma = result.indexOf(',');
+        resolve(comma >= 0 ? result.slice(comma + 1) : result);
+      };
+      reader.onerror = () => reject(new Error('Could not read the PDF file.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function setIfPresent(id, value) {
+    if (value === null || value === undefined || value === '') return;
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  }
+
+  function prefillFromPdfExtraction(fields) {
+    const f = fields || {};
+    setIfPresent('pname', f.name);
+    setIfPresent('ptype', f.projectType);
+    setIfPresent('pEntityName', f.generatingEntityName);
+    setIfPresent('pEntityType', f.generatingEntityType);
+    setIfPresent('pdesc', f.description);
+    setIfPresent('pcountry', f.country);
+    if (f.beneficiaryCount != null && f.beneficiaryCount !== '') setIfPresent('pbeneficiaries', parseInt(f.beneficiaryCount, 10));
+    if (f.durationValue != null && f.durationValue !== '') setIfPresent('pDurationValue', parseInt(f.durationValue, 10));
+    setIfPresent('pDurationUnit', f.durationUnit);
+    setIfPresent('pPriority', f.priority);
+    setIfPresent('pTechnicalCriticality', f.technicalCriticality);
+    setIfPresent('pComplexity', f.complexity);
+    if (f.budgetAmount != null && f.budgetAmount !== '') setIfPresent('pBudgetAmount', parseFloat(f.budgetAmount));
+    if (f.budgetAmountUsd != null && f.budgetAmountUsd !== '') setIfPresent('pBudgetAmountUsd', parseFloat(f.budgetAmountUsd));
+    if (f.exchangeRate != null && f.exchangeRate !== '') setIfPresent('pExchangeRate', parseFloat(f.exchangeRate));
+    if (f.financingRequiredPercentage != null && f.financingRequiredPercentage !== '') setIfPresent('pFinancingRequiredPercentage', parseFloat(f.financingRequiredPercentage));
+  }
+
+  document.getElementById('pUploadPdfBtn').addEventListener('click', () => document.getElementById('pPdfInput').click());
+  document.getElementById('pPdfInput').addEventListener('change', async (e) => {
+    const fileList = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!fileList.length) return;
+    const btn = document.getElementById('pUploadPdfBtn');
+    const statusEl = document.getElementById('pPdfStatus');
+    btn.disabled = true;
+    statusEl.style.display = 'block';
+    statusEl.textContent = lang === 'es'
+      ? `Leyendo ${fileList.length > 1 ? fileList.length + ' documentos' : 'el documento'}…`
+      : `Reading ${fileList.length > 1 ? fileList.length + ' documents' : 'the document'}…`;
+    try {
+      const files = await Promise.all(fileList.map(async (file) => ({
+        pdfBase64: await fileToBase64(file),
+        fileName: file.name,
+      })));
+      const result = await INAPlatform.extractProjectData(files);
+      prefillFromPdfExtraction(result.fields);
+      const filledCount = Object.values(result.fields || {}).filter((v) => v !== null && v !== undefined && v !== '').length;
+      const parts = [];
+      if (filledCount) {
+        parts.push(lang === 'es'
+          ? `✓ Se completaron ${filledCount} campo(s) — revisalos y completá el resto a mano.`
+          : `✓ Filled in ${filledCount} field(s) — review them and complete the rest by hand.`);
+      } else {
+        parts.push(lang === 'es'
+          ? 'No se encontró información suficiente en el/los documento(s) para completar campos.'
+          : "Couldn't find enough information in the document(s) to fill in any fields.");
+      }
+      if ((result.skipped || []).length) {
+        parts.push(lang === 'es'
+          ? `(${result.skipped.length} archivo(s) no se pudieron leer.)`
+          : `(${result.skipped.length} file(s) couldn't be read.)`);
+      }
+      statusEl.textContent = parts.join(' ');
+    } catch (err) {
+      statusEl.textContent = (lang === 'es' ? 'No se pudo leer el/los PDF: ' : "Couldn't read the PDF(s): ") + (err.message || err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   /* Initiatives (umbrella-role programs, see the field comment above) are
      optional and fetched async (RLS-scoped to the user's own programs, or
@@ -873,6 +984,10 @@
     document.getElementById('crumbLabel').innerHTML = '<span data-i18n="np.edit.title">Edit Project</span>';
     document.getElementById('submitBtn').innerHTML = '<span data-i18n="np.edit.submit">Save Changes</span>';
     document.getElementById('editNote').style.display = 'block';
+    // "Load from PDF(s)" is create-only (see Pablo's request quoted above
+    // pPdfUploadBlock) — re-running extraction over an already-saved
+    // project would clobber fields the user may have since hand-edited.
+    document.getElementById('pPdfUploadBlock').style.display = 'none';
     // Cancel is edit-mode only — a brand-new project has no saved state to
     // cancel out of yet (closing the tab is enough there); clearing the
     // inline display:none lets .btn's own CSS display rule take over.
