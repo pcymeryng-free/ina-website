@@ -11,12 +11,26 @@
  * posibles. Luego, permitir la edición de los datos como hasta ahora."
  *
  * Reads ONE OR SEVERAL documents (technical folders, terms of reference,
- * project briefs, feasibility studies, etc.) sent directly in the request
- * body as base64 — there's no project row yet to attach documents to, same
- * shape as api/extract-success-case.js's single-file upload, extended here
- * to accept an array and concatenate their text (same multi-document
- * concatenation approach api/extract-template-data.js already uses for
- * documents already attached to an EXISTING project). Proposes values for
+ * project briefs, feasibility studies, etc.) that the client has ALREADY
+ * uploaded to Supabase Storage (project-documents bucket, under
+ * `${userId}/tmp-extractions/{timestamp}_{filename}` per file — see
+ * assets/platform.js's uploadTempExtractionFile()) — the request body only
+ * carries `files: [{storagePath, fileName}, ...]`, never the files' bytes.
+ * This replaced an earlier design that sent every PDF directly as base64 in
+ * the POST body, which broke in real production with a "413 Content Too
+ * Large" on Vercel: Vercel's Node.js serverless functions enforce a hard
+ * ~4.5MB request body ceiling that no app-level config can raise, and
+ * several small PDFs together crossed it easily. Each file is downloaded
+ * server-side via the service-role key (same pattern as
+ * api/extract-template-data.js's downloadStorageFile()) and their text is
+ * concatenated (same multi-document concatenation approach
+ * api/extract-template-data.js already uses for documents already attached
+ * to an EXISTING project). There's no project row yet to attach documents
+ * to — every storagePath is a TEMPORARY one, deleted by the client right
+ * after extraction via deleteTempExtractionFile(), best-effort. Because the
+ * service-role key bypasses Storage RLS entirely, this handler manually
+ * re-verifies that EACH storagePath's first two segments are
+ * `${user.id}/tmp-extractions/` before ever downloading it. Proposes values for
  * every extractable field on app/new-project.html's creation wizard step 1
  * (identity/attributes) and step 3 (budget) — see that file's comment
  * block above its own document-upload zones (step 2) for why FSU/program/
@@ -62,9 +76,6 @@ const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
 const MAX_FILES = 5;
 const MAX_CHARS_PER_DOC = 8000;
 const MAX_TOTAL_CHARS = 30000;
-// Base64 is ~33% larger than the raw file; this caps the combined raw
-// files at roughly 24MB, comfortably inside Vercel's request body limit.
-const MAX_BASE64_LENGTH_TOTAL = 32 * 1024 * 1024;
 
 function json(res, status, body) {
   res.status(status).setHeader('Content-Type', 'application/json');
@@ -93,6 +104,19 @@ async function verifyUser(accessToken, { supabaseUrl, anonKey }) {
   });
   if (!res.ok) return null;
   return res.json();
+}
+
+// Same pattern as api/extract-template-data.js's downloadStorageFile() —
+// server-side read of the project-documents bucket via the service-role
+// key, so the request body never has to carry any file's bytes.
+async function downloadStorageFile(storagePath, { supabaseUrl, serviceKey }) {
+  const res = await fetch(
+    `${supabaseUrl}/storage/v1/object/project-documents/${storagePath}`,
+    { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+  );
+  if (!res.ok) return null;
+  const arrayBuffer = await res.arrayBuffer();
+  return Buffer.from(arrayBuffer);
 }
 
 /* Fixed field spec for app/new-project.html's wizard — step 1 (identity/
@@ -257,11 +281,7 @@ async function handler(req, res) {
     return json(res, 400, { error: 'Invalid JSON body' });
   }
   const files = Array.isArray(body && body.files) ? body.files.slice(0, MAX_FILES) : [];
-  if (!files.length) return json(res, 400, { error: 'files (array of {pdfBase64, fileName}) is required' });
-  const totalBase64Length = files.reduce((sum, f) => sum + ((f && f.pdfBase64) ? f.pdfBase64.length : 0), 0);
-  if (totalBase64Length > MAX_BASE64_LENGTH_TOTAL) {
-    return json(res, 400, { error: 'Total upload too large. Please use smaller or fewer files.' });
-  }
+  if (!files.length) return json(res, 400, { error: 'files (array of {storagePath, fileName}) is required' });
 
   const authHeader = req.headers.authorization || '';
   const accessToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -270,6 +290,16 @@ async function handler(req, res) {
   try {
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
+
+    // Security-critical: SUPABASE_SERVICE_ROLE_KEY bypasses Storage RLS
+    // entirely, so this check is the ONLY thing standing between an
+    // authenticated user and someone else's file. uploadTempExtractionFile()
+    // in assets/platform.js always writes under `${userId}/tmp-
+    // extractions/...`, so refuse any storagePath that doesn't match the
+    // CALLING user's own id in that first segment.
+    const ownPrefix = `${user.id}/tmp-extractions/`;
+    const invalidPath = files.find((f) => !(f && typeof f.storagePath === 'string' && f.storagePath.startsWith(ownPrefix)));
+    if (invalidPath) return json(res, 403, { error: 'Invalid storagePath.' });
 
     const fieldsSpec = buildFieldsSpec();
 
@@ -290,7 +320,7 @@ async function handler(req, res) {
 
     for (const file of files) {
       const fileName = (file && file.fileName) || 'document.pdf';
-      if (!file || !file.pdfBase64) { skipped.push(`${fileName} (no data)`); continue; }
+      if (!file || !file.storagePath) { skipped.push(`${fileName} (no storagePath)`); continue; }
       if (combinedText.length >= MAX_TOTAL_CHARS) {
         skipped.push(`${fileName} (budget reached)`);
         continue;
@@ -299,13 +329,11 @@ async function handler(req, res) {
         skipped.push(`${fileName} (not a PDF)`);
         continue;
       }
-      let pdfBuffer;
-      try {
-        pdfBuffer = Buffer.from(file.pdfBase64, 'base64');
-      } catch (e) {
-        skipped.push(`${fileName} (couldn't decode)`);
-        continue;
-      }
+      const pdfBuffer = await downloadStorageFile(file.storagePath, {
+        supabaseUrl: SUPABASE_URL,
+        serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+      });
+      if (!pdfBuffer) { skipped.push(`${fileName} (couldn't download)`); continue; }
       if (pdfBuffer.length > 25 * 1024 * 1024) {
         skipped.push(`${fileName} (too large)`);
         continue;

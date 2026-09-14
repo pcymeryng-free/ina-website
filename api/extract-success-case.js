@@ -6,12 +6,29 @@
  * files' headers for why. Pinned to pdf-parse 1.1.4, pure JS, no native
  * @napi-rs/canvas dependency).
  *
- * Reads a case-study PDF sent directly in the request body as base64 —
- * nothing has been saved to Storage yet at this point, same shape as
- * api/extract-business-card.js's imageBase64/mediaType (there is no
- * success_cases row yet either, unlike api/extract-template-data.js which
- * reads documents already attached to an existing project) — and asks the
- * LLM to propose values for the New Success Case form's fields: title,
+ * Reads a case-study PDF that the client has ALREADY uploaded to Supabase
+ * Storage (project-documents bucket, under
+ * `${userId}/tmp-extractions/{timestamp}_{filename}` — see
+ * assets/platform.js's uploadTempExtractionFile()) — the request body only
+ * carries {storagePath, fileName}, never the file's bytes. This replaced an
+ * earlier design that sent the PDF directly as base64 in the POST body,
+ * which worked against local-server.js but broke in real production with a
+ * "413 Content Too Large" on Vercel: Vercel's Node.js serverless functions
+ * enforce a hard ~4.5MB request body ceiling that no app-level config can
+ * raise. Downloading server-side via the service-role key (same pattern as
+ * api/extract-template-data.js's downloadStorageFile()) keeps the request
+ * body tiny regardless of PDF size. There is no success_cases row yet at
+ * this point (unlike api/extract-template-data.js which reads documents
+ * already attached to an existing project), and the storage path is a
+ * TEMPORARY one — the client deletes it right after extraction via
+ * deleteTempExtractionFile(), best-effort. Because the service-role key
+ * bypasses Storage RLS entirely, this handler manually re-verifies that
+ * storagePath's first two segments are `${user.id}/tmp-extractions/` before
+ * ever downloading it — otherwise an authenticated-but-unrelated user could
+ * ask this endpoint to read someone else's file by guessing/observing a
+ * path.
+ *
+ * Asks the LLM to propose values for the New Success Case form's fields: title,
  * provider/technology, country, region, sector (must be one of the closed
  * taxonomy values — see migration_v59_success_cases.sql's check
  * constraint), a bilingual summary, beneficiaries reached, an extra
@@ -52,9 +69,6 @@ const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
 // relative to api/analyze-project.js's per-project budget, but no need for
 // api/extract-template-data.js's much larger multi-document ceiling.
 const MAX_CHARS_FROM_PDF = 15000;
-// Base64 is ~33% larger than the raw file; this caps the raw PDF at
-// roughly 12MB, comfortably inside Vercel's request body limit.
-const MAX_BASE64_LENGTH = 16 * 1024 * 1024;
 
 // Must match migration_v59_success_cases.sql's `sector` check constraint
 // exactly (also mirrored client-side in assets/platform.js's
@@ -84,6 +98,19 @@ function isAllowedOrigin(origin) {
   } catch (e) {
     return false;
   }
+}
+
+// Same pattern as api/extract-template-data.js's downloadStorageFile() —
+// server-side read of the project-documents bucket via the service-role
+// key, so the request body never has to carry the file's bytes.
+async function downloadStorageFile(storagePath, { supabaseUrl, serviceKey }) {
+  const res = await fetch(
+    `${supabaseUrl}/storage/v1/object/project-documents/${storagePath}`,
+    { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+  );
+  if (!res.ok) return null;
+  const arrayBuffer = await res.arrayBuffer();
+  return Buffer.from(arrayBuffer);
 }
 
 async function verifyUser(accessToken, { supabaseUrl, anonKey }) {
@@ -210,11 +237,8 @@ async function handler(req, res) {
   } catch (e) {
     return json(res, 400, { error: 'Invalid JSON body' });
   }
-  const { pdfBase64, fileName } = body || {};
-  if (!pdfBase64) return json(res, 400, { error: 'pdfBase64 is required' });
-  if (pdfBase64.length > MAX_BASE64_LENGTH) {
-    return json(res, 400, { error: 'PDF too large. Please use a smaller file.' });
-  }
+  const { storagePath, fileName } = body || {};
+  if (!storagePath) return json(res, 400, { error: 'storagePath is required' });
 
   const authHeader = req.headers.authorization || '';
   const accessToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -229,6 +253,16 @@ async function handler(req, res) {
       return json(res, 403, { error: 'Success Cases are restricted to advisor/admin users.' });
     }
 
+    // Security-critical: SUPABASE_SERVICE_ROLE_KEY bypasses Storage RLS
+    // entirely, so this handler is the ONLY thing standing between an
+    // authenticated user and someone else's file. uploadTempExtractionFile()
+    // in assets/platform.js always writes under `${userId}/tmp-
+    // extractions/...`, so refuse anything that doesn't match the CALLING
+    // user's own id in that first segment.
+    if (!storagePath.startsWith(`${user.id}/tmp-extractions/`)) {
+      return json(res, 403, { error: 'Invalid storagePath.' });
+    }
+
     if (provider === 'bedrock-mock') {
       // No model call, no fabricated values for a data-entry feature (see
       // file header) — every field simply comes back null/not found.
@@ -239,12 +273,11 @@ async function handler(req, res) {
       });
     }
 
-    let pdfBuffer;
-    try {
-      pdfBuffer = Buffer.from(pdfBase64, 'base64');
-    } catch (e) {
-      return json(res, 400, { error: 'Could not decode pdfBase64.' });
-    }
+    const pdfBuffer = await downloadStorageFile(storagePath, {
+      supabaseUrl: SUPABASE_URL,
+      serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+    });
+    if (!pdfBuffer) return json(res, 400, { error: "Couldn't download the uploaded PDF." });
     if (pdfBuffer.length > 25 * 1024 * 1024) {
       return json(res, 400, { error: 'PDF too large. Please use a smaller file.' });
     }
