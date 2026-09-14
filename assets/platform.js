@@ -88,6 +88,19 @@ function extractSuccessCaseUrl() {
 }
 
 /* Same reasoning/hosting split as analyzeProjectUrl() above — see
+   api/extract-project-data.js, the "Cargar desde uno o varios PDF" box
+   behind app/new-project.html's creation wizard (Pablo, sep 2026: "cuando
+   se carga un proyecto nuevo se debe tener la opción de hacerlo desde uno
+   o varios PDF y que un agente lea los documentos y obtenga todos los
+   atributos posibles"). */
+function extractProjectDataUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/extract-project-data`;
+  }
+  return '/api/extract-project-data';
+}
+
+/* Same reasoning/hosting split as analyzeProjectUrl() above — see
    api/generate-proposal.js, the "Generar borrador con IA" button behind
    app/project.html's Investment Proposal editor section. */
 function generateProposalUrl() {
@@ -5836,6 +5849,35 @@ const INAPlatform = {
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
       console.error('[extractSuccessCase] failed:', body.error, body.detail || body.raw || '');
+      throw new Error(body.error || 'PDF extraction request failed.');
+    }
+    return body;
+  },
+
+  /* Pablo, sep 2026: "cuando se carga un proyecto nuevo se debe tener la
+     opción de hacerlo desde uno o varios PDF y que un agente lea los
+     documentos y obtenga todos los atributos posibles. Luego, permitir la
+     edición de los datos como hasta ahora." Same shape as
+     extractSuccessCase() above, but takes an ARRAY of files (api/
+     extract-project-data.js concatenates their text server-side into one
+     model call) and targets new-project.html's fixed wizard field set
+     instead of a caller-supplied list. `files` is
+     [{pdfBase64, fileName}, ...]. Never writes anything — createProject()
+     still runs separately once the user reviews/edits and submits Step 1. */
+  async extractProjectData(files) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(extractProjectDataUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ files }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('[extractProjectData] failed:', body.error, body.detail || body.raw || '');
       throw new Error(body.error || 'PDF extraction request failed.');
     }
     return body;
