@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=24">
+<link rel="stylesheet" href="/assets/style.css?v=25">
 <link rel="stylesheet" href="/assets/app.css?v=10">
 </head>
 <body class="app-body">
@@ -277,6 +277,49 @@
         <p id="riskMatrixEmpty" style="font-size:13px; color:var(--muted); margin-top:8px; display:none;"><span data-i18n="pd.risk.empty">No risks logged yet for this project.</span></p>
       </div>
 
+      <!-- Success Cases (reference library) — Pablo, sep 2026: "para que un
+           proyecto nuevo se puede basar en un caso de éxito, o bien, lo
+           tome como referencia." See supabase/migration_v59_success_cases.sql
+           and app/success-cases.html (the browsable library this project
+           links into). Unlike Financing Programs (which moved to its own
+           app/project-financing.html page), this stays inline — a much
+           lighter add/remove-only interaction with no financing math, so a
+           dedicated page would be overkill. Picker/linking are owner-or-
+           assigned-advisor only (matches project_success_cases RLS); the
+           linked list itself is visible to anyone who can view the
+           project. Hidden entirely (like Roadmaps/Risk Matrix above) only
+           while nothing has loaded yet — always shown once cases exist or
+           the viewer can add one, even with zero links, since "add your
+           first reference case" is itself a useful prompt here. -->
+      <div id="successCasesBlock" class="info-block" style="margin-top:24px; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div>
+            <h4><span data-i18n="pd.sc.title">Reference Success Cases</span></h4>
+            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pd.sc.help">Real-world cases this project is based on or takes as a reference.</span></p>
+          </div>
+          <a href="success-cases.html" target="_blank" rel="noopener" class="btn ghost small"><span data-i18n="pd.sc.browse">Browse Library</span></a>
+        </div>
+
+        <div id="scLinkedList" class="sc-linked-list" style="margin-top:14px;"></div>
+        <p id="scLinkedEmpty" style="font-size:13px; color:var(--muted); margin-top:8px; display:none;"><span data-i18n="pd.sc.empty">No success cases linked yet.</span></p>
+
+        <div id="scPickerRow" style="margin-top:18px; padding-top:16px; border-top:1px solid var(--paper-line); display:none;">
+          <label style="font-size:12.5px; color:var(--muted); display:block; margin-bottom:8px;"><span data-i18n="pd.sc.pick">Link a success case as reference</span></label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+            <div class="ffield" style="flex:0 0 170px;">
+              <select id="scPickerSector"></select>
+            </div>
+            <div class="ffield" style="flex:0 0 170px;">
+              <select id="scPickerCountry"></select>
+            </div>
+            <div class="ffield" style="flex:1 1 260px;">
+              <select id="scPicker"></select>
+            </div>
+            <button type="button" class="btn ghost small" id="addSuccessCaseBtn"><span data-i18n="pd.sc.add">Link</span></button>
+          </div>
+        </div>
+      </div>
+
       <!-- Investment Proposal — the four AI-draftable, user-editable
            narrative chapters (Introduction, Technical Description,
            Benefits, Planning narrative) that feed the separate, longer
@@ -380,7 +423,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=63"></script>
+<script src="/assets/i18n.js?v=67"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <!-- pdf-lib: only used by generateProjectPdf() to splice real attached PDF
@@ -388,7 +431,7 @@
      another PDF's existing pages — see the "Anexos" section of that
      function). Everything else in the report still uses jsPDF alone. -->
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="/assets/platform.js?v=73"></script>
+<script src="/assets/platform.js?v=77"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -572,6 +615,7 @@
       if (currentProject) renderFinancingSummary();
       if (currentRoadmaps.length || (currentProfile && INAPlatform.canManageRoadmaps(currentProfile))) renderRoadmaps();
       if (currentRisks.length || (currentProfile && INAPlatform.canManageRisks(currentProfile))) renderRiskMatrix();
+      if (allSuccessCasesForPicker.length || currentSuccessCases.length) renderSuccessCases();
     });
   });
 
@@ -630,6 +674,12 @@
   // This project's Risk Matrix rows — see the Risk Matrix block below and
   // supabase/migration_v41_project_risks.sql.
   let currentRisks = [];
+  // This project's linked Success Cases (project_success_cases rows, each
+  // with its success_case embedded) and the full library (for the picker
+  // below) — see the Success Cases block and
+  // supabase/migration_v59_success_cases.sql.
+  let currentSuccessCases = [];
+  let allSuccessCasesForPicker = [];
   function renderProject(p) {
     currentProject = p;
     document.getElementById('crumbName').textContent = p.name;
@@ -2591,6 +2641,138 @@
     }
   }
 
+  /* Success Cases — linking is owner-or-assigned-advisor only (matches
+     project_success_cases_insert/delete_own_or_assigned_advisor RLS in
+     migration_v59); the linked list itself is read-only for everyone else
+     who can view the project at all. */
+  function renderSuccessCases() {
+    const lang = INAPlatform.currentLang();
+    const canManage = isOwner || isAssignedAdvisor;
+    const list = document.getElementById('scLinkedList');
+    list.innerHTML = '';
+    currentSuccessCases.forEach((row) => {
+      const c = row.success_cases;
+      if (!c) return;
+      const summary = (lang === 'es' ? c.summary_es : (c.summary_en || c.summary_es)) || '';
+      const card = document.createElement('div');
+      card.className = 'sc-linked-card';
+      card.style.borderLeftColor = { education: '#2e5fc7', health: '#c73749', emergency_response: 'var(--amber)', agriculture: '#2f7a49', government: 'var(--ink-2)', financial_inclusion: '#7248b8' }[c.sector] || 'var(--paper-line)';
+      const info = document.createElement('div');
+      info.innerHTML = `
+        <div class="pgname" style="font-size:14px;">${c.title}</div>
+        <div class="pgmeta">${c.country}${c.region ? ` — ${c.region}` : ''}
+          <span class="type-tag sector-tag" data-sector="${c.sector}">${INAPlatform.successCaseSectorLabel(c.sector)}</span>
+          <span class="type-tag">${c.provider}</span>
+        </div>
+        ${summary ? `<div class="sc-summary" style="-webkit-line-clamp:2; margin-top:6px;">${summary}</div>` : ''}
+      `;
+      card.appendChild(info);
+      if (canManage) {
+        const actions = document.createElement('div');
+        actions.className = 'icon-action-group';
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'icon-btn icon-btn-delete';
+        delBtn.title = lang === 'es' ? 'Quitar referencia' : 'Remove reference';
+        delBtn.textContent = '🗑';
+        delBtn.addEventListener('click', () => removeSuccessCase(c.id));
+        actions.appendChild(delBtn);
+        card.appendChild(actions);
+      }
+      list.appendChild(card);
+    });
+    document.getElementById('scLinkedEmpty').style.display = currentSuccessCases.length ? 'none' : 'block';
+
+    const pickerRow = document.getElementById('scPickerRow');
+    if (canManage) {
+      pickerRow.style.display = 'block';
+      populateSuccessCasePicker();
+    } else {
+      pickerRow.style.display = 'none';
+    }
+    document.getElementById('successCasesBlock').style.display = 'block';
+  }
+
+  function populateSuccessCasePicker() {
+    const lang = INAPlatform.currentLang();
+    const allLabel = lang === 'es' ? 'Todos' : 'All';
+    const linkedIds = new Set(currentSuccessCases.map((r) => r.success_case_id));
+    const sectorSel = document.getElementById('scPickerSector');
+    const countrySel = document.getElementById('scPickerCountry');
+    const picker = document.getElementById('scPicker');
+
+    const prevSector = sectorSel.value;
+    const prevCountry = countrySel.value;
+
+    sectorSel.innerHTML = '';
+    sectorSel.appendChild(new Option(lang === 'es' ? 'Sector (todos)' : 'Sector (all)', ''));
+    INAPlatform.SUCCESS_CASE_SECTORS.forEach((s) => {
+      if (allSuccessCasesForPicker.some((c) => c.sector === s.value)) {
+        sectorSel.appendChild(new Option(s[lang] || s.en, s.value));
+      }
+    });
+    sectorSel.value = prevSector || '';
+
+    countrySel.innerHTML = '';
+    countrySel.appendChild(new Option(lang === 'es' ? 'País (todos)' : 'Country (all)', ''));
+    Array.from(new Set(allSuccessCasesForPicker.map((c) => c.country))).sort().forEach((c) => {
+      countrySel.appendChild(new Option(c, c));
+    });
+    countrySel.value = prevCountry || '';
+
+    const available = allSuccessCasesForPicker.filter((c) =>
+      !linkedIds.has(c.id)
+      && (!sectorSel.value || c.sector === sectorSel.value)
+      && (!countrySel.value || c.country === countrySel.value)
+    );
+    picker.innerHTML = '';
+    if (!available.length) {
+      picker.appendChild(new Option(lang === 'es' ? '— Sin casos disponibles —' : '— No cases available —', ''));
+      picker.disabled = true;
+    } else {
+      picker.disabled = false;
+      picker.appendChild(new Option(lang === 'es' ? '— Elegí un caso —' : '— Choose a case —', ''));
+      available.forEach((c) => {
+        picker.appendChild(new Option(`${c.title} — ${c.country}`, c.id));
+      });
+    }
+  }
+
+  async function addSuccessCaseFromPicker() {
+    const picker = document.getElementById('scPicker');
+    const caseId = picker.value;
+    if (!caseId) return;
+    const btn = document.getElementById('addSuccessCaseBtn');
+    btn.disabled = true;
+    try {
+      const row = await INAPlatform.linkSuccessCaseToProject(projectId, caseId);
+      currentSuccessCases.push(row);
+      renderSuccessCases();
+    } catch (err) {
+      const lang = INAPlatform.currentLang();
+      alert((lang === 'es' ? 'No se pudo vincular el caso: ' : "Couldn't link the case: ") + (err.message || err));
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function removeSuccessCase(caseId) {
+    const lang = INAPlatform.currentLang();
+    if (!confirm(lang === 'es' ? '¿Quitar este caso de éxito como referencia del proyecto?' : 'Remove this success case as a reference for the project?')) return;
+    try {
+      await INAPlatform.unlinkSuccessCaseFromProject(projectId, caseId);
+      currentSuccessCases = currentSuccessCases.filter((r) => r.success_case_id !== caseId);
+      renderSuccessCases();
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo quitar el caso: ' : "Couldn't remove the case: ") + (err.message || err));
+    }
+  }
+
+  document.getElementById('addSuccessCaseBtn').addEventListener('click', addSuccessCaseFromPicker);
+  ['scPickerSector', 'scPickerCountry'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', populateSuccessCasePicker);
+  });
+
   async function init() {
     if (!projectId) { location.href = 'dashboard.html'; return; }
     if (!INAPlatform.isConfigured()) {
@@ -2833,6 +3015,22 @@
     if (currentRisks.length || viewerCanManageRisks) {
       document.getElementById('riskMatrixBlock').style.display = 'block';
       renderRiskMatrix();
+    }
+
+    try {
+      currentSuccessCases = await INAPlatform.listProjectSuccessCases(projectId);
+    } catch (e) { currentSuccessCases = []; /* non-critical — block just shows empty */ }
+    const viewerCanManageSuccessCases = isOwner || isAssignedAdvisor;
+    if (viewerCanManageSuccessCases) {
+      // Only the owner/assigned advisor can actually link a case, so only
+      // they pay for fetching the full library up front — a read-only
+      // viewer just sees whatever's already linked, no picker to populate.
+      try {
+        allSuccessCasesForPicker = await INAPlatform.listSuccessCases();
+      } catch (e) { allSuccessCasesForPicker = []; /* non-critical — picker stays empty */ }
+    }
+    if (currentSuccessCases.length || viewerCanManageSuccessCases) {
+      renderSuccessCases();
     }
 
     if (project.status === 'completed') {

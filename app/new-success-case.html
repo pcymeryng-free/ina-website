@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="New Success Case — INA Platform" data-i18n-es="Nuevo Caso de Éxito — Plataforma INA">New Success Case — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Create or edit a Success Case on the INA Platform." data-i18n-es="Creá o editá un Caso de Éxito en la Plataforma INA." content="Create or edit a Success Case on the INA Platform.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=25">
+<link rel="stylesheet" href="/assets/app.css?v=10">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
+      <a href="success-cases.html" class="active"><span data-i18n="sc.nav">Success Cases</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+          <a href="roles.html" id="rolesMenuItem" class="menu-item" style="display:none;"><span data-i18n="roles.nav">Roles</span></a>
+        </div>
+      </div>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="success-cases.html"><span data-i18n="sc.nav">Success Cases</span></a><span>/</span><span id="crumbLabel"><span data-i18n="sc.form.new">New Success Case</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;" id="pageTitle"><span data-i18n="sc.form.new">New Success Case</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="sc.form.lede">A real-world case a new project can be based on or cite as a reference — the provider/technology field is free text, so cases from any vendor fit here, not only Starlink.</span></p>
+
+    <!-- No hard edit-lock on this form (unlike new-project.html/new-program.html) —
+         success_cases is advisor/admin-only to begin with (see
+         INAPlatform.canManageSuccessCases()/migration_v59_success_cases.sql),
+         so the concurrent-edit collision this prevents elsewhere is much
+         less likely here; kept out to avoid a new edit_locks migration for
+         a low-traffic reference-library entity. Revisit if it becomes an
+         issue in practice. -->
+
+    <!-- Pablo, sep 2026: "El alta de un nuevo Success case se debería poder
+         cargar a partir de un documento pdf subido a la plataforma. Luego
+         completar los datos restantes, si fuera necesario, a mano." — the
+         PDF is sent straight to api/extract-success-case.js as base64
+         (nothing saved to Storage, same as master-data.html's "Cargar
+         desde tarjeta" business-card flow) and the response prefills the
+         ordinary form fields below, which stay fully editable. Only shown
+         on the create form — editing an existing case doesn't offer this
+         (see isEdit further down). -->
+    <div class="new-org-box" id="scPdfUploadBlock" style="max-width:640px; margin-top:36px;">
+      <label style="margin-bottom:8px; display:block;"><span data-i18n="sc.f.uploadPdf">Load from a PDF document</span></label>
+      <p style="font-size:12px; color:var(--muted); margin:0 0 10px;"><span data-i18n="sc.f.uploadPdf.help">Upload a case-study PDF and the fields below will be pre-filled — review and complete anything missing by hand before saving.</span></p>
+      <button type="button" class="btn ghost small" id="scUploadPdfBtn"><span data-i18n="sc.f.uploadPdf.btn">📄 Upload PDF</span></button>
+      <input type="file" id="scPdfInput" accept="application/pdf,.pdf" style="display:none;">
+      <p id="scPdfStatus" style="font-size:12.5px; margin-top:10px; display:none;"></p>
+    </div>
+
+    <form id="caseForm" style="max-width:640px; margin-top:24px;">
+      <div class="field" style="margin-top:0;"><label for="scTitle"><span data-i18n="sc.f.title">Case title</span></label><input id="scTitle" type="text" required></div>
+
+      <div class="field" style="margin-top:18px; display:flex; gap:18px;">
+        <div style="flex:1;"><label for="scProvider"><span data-i18n="sc.f.provider">Provider / technology</span></label><input id="scProvider" type="text" required value="Starlink"></div>
+        <div style="flex:1;"><label for="scCountry"><span data-i18n="sc.f.country">Country</span></label><input id="scCountry" type="text" required></div>
+      </div>
+
+      <div class="field" style="margin-top:18px;"><label for="scRegion"><span data-i18n="sc.f.region">Region / location (optional)</span></label><input id="scRegion" type="text" placeholder="Amazonía, La Araucanía…"></div>
+
+      <div class="field" style="margin-top:18px;">
+        <label><span data-i18n="sc.f.sector">Sector</span></label>
+        <div class="chk-group" id="sectorOptions"></div>
+      </div>
+
+      <div class="field" style="margin-top:18px;"><label for="scSummaryEs"><span data-i18n="sc.f.summaryEs">Summary (Spanish)</span></label>
+        <textarea id="scSummaryEs" style="min-height:90px;" required></textarea>
+      </div>
+      <div class="field" style="margin-top:18px;"><label for="scSummaryEn"><span data-i18n="sc.f.summaryEn">Summary in English (optional)</span></label>
+        <textarea id="scSummaryEn" style="min-height:90px;"></textarea>
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="sc.f.summaryEn.help">Shown instead of the Spanish summary only when a viewer has the site in English — leave blank to always show the Spanish summary.</span></p>
+      </div>
+
+      <div class="field" style="margin-top:18px;"><label for="scBeneficiaries"><span data-i18n="sc.f.beneficiaries">Beneficiaries reached (optional)</span></label><input id="scBeneficiaries" type="number" min="0" step="1"></div>
+
+      <div class="field" style="margin-top:18px;"><label for="scMetricsEs"><span data-i18n="sc.f.metricsEs">Extra metrics or quote — Spanish (optional)</span></label>
+        <textarea id="scMetricsEs" style="min-height:60px;"></textarea>
+      </div>
+      <div class="field" style="margin-top:18px;"><label for="scMetricsEn"><span data-i18n="sc.f.metricsEn">Extra metrics or quote — English (optional)</span></label>
+        <textarea id="scMetricsEn" style="min-height:60px;"></textarea>
+      </div>
+
+      <div class="field" style="margin-top:18px; display:flex; gap:18px;">
+        <div style="flex:1;"><label for="scSourceLabel"><span data-i18n="sc.f.sourceLabel">Source (optional)</span></label><input id="scSourceLabel" type="text" placeholder="Starlink — Impacto en América Latina (2026)"></div>
+        <div style="flex:1;"><label for="scSourceUrl"><span data-i18n="sc.f.sourceUrl">Source URL (optional)</span></label><input id="scSourceUrl" type="url" placeholder="https://…"></div>
+      </div>
+
+      <button type="submit" class="btn amber" style="margin-top:30px;" id="scSubmit"><span data-i18n="sc.form.create">Add Success Case</span></button>
+      <p class="contact-note" id="scNote" style="margin-top:14px; min-height:18px;"></p>
+    </form>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=67"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=77"></script>
+<script src="/assets/script.js?v=14"></script>
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const editId = params.get('id');
+  const isEdit = !!editId;
+
+  if (isEdit) {
+    document.getElementById('pageTitle').innerHTML = '<span data-i18n="sc.form.edit">Edit Success Case</span>';
+    document.getElementById('crumbLabel').innerHTML = '<span data-i18n="sc.form.edit">Edit Success Case</span>';
+    document.getElementById('scSubmit').innerHTML = '<span data-i18n="sc.form.save">Save Changes</span>';
+    // "Load from PDF" is create-only (see Pablo's request quoted above) —
+    // re-running extraction over an already-saved case would clobber
+    // fields the advisor may have since hand-edited, with no clear
+    // "merge" semantics worth building for a low-traffic reference form.
+    document.getElementById('scPdfUploadBlock').style.display = 'none';
+  }
+
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  // NOT a const — same stale-lang-capture fix as new-program.html: the
+  // sector checkbox group is built in plain JS from this variable, so the
+  // .lang-btn listener further below has to re-render it explicitly.
+  let lang = INAPlatform.currentLang();
+
+  let sectorSelected = 'education';
+  function renderSectorOptions() {
+    const el = document.getElementById('sectorOptions');
+    el.innerHTML = INAPlatform.SUCCESS_CASE_SECTORS.map((s, i) => `
+      <label class="chk-pill">
+        <input type="radio" name="sector" value="${s.value}" ${s.value === sectorSelected ? 'checked' : ''}>
+        <span>${s[lang] || s.en}</span>
+      </label>
+    `).join('');
+  }
+  renderSectorOptions();
+  document.getElementById('sectorOptions').addEventListener('change', (e) => {
+    if (e.target.name === 'sector') sectorSelected = e.target.value;
+  });
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      lang = btn.getAttribute('data-lang');
+      document.documentElement.setAttribute('lang', lang);
+      renderSectorOptions();
+    });
+  });
+
+  // ---- Load from PDF (Pablo, sep 2026 — see the comment above
+  // scPdfUploadBlock) ----
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result || '';
+        const comma = result.indexOf(',');
+        resolve(comma >= 0 ? result.slice(comma + 1) : result);
+      };
+      reader.onerror = () => reject(new Error('Could not read the PDF file.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function prefillFromPdfExtraction(fields) {
+    const f = fields || {};
+    if (f.title) document.getElementById('scTitle').value = f.title;
+    if (f.provider) document.getElementById('scProvider').value = f.provider;
+    if (f.country) document.getElementById('scCountry').value = f.country;
+    if (f.region) document.getElementById('scRegion').value = f.region;
+    if (f.sector) { sectorSelected = f.sector; renderSectorOptions(); }
+    if (f.summary_es) document.getElementById('scSummaryEs').value = f.summary_es;
+    if (f.summary_en) document.getElementById('scSummaryEn').value = f.summary_en;
+    if (f.beneficiaries_count != null) document.getElementById('scBeneficiaries').value = f.beneficiaries_count;
+    if (f.metrics_es) document.getElementById('scMetricsEs').value = f.metrics_es;
+    if (f.metrics_en) document.getElementById('scMetricsEn').value = f.metrics_en;
+    if (f.source_label) document.getElementById('scSourceLabel').value = f.source_label;
+  }
+
+  document.getElementById('scUploadPdfBtn').addEventListener('click', () => document.getElementById('scPdfInput').click());
+  document.getElementById('scPdfInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const btn = document.getElementById('scUploadPdfBtn');
+    const statusEl = document.getElementById('scPdfStatus');
+    btn.disabled = true;
+    statusEl.style.display = 'block';
+    statusEl.textContent = lang === 'es' ? 'Leyendo el PDF…' : 'Reading the PDF…';
+    try {
+      const base64 = await fileToBase64(file);
+      const result = await INAPlatform.extractSuccessCase(base64, file.name);
+      prefillFromPdfExtraction(result.fields);
+      statusEl.textContent = lang === 'es'
+        ? '✓ Campos completados desde el PDF — revisalos y completá lo que falte antes de guardar.'
+        : '✓ Fields filled in from the PDF — review them and complete anything missing before saving.';
+    } catch (err) {
+      statusEl.textContent = (lang === 'es' ? 'No se pudo leer el PDF: ' : "Couldn't read the PDF: ") + (err.message || err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  const form = document.getElementById('caseForm');
+  const note = document.getElementById('scNote');
+  const submitBtn = document.getElementById('scSubmit');
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      note.textContent = 'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    let viewerProfile = null;
+    try {
+      viewerProfile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(viewerProfile.full_name);
+      document.getElementById('appUserName').textContent = viewerProfile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      const canAdminUsers = INAPlatform.canManageUsers(viewerProfile);
+      const canMasterData = INAPlatform.canManageMasterData(viewerProfile);
+      if (canAdminUsers || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
+      if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
+      if (canAdminUsers) document.getElementById('adminUsersMenuItem').style.display = 'flex';
+      if (canAdminUsers) document.getElementById('rolesMenuItem').style.display = 'flex';
+      if (INAPlatform.canViewRoadmaps(viewerProfile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    // Both create and edit are advisor/admin-only (see migration_v59 and
+    // INAPlatform.canManageSuccessCases()) — unlike Financing Programs,
+    // there's no owner-editable exception, since the library is a shared
+    // reference resource, not one advisor's personal record.
+    if (!INAPlatform.canManageSuccessCases(viewerProfile)) {
+      location.href = 'success-cases.html';
+      return;
+    }
+
+    if (isEdit) {
+      let c;
+      try {
+        c = await INAPlatform.getSuccessCase(editId);
+      } catch (e) {
+        location.href = 'success-cases.html';
+        return;
+      }
+      document.getElementById('scTitle').value = c.title || '';
+      document.getElementById('scProvider').value = c.provider || 'Starlink';
+      document.getElementById('scCountry').value = c.country || '';
+      document.getElementById('scRegion').value = c.region || '';
+      sectorSelected = c.sector || 'education';
+      renderSectorOptions();
+      document.getElementById('scSummaryEs').value = c.summary_es || '';
+      document.getElementById('scSummaryEn').value = c.summary_en || '';
+      document.getElementById('scBeneficiaries').value = c.beneficiaries_count != null ? c.beneficiaries_count : '';
+      document.getElementById('scMetricsEs').value = c.metrics_es || '';
+      document.getElementById('scMetricsEn').value = c.metrics_en || '';
+      document.getElementById('scSourceLabel').value = c.source_label || '';
+      document.getElementById('scSourceUrl').value = c.source_url || '';
+    }
+  }
+  init();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    note.textContent = '';
+    if (!INAPlatform.isConfigured()) {
+      note.textContent = 'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    submitBtn.disabled = true;
+    note.textContent = lang === 'es' ? 'Guardando…' : 'Saving…';
+
+    const beneficiariesRaw = document.getElementById('scBeneficiaries').value;
+    const payload = {
+      title: document.getElementById('scTitle').value,
+      provider: document.getElementById('scProvider').value,
+      country: document.getElementById('scCountry').value,
+      region: document.getElementById('scRegion').value,
+      sector: sectorSelected,
+      summaryEs: document.getElementById('scSummaryEs').value,
+      summaryEn: document.getElementById('scSummaryEn').value,
+      beneficiariesCount: beneficiariesRaw === '' ? null : parseInt(beneficiariesRaw, 10),
+      metricsEs: document.getElementById('scMetricsEs').value,
+      metricsEn: document.getElementById('scMetricsEn').value,
+      sourceLabel: document.getElementById('scSourceLabel').value,
+      sourceUrl: document.getElementById('scSourceUrl').value,
+    };
+
+    try {
+      if (isEdit) {
+        await INAPlatform.updateSuccessCase(editId, payload);
+      } else {
+        await INAPlatform.createSuccessCase(payload);
+      }
+      location.href = 'success-cases.html';
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar el caso de éxito.' : "Couldn't save the success case.");
+      submitBtn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>

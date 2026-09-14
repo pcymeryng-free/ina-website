@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Success Cases — INA Platform" data-i18n-es="Casos de Éxito — Plataforma INA">Success Cases — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="A reference library of real-world connectivity success cases a new project can be based on." data-i18n-es="Una biblioteca de referencia de casos de éxito reales de conectividad en los que un proyecto nuevo puede basarse." content="A reference library of real-world connectivity success cases a new project can be based on.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=25">
+<link rel="stylesheet" href="/assets/app.css?v=10">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
+      <a href="success-cases.html" class="active"><span data-i18n="sc.nav">Success Cases</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+          <a href="roles.html" id="rolesMenuItem" class="menu-item" style="display:none;"><span data-i18n="roles.nav">Roles</span></a>
+        </div>
+      </div>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="platform-header reveal">
+      <div>
+        <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+        <h1 class="h-section" style="margin-top:14px;"><span data-i18n="sc.title">Success Cases</span></h1>
+        <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="sc.lede">Real-world connectivity impact cases a new project can be based on, or take as a reference.</span></p>
+      </div>
+      <a href="new-success-case.html" class="btn amber" id="createCaseBtn" style="display:none;"><span data-i18n="sc.form.create">Add Success Case</span></a>
+    </div>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="casesBody" style="display:none; margin-top:24px;">
+      <div class="dash-stats reveal" id="scStats"></div>
+
+      <div class="filter-bar">
+        <div class="ffield">
+          <label for="fSector"><span data-i18n="sc.filter.sector">Sector</span></label>
+          <select id="fSector"></select>
+        </div>
+        <div class="ffield">
+          <label for="fCountry"><span data-i18n="sc.filter.country">Country</span></label>
+          <select id="fCountry"></select>
+        </div>
+        <div class="ffield">
+          <label for="fProvider"><span data-i18n="sc.filter.provider">Provider / Technology</span></label>
+          <select id="fProvider"></select>
+        </div>
+        <div class="ffield" style="flex:1 1 200px;">
+          <label for="fSearch"><span data-i18n="dash.filter.search">Search</span></label>
+          <input type="search" id="fSearch" placeholder="">
+        </div>
+        <button type="button" class="fclear" id="fClear"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+      </div>
+
+      <div class="filter-count-row">
+        <p class="filter-count" id="filterCount"></p>
+        <div class="view-toggle" role="group" aria-label="View">
+          <button type="button" class="view-toggle-btn" data-view="list" title="List view">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <button type="button" class="view-toggle-btn" data-view="grid" title="Grid view">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="caseList" class="program-list"></div>
+
+      <div class="empty-state" id="noMatchState" style="display:none;">
+        <div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/></svg></div>
+        <p style="font-size:14.5px; color:var(--text);"><span data-i18n="sc.filter.none">No success cases match the current filters.</span></p>
+        <button type="button" class="btn ghost" style="margin-top:18px;" id="fClear2"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+      </div>
+
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <p><span data-i18n="sc.empty">No success cases yet — add one above to start building the reference library.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=67"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=77"></script>
+<script src="/assets/script.js?v=14"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  // NOT a const — same stale-lang-capture fix as financing-programs.html:
+  // this whole page is built dynamically, so the lang-btn listener below has
+  // to re-render explicitly after the language actually switches.
+  let lang = INAPlatform.currentLang();
+
+  let allCases = [];
+  let currentUserId = null;
+  let currentIsAdmin = false;
+  let currentCanManageCases = false;
+
+  function accentFor(c) {
+    return `sc-${c.sector || 'other'}`;
+  }
+
+  function fmtNumber(n) {
+    return new Intl.NumberFormat(lang === 'es' ? 'es-AR' : 'en-US').format(n);
+  }
+
+  const fSector = document.getElementById('fSector');
+  const fCountry = document.getElementById('fCountry');
+  const fProvider = document.getElementById('fProvider');
+  const fSearch = document.getElementById('fSearch');
+
+  function renderStats() {
+    const total = allCases.length;
+    const countries = new Set(allCases.map((c) => c.country).filter(Boolean)).size;
+    const sectors = new Set(allCases.map((c) => c.sector).filter(Boolean)).size;
+    const beneficiaries = allCases.reduce((sum, c) => sum + (c.beneficiaries_count || 0), 0);
+
+    const labels = {
+      'sc.stats.total': { en: 'Success Cases', es: 'Casos de Éxito' },
+      'sc.stats.countries': { en: 'Countries', es: 'Países' },
+      'sc.stats.sectors': { en: 'Sectors Covered', es: 'Sectores Cubiertos' },
+      'sc.stats.beneficiaries': { en: 'Beneficiaries Reached', es: 'Beneficiarios Alcanzados' },
+    };
+    const el = document.getElementById('scStats');
+    el.innerHTML = [
+      { n: total, key: 'sc.stats.total' },
+      { n: countries, key: 'sc.stats.countries' },
+      { n: sectors, key: 'sc.stats.sectors' },
+      { n: `${fmtNumber(beneficiaries)}+`, key: 'sc.stats.beneficiaries' },
+    ].map((s) => `
+      <div class="dash-stat">
+        <div class="dsn">${s.n}</div>
+        <div class="dsl" data-i18n="${s.key}">${labels[s.key][lang]}</div>
+      </div>
+    `).join('');
+  }
+
+  function populateFilterOptions() {
+    const allLabel = lang === 'es' ? 'Todos' : 'All';
+
+    fSector.innerHTML = '';
+    fSector.appendChild(new Option(allLabel, ''));
+    INAPlatform.SUCCESS_CASE_SECTORS.forEach((s) => {
+      // Only offer sectors actually present in the library — Financial
+      // Inclusion/Other have no Starlink cases yet (see migration_v59's
+      // header note), so they'd otherwise be dead filter options.
+      if (allCases.some((c) => c.sector === s.value)) {
+        fSector.appendChild(new Option(s[lang] || s.en, s.value));
+      }
+    });
+
+    fCountry.innerHTML = '';
+    fCountry.appendChild(new Option(allLabel, ''));
+    Array.from(new Set(allCases.map((c) => c.country).filter(Boolean))).sort().forEach((c) => {
+      fCountry.appendChild(new Option(c, c));
+    });
+
+    fProvider.innerHTML = '';
+    fProvider.appendChild(new Option(allLabel, ''));
+    Array.from(new Set(allCases.map((c) => c.provider).filter(Boolean))).sort().forEach((p) => {
+      fProvider.appendChild(new Option(p, p));
+    });
+
+    fSearch.placeholder = lang === 'es' ? 'Título, país o resumen…' : 'Title, country or summary…';
+  }
+
+  function applyFilters(list) {
+    const sector = fSector.value;
+    const country = fCountry.value;
+    const provider = fProvider.value;
+    const q = fSearch.value.trim().toLowerCase();
+
+    return list.filter((c) => {
+      if (sector && c.sector !== sector) return false;
+      if (country && c.country !== country) return false;
+      if (provider && c.provider !== provider) return false;
+      if (q) {
+        const hay = `${c.title} ${c.country} ${c.region || ''} ${c.provider} ${c.summary_es || ''} ${c.summary_en || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function buildActions(c, canEdit, canDelete) {
+    const actions = document.createElement('div');
+    actions.className = 'icon-action-group';
+    if (canEdit) {
+      const editEl = document.createElement('a');
+      editEl.href = `new-success-case.html?id=${c.id}`;
+      editEl.className = 'icon-btn';
+      editEl.title = lang === 'es' ? 'Editar caso' : 'Edit case';
+      editEl.textContent = '✎';
+      actions.appendChild(editEl);
+    }
+    if (canDelete) {
+      const deleteEl = document.createElement('button');
+      deleteEl.type = 'button';
+      deleteEl.className = 'icon-btn icon-btn-delete';
+      deleteEl.title = lang === 'es' ? 'Eliminar caso' : 'Delete case';
+      deleteEl.textContent = '🗑';
+      deleteEl.addEventListener('click', () => deleteCase(c));
+      actions.appendChild(deleteEl);
+    }
+    return actions;
+  }
+
+  // Unlike Financing Programs, a success case has no separate read-only
+  // detail page — browsing IS the detail view, so the full bilingual
+  // summary/metrics render inline here (see .sc-summary/.sc-metrics in
+  // style.css). `main` only becomes a real link (to the edit form) for
+  // advisor/admin; everyone else gets a plain, non-interactive block.
+  function mainInnerHtml(c) {
+    const summary = (lang === 'es' ? c.summary_es : (c.summary_en || c.summary_es)) || '';
+    const metrics = (lang === 'es' ? c.metrics_es : (c.metrics_en || c.metrics_es)) || '';
+    const badges = [
+      `<span class="type-tag sector-tag" data-sector="${c.sector}">${INAPlatform.successCaseSectorLabel(c.sector)}</span>`,
+      `<span class="type-tag">${c.provider}</span>`,
+    ];
+    if (c.beneficiaries_count) {
+      badges.push(`<span class="sc-beneficiaries">${fmtNumber(c.beneficiaries_count)} ${lang === 'es' ? 'beneficiarios' : 'beneficiaries'}</span>`);
+    }
+    return `
+      <div class="pgname">${c.title}</div>
+      <div class="pgmeta">${c.country}${c.region ? ` — ${c.region}` : ''} ${badges.join(' ')}</div>
+      ${summary ? `<div class="sc-summary">${summary}</div>` : ''}
+      ${metrics ? `<div class="sc-metrics">${metrics}</div>` : ''}
+    `;
+  }
+
+  let viewMode = localStorage.getItem('inaSuccessCasesViewMode') === 'grid' ? 'grid' : 'list';
+
+  function setViewMode(mode) {
+    viewMode = mode;
+    localStorage.setItem('inaSuccessCasesViewMode', mode);
+    document.querySelectorAll('.view-toggle-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-view') === mode);
+    });
+    renderList();
+  }
+
+  function renderList() {
+    const filtered = applyFilters(allCases);
+    const list = document.getElementById('caseList');
+    const noMatch = document.getElementById('noMatchState');
+    const count = document.getElementById('filterCount');
+
+    list.innerHTML = '';
+    list.className = viewMode === 'grid' ? 'program-grid' : 'program-list';
+
+    const countLabel = lang === 'es'
+      ? `${filtered.length} de ${allCases.length} caso${allCases.length === 1 ? '' : 's'}`
+      : `${filtered.length} of ${allCases.length} case${allCases.length === 1 ? '' : 's'}`;
+    count.textContent = countLabel;
+
+    if (!filtered.length) {
+      list.style.display = 'none';
+      noMatch.style.display = 'block';
+      return;
+    }
+    noMatch.style.display = 'none';
+    list.style.display = viewMode === 'grid' ? 'grid' : 'flex';
+
+    if (viewMode === 'grid') {
+      renderGridCards(filtered, list);
+    } else {
+      renderListRows(filtered, list);
+    }
+  }
+
+  function renderListRows(filtered, list) {
+    filtered.forEach((c) => {
+      const row = document.createElement('div');
+      row.className = 'program-row';
+      row.style.gridTemplateColumns = '1fr auto';
+      row.setAttribute('data-accent', accentFor(c));
+
+      const canEdit = currentCanManageCases;
+      const canDelete = currentCanManageCases && (currentIsAdmin || c.created_by === currentUserId);
+
+      const main = canEdit ? document.createElement('a') : document.createElement('div');
+      if (canEdit) main.href = `new-success-case.html?id=${c.id}`;
+      main.className = `main sc-${canEdit ? 'link' : 'static'}`;
+      main.innerHTML = mainInnerHtml(c);
+
+      row.appendChild(main);
+      row.appendChild(buildActions(c, canEdit, canDelete));
+      list.appendChild(row);
+    });
+  }
+
+  function renderGridCards(filtered, list) {
+    filtered.forEach((c) => {
+      const card = document.createElement('div');
+      card.className = 'program-card';
+      card.setAttribute('data-accent', accentFor(c));
+
+      const canEdit = currentCanManageCases;
+      const canDelete = currentCanManageCases && (currentIsAdmin || c.created_by === currentUserId);
+
+      const main = canEdit ? document.createElement('a') : document.createElement('div');
+      if (canEdit) main.href = `new-success-case.html?id=${c.id}`;
+      main.className = `pc-main sc-${canEdit ? 'link' : 'static'}`;
+      main.innerHTML = mainInnerHtml(c);
+      card.appendChild(main);
+
+      if (c.source_label) {
+        const footer = document.createElement('div');
+        footer.className = 'pc-footer';
+        footer.innerHTML = `<span>${c.source_label}</span>`;
+        card.appendChild(footer);
+      }
+
+      card.appendChild(buildActions(c, canEdit, canDelete));
+      list.appendChild(card);
+    });
+  }
+
+  async function deleteCase(c) {
+    const msg = lang === 'es'
+      ? `¿Está seguro que desea eliminar definitivamente el caso "${c.title}"? Se desvinculará de cualquier proyecto que lo referencie. Esta acción no se puede deshacer.`
+      : `Are you sure you want to permanently delete "${c.title}"? It will be unlinked from any project referencing it. This can't be undone.`;
+    if (!confirm(msg)) return;
+    try {
+      await INAPlatform.deleteSuccessCase(c.id);
+      allCases = allCases.filter((x) => x.id !== c.id);
+      if (!allCases.length) {
+        document.getElementById('casesBody').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+        return;
+      }
+      renderStats();
+      populateFilterOptions();
+      renderList();
+    } catch (err) {
+      alert(lang === 'es'
+        ? `No se pudo eliminar el caso: ${err.message || err}`
+        : `Couldn't delete the case: ${err.message || err}`);
+    }
+  }
+
+  function clearFilters() {
+    fSector.value = '';
+    fCountry.value = '';
+    fProvider.value = '';
+    fSearch.value = '';
+    renderList();
+  }
+
+  [fSector, fCountry, fProvider].forEach((el) => el.addEventListener('change', renderList));
+  fSearch.addEventListener('input', renderList);
+  document.getElementById('fClear').addEventListener('click', clearFilters);
+  document.getElementById('fClear2').addEventListener('click', clearFilters);
+
+  document.querySelectorAll('.view-toggle-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.getAttribute('data-view') === viewMode);
+    btn.addEventListener('click', () => setViewMode(btn.getAttribute('data-view')));
+  });
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const newLang = btn.getAttribute('data-lang');
+      document.documentElement.setAttribute('lang', newLang);
+      lang = newLang;
+      if (!allCases.length) return;
+      const saved = { sector: fSector.value, country: fCountry.value, provider: fProvider.value };
+      renderStats();
+      populateFilterOptions();
+      fSector.value = saved.sector;
+      fCountry.value = saved.country;
+      fProvider.value = saved.provider;
+      renderList();
+    });
+  });
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+    currentUserId = session.user.id;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      currentIsAdmin = INAPlatform.isAdmin(profile);
+      currentCanManageCases = INAPlatform.canManageSuccessCases(profile);
+      const canManageUsersNav = INAPlatform.canManageUsers(profile);
+      const canMasterData = INAPlatform.canManageMasterData(profile);
+      if (canManageUsersNav || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
+      if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
+      if (canManageUsersNav) document.getElementById('adminUsersMenuItem').style.display = 'flex';
+      if (canManageUsersNav) document.getElementById('rolesMenuItem').style.display = 'flex';
+      if (INAPlatform.canViewRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+      // Same permission shape as Financing Programs: everyone browses the
+      // library, only advisor/admin can add to it (see
+      // INAPlatform.canManageSuccessCases() / migration_v59).
+      if (currentCanManageCases) {
+        document.getElementById('createCaseBtn').style.display = 'inline-flex';
+      }
+    } catch (e) { /* non-critical */ }
+
+    try {
+      allCases = await INAPlatform.listSuccessCases();
+    } catch (e) {
+      document.getElementById('loadingState').textContent =
+        (INAPlatform.currentLang() === 'es' ? 'No se pudieron cargar los casos de éxito: ' : 'Could not load the success cases: ') + (e.message || e);
+      return;
+    }
+
+    document.getElementById('loadingState').style.display = 'none';
+
+    if (!allCases.length) {
+      document.getElementById('emptyState').style.display = 'block';
+      document.getElementById('casesBody').style.display = 'block';
+      document.getElementById('scStats').style.display = 'none';
+      document.querySelector('.filter-bar').style.display = 'none';
+      document.querySelector('.filter-count-row').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('casesBody').style.display = 'block';
+    renderStats();
+    populateFilterOptions();
+    renderList();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

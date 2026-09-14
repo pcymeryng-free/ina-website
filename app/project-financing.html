@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=24">
+<link rel="stylesheet" href="/assets/style.css?v=25">
 <link rel="stylesheet" href="/assets/app.css?v=10">
 </head>
 <body class="app-body">
@@ -18,21 +18,39 @@
       <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
       <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
     </a>
+    <!-- Persistent project nav (Pablo, sep 2026): "el menú del proyecto
+         debe permanecer mientras se mantiene el proyecto seleccionado" —
+         this used to fall back to the generic site-wide nav (Initiatives/
+         Projects/Financing/Roadmaps/Admin) the moment you left project.
+         html for one of its own sub-screens, even though the project was
+         still open. Markup/ids copied from project.html's nav (minus the
+         Workflow menu and the Download PDF/AI Analysis actions, which
+         need that page's live workflow-polling/PDF-generation code); see
+         INAPlatform.wireProjectNav()/initDropdownMenus() in platform.js. -->
     <nav class="app-nav">
-      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
-      <a href="dashboard.html" class="active"><span data-i18n="dash.h1">Projects</span></a>
-      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
-      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
-      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
-        <button type="button" class="nav-menu-trigger menu-trigger" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
-          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+      <div class="menu nav-menu" id="navProjectMenu">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="navProjectMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="nav.project">Project</span><span class="menu-caret">▾</span>
         </button>
-        <div class="menu-panel" id="adminNavMenuPanel">
-          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
-          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
-          <a href="roles.html" id="rolesMenuItem" class="menu-item" style="display:none;"><span data-i18n="roles.nav">Roles</span></a>
+        <div class="menu-panel" id="navProjectMenuPanel">
+          <a href="new-project.html" class="menu-item"><span data-i18n="pd.newProject">New Project</span></a>
+          <a href="#" id="navEditLink" class="menu-item" style="display:none;"><span data-i18n="pd.editProject">Edit</span></a>
+          <button type="button" id="navDeleteLink" class="menu-item" style="display:none;"><span data-i18n="pd.deleteProject">Delete</span></button>
+          <a href="dashboard.html" class="menu-item"><span data-i18n="pd.close">Close</span></a>
         </div>
       </div>
+      <a href="#" id="navFinancingLink" class="nav-menu-trigger"><span data-i18n="pf.nav">Financing</span></a>
+      <a href="#" id="navDownloadProposalBtn" class="nav-menu-trigger" style="display:none;"><span data-i18n="pd.downloadProposal">Investment Proposal</span></a>
+      <div class="menu nav-menu" id="navAnalysisMenu">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="navAnalysisMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="wf.actions.analysis">Analysis</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="navAnalysisMenuPanel">
+          <a href="#" id="navFsuLink" class="menu-item" style="display:none;"><span data-i18n="fsu.cta">FSU Scoring</span></a>
+          <a href="#" id="navAssessLink" class="menu-item" style="display:none;"><span data-i18n="assess.cta">Self-Assessment</span></a>
+        </div>
+      </div>
+      <a href="#" class="nav-menu-trigger" id="navHelpLink"><span data-i18n="nav.help">Help</span></a>
     </nav>
     <div class="app-header-actions">
       <div class="lang-switch" aria-label="Language">
@@ -50,9 +68,23 @@
 <section class="tight">
   <div class="wrap">
     <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><a href="#" id="crumbProject">…</a><span>/</span><span><span data-i18n="pf.title">Financing Management</span></span></div>
-    <span class="eyebrow"><span data-i18n="fw.f6.kicker">Decision Engine</span></span>
-    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="pf.title">Financing Management</span></h1>
-    <p class="lede" style="margin-top:10px; max-width:680px;"><span data-i18n="pf.help">A task to complete once the project is registered: pick the financing mix — FSU, financing programs, other sources — with AI-assisted recommendations, without exceeding 100% of the budget.</span></p>
+    <!-- Pablo, sep 2026: "separar la función de Generate Recomendation de
+         los datos ingresados ... El boton de Generate recomendation
+         debería estar a la derecha del título Financing Management y su
+         descripción." The button now lives here, in the page header
+         itself, and its only job is to navigate to the dedicated
+         app/financing-recommendation.html screen — generating, selecting
+         and applying instruments all happen there now, not inline on this
+         "entered data" page. See financingRecommendationBlock below for
+         what's left here: a read-only summary card, no apply/select UI. -->
+    <div class="platform-header">
+      <div>
+        <span class="eyebrow"><span data-i18n="fw.f6.kicker">Decision Engine</span></span>
+        <h1 class="h-section" style="margin-top:14px;"><span data-i18n="pf.title">Financing Management</span></h1>
+        <p class="lede" style="margin-top:10px; max-width:680px;"><span data-i18n="pf.help">A task to complete once the project is registered: pick the financing mix — FSU, financing programs, other sources — with AI-assisted recommendations, without exceeding 100% of the budget.</span></p>
+      </div>
+      <a href="#" id="financingRecoRunBtn" class="btn amber" style="display:none;"><span data-i18n="finreco.run">Generate recommendation</span></a>
+    </div>
 
     <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
 
@@ -83,26 +115,28 @@
         </div>
       </div>
 
-      <!-- AI Financing Recommendation (moved from project.html — Pablo, sep
-           2026: "que muestre una pantalla donde se incluya las funciones de
-           recomendación de financiación y que el usuario pueda elegir de
-           acuerdo a su criterio"). Same gate as AI Analysis on project.html
-           (canManage — owner, assigned advisor, or any admin). See
+      <!-- AI Financing Recommendation — read-only summary only. Generating a
+           new recommendation, picking which suggested instruments to
+           apply, and applying them all now live on their own screen,
+           app/financing-recommendation.html (reached via the "Generate
+           recommendation" button in the page header above) — see the
+           comment there. This card just shows what the last recommendation
+           said, so "the data entered so far" (this whole page) stays
+           readable without the selection UI mixed into it. Same visibility
+           gate as before (canManage — owner, assigned advisor, or any
+           admin); a view-only visitor doesn't see this card at all, same
+           as they can't reach the button above. See
            migration_v55_financing_recommendations.sql and
            api/recommend-financing.js. -->
       <div id="financingRecommendationBlock" class="info-block" style="margin-top:24px; display:none;">
-        <h4 style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <span data-i18n="finreco.title">AI Financing Recommendation</span>
-          <button type="button" class="btn ghost small" id="financingRecoRunBtn" style="padding:6px 12px; display:none;"><span id="financingRecoRunBtnLabel" data-i18n="finreco.run">Generate recommendation</span></button>
-        </h4>
-        <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:640px;"><span data-i18n="finreco.help">Uses AI to pick the best combination of financing instruments/programs already registered on the platform (BID, DFC, FSU/TASU/FATIC, USTDA, capital markets, etc.) for this specific project.</span></p>
-
-        <div id="financingRecoLoading" style="display:none; margin-top:14px; font-size:13px; color:var(--muted);"><span data-i18n="finreco.loading">Analyzing the best combination…</span></div>
-        <div id="financingRecoEmpty" style="margin-top:14px; font-size:13px; color:var(--muted);"><span data-i18n="finreco.empty">No recommendation generated yet.</span></div>
-        <div id="financingRecoResult" style="display:none; margin-top:14px;">
-          <p id="financingRecoSummary" style="font-size:13px; color:var(--ink); max-width:640px; margin-bottom:14px;"></p>
-          <div id="financingRecoList" style="display:flex; flex-direction:column; gap:10px;"></div>
-          <p id="financingRecoUpdatedAt" style="font-size:11.5px; color:var(--muted); margin-top:12px;"></p>
+        <h4><span data-i18n="finreco.title">AI Financing Recommendation</span></h4>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:640px;"><span data-i18n="finreco.summaryHelp">A quick read of the last AI-generated combination — open it to pick and apply instruments.</span></p>
+        <div id="financingRecoSummaryBlock" style="margin-top:14px;">
+          <p id="financingRecoEmpty" style="font-size:13px; color:var(--muted); display:none;"><span data-i18n="finreco.summaryEmpty">No recommendation generated yet — use the button above to create one.</span></p>
+          <div id="financingRecoResult" style="display:none;">
+            <p id="financingRecoSummary" style="font-size:13px; color:var(--ink); max-width:640px;"></p>
+            <p id="financingRecoUpdatedAt" style="font-size:11.5px; color:var(--muted); margin-top:8px;"></p>
+          </div>
         </div>
       </div>
 
@@ -210,9 +244,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=63"></script>
+<script src="/assets/i18n.js?v=67"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=73"></script>
+<script src="/assets/platform.js?v=77"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -565,7 +599,6 @@
       await INAPlatform.removeProjectProgram(projectId, programId);
       currentProjectPrograms = currentProjectPrograms.filter((r) => r.program_id !== programId);
       renderProgramApplications();
-      renderFinancingRecommendation();
     } catch (err) {
       alert((lang === 'es' ? 'No se pudo quitar la aplicación: ' : "Couldn't remove the application: ") + (err.message || err));
     }
@@ -590,7 +623,6 @@
       const row = await INAPlatform.applyToProgram(projectId, programId, applyOpts);
       currentProjectPrograms.push(row);
       renderProgramApplications();
-      renderFinancingRecommendation();
     } catch (err) {
       const lang = INAPlatform.currentLang();
       alert((lang === 'es' ? 'No se pudo aplicar al programa: ' : "Couldn't apply to the program: ") + (err.message || err));
@@ -612,8 +644,14 @@
     });
   });
 
-  /* ---------- AI Financing Recommendation (moved from project.html) ---------- */
-  function renderFinancingRecommendation() {
+  /* ---------- AI Financing Recommendation — read-only summary card ----------
+     Generating, selecting and applying instruments moved to their own
+     screen (app/financing-recommendation.html) — see the header comment
+     above and the matching comment on financingRecommendationBlock. This
+     page only reads the last saved recommendation (if any) to show a
+     one-line summary + timestamp; it never calls
+     requestFinancingRecommendation() itself anymore. */
+  function renderFinancingRecoSummary() {
     const lang = INAPlatform.currentLang();
     const emptyEl = document.getElementById('financingRecoEmpty');
     const resultEl = document.getElementById('financingRecoResult');
@@ -624,67 +662,7 @@
     }
     emptyEl.style.display = 'none';
     resultEl.style.display = 'block';
-
-    const items = (lang === 'es' ? currentFinancingReco.recommended : currentFinancingReco.recommended_en) || [];
     document.getElementById('financingRecoSummary').textContent = (lang === 'es' ? currentFinancingReco.summary : currentFinancingReco.summary_en) || '';
-
-    const list = document.getElementById('financingRecoList');
-    list.innerHTML = '';
-    items.forEach((item) => {
-      const div = document.createElement('div');
-      div.style.cssText = 'padding:12px 14px; border:1px solid var(--paper-line); border-radius:10px;';
-      const isFinancingStage = item.funding_stage !== 'preparation';
-      const stageLabel = isFinancingStage
-        ? (lang === 'es' ? 'Financiamiento' : 'Financing')
-        : (lang === 'es' ? 'Preparación' : 'Preparation');
-      const scoreClass = INAPlatform.scoreBandClass(item.fit_score);
-      const appliedRow = currentProjectPrograms.find((r) => r.program_id === item.program_id) || null;
-      const isApplied = !!appliedRow;
-      const pctValue = isApplied
-        ? (appliedRow.financing_percentage != null ? appliedRow.financing_percentage : '')
-        : (item.suggested_percentage != null ? item.suggested_percentage : '');
-      div.innerHTML = `
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <div style="min-width:0;">
-            <strong style="font-size:13.5px;">${item.name || ''}</strong>
-            <p style="font-size:12px; color:var(--muted); margin-top:2px;">${item.financing_entity ? item.financing_entity + ' · ' : ''}${stageLabel}</p>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-            <span class="status-pill ${scoreClass}" style="font-size:11.5px; padding:4px 10px;">${item.fit_score}/100</span>
-            ${isApplied ? `<span style="font-size:11.5px; color:var(--muted);">✓ ${lang === 'es' ? 'Ya aplicado' : 'Already applied'}</span>` : ''}
-          </div>
-        </div>
-        <p style="font-size:12.5px; color:var(--muted); margin-top:8px;">${item.rationale || ''}</p>
-        ${canManage ? `
-        <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--paper-line); flex-wrap:wrap;">
-          ${isFinancingStage ? `
-            <label style="font-size:12px; color:var(--muted);">${lang === 'es' ? '% del presupuesto' : '% of budget'}</label>
-            <input type="number" min="0" max="100" step="1" value="${pctValue}" data-reco-pct="${item.program_id}" style="width:64px; padding:5px 8px; font-size:12.5px;">
-          ` : ''}
-          ${isApplied
-            ? `${isFinancingStage ? `<button type="button" class="btn ghost small" data-reco-save-pct="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Guardar %' : 'Save %'}</button>` : ''}
-               <button type="button" class="btn ghost small" data-reco-unapply="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Desaplicar' : 'Unapply'}</button>`
-            : `<button type="button" class="btn ghost small" data-apply-reco="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Aplicar' : 'Apply'}</button>`}
-          <span data-reco-pct-status="${item.program_id}" style="font-size:11.5px; color:var(--muted);"></span>
-        </div>` : ''}
-      `;
-      list.appendChild(div);
-    });
-    list.querySelectorAll('[data-apply-reco]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const programId = btn.getAttribute('data-apply-reco');
-        const pctInput = list.querySelector(`[data-reco-pct="${programId}"]`);
-        const pct = pctInput && pctInput.value !== '' ? pctInput.value : undefined;
-        applyProgramFromPicker(programId, pct);
-      });
-    });
-    list.querySelectorAll('[data-reco-save-pct]').forEach((btn) => {
-      btn.addEventListener('click', () => saveRecoPercentage(btn.getAttribute('data-reco-save-pct')));
-    });
-    list.querySelectorAll('[data-reco-unapply]').forEach((btn) => {
-      btn.addEventListener('click', () => removeProgramApplication(btn.getAttribute('data-reco-unapply')));
-    });
-
     const updatedEl = document.getElementById('financingRecoUpdatedAt');
     if (currentFinancingReco.updated_at) {
       const dateStr = new Date(currentFinancingReco.updated_at).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
@@ -694,53 +672,6 @@
     }
   }
 
-  async function saveRecoPercentage(programId) {
-    const lang = INAPlatform.currentLang();
-    const pctInput = document.querySelector(`#financingRecoList [data-reco-pct="${programId}"]`);
-    if (!pctInput) return;
-
-    const projected = hypotheticalTotalPct({ programOverride: { programId, percentage: pctInput.value } });
-    if (blockIfOverBudget(projected)) return;
-
-    try {
-      const updated = await INAPlatform.updateProjectProgramFinancing(projectId, programId, { percentage: pctInput.value });
-      currentProjectPrograms = currentProjectPrograms.map((r) => (r.program_id === programId ? updated : r));
-      renderProgramApplications();
-      renderFinancingRecommendation();
-      const freshStatus = document.querySelector(`#financingRecoList [data-reco-pct-status="${programId}"]`);
-      if (freshStatus) {
-        freshStatus.textContent = lang === 'es' ? 'Guardado ✓' : 'Saved ✓';
-        setTimeout(() => { freshStatus.textContent = ''; }, 2500);
-      }
-    } catch (err) {
-      alert((lang === 'es' ? 'No se pudo guardar el %: ' : "Couldn't save the %: ") + (err.message || err));
-    }
-  }
-
-  async function runFinancingRecommendation() {
-    const lang = INAPlatform.currentLang();
-    const btn = document.getElementById('financingRecoRunBtn');
-    const loadingEl = document.getElementById('financingRecoLoading');
-    const emptyEl = document.getElementById('financingRecoEmpty');
-    const resultEl = document.getElementById('financingRecoResult');
-    btn.disabled = true;
-    loadingEl.style.display = 'block';
-    emptyEl.style.display = 'none';
-    resultEl.style.display = 'none';
-    try {
-      currentFinancingReco = await INAPlatform.requestFinancingRecommendation(projectId);
-      renderFinancingRecommendation();
-    } catch (err) {
-      alert((lang === 'es' ? 'No se pudo generar la recomendación: ' : "Couldn't generate the recommendation: ") + (err.message || err));
-      emptyEl.style.display = 'block';
-    } finally {
-      btn.disabled = false;
-      loadingEl.style.display = 'none';
-    }
-  }
-
-  document.getElementById('financingRecoRunBtn').addEventListener('click', runFinancingRecommendation);
-
   document.querySelectorAll('.lang-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       setTimeout(() => {
@@ -749,7 +680,7 @@
           renderFinancingCoverage();
         }
         renderProgramApplications();
-        renderFinancingRecommendation();
+        renderFinancingRecoSummary();
       }, 0);
     });
   });
@@ -770,13 +701,6 @@
       document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
       document.getElementById('appUserName').textContent = profile.full_name || '';
       document.getElementById('appUser').style.display = 'flex';
-      const canAdminUsers = INAPlatform.canManageUsers(profile);
-      const canMasterData = INAPlatform.canManageMasterData(profile);
-      if (canAdminUsers || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
-      if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
-      if (canAdminUsers) document.getElementById('adminUsersMenuItem').style.display = 'flex';
-      if (canAdminUsers) document.getElementById('rolesMenuItem').style.display = 'flex';
-      if (INAPlatform.canViewRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
     } catch (e) { /* non-critical */ }
 
     let project;
@@ -801,6 +725,18 @@
       ]);
     } catch (e) { allProgramsForApply = []; currentProjectPrograms = []; /* non-critical */ }
 
+    // Persistent project nav — see the markup comment above. Wired after
+    // currentProjectPrograms is fetched so the FSU-eligibility check
+    // (which also looks at applied Programs, not just project_type) is
+    // accurate.
+    INAPlatform.initDropdownMenus(document.querySelector('.app-nav'));
+    let fsuEligibleForNav = false;
+    try { fsuEligibleForNav = INAPlatform.isFsuScoringEligible(project, currentProjectPrograms); } catch (e) { fsuEligibleForNav = false; }
+    INAPlatform.wireProjectNav({
+      projectId, project, isOwner, isAssignedAdvisor, isAdmin: isAdminViewer,
+      fsuEligible: fsuEligibleForNav, canEditProposal: canManage,
+    });
+
     document.getElementById('crumbProject').href = `project.html?id=${projectId}`;
     document.getElementById('crumbProject').textContent = project.name;
 
@@ -811,15 +747,21 @@
     renderFsuFields(project);
     renderOtherFinancingFields(project);
 
-    // AI Financing Recommendation — visible to any viewer (same as the
-    // Financing Programs list below), but only whoever can manage the
-    // project's financing (canManage) can trigger generating a new one.
+    // AI Financing Recommendation summary — visible to any viewer (same as
+    // the Financing Programs list below), but only whoever can manage the
+    // project's financing (canManage) sees the "Generate recommendation"
+    // button up in the page header, which is the only way to actually
+    // generate/apply one (on its own screen — see the header comment).
     document.getElementById('financingRecommendationBlock').style.display = 'block';
-    document.getElementById('financingRecoRunBtn').style.display = canManage ? 'inline-flex' : 'none';
+    const financingRecoRunBtn = document.getElementById('financingRecoRunBtn');
+    if (canManage) {
+      financingRecoRunBtn.href = `financing-recommendation.html?id=${projectId}`;
+      financingRecoRunBtn.style.display = 'inline-flex';
+    }
     try {
       currentFinancingReco = await INAPlatform.getFinancingRecommendation(projectId);
     } catch (e) { currentFinancingReco = null; /* non-critical */ }
-    renderFinancingRecommendation();
+    renderFinancingRecoSummary();
 
     renderProgramApplications();
     renderFinancingCoverage();

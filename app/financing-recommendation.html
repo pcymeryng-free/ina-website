@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="AI Financing Recommendation — INA Platform" data-i18n-es="Recomendación de Financiamiento IA — Plataforma INA">AI Financing Recommendation — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Review the AI-suggested financing instruments, pick the ones you want, and apply them." data-i18n-es="Revisá los instrumentos de financiamiento sugeridos por IA, elegí los que querés y aplicalos." content="Review the AI-suggested financing instruments.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=25">
+<link rel="stylesheet" href="/assets/app.css?v=10">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <!-- Persistent project nav — same markup/ids as project-financing.html,
+         wired via INAPlatform.wireProjectNav()/initDropdownMenus(). See
+         PLATFORM_SETUP.md's "Persistent project nav" section. -->
+    <nav class="app-nav">
+      <div class="menu nav-menu" id="navProjectMenu">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="navProjectMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="nav.project">Project</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="navProjectMenuPanel">
+          <a href="new-project.html" class="menu-item"><span data-i18n="pd.newProject">New Project</span></a>
+          <a href="#" id="navEditLink" class="menu-item" style="display:none;"><span data-i18n="pd.editProject">Edit</span></a>
+          <button type="button" id="navDeleteLink" class="menu-item" style="display:none;"><span data-i18n="pd.deleteProject">Delete</span></button>
+          <a href="dashboard.html" class="menu-item"><span data-i18n="pd.close">Close</span></a>
+        </div>
+      </div>
+      <a href="#" id="navFinancingLink" class="nav-menu-trigger"><span data-i18n="pf.nav">Financing</span></a>
+      <a href="#" id="navDownloadProposalBtn" class="nav-menu-trigger" style="display:none;"><span data-i18n="pd.downloadProposal">Investment Proposal</span></a>
+      <div class="menu nav-menu" id="navAnalysisMenu">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="navAnalysisMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="wf.actions.analysis">Analysis</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="navAnalysisMenuPanel">
+          <a href="#" id="navFsuLink" class="menu-item" style="display:none;"><span data-i18n="fsu.cta">FSU Scoring</span></a>
+          <a href="#" id="navAssessLink" class="menu-item" style="display:none;"><span data-i18n="assess.cta">Self-Assessment</span></a>
+        </div>
+      </div>
+      <a href="#" class="nav-menu-trigger" id="navHelpLink"><span data-i18n="nav.help">Help</span></a>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;">
+      <a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span>
+      <a href="#" id="crumbProject">…</a><span>/</span>
+      <a href="#" id="crumbFinancing"><span data-i18n="pf.title">Financing Management</span></a><span>/</span>
+      <span><span data-i18n="finreco.crumb">AI Recommendation</span></span>
+    </div>
+
+    <div class="platform-header">
+      <div>
+        <span class="eyebrow"><span data-i18n="fw.f6.kicker">Decision Engine</span></span>
+        <h1 class="h-section" style="margin-top:14px;"><span data-i18n="finreco.title">AI Financing Recommendation</span></h1>
+        <p class="lede" style="margin-top:10px; max-width:680px;"><span data-i18n="finreco.pageLede">Review the AI-suggested combination of financing instruments, pick the ones you want, then Save to apply them — or Cancel to discard and go back.</span></p>
+      </div>
+      <button type="button" class="btn ghost" id="regenerateBtn" style="display:none;"><span data-i18n="finreco.regenerate">Regenerate</span></button>
+    </div>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="recoBody" style="display:none; margin-top:8px;">
+      <div id="recoLoading" style="display:none; padding:24px 0; font-size:13.5px; color:var(--muted);"><span data-i18n="finreco.loading">Analyzing the best combination…</span></div>
+      <div id="recoEmpty" style="display:none; padding:24px 0; font-size:13.5px; color:var(--muted);"><span data-i18n="finreco.empty">No recommendation generated yet.</span></div>
+
+      <div id="recoResult" style="display:none;">
+        <p id="recoSummary" style="font-size:13.5px; color:var(--ink); max-width:680px;"></p>
+        <div id="recoList" style="display:flex; flex-direction:column; gap:12px; margin-top:18px;"></div>
+        <p id="recoUpdatedAt" style="font-size:11.5px; color:var(--muted); margin-top:14px;"></p>
+
+        <div style="display:flex; align-items:center; gap:12px; margin-top:28px; padding-top:20px; border-top:1px solid var(--paper-line);">
+          <button type="button" class="btn amber" id="saveSelectionBtn"><span data-i18n="finreco.save">Save selection</span></button>
+          <button type="button" class="btn ghost" id="cancelSelectionBtn"><span data-i18n="finreco.cancel">Cancel</span></button>
+          <span id="saveSelectionStatus" style="font-size:12.5px; color:var(--muted);"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=67"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=77"></script>
+<script src="/assets/script.js?v=14"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+
+  const params = new URLSearchParams(location.search);
+  const projectId = params.get('id');
+  let currentProject = null;
+  let currentProfile = null;
+  let currentProjectPrograms = [];
+  let allProgramsForApply = [];
+  let currentFinancingReco = null;
+  let isOwner = false;
+  let isAssignedAdvisor = false;
+  let canManage = false;
+
+  // Pending in-page selections, keyed by program_id — nothing here touches
+  // the server until "Save selection" is clicked (Pablo, sep 2026: "que
+  // el usuario pueda elegir ... y luego se dé Save o Cancel"). Only
+  // non-templated recommended items get an entry; a templated program
+  // (e.g. TASU, USTDA) still applies via its own direct link, same as
+  // before, since filling its guided form is its own multi-step flow that
+  // can't be batched here.
+  let selections = {};
+
+  function initSelectionsFromReco(items) {
+    selections = {};
+    items.forEach((item) => {
+      const appliedRow = currentProjectPrograms.find((r) => r.program_id === item.program_id);
+      selections[item.program_id] = {
+        selected: !!appliedRow,
+        pct: appliedRow
+          ? (appliedRow.financing_percentage != null ? String(appliedRow.financing_percentage) : '')
+          : (item.suggested_percentage != null ? String(item.suggested_percentage) : ''),
+      };
+    });
+  }
+
+  /* Same 100%-of-budget guard as project-financing.html's
+     hypotheticalTotalPct()/blockIfOverBudget() — reimplemented here for a
+     BATCH of pending changes at once (add/update/remove several programs
+     in one Save) rather than one field at a time, but calling the exact
+     same INAPlatform.computeFinancingCoverage() so the arithmetic (FSU
+     double-counting avoidance included) never diverges from production
+     logic. */
+  function projectedTotalPctForBatch(batch) {
+    let programsCopy = currentProjectPrograms.slice();
+    batch.toRemove.forEach((programId) => {
+      programsCopy = programsCopy.filter((r) => r.program_id !== programId);
+    });
+    batch.toApply.concat(batch.toUpdate).forEach(({ programId, pct, programMeta }) => {
+      const idx = programsCopy.findIndex((r) => r.program_id === programId);
+      const pctNum = pct === '' || pct == null ? null : Number(pct);
+      if (idx !== -1) {
+        programsCopy[idx] = Object.assign({}, programsCopy[idx], { financing_percentage: pctNum });
+      } else {
+        programsCopy.push({ program_id: programId, financing_percentage: pctNum, financing_amount: null, programs: programMeta || {} });
+      }
+    });
+    return INAPlatform.computeFinancingCoverage(currentProject, programsCopy).totalPct;
+  }
+
+  function blockIfOverBudget(totalPct) {
+    const lang = INAPlatform.currentLang();
+    if (totalPct > 100.5) {
+      alert(lang === 'es'
+        ? `No se puede guardar: el total asignado sería ${totalPct}% del presupuesto — supera el 100%. Ajustá los porcentajes o las selecciones antes de continuar.`
+        : `Can't save: the total assigned would be ${totalPct}% of the budget — that exceeds 100%. Adjust the percentages or selections before continuing.`);
+      return true;
+    }
+    return false;
+  }
+
+  function renderRecoList() {
+    const lang = INAPlatform.currentLang();
+    const emptyEl = document.getElementById('recoEmpty');
+    const resultEl = document.getElementById('recoResult');
+    if (!currentFinancingReco) {
+      emptyEl.style.display = 'block';
+      resultEl.style.display = 'none';
+      return;
+    }
+    emptyEl.style.display = 'none';
+    resultEl.style.display = 'block';
+
+    const items = (lang === 'es' ? currentFinancingReco.recommended : currentFinancingReco.recommended_en) || [];
+    document.getElementById('recoSummary').textContent = (lang === 'es' ? currentFinancingReco.summary : currentFinancingReco.summary_en) || '';
+
+    if (!Object.keys(selections).length) initSelectionsFromReco(items);
+
+    const list = document.getElementById('recoList');
+    list.innerHTML = '';
+    items.forEach((item) => {
+      const program = allProgramsForApply.find((pg) => pg.id === item.program_id);
+      const hasTemplate = program && program.template_key && INAPlatform.programTemplateFor(program.template_key);
+      const appliedRow = currentProjectPrograms.find((r) => r.program_id === item.program_id) || null;
+      const isApplied = !!appliedRow;
+      const isFinancingStage = item.funding_stage !== 'preparation';
+      const stageLabel = isFinancingStage
+        ? (lang === 'es' ? 'Financiamiento' : 'Financing')
+        : (lang === 'es' ? 'Preparación' : 'Preparation');
+      const scoreClass = INAPlatform.scoreBandClass(item.fit_score);
+      const sel = selections[item.program_id] || { selected: isApplied, pct: '' };
+
+      const div = document.createElement('div');
+      div.style.cssText = 'padding:14px 16px; border:1px solid var(--paper-line); border-radius:10px;';
+
+      let controlsHtml;
+      if (hasTemplate) {
+        // Templated programs keep the old direct-link flow — filling a
+        // guided form is its own multi-step detour, not something that
+        // fits a batched Save. Removal (if already applied) is simple
+        // enough to still offer immediately.
+        const fillHref = `project-template.html?mode=apply&project=${encodeURIComponent(projectId)}&program=${encodeURIComponent(item.program_id)}&ptpl=${encodeURIComponent(program.template_key)}${item.suggested_percentage != null ? `&pct=${encodeURIComponent(item.suggested_percentage)}` : ''}`;
+        controlsHtml = canManage ? `
+          <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--paper-line); flex-wrap:wrap;">
+            ${isApplied
+              ? `<span style="font-size:11.5px; color:var(--muted);">✓ ${lang === 'es' ? 'Ya aplicado' : 'Already applied'}</span>
+                 <button type="button" class="btn ghost small" data-direct-unapply="${item.program_id}" style="padding:5px 10px;">${lang === 'es' ? 'Desaplicar' : 'Unapply'}</button>`
+              : `<a href="${fillHref}" class="btn ghost small" style="padding:5px 10px;">${lang === 'es' ? 'Completar template para aplicar' : 'Fill template to apply'}</a>`}
+          </div>` : '';
+      } else {
+        controlsHtml = canManage ? `
+          <div style="display:flex; align-items:center; gap:12px; margin-top:10px; padding-top:10px; border-top:1px solid var(--paper-line); flex-wrap:wrap;">
+            <label class="chk-pill-inline">
+              <input type="checkbox" data-sel-check="${item.program_id}" ${sel.selected ? 'checked' : ''}>
+              <span data-i18n="finreco.select">${lang === 'es' ? 'Aplicar este instrumento' : 'Apply this instrument'}</span>
+            </label>
+            ${isFinancingStage ? `
+              <label style="font-size:12px; color:var(--muted);">${lang === 'es' ? '% del presupuesto' : '% of budget'}</label>
+              <input type="number" min="0" max="100" step="1" value="${sel.pct}" data-sel-pct="${item.program_id}" style="width:64px; padding:5px 8px; font-size:12.5px;" ${sel.selected ? '' : 'disabled'}>
+            ` : ''}
+            ${isApplied ? `<span style="font-size:11.5px; color:var(--muted);">✓ ${lang === 'es' ? 'Ya aplicado' : 'Already applied'}</span>` : ''}
+          </div>` : '';
+      }
+
+      div.innerHTML = `
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div style="min-width:0;">
+            <strong style="font-size:13.5px;">${item.name || ''}</strong>
+            <p style="font-size:12px; color:var(--muted); margin-top:2px;">${item.financing_entity ? item.financing_entity + ' · ' : ''}${stageLabel}</p>
+          </div>
+          <span class="status-pill ${scoreClass}" style="font-size:11.5px; padding:4px 10px; flex-shrink:0;">${item.fit_score}/100</span>
+        </div>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:8px;">${item.rationale || ''}</p>
+        ${controlsHtml}
+      `;
+      list.appendChild(div);
+    });
+
+    list.querySelectorAll('[data-sel-check]').forEach((cb) => {
+      cb.addEventListener('change', () => {
+        const programId = cb.getAttribute('data-sel-check');
+        selections[programId] = Object.assign({}, selections[programId], { selected: cb.checked });
+        const pctInput = list.querySelector(`[data-sel-pct="${programId}"]`);
+        if (pctInput) pctInput.disabled = !cb.checked;
+      });
+    });
+    list.querySelectorAll('[data-sel-pct]').forEach((input) => {
+      input.addEventListener('input', () => {
+        const programId = input.getAttribute('data-sel-pct');
+        selections[programId] = Object.assign({}, selections[programId], { pct: input.value });
+      });
+    });
+    list.querySelectorAll('[data-direct-unapply]').forEach((btn) => {
+      btn.addEventListener('click', () => directUnapply(btn.getAttribute('data-direct-unapply')));
+    });
+
+    const updatedEl = document.getElementById('recoUpdatedAt');
+    if (currentFinancingReco.updated_at) {
+      const dateStr = new Date(currentFinancingReco.updated_at).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
+      updatedEl.textContent = (lang === 'es' ? 'Generado: ' : 'Generated: ') + dateStr;
+    } else {
+      updatedEl.textContent = '';
+    }
+  }
+
+  // Removing an already-applied templated program is a single, simple
+  // action (unlike applying one) — kept immediate rather than folded into
+  // the batched Save, so the "✓ Already applied" state can be undone
+  // without needing to revisit the template form.
+  async function directUnapply(programId) {
+    const lang = INAPlatform.currentLang();
+    if (!confirm(lang === 'es' ? '¿Quitar la aplicación a este programa?' : 'Remove the application to this program?')) return;
+    try {
+      await INAPlatform.removeProjectProgram(projectId, programId);
+      currentProjectPrograms = currentProjectPrograms.filter((r) => r.program_id !== programId);
+      delete selections[programId];
+      renderRecoList();
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo quitar la aplicación: ' : "Couldn't remove the application: ") + (err.message || err));
+    }
+  }
+
+  async function runGeneration() {
+    const lang = INAPlatform.currentLang();
+    document.getElementById('recoLoading').style.display = 'block';
+    document.getElementById('recoEmpty').style.display = 'none';
+    document.getElementById('recoResult').style.display = 'none';
+    document.getElementById('regenerateBtn').disabled = true;
+    try {
+      currentFinancingReco = await INAPlatform.requestFinancingRecommendation(projectId);
+      selections = {};
+      renderRecoList();
+    } catch (err) {
+      alert((lang === 'es' ? 'No se pudo generar la recomendación: ' : "Couldn't generate the recommendation: ") + (err.message || err));
+      document.getElementById('recoEmpty').style.display = 'block';
+    } finally {
+      document.getElementById('recoLoading').style.display = 'none';
+      document.getElementById('regenerateBtn').disabled = false;
+    }
+  }
+
+  document.getElementById('regenerateBtn').addEventListener('click', runGeneration);
+
+  async function saveSelection() {
+    const lang = INAPlatform.currentLang();
+    const status = document.getElementById('saveSelectionStatus');
+    const items = (lang === 'es' ? currentFinancingReco.recommended : currentFinancingReco.recommended_en) || [];
+
+    const toApply = [];
+    const toUpdate = [];
+    const toRemove = [];
+    items.forEach((item) => {
+      const program = allProgramsForApply.find((pg) => pg.id === item.program_id);
+      const hasTemplate = program && program.template_key && INAPlatform.programTemplateFor(program.template_key);
+      if (hasTemplate) return; // handled via its own direct link/unapply
+      const sel = selections[item.program_id];
+      if (!sel) return;
+      const appliedRow = currentProjectPrograms.find((r) => r.program_id === item.program_id) || null;
+      const isFinancingStage = item.funding_stage !== 'preparation';
+      const pct = isFinancingStage ? sel.pct : undefined;
+      if (sel.selected && !appliedRow) {
+        toApply.push({ programId: item.program_id, pct, programMeta: program });
+      } else if (!sel.selected && appliedRow) {
+        toRemove.push(item.program_id);
+      } else if (sel.selected && appliedRow && isFinancingStage) {
+        const prevPct = appliedRow.financing_percentage != null ? String(appliedRow.financing_percentage) : '';
+        if (String(pct || '') !== prevPct) toUpdate.push({ programId: item.program_id, pct, programMeta: program });
+      }
+    });
+
+    if (!toApply.length && !toUpdate.length && !toRemove.length) {
+      location.href = `project-financing.html?id=${projectId}`;
+      return;
+    }
+
+    const projected = projectedTotalPctForBatch({ toApply, toUpdate, toRemove });
+    if (blockIfOverBudget(projected)) return;
+
+    document.getElementById('saveSelectionBtn').disabled = true;
+    document.getElementById('cancelSelectionBtn').disabled = true;
+    status.textContent = lang === 'es' ? 'Guardando…' : 'Saving…';
+    try {
+      for (const programId of toRemove) {
+        await INAPlatform.removeProjectProgram(projectId, programId);
+      }
+      for (const { programId, pct } of toUpdate) {
+        await INAPlatform.updateProjectProgramFinancing(projectId, programId, { percentage: pct });
+      }
+      for (const { programId, pct } of toApply) {
+        const applyOpts = {};
+        if (pct !== undefined && pct !== '') applyOpts.financingPercentage = pct;
+        await INAPlatform.applyToProgram(projectId, programId, applyOpts);
+      }
+      location.href = `project-financing.html?id=${projectId}`;
+    } catch (err) {
+      status.textContent = '';
+      document.getElementById('saveSelectionBtn').disabled = false;
+      document.getElementById('cancelSelectionBtn').disabled = false;
+      alert((lang === 'es' ? 'No se pudo guardar la selección: ' : "Couldn't save the selection: ") + (err.message || err));
+    }
+  }
+
+  document.getElementById('saveSelectionBtn').addEventListener('click', saveSelection);
+  document.getElementById('cancelSelectionBtn').addEventListener('click', () => {
+    location.href = `project-financing.html?id=${projectId}`;
+  });
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setTimeout(() => renderRecoList(), 0);
+    });
+  });
+
+  async function init() {
+    if (!projectId) { location.href = 'dashboard.html'; return; }
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      currentProfile = profile;
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+    } catch (e) { /* non-critical */ }
+
+    let project;
+    try {
+      project = await INAPlatform.getProject(projectId);
+    } catch (e) {
+      document.getElementById('loadingState').textContent =
+        (INAPlatform.currentLang() === 'es' ? 'No se pudo cargar el proyecto: ' : 'Could not load the project: ') + (e.message || e);
+      return;
+    }
+    currentProject = project;
+
+    isOwner = project.user_id === session.user.id;
+    isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === session.user.id;
+    const isAdminViewer = currentProfile && INAPlatform.isAdmin(currentProfile);
+    canManage = isOwner || isAssignedAdvisor || isAdminViewer;
+
+    // View-only visitors (can see the project but can't manage its
+    // financing) have no business generating/applying recommendations —
+    // send them back to the read-only financing summary instead.
+    if (!canManage) {
+      location.href = `project-financing.html?id=${projectId}`;
+      return;
+    }
+
+    try {
+      [allProgramsForApply, currentProjectPrograms] = await Promise.all([
+        INAPlatform.listPrograms(),
+        INAPlatform.listProjectPrograms(projectId),
+      ]);
+    } catch (e) { allProgramsForApply = []; currentProjectPrograms = []; /* non-critical */ }
+
+    INAPlatform.initDropdownMenus(document.querySelector('.app-nav'));
+    let fsuEligibleForNav = false;
+    try { fsuEligibleForNav = INAPlatform.isFsuScoringEligible(project, currentProjectPrograms); } catch (e) { fsuEligibleForNav = false; }
+    INAPlatform.wireProjectNav({
+      projectId, project, isOwner, isAssignedAdvisor, isAdmin: isAdminViewer,
+      fsuEligible: fsuEligibleForNav, canEditProposal: canManage,
+    });
+
+    document.getElementById('crumbProject').href = `project.html?id=${projectId}`;
+    document.getElementById('crumbProject').textContent = project.name;
+    document.getElementById('crumbFinancing').href = `project-financing.html?id=${projectId}`;
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('recoBody').style.display = 'block';
+    document.getElementById('regenerateBtn').style.display = 'inline-flex';
+
+    try {
+      currentFinancingReco = await INAPlatform.getFinancingRecommendation(projectId);
+    } catch (e) { currentFinancingReco = null; /* non-critical */ }
+
+    if (currentFinancingReco) {
+      renderRecoList();
+    } else {
+      // First visit for this project — generate immediately so the screen
+      // never shows an empty "nothing yet" state right after the header
+      // button was clicked.
+      await runGeneration();
+    }
+  }
+  init();
+})();
+</script>
+</body>
+</html>
