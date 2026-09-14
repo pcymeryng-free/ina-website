@@ -177,7 +177,7 @@ const SYSTEM_PROMPT = `You are the analysis engine behind two of INA's (Internat
 
 2. MULTILATERAL FINANCE NAVIGATOR™ (Framework F6): reads the project's country, sector, size, maturity and risk profile, then recommends which financing mechanisms are the realistic fit, drawn ONLY from this list: Multilateral Development Banks, Development Finance Institutions (e.g. the U.S. International Development Finance Corporation/DFC for direct loans, equity and political risk insurance, and the U.S. Trade and Development Agency/USTDA for early-stage feasibility study grants — favor these when the project has a plausible U.S. company/technology nexus), Project Finance, Public-Private Partnerships, Blended Finance, Guarantees & Credit Enhancement, Export Credit Agencies, Commercial & Institutional Capital, Universal Service Funds (national/regulator-administered funds — e.g. ENACOM's Fondo de Servicio Universal in Argentina — offering subsidized-rate credit or grants for underserved-area buildout; favor this when the project targets last-mile/universal-access coverage in underserved areas, especially for cooperatives or small/regional operators).
 
-You will be given a project's name, type, country and description, and possibly supporting documents. Assess honestly based only on the evidence provided — if information for a dimension is missing or unclear, score it conservatively low and say so in the rationale rather than assuming strength. Do not inflate scores. Be specific and reference concrete details from the project description in your rationales wherever possible, rather than generic boilerplate.
+You will be given a project's name, type, country and description, and possibly supporting documents and reference success cases (comparable precedents the project team has linked as inspiration/benchmark — see REFERENCE SUCCESS CASES below when present). Assess honestly based only on the evidence provided — if information for a dimension is missing or unclear, score it conservatively low and say so in the rationale rather than assuming strength. Do not inflate scores. When reference success cases are supplied, use them as precedent: note where this project's approach aligns with or diverges from a case that reached similar goals, and let their financing mechanisms and results inform financing_recommendations and gap_roadmap — but a strong reference case is never a substitute for evidence this specific project actually provides, so do not let it inflate this project's own dimension scores. Be specific and reference concrete details from the project description in your rationales wherever possible, rather than generic boilerplate.
 
 INA's platform serves both Spanish- and English-speaking users, so every rationale/action/summary field below must be written TWICE — once in Spanish (the "_es" field) and once in English (the "_en" field). Write natural, idiomatic prose in each language (not a literal word-for-word translation of one from the other), but keep the underlying assessment identical in both: the same scores, the same priorities, the same recommended mechanisms.
 
@@ -498,6 +498,26 @@ async function handler(req, res) {
       supabaseUrl: SUPABASE_URL,
     });
 
+    // Pablo, sep 2026: "Agregar la posibilidad de asociar un proyecto a un
+    // caso de uso cargado en el sistema. y utilizar los datos del caso de
+    // éxito en el análisis de IA." Linking itself already existed in full
+    // (app/project.html's "Casos de Éxito de Referencia" picker, backed by
+    // INAPlatform.linkSuccessCaseToProject() — see assets/platform.js). The
+    // gap was here: the analysis prompt had zero awareness of linked cases.
+    // Fetched the same way as `documents` above (embedded PostgREST
+    // resource — same `success_cases(...)` selection listProjectSuccessCases()
+    // uses client-side in platform.js) and folded into `projectText` below,
+    // so it flows into every provider branch (Anthropic/Groq/Bedrock/
+    // bedrock-mock/local) automatically since they all consume the same
+    // `projectText` string. bedrock-mock is the one exception worth calling
+    // out: buildMockAnalysis(project) below never reads projectText at all,
+    // so this fetch is wasted work on that path, but it's cheap and keeping
+    // the code path uniform beats special-casing it.
+    const linkedSuccessCases = await supabaseRest(
+      `/project_success_cases?project_id=eq.${projectId}&select=note,success_cases(title,provider,country,region,sector,summary_es,summary_en,metrics_es,metrics_en,source_label,source_url)`,
+      { serviceKey: SUPABASE_SERVICE_ROLE_KEY, supabaseUrl: SUPABASE_URL }
+    );
+
     // Build the model input: project text + up to 5 documents. On the
     // Anthropic path, PDFs/images are sent natively (Claude reads them
     // directly) via `contentBlocks`; plain text files are always inlined
@@ -509,6 +529,35 @@ async function handler(req, res) {
     const textOnlyProvider = provider === 'groq' || provider === 'bedrock' || provider === 'local';
     const contentBlocks = [];
     let projectText = `PROJECT NAME: ${project.name}\nPROJECT TYPE: ${project.project_type}\nCOUNTRY: ${project.country}\n\nDESCRIPTION:\n${project.description}`;
+
+    // Fold in linked success cases (see linkedSuccessCases fetch above) as
+    // named reference/precedent material — kept in English only (this is
+    // model input, not a user-facing field, so no _es/_en split needed).
+    // Uses summary_en/metrics_en when present, falling back to the Spanish
+    // fields (summary_es is required at creation time, summary_en/metrics_en
+    // are optional — see createSuccessCase() in assets/platform.js) so a
+    // case never disappears from the prompt just because nobody filled in
+    // the English text.
+    if (Array.isArray(linkedSuccessCases) && linkedSuccessCases.length) {
+      const casesText = linkedSuccessCases
+        .map(({ note, success_cases: c }) => {
+          if (!c) return null;
+          const summary = c.summary_en || c.summary_es || '';
+          const metrics = c.metrics_en || c.metrics_es || '';
+          let block = `- "${c.title}" (${c.provider}, ${c.country}${c.region ? ', ' + c.region : ''}, ${c.sector} sector)`;
+          if (summary) block += `\n  Summary: ${summary}`;
+          if (metrics) block += `\n  Metrics: ${metrics}`;
+          if (note) block += `\n  Why the project team cited this case: ${note}`;
+          if (c.source_label || c.source_url) {
+            block += `\n  Source: ${[c.source_label, c.source_url].filter(Boolean).join(' — ')}`;
+          }
+          return block;
+        })
+        .filter(Boolean);
+      if (casesText.length) {
+        projectText += `\n\nREFERENCE SUCCESS CASES (linked by the project team as comparable precedents — use them to benchmark this project's dimensions and to sanity-check financing_recommendations, but do not let a strong reference case substitute for evidence this specific project actually provides):\n${casesText.join('\n')}`;
+      }
+    }
 
     // bedrock-mock never reads any of this — skip the Storage
     // downloads/PDF parsing entirely rather than doing pointless work.
