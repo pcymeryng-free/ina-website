@@ -433,7 +433,7 @@
 </footer>
 <script src="/assets/i18n.js?v=68"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=78"></script>
+<script src="/assets/platform.js?v=79"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -627,26 +627,20 @@
   renderComplexityOptions();
 
   // ---- Load from one or several PDF(s) (Pablo, sep 2026 — see the
-  // comment above pPdfUploadBlock). Same fileToBase64()/prefill pattern as
-  // new-success-case.html's single-PDF box, extended to read multiple
-  // files and hand them all to api/extract-project-data.js in one call —
-  // it concatenates their text server-side before a single model call, so
-  // this only ever needs one round trip regardless of file count. All
-  // <select>s above are already populated by this point (every
+  // comment above pPdfUploadBlock). Same upload-then-extract-then-cleanup
+  // pattern as new-success-case.html's single-PDF box, extended to upload
+  // multiple files (INAPlatform.uploadTempExtractionFile() per file) and
+  // hand all their storage paths to api/extract-project-data.js in one
+  // call — it downloads and concatenates their text server-side before a
+  // single model call, so this only ever needs one round trip regardless
+  // of file count. As of sep 2026 the request body carries only short
+  // storage paths, never the files' base64 bytes — sending base64 directly
+  // worked locally but broke in real production with "413 Content Too
+  // Large" (Vercel's hard ~4.5MB serverless request-body ceiling); see
+  // assets/platform.js's extractProjectData() for the full explanation.
+  // All <select>s above are already populated by this point (every
   // render*Options() call above runs synchronously at load), so setting
   // .value directly on any of them here just works. ----
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result || '';
-        const comma = result.indexOf(',');
-        resolve(comma >= 0 ? result.slice(comma + 1) : result);
-      };
-      reader.onerror = () => reject(new Error('Could not read the PDF file.'));
-      reader.readAsDataURL(file);
-    });
-  }
 
   function setIfPresent(id, value) {
     if (value === null || value === undefined || value === '') return;
@@ -684,13 +678,17 @@
     btn.disabled = true;
     statusEl.style.display = 'block';
     statusEl.textContent = lang === 'es'
-      ? `Leyendo ${fileList.length > 1 ? fileList.length + ' documentos' : 'el documento'}…`
-      : `Reading ${fileList.length > 1 ? fileList.length + ' documents' : 'the document'}…`;
+      ? `Subiendo ${fileList.length > 1 ? fileList.length + ' documentos' : 'el documento'}…`
+      : `Uploading ${fileList.length > 1 ? fileList.length + ' documents' : 'the document'}…`;
+    let files = [];
     try {
-      const files = await Promise.all(fileList.map(async (file) => ({
-        pdfBase64: await fileToBase64(file),
+      files = await Promise.all(fileList.map(async (file) => ({
+        storagePath: await INAPlatform.uploadTempExtractionFile(file),
         fileName: file.name,
       })));
+      statusEl.textContent = lang === 'es'
+        ? `Leyendo ${fileList.length > 1 ? fileList.length + ' documentos' : 'el documento'}…`
+        : `Reading ${fileList.length > 1 ? fileList.length + ' documents' : 'the document'}…`;
       const result = await INAPlatform.extractProjectData(files);
       prefillFromPdfExtraction(result.fields);
       const filledCount = Object.values(result.fields || {}).filter((v) => v !== null && v !== undefined && v !== '').length;
@@ -714,6 +712,7 @@
       statusEl.textContent = (lang === 'es' ? 'No se pudo leer el/los PDF: ' : "Couldn't read the PDF(s): ") + (err.message || err);
     } finally {
       btn.disabled = false;
+      files.forEach((f) => { if (f && f.storagePath) INAPlatform.deleteTempExtractionFile(f.storagePath); });
     }
   });
 
