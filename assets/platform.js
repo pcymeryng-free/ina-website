@@ -5799,7 +5799,17 @@ const INAPlatform = {
      assigned advisor only (project_success_cases_insert_own_or_assigned_advisor
      RLS). note is optional free text on why the case is relevant. Re-linking
      an already-linked case is a no-op error the caller can safely ignore
-     (unique (project_id, success_case_id)). */
+     (unique (project_id, success_case_id)).
+
+     Pablo, sep 2026: "elijo el caso y presiono link pero no hace nada" —
+     the .select() below used to return just the bare project_success_cases
+     row (no embedded success_cases). project.html's renderSuccessCases()
+     reads `row.success_cases` and silently skips (`if (!c) return;`) any
+     row missing it, so linking APPEARED to do nothing even though the
+     insert had actually succeeded — the picker's list just never re-drew.
+     Embedding the same success_cases(...) fields listProjectSuccessCases()
+     already selects means the newly-linked row is immediately renderable
+     without a second round-trip. */
   async linkSuccessCaseToProject(projectId, successCaseId, { note } = {}) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
@@ -5811,7 +5821,7 @@ const INAPlatform = {
         user_id: session.user.id,
         note: note || null,
       })
-      .select()
+      .select('*, success_cases(title, provider, country, region, sector, summary_es, summary_en, source_label, source_url)')
       .single();
     if (error) throw error;
     return data;
@@ -5835,7 +5845,58 @@ const INAPlatform = {
      above) and gets back proposed field values to prefill the New Success
      Case form with. Never writes anything — createSuccessCase() still runs
      separately once the advisor reviews/edits and submits the form. */
-  async extractSuccessCase(pdfBase64, fileName) {
+  /* Uploads a PDF to Storage under a TEMPORARY path — {userId}/tmp-
+     extractions/{timestamp}_{filename} in the existing project-documents
+     bucket, deliberately reusing the SAME "own folder" RLS policies every
+     other upload here already relies on (doc_upload_own_folder/
+     doc_read_own_folder_or_advisor/doc_delete_own_folder in schema.sql —
+     they key off the path's first segment being auth.uid(), so this new
+     'tmp-extractions' second segment needs no new migration/policy at
+     all). Used ONLY to get a base64 PDF's bytes to the extraction
+     endpoints without hitting Vercel's hard ~4.5MB serverless request-body
+     ceiling (see the comment on extractSuccessCase() below for the "413
+     Content Too Large" bug this fixes, sep 2026) — the file has no owning
+     project/success-case yet, so there's nowhere "real" to attach it;
+     deleteTempExtractionFile() below cleans it up right after extraction
+     finishes (best-effort, not load-bearing). */
+  async uploadTempExtractionFile(file) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const userId = session.user.id;
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `${userId}/tmp-extractions/${Date.now()}_${safeName}`;
+    const { error } = await supabaseClient.storage.from('project-documents').upload(storagePath, file);
+    if (error) throw error;
+    return storagePath;
+  },
+
+  // Best-effort cleanup — called after an extraction call finishes (success
+  // or failure), never awaited by the caller in a way that blocks the UI.
+  // A leftover temp file is harmless (same "own folder" RLS means only the
+  // uploader/an advisor can ever read it) but there's no reason to keep it.
+  async deleteTempExtractionFile(storagePath) {
+    if (!storagePath) return;
+    try {
+      await supabaseClient.storage.from('project-documents').remove([storagePath]);
+    } catch (e) { /* non-critical */ }
+  },
+
+  /* Sends a PDF for AI extraction — as of sep 2026 this sends the Storage
+     PATH (from uploadTempExtractionFile() above), NOT the file's base64
+     bytes, in the request body. Originally this endpoint took
+     {pdfBase64, fileName} directly, which worked fine against
+     local-server.js (Express, configurable body limit) but broke in real
+     production on Vercel with "413 Content Too Large" — Vercel's Node.js
+     serverless functions enforce a hard ~4.5MB request body ceiling that
+     cannot be raised via any app-level config, unrelated to this file's
+     own (much larger) MAX_BASE64_LENGTH check in
+     api/extract-success-case.js, which never even got a chance to run.
+     Sending just a short Storage path keeps the request body tiny
+     regardless of PDF size; the endpoint downloads the actual bytes
+     server-side via the service-role key, same as api/
+     extract-template-data.js already does for documents attached to an
+     existing project. */
+  async extractSuccessCase(storagePath, fileName) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const res = await fetch(extractSuccessCaseUrl(), {
@@ -5844,7 +5905,7 @@ const INAPlatform = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ pdfBase64, fileName }),
+      body: JSON.stringify({ storagePath, fileName }),
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -5857,13 +5918,15 @@ const INAPlatform = {
   /* Pablo, sep 2026: "cuando se carga un proyecto nuevo se debe tener la
      opción de hacerlo desde uno o varios PDF y que un agente lea los
      documentos y obtenga todos los atributos posibles. Luego, permitir la
-     edición de los datos como hasta ahora." Same shape as
-     extractSuccessCase() above, but takes an ARRAY of files (api/
+     edición de los datos como hasta ahora." Same shape/same Storage-path
+     fix as extractSuccessCase() above, but takes an ARRAY of files (api/
      extract-project-data.js concatenates their text server-side into one
      model call) and targets new-project.html's fixed wizard field set
      instead of a caller-supplied list. `files` is
-     [{pdfBase64, fileName}, ...]. Never writes anything — createProject()
-     still runs separately once the user reviews/edits and submits Step 1. */
+     [{storagePath, fileName}, ...] — each storagePath comes from a
+     separate uploadTempExtractionFile() call. Never writes anything —
+     createProject() still runs separately once the user reviews/edits and
+     submits Step 1. */
   async extractProjectData(files) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
