@@ -66,14 +66,17 @@ const extractProjectDataHandler = require('./api/extract-project-data');
 const app = express();
 const PORT = Number(process.env.PORT) || 5050;
 
-// Bumped from 2mb (sep 2026): api/extract-success-case.js sends a whole
-// case-study PDF as base64 in the request body (same shape as
-// api/extract-business-card.js's photo upload) — a base64-encoded PDF a
-// few MB in size would have exceeded the old 2mb JSON body limit before
-// even reaching the handler's own MAX_BASE64_LENGTH check. Bumped again to
-// 40mb (still sep 2026) for api/extract-project-data.js, which can carry
-// SEVERAL base64 PDFs in one request (MAX_FILES=5 there).
-app.use(express.json({ limit: '40mb' }));
+// Was bumped to 40mb earlier in sep 2026 when api/extract-success-case.js
+// and api/extract-project-data.js sent whole PDFs as base64 directly in the
+// request body. Both were rearchitected (still sep 2026, see their file
+// headers) to upload to Supabase Storage first and send only a short
+// storagePath — that base64-in-body design also broke in real production on
+// Vercel with "413 Content Too Large" (Vercel's hard ~4.5MB serverless
+// request-body ceiling), which is what forced the rearchitecture. Lowered
+// back down to 5mb: nothing this server routes to (see the app.post() list
+// below — api/extract-business-card.js isn't wired up here) needs a large
+// body anymore, this is just headroom for ordinary JSON payloads.
+app.use(express.json({ limit: '5mb' }));
 
 // Never statically serve source/config files that shouldn't be reachable
 // over HTTP, even though this server is only ever meant to be bound to
