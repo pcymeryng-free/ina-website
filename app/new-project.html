@@ -450,6 +450,20 @@
   // anything is created) is genuinely isEdit-vs-not.
   let activeProjectId = editId || null;
 
+  // Pablo, sep 2026: "cuando se carga un proyecto nuevo. Si se ingresa un
+  // pdf al inicio, el mismo debería figurar en los documentos adjuntos." —
+  // the "Cargar desde uno o varios PDF" box (above step 1) runs BEFORE the
+  // project exists, so those files can't be attached via uploadDocument()
+  // at pick-time (it needs a real project id — see the doc-upload-group
+  // comment further down). Instead the actual File objects picked there are
+  // kept here and re-uploaded as ordinary "other" documents right after
+  // step 1's "Continue" creates the project record (see step1NextBtn below)
+  // — same uploadDocument() call every doc-upload-group zone already uses,
+  // just deferred until a project id exists. Cleared once attached so
+  // re-visiting step 1 (activeProjectId already set, goToStep(2) short-
+  // circuits) never re-attaches the same files twice.
+  let pendingAutofillFiles = [];
+
   // Set only when this tab actually holds the edit lock on an existing
   // project (see the isEdit block in init() below) — calling this stops
   // the 60s heartbeat that renews it. Left null for brand-new projects
@@ -686,6 +700,13 @@
         storagePath: await INAPlatform.uploadTempExtractionFile(file),
         fileName: file.name,
       })));
+      // Remember the actual File objects (not just their temp storage
+      // paths, which get deleted in the `finally` below) so step 1's
+      // "Continue" can attach them as real project documents once the
+      // project exists — see the pendingAutofillFiles comment above.
+      // Kept regardless of whether extraction itself succeeds below: the
+      // upload succeeded, so the PDF is real and worth keeping either way.
+      pendingAutofillFiles = fileList;
       statusEl.textContent = lang === 'es'
         ? `Leyendo ${fileList.length > 1 ? fileList.length + ' documentos' : 'el documento'}…`
         : `Reading ${fileList.length > 1 ? fileList.length + ' documents' : 'the document'}…`;
@@ -1249,6 +1270,25 @@
       const project = await INAPlatform.createProject({ name, projectType, programId, country, description, beneficiaryCount, generatingEntityName, generatingEntityType, durationValue, durationUnit, priority, technicalCriticality, budgetAmount, budgetAmountUsd, exchangeRate, exchangeRateDate, complexity });
       activeProjectId = project.id;
       history.replaceState(null, '', `new-project.html?id=${project.id}`);
+      // Attach whatever PDF(s) were used for the "Cargar desde uno o varios
+      // PDF" autofill above (see pendingAutofillFiles comment near its
+      // declaration) — only reachable now that activeProjectId exists.
+      // Best-effort per file: one failing upload shouldn't block the user
+      // from moving on, they can always re-attach manually in step 2.
+      // Filed under "other" since these source documents don't reliably
+      // map to one of the six specific categories.
+      if (pendingAutofillFiles.length) {
+        for (const file of pendingAutofillFiles) {
+          try {
+            const doc = await INAPlatform.uploadDocument(activeProjectId, file, 'other');
+            existingDocs.push(doc);
+          } catch (err) {
+            console.error('[step1NextBtn] could not attach autofill PDF as a document:', err);
+          }
+        }
+        pendingAutofillFiles = [];
+        renderExistingDocs();
+      }
       noteEl.textContent = '';
       goToStep(2);
     } catch (err) {
