@@ -1069,19 +1069,34 @@ requires another admin, or the Supabase steps above.
   `app/fsu-scoring.html` can show a live-updating breakdown as the form is
   filled in, before ever saving. Offered for `fiber_backbone_last_mile`
   projects (`INAPlatform.FSU_SCORING_ELIGIBLE_TYPE` — the criteria make
-  sense for fiber-to-the-home builds) **or** any project applying under a
-  Program tagged with one of the three FATIC (Financiamiento y Apoyo a
-  Proveedores de Servicios de TIC) template_keys —
-  `capital_markets_debt_financing`, `tasu_subsidized_rate_credit`,
-  `fatic_general_equipment_provision` — since those financing lines are
-  FSU-funded regardless of the underlying infrastructure category (see
-  `FSU_SCORING_ELIGIBLE_PROGRAM_TEMPLATES` and `isFsuScoringEligible()`,
-  the single source of truth `app/project.html`, `app/fsu-scoring.html` and
-  `app/dashboard.html` all call). Only offered to the project owner; a
-  saved score shows as a badge on `project.html` for owner and advisor
-  viewers alike. This is an orientation estimate based on the manual's
-  published table, not an official ENACOM evaluation or eligibility
-  determination.
+  sense for fiber-to-the-home builds) **or** any project whose primary/
+  preparation Program (`projects.program_id`) **or** any Program it has
+  *applied* to as a financing line (`project_programs`, via "Aplicar a
+  Programa" — see the Financing Programs block below) is tagged with one of
+  four FSU-funded template_keys — the three FATIC (Financiamiento y Apoyo a
+  Proveedores de Servicios de TIC) lines
+  (`capital_markets_debt_financing`, `tasu_subsidized_rate_credit`,
+  `fatic_general_equipment_provision`) plus `wholesale_neutral_network_program`
+  ("FSU — Red Mayorista Neutral", ENACOM Resolución 951/2025) — since all
+  four financing lines are FSU-funded regardless of the underlying
+  infrastructure category (see `FSU_SCORING_ELIGIBLE_PROGRAM_TEMPLATES` and
+  `isFsuScoringEligible(project, appliedPrograms)`, the single source of
+  truth `app/project.html`, `app/fsu-scoring.html`,
+  `app/investment-proposal.html` and `app/dashboard.html` all call — the
+  second, optional `appliedPrograms` argument is the project's
+  `project_programs` rows, needed because applying to an FSU Program as a
+  financing line doesn't touch `program_id`). `wholesale_neutral_network_program`
+  was added to that eligible list after Pablo reported that projects
+  applying to Red Mayorista Neutral weren't getting the FSU Scoring tab —
+  it had been left out since it predates the FATIC lines and wasn't
+  reconsidered when those were added; the applied-programs check was added
+  in the same fix, since without it a project applying to *any* of the four
+  eligible Programs purely via "Aplicar a Programa" (rather than as its
+  primary Program) would still have been incorrectly excluded. Only offered
+  to the project owner; a saved score shows as a badge on `project.html`
+  for owner and advisor viewers alike. This is an orientation estimate
+  based on the manual's published table, not an official ENACOM evaluation
+  or eligibility determination.
 - **PDF export**: the "Download PDF" / "Descargar PDF" button on
   `app/project.html` (`generateProjectPdf()`) builds a branded report —
   navy header band, amber accents, matching `Manual_Usuario_Plataforma_INA.pdf`'s
@@ -1433,6 +1448,28 @@ requires another admin, or the Supabase steps above.
   calling `setAiAnalysisBtn('start')` in `renderAnalysis()` — the function
   already does the real gating via `canRunAnalysis` internally, so this
   call no longer needs its own opinion about when re-running is allowed.
+- **Analysis available at any workflow stage — Self-Assessment, AI Analysis,
+  FSU Scoring, all roles**: per Pablo's request ("en cualquier momento y
+  estado del workflow se debe habilitar los análisis Self, AI y si aplica
+  FSU Scoring"), the last remaining stage-based gate was removed. Until
+  this fix, the immediately preceding "AI Analysis at any stage
+  (advisor/admin)" bullet was accurate only for the advisor/admin path —
+  the OWNER specifically still couldn't run AI Analysis on a project that
+  was still Not Analyzed (`readiness_stage` null); they had to run
+  Self-Assessment first to leave that state (`canRunAnalysis = (isOwner &&
+  !!project.readiness_stage) || isAssignedAdvisor || isAdminForAnalysis`
+  in `app/project.html`, with a matching 409 in
+  `api/analyze-project.js` — "This project needs the owner's
+  self-assessment before AI Analysis can run"). That asymmetry is gone:
+  `canRunAnalysis = isOwner || isAssignedAdvisor || isAdminForAnalysis`,
+  and the server-side 409 was removed (the `readiness_stage` bootstrap to
+  `'Concept Stage'` on first analysis, further down in
+  `api/analyze-project.js`, already handled a project with no
+  self-assessment yet — that logic didn't need to change). Self-Assessment
+  (`app/assessment.html`) and FSU Scoring (`app/fsu-scoring.html`,
+  `isFsuScoringEligible()`) were already available at any stage/status —
+  neither had a workflow gate to begin with, so no change was needed for
+  either of those; only the AI Analysis owner path did.
 - **Project workflow — always-visible stepper + separated header actions**:
   the stepper in `app/project.html` (`renderWorkflow()`) is now shown
   unconditionally, even for a brand-new, never-analyzed project — it gains
@@ -3734,6 +3771,54 @@ all, which is both faster and worked reliably where the Vercel logs UI
 didn't. **Files touched:** `assets/platform.js`, `app/project.html`; bumped
 `platform.js?v=` to 60 across all `app/*.html`.
 
+## Fix: "Autocompletar desde documentos" — `Could not parse extraction output`
+
+**Symptom:** Pablo reported that clicking "Autocompletar desde documentos" on
+`app/project-template.html` (the button that reads a project's attached
+PDFs/text documents and asks the LLM to prefill the current template's
+fields) failed with `Couldn't autocomplete: Could not parse extraction
+output`.
+
+**Root cause:** `api/extract-template-data.js` asks the model to return a
+single flat JSON object mapping every requested field key to its extracted
+value (or `null`), one call per template (up to `MAX_FIELDS_PER_REQUEST =
+60` fields at once — `autofillTemplateAnswers()` in `assets/platform.js`
+sends every field not already cached in the project's `shared_field_answers`
+pool, which on a brand-new project's first template can be most or all of
+that template's fields). Several templates are large —
+`DATACENTER_TEMPLATE`, `SUBMARINE_CABLE_TEMPLATE`, and
+`WHOLESALE_NEUTRAL_NETWORK_TEMPLATE` each have 50-70+ fields, a dozen or more
+of them `textarea` fields the system prompt asks for 1-4 sentence answers on.
+All four provider branches (`anthropic`, `groq`, `bedrock`, `local`) capped
+the model's response at `max_tokens: 2000` — nowhere near enough to return a
+JSON object covering that many fields with verbose textarea answers. The
+model's response routinely got cut off mid-object, so the truncated text
+failed `JSON.parse` and the endpoint returned the generic "Could not parse
+extraction output" error, with no way for Pablo to tell why from the UI.
+
+**Fix:**
+- Raised `max_tokens`/`maxTokens` from `2000` to `6000` in all four provider
+  branches of `api/extract-template-data.js`, giving the model enough room
+  to return a complete JSON object even for the largest templates.
+- Added a defensive second line of parsing: before `JSON.parse`, the code
+  now also slices the cleaned response down to its outermost `{`...`}` span
+  (in addition to the existing `<think>`-tag and code-fence stripping), so
+  any stray prose the model wraps around the JSON no longer breaks parsing.
+- Added `console.error` logging of `body.raw`/`body.detail` in
+  `INAPlatform.extractTemplateFieldsFromDocuments()` (`assets/platform.js`)
+  before it throws, mirroring the existing `requestAnalysis()` diagnostic
+  pattern — so if this ever fails again, the actual raw model output is
+  visible in the browser's DevTools Console (F12) instead of just the
+  generic error message.
+
+Note: the two other `2000` values still present in
+`api/extract-template-data.js` (`field.type === 'textarea' ? 2000 : 300`, a
+stored-value length cap, and `rawText.slice(0, 2000)`, a log-truncation
+slice) are unrelated and were left unchanged.
+
+**Files touched:** `api/extract-template-data.js`, `assets/platform.js`;
+bumped `platform.js?v=` to 70 across all `app/*.html`.
+
 ## Viewing/opening attached documents (edit mode + consulta mode)
 
 Both `app/project.html` (consulta/view mode, via `renderDocs()`) and
@@ -3886,7 +3971,894 @@ Pablo's request: a second, separate PDF document — the full, formal proposal a
 - **i18n:** `pd.downloadProposal`, `pd.proposal.title`, `pd.proposal.help`, `pd.proposal.draft`, `pd.proposal.save`, `pd.proposal.introduction`, `pd.proposal.technicalDescription`, `pd.proposal.benefits`, `pd.proposal.planning` — both languages, in `assets/i18n.js`.
 - **Cache-busting version bump:** `platform.js?v=63` → `?v=64` and `i18n.js?v=51` → `?v=52`, across every `app/*.html` file.
 
-**To use:** open a project you can edit, scroll to the new "Investment Proposal" card, click "Generar borrador con IA" to have the 4 narrative chapters drafted from the project's own data, review/edit the text, click "Guardar", then use the new "Propuesta de Financiamiento (PDF)" button (Actions menu or top nav) to download the complete document.
+**To use (superseded by the dedicated screen below — see that section for the current flow).**
+
+## Investment Proposal editor — split into its own screen (`app/investment-proposal.html`)
+
+Pablo's request: turn the inline "Investment Proposal" card on `project.html` into "una pantalla" — a proper full screen with drafting, editing, saving, a preview, and a download, all in one place, rather than a small editing box competing for space with the rest of the project page. Follows the exact same split this codebase already used for the Risk Matrix (`app/risk-matrix.html` + a compact summary card on `project.html`).
+
+- **New page `app/investment-proposal.html`:** same app shell/header/nav as every other `app/*.html` page, reached via `?id=<projectId>`. Loads the project (`INAPlatform.getProject`), then — for the same document chapters `generateProposalPdf()` needs — the latest AI Analysis (`getAnalysis`), the risk register (`listProjectRisks`), FSU score if eligible (`isFsuScoringEligible` + `getFsuScoring`), applied financing programs (`listProjectPrograms`) and roadmap instances (`listRoadmapInstances`). Same permission gate as before (owner, the advisor who took the project, or any admin) — anyone else is redirected back to `project.html`.
+- **Edit / Preview tabs:** "Edit" shows the same four textareas as before (Introduction, Technical Description, Benefits, Planning) plus "Generate draft with AI" and "Save" — identical behavior to the old inline card. "Preview" calls the same `generateProposalPdf()` used for the real download, but in a `mode: 'preview'` that returns `doc.output('bloburl')` instead of calling `doc.save()`, and shows that blob URL in an `<iframe>` — so the preview is pixel-identical to what "Download PDF" produces, not a separate simplified rendering. The blob URL is revoked and regenerated each time the Preview tab is opened (after edits, an AI redraft, or a language toggle), so it never shows stale content.
+- **`generateProposalPdf()` moved here wholesale** from `project.html` (same jsPDF chapter-building helpers, same `sanitizeText()` font-bug fix, same INA logo constants) — `project.html` no longer contains this function at all. Ends with `doc.save('INA_Propuesta_<project>.pdf')` in download mode, `doc.output('bloburl')` in preview mode.
+- **`app/project.html` — card simplified to a status + entry point:** the `proposalBlock` card (still gated the same way) now only shows the "Last updated" timestamp and a "Manage Proposal" button/link to `investment-proposal.html?id=<projectId>` — no textareas, no Draft/Save buttons, no PDF generation code left in this file. The Actions-menu and top-nav "Investment Proposal" entries (`downloadProposalBtn`/`navDownloadProposalBtn`, relabeled from "Financing Proposal (PDF)") are now plain links to the same screen instead of triggering a direct download — the download itself lives in the editor now.
+- **CSS:** `.prop-tabs`/`.prop-tab`/`.prop-tab.active` added to `assets/style.css` (plain underline tabs, matching the app shell's restrained look — not a boxed/pill control).
+- **i18n:** new `prop.title`, `prop.manage`, `prop.summary.help`, `prop.tab.edit`, `prop.tab.preview`, `prop.download`, `prop.preview.help`, `prop.preview.loading` keys; `pd.downloadProposal` relabeled from "Financing Proposal (PDF)" to "Investment Proposal" to match its new role as a navigation link. All existing `pd.proposal.*` keys (title/help/draft/save/field labels) are reused as-is on the new page.
+- **Cache-busting version bump:** `platform.js?v=65` (unchanged — no platform.js code changed), `i18n.js?v=53` → `?v=54`, `style.css?v=21` → `?v=22`, `app.css?v=9` → `?v=10`, across every `app/*.html` file including the new page.
+
+**To use:** open a project you can edit → the "Investment Proposal" card → "Manage Proposal". On that screen: "Generate draft with AI" to have the 4 narrative chapters drafted, edit freely, "Save" to persist, "Preview" to see the exact document before committing, "Download PDF" to save the file.
+
+## project.html nav menus split into Project / Documentación / Workflow
+
+Pablo's request: the top-nav "Project" menu had grown to 9 items mixing unrelated concerns (create/edit/delete, document generation, workflow state changes). Split it into three focused menus, both in the fixed header nav and in the equivalent body-level menu near the page content (same header/body duplication convention as `navAnalysisMenu`/`analysisMenu`, task #275).
+
+- **`navProjectMenu` (header) / `actionsMenu` (body)** — now only: New Project (header only — no equivalent on the body menu, since "new" doesn't apply once you're already viewing a project), Edit, Delete, Close.
+- **New `navDocsMenu` (header) / `docsMenu` (body)** — "Documentation"/"Documentación": Download PDF, Investment Proposal.
+- **New `navWorkflowMenu` (header) / `workflowMenu` (body)** — "Workflow"/"Flujo de Trabajo": Promote, Demote, Return to Not Analyzed.
+- No JS changes needed — the generic `.menu`/`.menu-trigger` open/close wiring in `project.html`'s inline script queries `document.querySelectorAll('.menu')`, so the new menus work automatically. `renderWorkflowActionsMenu()` still targets the same button IDs (`promoteBtn`/`navPromoteBtn` etc.) by `getElementById`, unaffected by which panel now contains them.
+- **i18n:** new `nav.documentation` ("Documentation"/"Documentación") and `nav.workflow` ("Workflow"/"Flujo de Trabajo", matching the existing `wf.title` translation) keys.
+- **Cache-busting version bump:** `i18n.js?v=54` → `?v=55` across every `app/*.html` file.
+
+## new-program.html: Initiative form cleanup + language-switch fix
+
+Pablo's request: on the Initiative (umbrella-role) create/edit form, the name field's label still said "Program name" (confusing — it's the Initiative's own name); the form showed financing-only fields that don't apply to an Initiative; and switching EN/ES while on the form didn't retranslate the Program type(s) checkboxes or the Program template dropdown.
+
+- **Name label now role-aware:** `applyRoleContext()` swaps the `#pgNameLabel` span between `prog.f.name` ("Program name") for a Financing Program and the new `init.f.name` ("Initiative name") for an Initiative, the same way it already swaps the page title/breadcrumb/lede/submit button.
+- **Financing entity + template hidden for Initiatives:** `#financingEntityField` and `#templateField` (newly wrapped with ids, matching the existing `#fundingStageField` pattern) are now hidden by `updateRoleDependentFieldsVisibility()` (renamed from `updateFundingStageFieldVisibility()`) whenever `programRole === 'umbrella'`, and their values are cleared at the same time — an Initiative isn't itself a funding source and has no guided-form template, so neither field should be editable or silently carry over a stale value. Loading an existing Initiative for editing also no longer repopulates these two fields from legacy data (`editedIsUmbrella` check around line 604).
+- **Attachments were already available to Initiatives** — `#existingPgDocsBlock`/the upload drop-zone/`INAPlatform.uploadProgramDocument()` etc. have never been role-gated; no change needed there.
+- **Language-switch fix:** `let lang` (was `const lang`, capturing `INAPlatform.currentLang()` once at load) plus a new `.lang-btn` listener that reassigns `lang` and re-runs `renderOrgTypeOptions()`, `renderFundingStageOptions()`, `renderProgramRoleOptions()`, `renderProgramTypeOptions()`, `renderProgramTemplateOptions()` and `renderExistingPgDocs()` — the same stale-lang-capture pattern already fixed on `initiatives.html`/`dashboard.html`/`project.html`/`assessment.html`, just not previously applied to this page.
+- **i18n:** new `init.f.name` key.
+- **Cache-busting version bump:** `i18n.js?v=55` → `?v=56` across every `app/*.html` file.
+
+## new-program.html: hide Role field + rename Program type(s) for Initiatives
+
+Pablo's request: "quitar Rol del Programa y cambiar tipo de programa por Componentes de la Iniciativa" — the Role field is noise on the Initiatives form (arriving via "Create Initiative" already implies the role), and "Program type(s)" reads oddly for an Initiative, where these are really the different infrastructure components it bundles (e.g. EPECH's "Atlántico-Pacífico" = fiber backbone + submarine cable + datacenter).
+
+- **Role field hidden for Initiatives:** `#programRoleField` (the wrapper around the role picker `#programRoleOptions`) was added to the set of fields `updateRoleDependentFieldsVisibility()` (see previous section) hides when `programRole === 'umbrella'` — same mechanism already hiding `fundingStageField`/`financingEntityField`/`templateField`. It's now four fields, not three. **Trade-off:** since the picker that reclassifies a program's role is exactly what's hidden, there's no longer a way to switch a program from Initiative back to Financing Program (or vice versa) through this form once it's rendered as an Initiative — reclassification via the UI is intentionally no longer supported here. (Creating fresh still works via `?role=financing` / `?role=umbrella`.)
+- **"Program type(s)" → "Componentes de la Iniciativa":** `applyRoleContext()` now also swaps `#programTypesLabel` and `#programTypesHelp` between `prog.f.types`/`prog.f.types.help` ("Program type(s)" / financing-program help text) for a Financing Program and the new `init.f.types`/`init.f.types.help` ("Initiative components" / help text referencing the Atlántico-Pacífico example) for an Initiative — same swap-on-`outerHTML` pattern as the name label.
+- **i18n:** new `init.f.types` / `init.f.types.help` keys.
+- **Cache-busting version bump:** `i18n.js?v=56` → `?v=57` across every `app/*.html` file.
+
+## new-program.html: fix reversed-language bug on Organization Type / Funding Stage / Role
+
+Pablo's report: on `new-program.html`, the **Organization Type** options showed the *opposite* language from the rest of the page — Spanish text while the UI was set to English, and vice versa.
+
+- **Root cause:** the page's own `.lang-btn` click listener (added when the earlier stale-lang-capture fix went in) re-renders `renderOrgTypeOptions()` / `renderFundingStageOptions()` / `renderProgramRoleOptions()`, all three of which build their labels via `INAPlatform.programOrgTypeLabel()` / `programFundingStageLabel()` / `programRoleLabel()` — helpers that read `INAPlatform.currentLang()`, i.e. `document.documentElement`'s `lang` attribute, not this page's own local `lang` variable. That attribute is only updated by `assets/i18n.js`'s own `.lang-btn` listener (`applyLang()`). Listeners on the same element fire in registration order, and this page's inline `<script>` runs (and attaches its listener) before `DOMContentLoaded`, which is when `i18n.js` attaches its own — so this page's listener always ran *first*, re-rendering those three sections with the **previous** language, one click behind the rest of the page. Exactly the same race already fixed on `project.html`/`assessment.html` (see the "I3" fix above), just missed here since Organization Type didn't exist as a dynamic, `currentLang()`-driven section back then.
+- **Fix:** the local `.lang-btn` listener now sets `document.documentElement.setAttribute('lang', lang)` itself, immediately, before calling any of the render functions — so `currentLang()` always reflects the language just clicked, regardless of listener order. `assets/i18n.js`'s own listener still sets it too a moment later (harmless, idempotent).
+- No i18n key or version-bump changes — this is a pure JS logic fix, no external cached asset changed.
+
+## Master Data → Companies: sector/industry types
+
+Pablo's request: "agregar tipos de empresas (Tecnología, Telecomunicaciones, Consultoría, etc)" — the Companies tab's "Type(s)" field only had 3 business-role tags (Manufacturer / Service Provider / Financial Entity), no sector/industry tags.
+
+- **New values in `COMPANY_TYPES`** (`assets/platform.js`): `technology` (Tecnología), `telecommunications` (Telecomunicaciones), `consulting` (Consultoría), `infrastructure_construction` (Infraestructura / Construcción), `energy` (Energía), `investor_fund` (Inversor / Fondo) — alongside the existing `manufacturer` / `service_provider` / `financial_entity`. Same multi-tag checkbox UI already in place (`coTypesOptions` in the main Companies form, `cNewCompanyTypesOptions` in the inline quick-add box reached from Contacts) — no UI changes needed, just more options. A company can carry both a business-role tag and a sector tag at once (e.g. "Service Provider" + "Telecommunications").
+- **DB:** `supabase/migration_v51_company_sector_types.sql` — drops and recreates `companies_types_check` to allow the 6 new values (`schema.sql` updated to match). **Run this migration in the Supabase SQL Editor before the new checkboxes will save** — without it, `createCompany()`/`updateCompany()` calls that include any of the 6 new tags will fail the CHECK constraint.
+- **Cache-busting version bump:** `platform.js?v=65` → `?v=66` across every `app/*.html` file.
+
+## Master Data → Companies: merged industry list + single-select dropdown
+
+Pablo shared a screenshot of a ~22-item industry/sector list (a standard classification, the kind used for KYC/sanctions-style screening — Aerospace, Banking/Finance/Insurance, Broadcasting/Entertainment, Chemicals/Petrochemicals, Colocation/Hosting/Cloud, Construction and Engineering, Education, Fire/Alarms/Security, Government (non-military), Healthcare (non-pharma), Manufacturing, Maritime, Military/Defense, Mining/Metals, Nuclear Energy, Oil and Gas, Power Generation, Power/Gas Transmission and Distribution, Professional Services, Retail and Wholesale, Telecommunications, Transportation) and asked to (a) merge it with the 9 existing COMPANY_TYPES values rather than replace them, (b) let a company pick exactly one from the merged list, entered via a dropdown instead of checkboxes.
+
+- **`COMPANY_INDUSTRIES`** (`assets/platform.js`) — the merged, de-duplicated list (31 values: the original 9 + 21 new + `other`). The one exact duplicate between the two source lists ("Telecommunications") was collapsed to a single entry; every other near-overlap (`manufacturer` vs `manufacturing`, `infrastructure_construction` vs `construction_engineering`) was kept as two separate options, since Pablo asked for a straight merge rather than a dedup pass. `companyIndustryLabel(value)` renders it.
+- **`COMPANY_TYPES` is now deprecated** — the old 9-value multi-tag list and its `companyTypeLabel()`/`companyTypesLabel()` helpers are untouched in code but no longer written to by the UI; kept only so any pre-existing `companies.types` data still renders correctly if read directly.
+- **DB:** `supabase/migration_v52_company_industry.sql` adds `companies.industry` (single `text` column, `CHECK ... IN (...)` against the 31 values) alongside the old `types` array column (left in place, read-only going forward). The migration backfills `industry` from `types[1]` (the first legacy tag) for existing rows as a starting point — **worth reviewing any company that had more than one type checked before**, since only one industry can be kept going forward. `schema.sql` updated to match.
+- **UI (`app/master-data.html`):** both places that used to render `COMPANY_TYPES` as a checkbox grid (`coTypesOptions` in the main Companies form, `cNewCompanyTypesOptions` in the inline "create new company" box reached from Contacts) are now single `<select>` dropdowns (`coIndustry` / `cNewCompanyIndustry`) populated from `COMPANY_INDUSTRIES`. The Companies table's "Type(s)" column is now "Industry", showing the single tag via `companyIndustryLabel()`.
+- **`createCompany`/`updateCompany`** (`assets/platform.js`) now take/write an `industry` string instead of a `types` array.
+- **i18n:** new `md.companies.f.industry` / `md.companies.col.industry` keys (old `md.companies.f.types` / `md.companies.col.types` keys left in place, unused).
+- **Cache-busting version bump:** `platform.js?v=66` → `?v=67`, `i18n.js?v=57` → `?v=58` across every `app/*.html` file.
+
+## Master Data → Companies: alphabetize industry dropdown + remove "Sector Público"
+
+Pablo asked to (a) sort the `COMPANY_INDUSTRIES` dropdown alphabetically, (b) remove the "Sector público (excepto ejército)" option.
+
+- **Alphabetized** `COMPANY_INDUSTRIES` (`assets/platform.js`) by English label — same convention already used for `COUNTRIES_AMERICAS` (a fixed order, not re-sorted per active language). `other`/"Otro" stays pinned last regardless, matching every other catch-all list in the platform (`DOCUMENT_TYPES`, `PROJECT_TYPES`, etc.) rather than sorting alphabetically into the middle.
+- **Removed `government_non_military`** ("Government (except military)" / "Sector público (excepto ejército)") from the list entirely — down to 30 values (was 31). `app/master-data.html` needed no changes since its dropdown is built entirely from `COMPANY_INDUSTRIES` at render time.
+- **DB:** `supabase/migration_v53_remove_government_industry.sql` resets any company that had `industry = 'government_non_military'` to `NULL` (unclassified, for Pablo to reassign — public-sector orgs arguably belong in `public_agencies` rather than `companies` anyway) and rebuilds `companies_industry_check` without that value. `schema.sql` updated to match (also alphabetized, for readability — constraint value order has no functional effect).
+- **Cache-busting version bump:** `platform.js?v=67` → `?v=68` across every `app/*.html` file (no i18n.js content changed this round).
+
+## Master Data → Companies: reclassify industry via web research (migration_v54)
+
+Pablo asked to review every company in Master Data and correct its `industry` value against real-world information, since migration_v52's backfill (`industry = types[1]`) had mostly carried over `service_provider` — a generic business-role tag from the old checkbox list — rather than an actual sector.
+
+- Reviewed all 80 companies in the table (via a CSV export Pablo ran from Supabase SQL Editor) and looked up each one on the web to confirm its real line of business.
+- `supabase/migration_v54_reclassify_company_industries.sql` corrects 67 of the 80 (e.g. Netflix/DIRECTV/Paramount/VRIO → `broadcasting_entertainment`; Akamai/AWS/Google Cloud → `colocation_hosting_cloud`; law firms, regulatory-affairs and management consultancies → `professional_services`/`consulting`; telecom operators and satellite operators → `telecommunications`; SpaceX → `aerospace`; Lockheed Martin → `military_defense`; trade chambers/associations classified by their sector, e.g. CABASE/GSMA/TIA → `telecommunications`, CADMIPyA → `retail_wholesale`). 13 companies (mostly hardware manufacturers already correctly tagged `manufacturer`, plus 3 financial entities) needed no change and are not included.
+- Each `UPDATE` is scoped to `id AND industry IS NOT DISTINCT FROM <value at review time>`, so it's a no-op if Pablo already reclassified that company manually since the export — it won't overwrite a newer manual edit. Every statement has a one-line comment explaining the reasoning/source.
+- No code or schema changes — `companies.industry`'s CHECK constraint already allows all values used. Run manually in Supabase SQL Editor.
+
+## Master Data → Companies: filter bar (name / industry / country)
+
+Pablo asked to add filters to the Companies tab, same as Contacts already has.
+
+- Added a `filter-bar` above the Companies table with: a name search box, an Industry dropdown (built from `COMPANY_INDUSTRIES`, same sorted-by-active-language logic as the form's dropdown), and a Country dropdown (built from the countries actually present on companies, alphabetized). A "Clear filters" button resets all three. A filter-count line below shows "X of Y companies".
+- Reused the existing `.filter-bar`/`.ffield`/`.fclear`/`.filter-count-row`/`.filter-count` CSS classes (already in `assets/style.css` for the Contacts filter bar) — no new CSS needed.
+- `renderCompaniesTable()` now renders `getFilteredCompanies()` instead of the raw list; filter options are rebuilt in `populateCompanyFilters()` whenever companies load and on language toggle (so the Industry dropdown's labels/order stay correct after switching EN/ES).
+- i18n keys added: `md.companies.filter.name`, `md.companies.filter.industry`, `md.companies.filter.country` (reused the existing `dash.filter.clear` key for the button).
+- **Cache-busting version bump:** `i18n.js?v=58` → `?v=59` across every `app/*.html` file (no `platform.js` content changed).
+
+## AI Financing Recommendation (best combination of instruments)
+
+Pablo (sep 2026): "para cualquier proyecto nuevo o ya ingresado agregar una
+nueva funcionalidad que permita utilizar IA para elegir la mejor
+combinación de instrumentos/programas de financiación existentes en la
+plataforma y mostrarlos en el dashboard de proyectos." Design decisions
+confirmed with Pablo before building: (1) triggered on demand by a button on
+`app/project.html`, same pattern as AI Analysis/FSU Scoring — not
+automatic on every save; (2) the dashboard shows a compact badge that links
+to the full detail on the project page, not the full instrument list
+inline; (3) purely informational — each recommended instrument has an
+"Aplicar" button that feeds into the *existing* "Programas de
+Financiamiento" apply flow, it doesn't auto-create the application.
+
+**How it works.** `api/recommend-financing.js` (new Vercel serverless
+function, same LLM_PROVIDER switch and Supabase service-role pattern as
+`api/analyze-project.js`/`api/extract-template-data.js` — no new env vars
+needed if AI Analysis is already configured) fetches the project's full
+attribute set (type, country, budget, duration, priority, technical
+criticality, complexity, beneficiary count, readiness stage, financing
+already secured) plus the ENTIRE catalog of financing/preparation `programs`
+rows on the platform (`program_role = 'financing'` — excludes umbrella
+Iniciativas), and asks the model to pick the best COMBINATION (not just the
+single best match) — e.g. a preparation/feasibility grant now plus a debt
+instrument for later, or a debt instrument plus a political-risk-insurance/
+guarantee instrument that makes that same debt cheaper. The prompt
+explicitly encodes the platform's "at most one FSU-linked financing-stage
+Program per project" rule (migration_v48) so the model doesn't recommend
+two FSU-linked instruments at once. The model's response is never trusted
+verbatim: every recommended `program_id` is resolved against the real
+catalog server-side (a hallucinated id is silently dropped), and only
+`fit_score`/`rationale` are taken from the model as-is.
+
+**Storage.** One row per project in the new `public.financing_recommendations`
+table (`recommended`/`recommended_en` jsonb arrays, `summary`/`summary_en`,
+`raw_model_output`) — see `supabase/migration_v55_financing_recommendations.sql`.
+Re-running overwrites the row in place (upsert on `project_id`), same
+convention as `fsu_scoring`, NOT an append-only history like
+`framework_analysis` — the combination logic is meant to reflect the
+project's *current* attributes and the *current* Programs catalog, so an old
+recommendation has no standing value once a newer one exists. Entirely
+AI-generated (no manual/self-entered variant), so — mirroring
+`framework_analysis`'s own "AI path has no insert/update policy for anon/
+authenticated" convention — the table only gets a SELECT RLS policy (owner,
+any advisor, or any admin); every write goes through the service-role key
+inside `api/recommend-financing.js`, which enforces its own owner/assigned-
+advisor/admin permission check server-side (identical logic to
+`api/analyze-project.js`'s `isOwner || isAssignedAdvisor || isAdminCaller`,
+no workflow-stage restriction — same "any stage, any of the three roles"
+rule as Self-Assessment/AI Analysis/FSU Scoring).
+
+**UI — `app/project.html`.** A new "Financing Recommendation" item in the
+Analysis nav menu scrolls to a new `financingRecommendationBlock` section
+(visible under the same `canRunAnalysis` gate as AI Analysis: owner,
+assigned advisor, or any admin, at any workflow stage). "Generar
+recomendación" runs it; the result renders as one card per instrument
+(name, financing entity, funding-stage tag, a 0-100 `fit_score` badge
+colored via the same `INAPlatform.scoreBandClass()` 4-band ramp the AI
+Analysis/FSU/Self-Assessment badges already use, and the rationale text),
+plus the overall combination-strategy summary. An instrument already
+applied to the project shows "✓ Ya aplicado" instead of an Apply button.
+"Aplicar" on a not-yet-applied instrument calls the *same*
+`applyProgramFromPicker()` already used by the "Programas de Financiamiento"
+block's own dropdown — no separate apply code path to keep in sync.
+
+**UI — `app/dashboard.html`.** `INAPlatform.listFinancingRecommendationsForProjects()`
+batch-fetches every visible project's cached recommendation in one query
+(same pattern as `listAnalysesForProjects()`/`listProjectProgramsForProjects()`).
+A row with a recommendation gets a compact "💡 N instrumentos sugeridos"
+badge next to the existing Self/AI/FSU score badges, linking to
+`project.html?id=...#financingRecommendationBlock`. Implementation note:
+that badge is a `<span data-finreco-goto>` wired up via a small click-
+delegation helper (`wireFinancingRecoBadges()`), NOT a literal `<a>` tag —
+the row's own `main` element is itself an `<a href="project.html?id=...">`
+wrapping the whole card/row, and nesting a real `<a>` inside another `<a>`
+is invalid HTML (the browser silently closes the outer anchor at that
+point, breaking click-to-open for anything rendered after it in the same
+row — the same reason `buildActions()`'s edit-icon `<a>` is built as a
+separate sibling element instead of embedded in that same HTML string).
+
+**Files touched:** `supabase/migration_v55_financing_recommendations.sql`,
+`supabase/schema.sql` (new table), `api/recommend-financing.js` (new),
+`assets/platform.js` (`recommendFinancingUrl()`,
+`requestFinancingRecommendation()`, `getFinancingRecommendation()`,
+`listFinancingRecommendationsForProjects()`), `app/project.html` (new menu
+item + block + render/generate logic), `app/dashboard.html` (batch fetch +
+badge), `assets/style.css` (`.score-badge.finreco`), `assets/i18n.js`
+(`finreco.*` keys), `local-server.js` + `vercel.json` (route/rewrite for the
+new endpoint, same pattern as `analyze-project`/`extract-template-data`).
+Cache-busting bumps: `platform.js?v=70` → `?v=71`, `i18n.js?v=59` → `?v=60`,
+`style.css?v=22` → `?v=23`, across every `app/*.html` file.
+
+**To deploy:** run `supabase/migration_v55_financing_recommendations.sql`
+in the Supabase SQL Editor, then `git push`/redeploy `api/recommend-financing.js`
+on Vercel, then re-upload the changed `app/*.html` files plus
+`assets/platform.js`, `assets/i18n.js` and `assets/style.css` to Bluehost.
+
+### Fix: recommendation ignored FSU + already-loaded financing (Pablo, sep 2026)
+
+Pablo's bug report: "la función de Generate recomendation dentro de la opción
+Financial recomendation, no está mostrando la parte del FSU y las
+financiaciones ya cargadas y reflejar eso en el documento Investment
+Proposal." Root cause: `buildProjectProfile()` in `api/recommend-financing.js`
+only sent the model a boolean `already_has_fsu_direct` flag and a bare list of
+applied `program_id`s — no actual %/amount figures — so the model had no way
+to reason about how much of the budget was already covered, and the UI never
+displayed that context either. Three changes:
+
+1. **`api/recommend-financing.js`** now re-implements
+   `INAPlatform.computeFinancingCoverage()`'s exact arithmetic server-side
+   (`computeFinancingCoverage()`/`isFsuFinancingEntity()` in this file —
+   duplicated rather than imported, since this file can't reach into the
+   browser-oriented `assets/platform.js`). `project_programs` is fetched with
+   the linked `programs(name, financing_entity, funding_stage)` embedded plus
+   each row's own `financing_percentage`/`financing_amount`, and
+   `buildProjectProfile()` now sends `fsu_coverage_percent`,
+   `other_financing_coverage_percent`, `programs_coverage_percent`,
+   `total_coverage_percent`, `remaining_financing_gap_percent`, and a
+   `financing_already_applied` list (name/entity/stage/%/amount per program) —
+   not just a boolean. The system prompt gained an explicit "CRITICAL —
+   account for financing already secured" block instructing the model to
+   reference `remaining_financing_gap_percent` in its summary, never
+   recommend a second FSU-linked Program once one is already covering part of
+   the budget, and recommend fewer (or zero) additional financing-stage
+   Programs once the gap is small.
+2. **`app/project.html`** — the `financingRecommendationBlock` panel now
+   shows a compact "Financiamiento ya asegurado: X% — resta cubrir Y%"
+   summary (`renderFinancingRecoCoverage()`, a lighter twin of the existing
+   `renderFinancingCoverage()` in the Financing Programs block below, same
+   `INAPlatform.computeFinancingCoverage()` call) right above the AI's
+   suggested-instruments list, so the already-secured context is visible
+   without scrolling down. Shown whenever the block itself is visible
+   (`canRunAnalysis`), independent of whether a recommendation has actually
+   been generated yet.
+3. **`app/investment-proposal.html`** — new optional chapter "Recomendación
+   de Financiamiento IA", inserted after "Matriz de Riesgos" and before
+   "Planificación", following the exact same conditional-section pattern as
+   the existing `currentFsu`-gated and `currentRisks`-gated chapters: skipped
+   entirely if no recommendation has been generated for the project yet
+   (`currentFinancingReco`, fetched via `INAPlatform.getFinancingRecommendation()`
+   in `init()`, same as `currentFsu`/`currentRisks`). Renders the same
+   "Financiamiento ya asegurado" coverage summary, the AI's overall
+   combination-strategy summary, and one entry per recommended instrument
+   (name, fit score, financing entity, funding stage, already-applied flag,
+   rationale). The índice's reserved-space constant went from 9 to 10 rows to
+   account for the extra possible chapter.
+
+No DB/API contract changes — `financing_recommendations` rows already stored
+enough (`recommended`/`recommended_en`/`summary`/`summary_en`); only the
+prompt input and the two pages' rendering changed. No cache-busting version
+bump was needed since `assets/platform.js`/`i18n.js`/`style.css` weren't
+touched — only `api/recommend-financing.js` (server-side, redeploy on Vercel)
+and the two `app/*.html` pages' own inline scripts (re-uploaded to Bluehost,
+no `?v=` to bump since the HTML pages themselves aren't cache-busted).
+
+### Follow-up: suggested %, editable at apply, unapply (Pablo, sep 2026)
+
+Pablo's request: "que la recomendación de financiación también proponga los
+porcentajes de cada programa que se elija y que el usuario al aplicar pueda
+modificar esos porcentajes. Una vez seleccionado el botón apply se debería
+marcar de alguna manera que se aplicó esa financiación y en ese caso debería
+haber una opción de desaplicar." Three changes, same files as the previous
+fix:
+
+1. **`api/recommend-financing.js`** — the system prompt now also asks for
+   `suggested_percentage` (integer 0-100, or `null`) per recommended
+   instrument: the % of the project's budget the AI thinks that instrument
+   should cover, given `remaining_financing_gap_percent` and what the OTHER
+   recommended financing-stage instruments in the same list are also
+   proposed to cover (complementary instruments should roughly sum to the
+   remaining gap; alternative/either-or instruments may each independently
+   propose covering most of it — the prompt tells the model to say so in the
+   rationale when that's the case). Server-side, `suggested_percentage` is
+   forced to `null` for any `funding_stage: 'preparation'` instrument
+   regardless of what the model returned (same rule as
+   `computeFinancingCoverage()`'s "preparation-stage rows never get a
+   share"), and otherwise clamped to an integer 0-100 — same
+   never-trust-the-model-verbatim posture as `program_id`/`fit_score`. The
+   `bedrock-mock` simulated branch was updated to also emit a
+   `suggested_percentage` per item, and the migration file's column comment
+   was updated to document the new field in the jsonb shape.
+2. **`app/project.html`** — the recommendation panel's financing-stage cards
+   now show an editable "% del presupuesto" number input, prefilled from
+   `suggested_percentage` (or from the actual applied row's saved
+   `financing_percentage` once applied — the real saved value always wins
+   over the AI's suggestion). Clicking "Aplicar" reads whatever's currently
+   in that input and applies WITH that %, via
+   `applyProgramFromPicker(programId, financingPercentage)` (new optional 2nd
+   param — `undefined` for every other existing caller, so the plain
+   "Programas de Financiamiento" dropdown's behavior is unchanged) →
+   `INAPlatform.applyToProgram(..., { financingPercentage })`, which already
+   accepted this option (it just wasn't wired up from this panel before).
+   Once applied, the card marks itself "✓ Ya aplicado" and swaps the
+   "Aplicar" button for "Guardar %" (re-saves an edited % via the same
+   `INAPlatform.updateProjectProgramFinancing()` the Financing Programs block
+   already uses) and "Desaplicar" (calls the existing
+   `removeProgramApplication()` — same confirm dialog and removal path as
+   the Financing Programs block's 🗑 button, just reachable from this panel
+   too). Important correctness fix bundled in here: "already applied" is now
+   computed LIVE from `currentProjectPrograms` on every render, not from the
+   `already_applied` flag stored on the recommendation at generation
+   time — that flag goes stale the instant the user applies or removes a
+   program afterward without re-running the recommendation. Both
+   `applyProgramFromPicker()` and `removeProgramApplication()` now call
+   `renderFinancingRecommendation()` again after they change
+   `currentProjectPrograms`, so a card flips between "Aplicar" and "✓ Ya
+   aplicado ... Desaplicar" immediately, no page reload needed.
+3. **`app/project-template.html`** — for a recommended Program that has a
+   guided template (redirects to this page in `?mode=apply` instead of
+   applying directly), the % typed into the recommendation card is carried
+   over as a new `&pct=` query param and applied via
+   `applyToProgram(..., { financingPercentage: applyPct })` once the
+   template form is submitted, so the percentage isn't lost across that
+   redirect round trip.
+
+No DB schema change — `suggested_percentage` just lives inside the existing
+`recommended`/`recommended_en` jsonb arrays, and the % the user actually
+applies with is stored exactly where it already was,
+`project_programs.financing_percentage` (migration_v35/v37), same column the
+Financing Programs block has always used. No cache-busting bump needed here
+either, for the same reason as the previous fix.
+
+### Financing Programs dashboard + dedicated detail page (Pablo, sep 2026)
+
+Pablo's request: "la solapa de financing program debería manejarse como un
+dashboard mostrando los programas de financiación de forma similar a los
+proyectos. Una vez seleccionado un programa, se muestra el detalle en otra
+pantalla." `app/financing-programs.html` used to be a single flat list of
+`.info-block` cards with inline Edit/Delete/View Projects controls and no
+click-through — it's now a filterable dashboard mirroring
+`app/dashboard.html`'s own pattern, and clicking a program opens a brand-new
+detail page, `app/financing-program.html`, kept entirely separate from the
+edit form (`new-program.html`) the same way `project.html` (view) is separate
+from `new-project.html` (edit).
+
+1. **`app/financing-programs.html` (rewritten)** — now has:
+   - A stat strip (`.dash-stats`, reused as-is from dashboard.html): Total
+     Programs, Project Financing count, Preparation Funding count, and
+     FSU-linked count.
+   - A filter bar (`.filter-bar`, reused as-is): Organization type, Funding
+     stage, "Covers project type" (matches against each program's declared
+     `types` / derived types, same `programTypes()` helper the old page
+     already had), and a free-text Search box (name + organization).
+   - A List/Grid view toggle (`.view-toggle`, reused as-is), persisted in
+     `localStorage['inaFinancingProgramsViewMode']` — a separate key from
+     dashboard.html's own `inaDashboardViewMode` so the two pages' view
+     preferences don't clash.
+   - Each row/card's main area is a real `<a href="financing-program.html?id=…">`
+     (name, organization + org-type/funding-stage/financing-entity badges,
+     type tags); a project-count pill and an `.icon-action-group` (View
+     Projects / Edit / Delete, same gating as before — Edit for owner or
+     `canManagePrograms()`, Delete for owner or admin) are built as SIBLING
+     elements next to `main`, never nested inside its `innerHTML` — the same
+     anchor-nesting rule documented throughout dashboard.html's row/card
+     builders (a literal `<a>`/`<button>` embedded inside another `<a>`'s
+     innerHTML gets silently closed by the browser at that point, breaking
+     the click target).
+   - `.project-row`/`.project-card` were NOT reused for these rows/cards —
+     their `grid-template-columns` is hard-coded to a project row's exact 5
+     siblings (icon+name+type / date / status pill / owner / actions) and
+     doesn't fit a program row's 3 siblings (main / project count /
+     actions). New `.program-row`/`.program-list`/`.program-card`/
+     `.program-grid` classes were added to `assets/style.css` instead,
+     following the exact same structural pattern (accent left-border via
+     `data-accent`, `.icon-action-group` reused unchanged for actions).
+     `data-accent` is keyed off `funding_stage`/`financing_entity` instead of
+     workflow status: `fsu` (amber accent) for any FSU-linked program,
+     `preparation` (ink accent) for a preparation-stage program, `financing`
+     (neutral) for everything else.
+2. **`app/financing-program.html` (new)** — the detail screen a click lands
+   on: breadcrumb back to the dashboard, a `.platform-header` (name +
+   organization/org-type/funding-stage/financing-entity badges, "View
+   Projects" → `dashboard.html?program=id`, "Edit" → `new-program.html?id=…`
+   gated the same as the dashboard row, "Delete" gated the same way too,
+   "Close" back to the dashboard), a type-tags row, and three `.info-block`
+   sections: Description (hidden if empty), Supporting Documents (via
+   `INAPlatform.listProgramDocuments()` + the same click-for-a-fresh-signed-
+   URL `buildDocLink()` pattern as `project.html`'s document list), and
+   Linked Projects — every project connected via either the legacy umbrella
+   `program_id` tag or a real `project_programs` application, each row
+   linking to `project.html?id=…` with its status pill. No new platform.js
+   helper was needed for the linked-projects list — there's no dedicated
+   "projects for one program" query yet, so it fetches `listProjects()` +
+   `listProjectProgramsForProjects()` once and filters down to the one
+   program id, the same two calls `financing-programs.html` already used to
+   build its project-count index, just keeping full rows instead of only a
+   count.
+3. **`assets/style.css`** — new section "Financing Programs dashboard" with
+   `.program-list`/`.program-row`/`.program-grid`/`.program-card`/`.pgname`/
+   `.pgmeta` (documented inline with why `.project-row`/`.project-card`
+   weren't reusable here). Bumped to `?v=24` across every `app/*.html`.
+4. **`assets/i18n.js`** — new keys `progfin.filter.fundingStage`,
+   `progfin.filter.projectType`, `progfin.filter.none`, `progfin.stats.*`
+   (total/financing/preparation/fsu), `progfin.detail.projects`,
+   `progfin.detail.noProjects`, `progfin.detail.noDocs` — everything else
+   (`pd.description`, `pd.documents`, `pd.editProject`, `pd.deleteProject`,
+   `pd.close`, `dash.filter.search`, `dash.filter.clear`, `dash.loading`,
+   `prog.viewProjects`, `prog.f.orgType`) was reused verbatim from existing
+   keys. Bumped to `?v=61` across every `app/*.html`.
+
+Both list pages this pattern already existed for (`app/dashboard.html` for
+projects) and now `app/financing-programs.html` follow the same shape: a
+stats-and-filters dashboard that links out to a dedicated, read-only detail
+page, kept separate from the create/edit form. `app/initiatives.html` (the
+umbrella/multi-project `program_role`) was intentionally left as its
+original flat list — Pablo's request was specifically about the financing
+tab, and Initiatives has a much smaller, simpler catalog today; the same
+dashboard treatment could be extended there later using the exact same
+`.program-row`/`.program-card` classes if needed.
+
+### Financing management split into its own screen (Pablo, sep 2026)
+
+Pablo's request, verbatim: "en la parte de Financing, incluir solo el monto
+total del proyecto en pesos y dólares y el % requerido de financiación. La
+gestión de financiación separarla de la edición del proyecto. Agregarla en
+el menú entre Project y Documentación como una tarea a realizar una vez
+dado de alta el proyecto. En el menú de financiación que muestre una
+pantalla donde se incluya las funciones de recomendación de financiación y
+que el usuario pueda elegir de acuerdo a su criterio y controlar que los
+porcentajes no superen el 100%." Three design decisions were confirmed with
+Pablo before building this: (1) the new "% financing required" field means
+the % of the total budget that needs external financing — the TARGET the
+new screen's coverage bar tries to reach, not always assumed to be 100%;
+(2) the existing FSU fields and "Other financing source" fields move AS-IS
+to the new screen (not deleted), now editable there since they're no longer
+editable on the project form; (3) the "don't exceed 100%" rule is a HARD
+BLOCK on save/apply, not just a warning — and it always caps against 100%
+of the total budget, never against the (possibly lower) required-percentage
+target.
+
+1. **DB — `migration_v56_financing_required_percentage.sql`** — adds
+   `projects.financing_required_percentage numeric` (nullable; `NULL` means
+   "the whole budget needs financing," i.e. defaults to 100 wherever it's
+   read). No RLS changes — same owner/advisor/admin write rules as every
+   other `projects` column.
+2. **`assets/platform.js`**:
+   - `createProject()`/`updateProject()` accept/persist
+     `financingRequiredPercentage`.
+   - `effectiveFinancingRequiredPercentage(project)` — returns `100` when
+     the column is `null`/unset, so every caller (the new screen's coverage
+     bar, the hard-block check, `generateProjectPdf()`) reads the same
+     effective target instead of each re-deriving the null-means-100
+     fallback independently.
+   - `computeFinancingCoverage(project, projectPrograms)` extended to also
+     return `requiredPct` (the effective target above) and
+     `remainingToRequiredPct` (`requiredPct - totalPct`, floored at 0) —
+     alongside its existing `fsuPct`/`otherPct`/`programShares`/`totalPct`.
+     `totalPct` (how much is currently allocated) and `requiredPct` (how
+     much actually needs to be raised) are two different numbers and are
+     never conflated anywhere in the codebase.
+
+## Financing Management: Generate Recommendation split into its own screen (`app/financing-recommendation.html`)
+
+Pablo's request: "en Financing Management de un proyecto, separar la función de Generate Recomendation de los datos ingresados. Una vez presionado el boton de Generate recomendation se debería abrir una pantalla nueva o separada en la que se elijan las opciones sugeridas y luego se de Save o Cancel y se vuelva a los datos de la financiación elegida. El boton de Generate recomendation debería estar a la derecha del título Financing Management y su descripción." Same split this codebase already used for the Risk Matrix and the Investment Proposal editor: pull an AI-driven sub-workflow out of the data-entry page into its own screen, leaving a compact summary + entry-point button behind.
+
+- **New page `app/financing-recommendation.html`:** same app shell/persistent-project-nav as `project-financing.html` (identical nav ids, so leaving the financing page for this one doesn't fall back to the generic site-wide nav). Reached via `?id=<projectId>`; only owner/assigned advisor/admin (`canManage`) can open it — anyone else is redirected straight back to `project-financing.html`. On load it fetches the existing recommendation (`getFinancingRecommendation`); if none exists yet it generates one immediately (`requestFinancingRecommendation`) so the screen is never empty right after clicking the header button.
+- **Selections are staged, not applied live:** each suggested (non-templated) program gets a checkbox ("Apply this instrument") plus an editable `%` field, held in local state (`selections`) — nothing hits the database on checkbox/percentage changes. Only **Save selection** commits the batch (apply new / update changed / remove unchecked, via the existing `applyToProgram`/`updateProjectProgramFinancing`/`removeProjectProgram` calls), checking the combined result against 100% of the budget first (new `projectedTotalPctForBatch()` helper, which builds one hypothetical program list and reuses the existing `computeFinancingCoverage()` rather than re-deriving the math) and blocking the save if it would go over. **Cancel** discards all staged changes and returns immediately. Both buttons end by navigating back to `project-financing.html?id=<projectId>`.
+- **Templated programs (TASU, USTDA, Mercado de Capitales, Red Mayorista Neutral, etc.) are excluded from the staged flow** — applying one requires the guided multi-step form on `project-template.html`, which can't be batched, so these keep their pre-existing behavior unchanged: a direct "Fill template to apply" link if not yet applied, an immediate Unapply button (calls `removeProjectProgram` right away) if already applied.
+- **`app/project-financing.html` header restructured:** title/eyebrow/lede now sit in a `.platform-header` flex row (same class `financing-programs.html` uses for its "Create Financing Program" button) with the "Generate recommendation" button (`financingRecoRunBtn`) at the right — no longer buried inside the recommendation block's own sub-header. The button is a plain link to `financing-recommendation.html?id=<projectId>`, shown only when `canManage`.
+- **`financingRecommendationBlock` on `project-financing.html` is now read-only:** the old full apply/unapply list UI (`renderFinancingRecommendation()`, `saveRecoPercentage()`, `runFinancingRecommendation()`, the old inline "Generate recommendation" click handler) was removed entirely and replaced with a small summary card (`renderFinancingRecoSummary()`) showing just the latest recommendation's summary text and generated-at timestamp, or an empty-state message if none exists yet. All instrument selection/application now happens exclusively on the new page.
+- **i18n:** new `finreco.crumb`, `finreco.pageLede`, `finreco.regenerate`, `finreco.select`, `finreco.save`, `finreco.cancel`, `finreco.summaryEmpty`, `finreco.summaryHelp` keys; existing `finreco.cta`/`finreco.title`/`finreco.help`/`finreco.run`/`finreco.loading`/`finreco.empty` reused as-is.
+- **Cache-busting version bump:** `i18n.js?v=65` → `?v=66` across every `app/*.html` file (no `platform.js`/`style.css` changes this round — only existing exports/classes were reused).
+
+**To use:** open a project's Financing Management page → "Generate recommendation" (top-right, next to the title) → review the AI-suggested instruments, check the ones to apply and adjust %, → "Save selection" to apply them all at once (or "Cancel" to discard) → back on Financing Management, the summary card shows the latest recommendation and the Programs list reflects whatever was saved.
+
+## Success Cases: create from an uploaded PDF (`api/extract-success-case.js`)
+
+Pablo's request: "El alta de un nuevo Success case se debería poder cargar a partir de un documento pdf subido a la plataforma. Luego completar los datos restantes, si fuera necesario, a mano." Same "propose values, never write anything, advisor reviews before saving" shape already used by `api/extract-business-card.js` (Master Data → Contacts) and `api/extract-template-data.js` (guided templates' "Autocomplete from documents").
+
+- **New serverless function `api/extract-success-case.js`:** the case-study PDF is sent straight from the browser as base64 in the request body — there's no `success_cases` row yet to attach a document to, so unlike `extract-template-data.js` (which reads documents already attached to an existing project) this endpoint takes the file directly, same shape as `extract-business-card.js`'s photo upload. Text-only extraction via `pdf-parse` (same pinned 1.1.4 version used elsewhere), then one LLM call using the SAME `LLM_PROVIDER` switch/credentials as AI Analysis/Autocomplete (anthropic/groq/bedrock/bedrock-mock/local) — no vision model needed since it's reading a text PDF, not a photo. Gated to advisor/admin (role read server-side via the service role key), matching `migration_v59_success_cases.sql`'s insert policy. Returns `{ ok, fields: { title, provider, country, region, sector, summary_es, summary_en, beneficiaries_count, metrics_es, metrics_en, source_label }, documentUsed }` — `sector` is validated server-side against the exact 7-value taxonomy from the DB check constraint, never a value outside it. If the source document actually covers several distinct cases, the prompt tells the model to extract only the first/most prominent one rather than merging them.
+- **`assets/platform.js`:** `extractSuccessCaseUrl()` (same production/relative hosting split as every other AI endpoint helper) and `INAPlatform.extractSuccessCase(pdfBase64, fileName)` — posts to the endpoint with the signed-in user's bearer token, throws with the server's error message on failure. Purely a proposal call: nothing is written to `success_cases` here, `createSuccessCase()` still runs separately once the advisor submits the form.
+- **`app/new-success-case.html` — "Cargar desde un documento PDF" box:** sits above the form, create-mode only (hidden entirely when editing an existing case — re-running extraction over an already-saved entry has no clear merge behavior worth building for a low-traffic reference form). A file input (`accept="application/pdf"`) triggers `fileToBase64()` (same FileReader pattern as `master-data.html`'s business-card upload) → `INAPlatform.extractSuccessCase()` → `prefillFromPdfExtraction()` fills in every matching form field (title, provider, country, region, sector radio, both summaries, beneficiaries count, both metrics fields, source label) — all of it stays in ordinary editable inputs, exactly per Pablo's "completar los datos restantes ... a mano." Status text cycles "Leyendo el PDF…" → a ✓ confirmation → or the error message on failure.
+- **Routing:** `vercel.json` rewrite `/extract-success-case → /api/extract-success-case`; `local-server.js` now also `require()`s and registers the handler (`app.post('/api/extract-success-case', ...)`), and its shared `express.json()` body limit was raised from 2mb to 20mb so a base64-encoded PDF has room — this limit is shared by every endpoint local-server.js serves, not new per-route config.
+- **i18n:** new `sc.f.uploadPdf`, `sc.f.uploadPdf.help`, `sc.f.uploadPdf.btn` keys.
+- **Cache-busting version bump:** `platform.js?v=76` → `?v=77`, `i18n.js?v=66` → `?v=67` across every `app/*.html` file (no `style.css` changes this round).
+
+**To use:** Success Cases → "New Success Case" → "Cargar desde un documento PDF" → pick the case-study PDF → fields below populate automatically → review, fix anything the model got wrong or left blank, then "Add Success Case" as usual.
+   - `updateProjectFinancing(id, {...})` — a lightweight partial-patch
+     helper distinct from `updateProject()`: it only writes keys explicitly
+     passed (checked via `!== undefined`) and never touches
+     `status`/`readiness_stage`. Used by the new screen's FSU/"other
+     financing" Save buttons, since a partial save there should never
+     accidentally reset the project's workflow state.
+3. **`app/new-project.html` (simplified)** — the Financing step of the
+   creation/edit wizard now asks for exactly three things: total budget
+   (ARS), total budget (USD), and "% of budget that needs financing." Every
+   other financing control that used to live here — FSU amount/%/scope,
+   applying to one or more financing/preparation Programs, "other financing
+   source" amount/%/notes — was removed from this file entirely (including
+   the multi-program-application reconciliation logic and the
+   preparation-program template picker) and now lives only on the new
+   dedicated page below. A short hint under the new field
+   (`np.f.financingManagement.hint`) tells the user that applying to
+   programs and getting an AI recommendation happens afterward, once the
+   project is registered.
+4. **`app/project-financing.html` (new)** — the dedicated "task to perform
+   once the project has been registered," reached from a new top-nav link
+   (`navFinancingLink`, positioned between Project and Documentación, per
+   Pablo's exact request) and from a "Manage Financing" button on
+   `project.html`'s compact summary card. Modeled structurally on
+   `app/investment-proposal.html` (the same page-per-concern split used for
+   the Investment Proposal editor). Contains:
+   - A read-only Project Budget block (ARS/USD totals + the effective
+     required %), with a note pointing back to the project's own edit form
+     for changing those numbers.
+   - A target-aware coverage bar: unlike the old inline summary (which only
+     showed "% of budget covered" against a flat 100%), this bar shows a
+     visual marker at `requiredPct` and colors green once `totalPct`
+     reaches it, amber while below it, red if `totalPct` ever exceeds 100%.
+   - The FSU direct fields (amount ARS/USD, %, scope/notes) — moved here
+     verbatim from `new-project.html`, now editable via
+     `updateProjectFinancing()`.
+   - The "Other financing source" fields (%, amount, notes) — same
+     treatment.
+   - The "Apply to Program" pickers (preparation-stage and financing-stage,
+     including the single-FSU-program-at-a-time rule from migration_v48)
+     and each applied program's own %/amount fields — ported from
+     `project.html` unchanged in behavior.
+   - The AI Financing Recommendation panel (`requestFinancingRecommendation()`
+     / `getFinancingRecommendation()`) — ported from `project.html`
+     unchanged, satisfying "que muestre... las funciones de recomendación
+     de financiación y que el usuario pueda elegir de acuerdo a su
+     criterio": the user can edit the AI's suggested % per instrument
+     before applying, exactly as before.
+   - **The 100% hard block**: every write path that could push total
+     coverage over budget — saving FSU fields, saving "other financing"
+     fields, saving a per-program %, applying a program from a picker
+     (with or without a prefilled %), and saving an edited recommendation
+     %  — first builds a hypothetical copy of the current project/programs
+     with the candidate value substituted in
+     (`hypotheticalTotalPct({ projectOverrides, programOverride })`), runs
+     the REAL `computeFinancingCoverage()` on that copy (so the hard block
+     can never drift out of sync with the real arithmetic, including the
+     FSU/FSU-linked-program double-counting-avoidance logic), and calls
+     `blockIfOverBudget(totalPct)` — which alerts and refuses to save if
+     the resulting total would exceed 100% of the budget (a 0.5-point
+     tolerance absorbs `Math.round()` noise). This always checks against
+     100% of the total budget, never against the possibly-lower
+     `requiredPct` target, per Pablo's confirmed answer.
+   - Editing (FSU/other-financing saves, program apply/remove, running a
+     new recommendation) is gated to the owner, the assigned advisor, or an
+     admin (`canManage`) — but the page itself, like `project.html`, is
+     visible read-only to any authenticated viewer of the project.
+5. **`app/project.html` (trimmed)** — the old inline
+   `financingRecommendationBlock` + `programsBlock` (FSU fields, "other
+   financing" fields, program-application lists/pickers, the full AI
+   recommendation panel — several hundred lines of markup and JS) were
+   removed entirely and replaced with a single compact
+   `financingSummaryBlock`: a heading, a one-line description, a "Manage
+   Financing" button linking to `project-financing.html?id=…`, and the same
+   target-aware coverage bar described above (`renderFinancingSummary()`,
+   reusing `computeFinancingCoverage()`). This block is visible to any
+   viewer (the destination page itself gates editing), matching the
+   `proposalBlock`/"Manage Proposal" split established for the Investment
+   Proposal feature. The new top-nav link `navFinancingLink` uses the same
+   single-destination-link pattern as `navHelpLink` (a plain `<a>`, not a
+   dropdown menu) since it points at exactly one page.
+6. **`assets/i18n.js`** — new keys: `np.f.financingRequiredPercentage(.help)`,
+   `np.f.financingManagement.hint` for the trimmed wizard step; `pf.nav`,
+   `pf.manage`, `pf.summary.help` for the nav link and summary card;
+   `pf.title`, `pf.help`, `pf.budget.title`, `pf.budget.editHint`,
+   `pf.fsu.help`, `pf.fsu.amount`, `pf.fsu.amountUsd`, `pf.fsu.percentage`,
+   `pf.fsu.scope`, `pf.other.percentage`, `pf.other.amount`,
+   `pf.other.notes`, `pf.save` for the new page (the FSU/"other financing"
+   field labels got fresh `pf.*` keys rather than reusing the old
+   `np.f.fsuAmount`-style keys, since those still say "(optional)" — no
+   longer accurate now that these fields live on their own dedicated
+   management screen). Bumped to `?v=62` across every `app/*.html`.
+7. **`assets/platform.js`** bumped to `?v=72` across every `app/*.html`
+   (the `financing_required_percentage` support from migration_v56 had
+   landed in an earlier session without a version bump; this bump covers
+   both that change and everything in this section).
+
+## Bilingual program/Initiative names (Sep 2026)
+
+Pablo flagged, while reviewing `app/project-financing.html`'s language
+toggle, that Financing Program names — "FSU", "BID-ISP…", "USTDA…", and
+every Initiative name — never actually translated. The root cause turned
+out to be platform-wide, not specific to that one screen:
+`programs.name` has always been a single plain-text field, typed once (in
+whatever language) when the program or Initiative is created via
+`new-program.html`, with no English counterpart anywhere. Every screen
+that shows a program's name — the dashboard, project detail, the
+Financing Programs list and detail pages, Initiatives, the project
+Financing-management page, the Investment Proposal PDF, and the AI
+Financing Recommendation cards — was reading that same single `name`
+column, so toggling the site to English never changed it.
+
+1. **DB — `migration_v57_program_name_en.sql`** — adds an optional,
+   nullable `programs.name_en text` column, following the exact same
+   bilingual convention already used for AI-generated content
+   (`framework_analysis.*_en`, migration_v40; `financing_recommendations.
+   *_en`, migration_v52). `NULL`/empty always falls back to `name` — the
+   ~20 existing programs with no English name keep displaying exactly as
+   before, in both languages. `schema.sql`'s `programs` table definition
+   was updated to match for fresh installs.
+2. **`assets/platform.js`**:
+   - New helper `INAPlatform.programDisplayName(program, lang)` — the
+     single authoritative place this logic lives. Accepts either a full
+     Program row or a minimal `{ name, name_en }` shape; returns
+     `name_en` only when `lang === 'en'` AND it's set, otherwise falls
+     back to `name`. `lang` defaults to `currentLang()` if omitted.
+   - `createProgram()`/`updateProgram()` accept a new `nameEn` param,
+     persisted as `name_en`.
+   - Every Supabase `.select()` that embeds a `programs(...)` relation
+     (in `listProjectPrograms`, `listProjectProgramsForProjects`,
+     `applyToProgram`, `updateProjectProgramFinancing`, `listProjects()`,
+     `getProject()`) now also fetches `name_en` so it's available
+     client-side without an extra round trip. `listPrograms()`/
+     `getProgram()` already used `select('*')`, so no change was needed
+     there.
+   - `computeFinancingCoverage()`'s `programShares[]` array gained a
+     `nameEn` field alongside the existing `name`, so every renderer that
+     builds a coverage breakdown line can call
+     `programDisplayName({ name: s.name, name_en: s.nameEn }, lang)`
+     instead of hardcoding `s.name`.
+3. **`api/recommend-financing.js`** — the AI Financing Recommendation's
+   Supabase query for candidate programs now also selects `name_en`; the
+   English output array (`recommended_en`) uses `pg.name_en || pg.name`
+   for each card's `name` while the Spanish array (`recommended`) still
+   uses `pg.name` — so the two arrays can now genuinely show a different
+   name, the same way their `rationale`/`rationale_en` fields already
+   did. (`api/generate-proposal.js`'s own `programs(name,funding_stage)`
+   select feeds AI-drafted proposal narrative text rather than a raw UI
+   display of the name, so it was deliberately left as-is.)
+4. **`app/new-program.html`** — a new optional field, "Name in English",
+   right under the existing name field, with inline help text explaining
+   it only matters if the site is switched to English. Left blank (the
+   common case), nothing changes. Wired into both the create and edit
+   paths (prefill on edit, included in the submit payload).
+5. **Every screen that displays a program's name** now goes through
+   `INAPlatform.programDisplayName()` instead of reading `.name` (or
+   `.programs.name`) directly: `app/dashboard.html` (project list rows,
+   the program filter dropdown, the printable-PDF meta line),
+   `app/project.html` (the program/Initiative tag, the PDF's "Datos
+   principales" and "Financiación" chapters, the on-screen financing
+   summary breakdown), `app/project-financing.html` (program-application
+   rows, the "apply to program" pickers, the coverage breakdown line —
+   the AI recommendation cards were left alone, since the server already
+   resolves the right-language name before the client sees it),
+   `app/investment-proposal.html` (the PDF's financing-coverage and
+   "already secured" breakdown lines), `app/initiatives.html` (the list
+   cards and the delete-confirmation dialog), `app/financing-programs.
+   html` (the dashboard list/grid, the search filter, the
+   delete-confirmation dialog), `app/financing-program.html` (the page
+   title, breadcrumb and header), and `app/new-project.html` (the
+   Initiative dropdown options and the "use this Initiative's template"
+   card label — both also re-render on a language switch now, which they
+   didn't need to before this feature since a plain-text name never
+   changed with the language toggle).
+6. **`assets/i18n.js`** — new keys `prog.f.nameEn` and
+   `prog.f.nameEn.help` for the new field's label/help text. Bumped to
+   `?v=63` across every `app/*.html` (except `index.html`, which
+   intentionally doesn't load `i18n.js`).
+7. **`assets/platform.js`** bumped to `?v=73` across every `app/*.html`.
+
+## Investment Proposal document restructuring + new Executive Summary chapter (Sep 2026)
+
+Pablo asked for the "Propuesta de Financiamiento" PDF
+(`generateProposalPdf()` in `app/investment-proposal.html`) to follow a
+fixed chapter order: a clean cover page, a dedicated índice page, then
+Resumen Ejecutivo/Introducción/Beneficios together, then Descripción
+Técnica, then a merged Planificación y Gobernanza chapter, then a
+restructured Capítulo Financiero ending in a colored pie chart of
+financing sources. Two things fell out of that request: the document had
+no standalone "Resumen Ejecutivo" text (only a single merged
+Introduction field), and jsPDF's core build has no pie-chart primitive.
+
+1. **DB — `migration_v58_proposal_executive_summary.sql`** — adds
+   `projects.proposal_executive_summary` / `_en`, following the exact
+   same bilingual pattern as the document's other four chapters
+   (migration_v50). `schema.sql` updated to match for fresh installs.
+2. **`api/generate-proposal.js`** — the AI draft prompt now produces
+   FIVE chapters instead of four: a new "Executive Summary" (2-3 tight
+   paragraphs a busy reviewer reads first) plus the existing
+   Introduction (now told to build on the Executive Summary rather than
+   restate it), Technical Description, Benefits and Planning. Returns
+   `executive_summary_es`/`executive_summary_en` alongside the other
+   eight fields.
+3. **`assets/platform.js`** — `updateProjectProposal()` accepts
+   `executiveSummary`/`executiveSummaryEn` and persists them to
+   `proposal_executive_summary`/`_en`.
+4. **`app/investment-proposal.html`** editor UI — a new "Resumen
+   Ejecutivo" textarea above "Introducción" (which lost its old
+   "/ Resumen Ejecutivo" suffix in the label). `proposalDraft` and
+   `PROPOSAL_FIELD_IDS` both gained the new field, so the existing
+   generic `renderProposalFields()`/`captureProposalFields()` helpers,
+   the "Generate draft with AI" handler, the Save handler and the
+   edit-mode load-from-`currentProject` logic all picked it up with a
+   one-line addition each.
+5. **`generateProposalPdf()` full restructuring**:
+   - **Página 1 — Carátula**: replaced the old header-band cover with a
+     clean, standalone page — just the project name, the presenting
+     entity (the project's proponent/generating entity, not INA — INA's
+     role as preparer is disclosed on the closing page) and the date,
+     all centered in the vertical middle of the page.
+   - **Página 2 — Índice**: the table of contents used to share the
+     cover page; it's now forced onto its own page via an extra
+     `newPage()` call, with the same deferred fill-in-page-numbers-later
+     mechanic as before.
+   - **Página 3+ — Resumen Ejecutivo, Introducción, Beneficios**: flow
+     together with natural pagination (no forced breaks between them),
+     per Pablo's spec.
+   - **Descripción Técnica** and **Planificación y Gobernanza** (the
+     former separate "Planificación" and "Equipo y Gobernanza" chapters,
+     now merged into one) each get their own forced `newPage()`.
+   - **Capítulo Financiero** (own forced page) was reordered and
+     absorbed the old standalone "Recomendación de Financiamiento IA"
+     chapter as an internal subsection. Order inside the chapter: (a)
+     total budget + "% que requiere financiación"
+     (`computeFinancingCoverage()`'s `requiredPct`); (b) the AI
+     platform's financing recommendations with their fit-score scoring
+     (only shown if one exists); (c) the chosen programs/FSU/other
+     source with their percentages; (d) a new colored pie chart of the
+     financing breakdown, with a gray "Sin asignar/Unassigned" slice for
+     any uncovered remainder.
+   - **Pie chart implementation**: jsPDF 2.5.1's core UMD build (no
+     canvas plugin) has no native pie/arc-drawing method, but does have
+     `doc.triangle()` as a core method — so each slice is hand-drawn as
+     a "triangle fan": many thin filled triangles from the center out to
+     points 2° apart along the circle's circumference, which reads as a
+     smooth arc at the chart's radius. A simple square-swatch legend is
+     drawn beside it.
+   - Cumplimiento normativo/FSU and Matriz de Riesgos keep their
+     existing optional-chapter behavior, now positioned after the
+     Capítulo Financiero. The closing page is unchanged.
+6. **`assets/i18n.js`** — new key `pd.proposal.executiveSummary`;
+   `pd.proposal.introduction`'s text simplified from "Introduction /
+   Executive Summary" to just "Introduction". Bumped to `?v=64` across
+   every `app/*.html` (except `index.html`).
+7. **`assets/platform.js`** bumped to `?v=74` across every `app/*.html`.
+
+## Persistent project nav across sub-pages (Pablo, sep 2026)
+
+Pablo: "cuando se selecciona un proyecto se muestra el menu con las
+opciones relacionadas con el proyecto seleccionado. Ese menu debe
+permanecer mientras se mantiene el proyecto seleccionado." Diagnosis: the
+project-scoped top nav (Project / Financing / Investment Proposal /
+Analysis / Help — the Project and Analysis entries are dropdowns) only
+ever existed on `app/project.html`. The six pages one level deeper into a
+specific project — `project-financing.html`, `investment-proposal.html`,
+`risk-matrix.html`, `fsu-scoring.html`, `assessment.html` and
+`roadmap-instance.html` — instead showed the generic site-wide nav
+(Initiatives/Projects/Financing/Roadmaps/Admin), so the project-context
+menu disappeared the moment you went one click deeper, even though the
+project was still very much "selected" via `?id=`.
+
+1. **`assets/platform.js`** — two new shared helpers so the wiring isn't
+   copy-pasted six times over (the exact kind of drift that caused this
+   bug in the first place):
+   - **`initDropdownMenus(rootEl)`** — generic open/close/outside-click/
+     Escape/keep-on-screen logic for any `.menu`/`.menu-panel` pair inside
+     `rootEl`, extracted from `project.html`'s own inline implementation
+     (left untouched on `project.html` itself to avoid regressions).
+   - **`wireProjectNav({ projectId, project, isOwner, isAssignedAdvisor,
+     isAdmin, fsuEligible, canEditProposal })`** — sets href/visibility on
+     the nav's `navHelpLink`, `navFinancingLink`, `navEditLink`,
+     `navFsuLink`, `navAssessLink`, `navDeleteLink` (including the
+     delete-confirm-and-redirect handler, reusing `deleteProject()`),
+     `navDownloadProposalBtn`, and hides the whole `navAnalysisMenu`
+     wrapper if neither FSU nor Self-Assessment ended up visible in it.
+2. **`project-financing.html`, `investment-proposal.html`,
+   `risk-matrix.html`, `fsu-scoring.html`, `assessment.html`** — each
+   page's generic `<nav class="app-nav">` block was replaced with the
+   same trimmed project-nav markup (ids matching `project.html`'s), wired
+   via `initDropdownMenus()` + `wireProjectNav()` once each page's own
+   `isOwner`/`isAssignedAdvisor`/`isAdmin`/`currentProjectPrograms` (for
+   FSU eligibility) were available — reusing whatever each page already
+   computed for its own access checks rather than re-fetching. The old
+   per-page JS that toggled `adminNavMenu`/`masterDataMenuItem`/
+   `adminUsersMenuItem`/`rolesMenuItem`/`roadmapsNavLink` was removed
+   along with the markup it targeted.
+3. **`roadmap-instance.html`** — the one exception: a roadmap instance's
+   linked project is *optional* (you can run a roadmap standalone). This
+   page now carries **both** nav blocks — `#genericNav` (visible by
+   default, covering create-mode and standalone roadmaps) and
+   `#projectNav` (hidden by default) — and `loadTracker()` swaps from the
+   former to the latter only when the loaded instance actually has a
+   `project_id` that resolves to a project the current user can see.
+4. **Scope note**: the ported project nav deliberately excludes the
+   Workflow menu (Promote/Demote/Return) and the "Download PDF"/"AI
+   Analysis" actions — those lean on `project.html`'s own live
+   workflow-polling and PDF-generation code, which wasn't worth
+   duplicating six times over. Everything else (New Project, Edit,
+   Delete, Close, Financing, Investment Proposal, FSU Scoring,
+   Self-Assessment, Help) is fully wired and functional on every subpage.
+5. **`assets/platform.js`** bumped to `?v=75` across every `app/*.html`.
+
+## Success Cases — reference library (Pablo, sep 2026) — migration_v59
+
+Pablo: "quiero que agregues otra dimensión a la plataforma que es Casos de
+éxito. Te adjunto unos documentos con casos de exito de starlink y quiero
+que los incorpores conceptualmente para que un proyecto nuevo se puede
+basar en un caso de éxito, o bien, lo tome como referencia." A new,
+shared reference library of real-world connectivity impact cases — seeded
+with 21 Starlink case studies extracted from "Starlink Impact Use Cases
+LATAM ESP.pdf" (education, health, emergency response, agriculture, and
+government initiatives across Colombia, Brasil, Panamá, Chile, Bolivia,
+Perú, Jamaica, Argentina, Ecuador, México and El Salvador) — that any
+project can cite as a precedent or inspiration.
+
+**Permission model**: deliberately the same simple, flat shape as
+Financing Programs had before the RBAC system (`migration_v46`) — any
+**advisor or admin** can create/edit/delete a case
+(`INAPlatform.canManageSuccessCases()`), every signed-in user can browse
+the library. Success Cases was **not** added to the configurable-roles
+system (`RBAC_ENTITIES` in `platform.js`, the `role_permissions.entity`
+check constraint, `roles.html`'s matrix) — that would have meant touching
+those three places for a scope this small; revisit if Pablo wants
+per-custom-role control over it later.
+
+**Generic by design**: `provider` is free text, not a Starlink-only enum
+— the whole point (confirmed with Pablo before building) is that cases
+from any future vendor/technology (fibra, torres, VSAT, etc.) fit the
+same table without a schema change.
+
+1. **`supabase/migration_v59_success_cases.sql`** (+ mirrored in
+   `schema.sql` for fresh installs) — two new tables:
+   - **`success_cases`** — `title`, `provider` (free text, default
+     `'Starlink'`), `country`, `region` (optional, e.g. "Amazonía"),
+     `sector` (closed taxonomy: `education`, `health`,
+     `emergency_response`, `agriculture`, `government`,
+     `financial_inclusion`, `other`), bilingual `summary_es`/`summary_en`,
+     optional `beneficiaries_count`, bilingual `metrics_es`/`metrics_en`
+     (extra numbers or a direct quote from the source), `source_label`/
+     `source_url`. RLS: any authenticated user can `select`; only
+     advisor/admin can `insert`/`update`/`delete`.
+   - **`project_success_cases`** — join table, modeled directly on
+     `project_programs` (`migration_v21`): a project can reference many
+     cases, a case can be referenced by many projects, `unique(project_id,
+     success_case_id)`, optional `note`. RLS: select for the project's
+     owner/assigned advisor/any advisor/admin; insert/delete for the
+     owner or assigned advisor only.
+2. **`assets/platform.js`** — `SUCCESS_CASE_SECTORS` taxonomy +
+   `successCaseSectorLabel()`, `canManageSuccessCases(profile)`, and CRUD/
+   linking helpers: `listSuccessCases()`, `getSuccessCase(id)`,
+   `createSuccessCase()`/`updateSuccessCase()`/`deleteSuccessCase()`,
+   `listProjectSuccessCases(projectId)` (embeds the linked
+   `success_cases` row), `linkSuccessCaseToProject(projectId,
+   successCaseId, {note})`, `unlinkSuccessCaseFromProject(projectId,
+   successCaseId)`.
+3. **`app/success-cases.html`** (new) — browsable dashboard, same visual
+   family as `financing-programs.html`: stat cards (total cases,
+   countries, sectors covered, beneficiaries reached), filters (sector,
+   country, provider, text search), list/grid toggle. A case's `main`
+   area is a real link to the edit form only for advisor/admin — there's
+   no separate read-only detail page, so the full bilingual summary and
+   metrics render directly inline in the list/grid instead (browsing
+   itself is the detail view for everyone else).
+4. **`app/new-success-case.html`** (new) — advisor/admin-only create/edit
+   form. No hard edit-lock (unlike `new-project.html`/`new-program.html`)
+   — creating/editing is already gated to advisor/admin, so the
+   concurrent-edit collision an edit-lock prevents elsewhere is much less
+   likely for a shared reference-library entity; revisit if it becomes an
+   issue.
+5. **`app/project.html`** — new "Reference Success Cases" section
+   (inline, not a separate management page like Financing — linking a
+   case is just add/remove with no math, so a dedicated page would be
+   overkill). Shows every linked case as a card (title, country/region,
+   sector/provider tags, summary snippet); owner or assigned advisor gets
+   a sector/country-filterable picker to link more. Linking itself
+   requires an existing `project_id`, so — same as applying to a
+   Financing Program — it isn't offered from `new-project.html`'s
+   creation wizard; it's available the moment a project exists, via its
+   detail page.
+6. **Nav**: "Success Cases" link added next to "Financing" across all 16
+   `app/*.html` pages that carry the generic site nav (the six
+   project-scoped sub-pages that swapped to the persistent project nav —
+   see above — intentionally don't get it, since it's a top-level library
+   link, not a per-project action).
+7. **Seed data**: `supabase/data_success_cases_starlink.sql` — a single
+   `insert` with the 21 Starlink cases (run once, after
+   `migration_v59_success_cases.sql`, in the Supabase SQL Editor).
+8. **CSS**: `.sc-summary`/`.sc-metrics`/`.sc-beneficiaries` and a
+   `.sector-tag`/`data-accent="sc-*"` color per sector (blue=education,
+   red=health, amber=emergency response, green=agriculture,
+   ink=government, purple=financial inclusion) — otherwise reuses
+   `.program-list`/`.program-row`/`.program-card`/`.dash-stats`/
+   `.filter-bar`/`.view-toggle`/`.empty-state` as-is.
+9. Versions bumped across every `app/*.html`: `style.css?v=25`,
+   `i18n.js?v=65`, `platform.js?v=76`.
+
+**To apply**: run `migration_v59_success_cases.sql`, then
+`data_success_cases_starlink.sql`, in the Supabase SQL Editor (in that
+order).
 
 ## Known limitations (v1)
 

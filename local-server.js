@@ -60,11 +60,17 @@ if (!process.env.LLM_PROVIDER) process.env.LLM_PROVIDER = 'local';
 const analyzeProjectHandler = require('./api/analyze-project');
 const extractTemplateDataHandler = require('./api/extract-template-data');
 const recommendFinancingHandler = require('./api/recommend-financing');
+const extractSuccessCaseHandler = require('./api/extract-success-case');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5050;
 
-app.use(express.json({ limit: '2mb' }));
+// Bumped from 2mb (sep 2026): api/extract-success-case.js sends a whole
+// case-study PDF as base64 in the request body (same shape as
+// api/extract-business-card.js's photo upload) — a base64-encoded PDF a
+// few MB in size would have exceeded the old 2mb JSON body limit before
+// even reaching the handler's own MAX_BASE64_LENGTH check.
+app.use(express.json({ limit: '20mb' }));
 
 // Never statically serve source/config files that shouldn't be reachable
 // over HTTP, even though this server is only ever meant to be bound to
@@ -82,6 +88,7 @@ app.use((req, res, next) => {
 app.post('/api/analyze-project', analyzeProjectHandler);
 app.post('/api/extract-template-data', extractTemplateDataHandler);
 app.post('/api/recommend-financing', recommendFinancingHandler);
+app.post('/api/extract-success-case', extractSuccessCaseHandler);
 
 // A handful of the same top-level redirects vercel.json defines in
 // production, so old-style bookmarks/links behave the same locally.
