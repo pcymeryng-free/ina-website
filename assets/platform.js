@@ -75,6 +75,19 @@ function extractBusinessCardUrl() {
 }
 
 /* Same reasoning/hosting split as analyzeProjectUrl() above — see
+   api/extract-success-case.js, the "Cargar desde PDF" button behind
+   app/new-success-case.html's create form (Pablo, sep 2026: "El alta de
+   un nuevo Success case se debería poder cargar a partir de un documento
+   pdf subido a la plataforma. Luego completar los datos restantes, si
+   fuera necesario, a mano."). */
+function extractSuccessCaseUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/extract-success-case`;
+  }
+  return '/api/extract-success-case';
+}
+
+/* Same reasoning/hosting split as analyzeProjectUrl() above — see
    api/generate-proposal.js, the "Generar borrador con IA" button behind
    app/project.html's Investment Proposal editor section. */
 function generateProposalUrl() {
@@ -237,6 +250,34 @@ function riskScoreBand(score) {
 function riskScoreBandLabel(score, lang) {
   const band = RISK_SCORE_BANDS.find((b) => score <= b.max) || RISK_SCORE_BANDS[RISK_SCORE_BANDS.length - 1];
   return band[lang];
+}
+
+/* ---------- Casos de Éxito (Success Cases) — app/success-cases.html ----------
+   See supabase/migration_v59_success_cases.sql. Pablo (sep 2026): "quiero
+   que agregues otra dimensión a la plataforma que es Casos de éxito ...
+   para que un proyecto nuevo se pueda basar en un caso de éxito, o bien, lo
+   tome como referencia." Seeded from Starlink LATAM case studies (see
+   supabase/data_success_cases_starlink.sql), but the taxonomy/model is
+   generic — 'other' and 'financial_inclusion' exist as forward-looking
+   buckets for future non-Starlink entries. Deliberately NOT wired into the
+   RBAC_ENTITIES/entityPermission() custom-roles system below (unlike
+   master_data/roadmaps/risks) — Pablo's spec was the flat "advisor or
+   admin" bar, same shape Financing Programs originally had before
+   migration_v46; canManageSuccessCases() reads isAdvisor()/isAdmin()
+   directly to match the simpler RLS in migration_v59. */
+const SUCCESS_CASE_SECTORS = [
+  { value: 'education', en: 'Education', es: 'Educación' },
+  { value: 'health', en: 'Health', es: 'Salud' },
+  { value: 'emergency_response', en: 'Emergency Response', es: 'Respuesta a Emergencias' },
+  { value: 'agriculture', en: 'Agriculture', es: 'Agricultura' },
+  { value: 'government', en: 'Government Initiatives', es: 'Iniciativas Gubernamentales' },
+  { value: 'financial_inclusion', en: 'Financial Inclusion', es: 'Inclusión Financiera' },
+  { value: 'other', en: 'Other', es: 'Otro' },
+];
+
+function successCaseSectorLabel(value, lang) {
+  const entry = SUCCESS_CASE_SECTORS.find((s) => s.value === value);
+  return entry ? entry[lang] : value;
 }
 
 /* ---------- Master Data (app/master-data.html) ----------
@@ -3910,7 +3951,7 @@ const FSU_SCORING_ELIGIBLE_PROGRAM_TEMPLATES = [
    used by app/project.html (to show/hide the link), app/fsu-scoring.html
    (to guard the page itself), app/investment-proposal.html and
    app/dashboard.html. `project` is a row from getProject()/listProjects(),
-   which embeds `programs(name, template_key)` — that's the project's
+   which embeds `programs(name, name_en, template_key)` — that's the project's
    primary/preparation Program (projects.program_id).
 
    `appliedPrograms` is optional: the array a caller gets from
@@ -4385,6 +4426,16 @@ const INAPlatform = {
     return entityPermission(profile, 'risks').can_edit;
   },
 
+  /* Casos de Éxito (Success Cases) — see the block comment above
+     SUCCESS_CASE_SECTORS. Intentionally a flat advisor/admin check (not
+     entityPermission()/RBAC_ENTITIES) — matches migration_v59's plain
+     is_advisor()/is_admin() RLS. Every signed-in user can still browse the
+     library and link cases to their own projects; only creating, editing
+     or deleting a case itself requires this. */
+  canManageSuccessCases(profile) {
+    return this.isAdvisor(profile) || this.isAdmin(profile);
+  },
+
   /* Master Data directory — Contacts, Companies, Products, Public Agencies
      (entity 'master_data'). No "project owner read-only" carve-out here,
      same as before this migration. */
@@ -4429,6 +4480,8 @@ const INAPlatform = {
   RISK_SCORE_BANDS,
   riskScoreBand(score) { return riskScoreBand(score); },
   riskScoreBandLabel(score) { return riskScoreBandLabel(score, currentLang()); },
+  SUCCESS_CASE_SECTORS,
+  successCaseSectorLabel(value) { return successCaseSectorLabel(value, currentLang()); },
   RACI_ROLES,
   raciRoleLabel(value) { return raciRoleLabel(value, currentLang()); },
   raciRoleLetter(value) { return raciRoleLetter(value); },
@@ -5084,7 +5137,7 @@ const INAPlatform = {
   async listProjects() {
     const { data, error } = await supabaseClient
       .from('projects')
-      .select('*, profiles!projects_user_id_fkey(full_name, organization), programs(name, template_key)')
+      .select('*, profiles!projects_user_id_fkey(full_name, organization), programs(name, name_en, template_key)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
@@ -5097,7 +5150,7 @@ const INAPlatform = {
         *,
         profiles!projects_user_id_fkey(full_name, organization),
         assigned_advisor:profiles!projects_assigned_advisor_id_fkey(full_name, organization),
-        programs(name, template_key)
+        programs(name, name_en, template_key)
       `)
       .eq('id', id)
       .single();
@@ -5319,7 +5372,7 @@ const INAPlatform = {
      supabase/migration_v19_program_permissions.sql); a standard user's
      insert is rejected at the database level even if the UI hiding the
      "Create Program" button were somehow bypassed. */
-  async createProgram({ name, organization, organizationType, financingEntity, types, description, templateKey, fundingStage, programRole }) {
+  async createProgram({ name, nameEn, organization, organizationType, financingEntity, types, description, templateKey, fundingStage, programRole }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
@@ -5327,6 +5380,10 @@ const INAPlatform = {
       .insert({
         user_id: session.user.id,
         name,
+        // Optional — see programDisplayName() above and
+        // migration_v57_program_name_en.sql. '' and undefined both mean
+        // "not provided" here, same convention as description below.
+        name_en: nameEn || null,
         organization,
         organization_type: organizationType || 'public',
         // Who actually finances the program — distinct from organization
@@ -5354,11 +5411,12 @@ const INAPlatform = {
      'financing' (funds the project's implementation — FSU, BID, etc.,
      default) — see PROGRAM_FUNDING_STAGE_LABELS below and
      supabase/migration_v21_program_funding_stage_and_applications.sql. */
-  async updateProgram(id, { name, organization, organizationType, financingEntity, types, description, templateKey, fundingStage, programRole }) {
+  async updateProgram(id, { name, nameEn, organization, organizationType, financingEntity, types, description, templateKey, fundingStage, programRole }) {
     const { data, error } = await supabaseClient
       .from('programs')
       .update({
         name,
+        name_en: nameEn || null,
         organization,
         organization_type: organizationType || 'public',
         financing_entity: financingEntity || null,
@@ -5405,7 +5463,7 @@ const INAPlatform = {
   async listProjectPrograms(projectId) {
     const { data, error } = await supabaseClient
       .from('project_programs')
-      .select('*, programs(name, template_key, funding_stage, financing_entity)')
+      .select('*, programs(name, name_en, template_key, funding_stage, financing_entity)')
       .eq('project_id', projectId)
       .order('applied_at', { ascending: true });
     if (error) throw error;
@@ -5427,7 +5485,7 @@ const INAPlatform = {
     if (!ids.length) return map;
     const { data, error } = await supabaseClient
       .from('project_programs')
-      .select('project_id, program_id, programs(name, template_key, funding_stage, financing_entity)')
+      .select('project_id, program_id, programs(name, name_en, template_key, funding_stage, financing_entity)')
       .in('project_id', ids);
     if (error) throw error;
     (data || []).forEach((row) => {
@@ -5472,7 +5530,7 @@ const INAPlatform = {
     const { data, error } = await supabaseClient
       .from('project_programs')
       .upsert(payload, { onConflict: 'project_id,program_id' })
-      .select('*, programs(name, template_key, funding_stage, financing_entity)')
+      .select('*, programs(name, name_en, template_key, funding_stage, financing_entity)')
       .single();
     if (error) throw error;
     return data;
@@ -5499,7 +5557,7 @@ const INAPlatform = {
       .update(updates)
       .eq('project_id', projectId)
       .eq('program_id', programId)
-      .select('*, programs(name, template_key, funding_stage, financing_entity)')
+      .select('*, programs(name, name_en, template_key, funding_stage, financing_entity)')
       .single();
     if (error) throw error;
     return data;
@@ -5555,6 +5613,10 @@ const INAPlatform = {
       .filter((row) => row.programs && row.programs.funding_stage !== 'preparation' && (row.financing_percentage != null || row.financing_amount != null))
       .map((row) => ({
         name: row.programs.name,
+        // Carried through so callers can call programDisplayName({ name,
+        // name_en }, lang) instead of hardcoding the Spanish name in the
+        // coverage breakdown text — see migration_v57_program_name_en.sql.
+        nameEn: row.programs.name_en || null,
         pct: effectivePct(row.financing_percentage, row.financing_amount),
         isFsu: this.isFsuFinancingEntity(row.programs.financing_entity),
       }));
@@ -5609,6 +5671,176 @@ const INAPlatform = {
     if (error) throw error;
   },
 
+  /* ---------- Casos de Éxito (Success Cases) ----------
+     See supabase/migration_v59_success_cases.sql and the block comment
+     above SUCCESS_CASE_SECTORS. Same two-layer shape as Programs above:
+     a shared library (listSuccessCases/getSuccessCase/createSuccessCase/
+     updateSuccessCase/deleteSuccessCase) plus a project-linking join table
+     (listProjectSuccessCases/linkSuccessCaseToProject/
+     unlinkSuccessCaseFromProject), modeled directly on
+     listProjectPrograms/applyToProgram/removeProjectProgram. */
+
+  /* Every case on the platform — success_cases_select_all_authenticated RLS
+     already restricts this to signed-in users, so no client-side filtering
+     is needed here; app/success-cases.html applies sector/country/text
+     filters in the UI. */
+  async listSuccessCases() {
+    const { data, error } = await supabaseClient
+      .from('success_cases')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  async getSuccessCase(id) {
+    const { data, error } = await supabaseClient
+      .from('success_cases')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Advisor/admin-only — enforced by success_cases_insert_advisor_or_admin
+     RLS. summaryEn/metrics/beneficiariesCount/sourceLabel/sourceUrl/region
+     are all optional. */
+  async createSuccessCase({ title, provider, country, region, sector, summaryEs, summaryEn, beneficiariesCount, metricsEs, metricsEn, sourceLabel, sourceUrl }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('success_cases')
+      .insert({
+        created_by: session.user.id,
+        title,
+        provider: provider || 'Starlink',
+        country,
+        region: region || null,
+        sector,
+        summary_es: summaryEs,
+        summary_en: summaryEn || null,
+        beneficiaries_count: beneficiariesCount != null && beneficiariesCount !== '' ? Number(beneficiariesCount) : null,
+        metrics_es: metricsEs || null,
+        metrics_en: metricsEn || null,
+        source_label: sourceLabel || null,
+        source_url: sourceUrl || null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Advisor/admin-only — enforced by success_cases_update_advisor_or_admin
+     RLS (no "owner" concept, same as Master Data — any advisor/admin can
+     edit any case). */
+  async updateSuccessCase(id, { title, provider, country, region, sector, summaryEs, summaryEn, beneficiariesCount, metricsEs, metricsEn, sourceLabel, sourceUrl }) {
+    const { data, error } = await supabaseClient
+      .from('success_cases')
+      .update({
+        title,
+        provider: provider || 'Starlink',
+        country,
+        region: region || null,
+        sector,
+        summary_es: summaryEs,
+        summary_en: summaryEn || null,
+        beneficiaries_count: beneficiariesCount != null && beneficiariesCount !== '' ? Number(beneficiariesCount) : null,
+        metrics_es: metricsEs || null,
+        metrics_en: metricsEn || null,
+        source_label: sourceLabel || null,
+        source_url: sourceUrl || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteSuccessCase(id) {
+    const { error } = await supabaseClient
+      .from('success_cases')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  /* Every success case a project cites as reference/precedent, with the
+     case's own fields embedded — used by project.html's "Casos de Éxito de
+     Referencia" section and by new-project.html's picker (to know which
+     cases are already linked). */
+  async listProjectSuccessCases(projectId) {
+    const { data, error } = await supabaseClient
+      .from('project_success_cases')
+      .select('*, success_cases(title, provider, country, region, sector, summary_es, summary_en, source_label, source_url)')
+      .eq('project_id', projectId)
+      .order('linked_at', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  /* Links a success case to a project as reference/inspiration — owner or
+     assigned advisor only (project_success_cases_insert_own_or_assigned_advisor
+     RLS). note is optional free text on why the case is relevant. Re-linking
+     an already-linked case is a no-op error the caller can safely ignore
+     (unique (project_id, success_case_id)). */
+  async linkSuccessCaseToProject(projectId, successCaseId, { note } = {}) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('project_success_cases')
+      .insert({
+        project_id: projectId,
+        success_case_id: successCaseId,
+        user_id: session.user.id,
+        note: note || null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /* Owner or assigned advisor only — project_success_cases_delete_own_or_assigned_advisor RLS. */
+  async unlinkSuccessCaseFromProject(projectId, successCaseId) {
+    const { error } = await supabaseClient
+      .from('project_success_cases')
+      .delete()
+      .eq('project_id', projectId)
+      .eq('success_case_id', successCaseId);
+    if (error) throw error;
+  },
+
+  /* Pablo, sep 2026: "El alta de un nuevo Success case se debería poder
+     cargar a partir de un documento pdf subido a la plataforma. Luego
+     completar los datos restantes, si fuera necesario, a mano." — sends
+     the PDF straight to api/extract-success-case.js as base64 (the file
+     hasn't been saved anywhere yet, same shape as extractBusinessCard()
+     above) and gets back proposed field values to prefill the New Success
+     Case form with. Never writes anything — createSuccessCase() still runs
+     separately once the advisor reviews/edits and submits the form. */
+  async extractSuccessCase(pdfBase64, fileName) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(extractSuccessCaseUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ pdfBase64, fileName }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('[extractSuccessCase] failed:', body.error, body.detail || body.raw || '');
+      throw new Error(body.error || 'PDF extraction request failed.');
+    }
+    return body;
+  },
+
   programOrgTypeLabel(value) {
     const entry = PROGRAM_ORG_TYPE_LABELS[value];
     return entry ? entry[currentLang()] : value;
@@ -5638,6 +5870,28 @@ const INAPlatform = {
   // silently dropping older rows.
   isFinancingProgram(pg) {
     return !!pg && pg.program_role !== 'umbrella';
+  },
+
+  // Pablo, sep 2026: "lo que no esta traducido son los titulos de los
+  // programas de financiamiento" — programs.name is a single plain-text
+  // field entered once (in whatever language) when the program is created,
+  // so it never changed when the viewer toggled the site to English. Fix:
+  // an optional programs.name_en column (migration_v57_program_name_en.sql)
+  // — same bilingual convention as framework_analysis.*_en (see
+  // localizeAnalysis() above) — that a program creator/editor can fill in.
+  // This helper is the single place every screen goes through to decide
+  // which name to show: falls back to the original `name` whenever
+  // `name_en` hasn't been filled in (every pre-existing Program, and any
+  // future one whose creator skips the optional field), so nothing breaks
+  // for programs without an English name yet. `program` can be either a
+  // full Program row or a plain { name, name_en } shape (e.g. built from a
+  // project_programs embed or an AI recommendation item) — only those two
+  // keys are read.
+  programDisplayName(program, lang) {
+    if (!program) return '';
+    const targetLang = lang || currentLang();
+    if (targetLang === 'en' && program.name_en) return program.name_en;
+    return program.name || '';
   },
 
   // Agreed convention (migration_v36_program_financing_entity.sql): a
@@ -7098,15 +7352,19 @@ const INAPlatform = {
      que incluya la propuesta definitiva y completa ... para presentar a
      las entidades financieras". A separate, longer document from the
      project summary "Descargar PDF" — see generateProposalPdf() in
-     app/project.html. Four narrative chapters (Introduction, Technical
-     Description, Benefits, Planning narrative) are AI-drafted on request
-     via api/generate-proposal.js, then reviewed/edited by the user and
-     explicitly saved — requestProposalDraft() below never writes to the
-     database itself, only updateProjectProposal() does, once the person
-     clicks Save. See supabase/migration_v50_investment_proposal.sql. */
+     app/investment-proposal.html. Five narrative chapters (Executive
+     Summary, Introduction, Technical Description, Benefits, Planning
+     narrative — Executive Summary added in migration_v58, kept as a
+     chapter distinct from Introduction rather than merged into it) are
+     AI-drafted on request via api/generate-proposal.js, then reviewed/
+     edited by the user and explicitly saved — requestProposalDraft()
+     below never writes to the database itself, only
+     updateProjectProposal() does, once the person clicks Save. See
+     supabase/migration_v50_investment_proposal.sql and
+     migration_v58_proposal_executive_summary.sql. */
 
-  /* Calls api/generate-proposal.js and returns its 8 bilingual fields
-     ({ introduction_es, introduction_en, technical_description_es, ... }).
+  /* Calls api/generate-proposal.js and returns its 10 bilingual fields
+     ({ executive_summary_es, executive_summary_en, introduction_es, ... }).
      No keepalive here (unlike requestAnalysis) — this is a normal
      awaited request from a button click, not a fire-and-forget kicked off
      right before a page navigation. */
@@ -7129,18 +7387,21 @@ const INAPlatform = {
     return body;
   },
 
-  /* Persists the 4 chapters (both languages each) the person has reviewed/
-     edited in app/project.html's Investment Proposal section. Plain
-     .update() on projects — covered by the same RLS as every other project
-     field (owner, the assigned advisor, or an admin). `fields` uses the
-     same camelCase-in/snake_case-out convention as updateProject() above. */
+  /* Persists the 5 chapters (both languages each) the person has reviewed/
+     edited in app/investment-proposal.html. Plain .update() on projects —
+     covered by the same RLS as every other project field (owner, the
+     assigned advisor, or an admin). `fields` uses the same camelCase-in/
+     snake_case-out convention as updateProject() above. */
   async updateProjectProposal(projectId, {
+    executiveSummary, executiveSummaryEn,
     introduction, introductionEn, technicalDescription, technicalDescriptionEn,
     benefits, benefitsEn, planningNarrative, planningNarrativeEn,
   } = {}) {
     const { data, error } = await supabaseClient
       .from('projects')
       .update({
+        proposal_executive_summary: executiveSummary != null ? executiveSummary : null,
+        proposal_executive_summary_en: executiveSummaryEn != null ? executiveSummaryEn : null,
         proposal_introduction: introduction != null ? introduction : null,
         proposal_introduction_en: introductionEn != null ? introductionEn : null,
         proposal_technical_description: technicalDescription != null ? technicalDescription : null,
@@ -7246,6 +7507,158 @@ const INAPlatform = {
       this.acquireEditLock(kind, id).catch(() => { /* non-critical */ });
     }, this.LOCK_HEARTBEAT_MS);
     return () => clearInterval(timer);
+  },
+
+  /* ---------- Persistent project nav (Pablo, sep 2026) ----------
+     "El menú con las opciones del proyecto seleccionado debe permanecer
+     mientras se mantiene el proyecto seleccionado" — until now, only
+     app/project.html showed the project-scoped nav (Project/Financing/
+     Documentation/Analysis/Help); every other project-related screen
+     (project-financing.html, investment-proposal.html, risk-matrix.html,
+     fsu-scoring.html, assessment.html, roadmap-instance.html) fell back
+     to the generic site-wide nav, so navigating one level deeper into a
+     project's own tools made all its options disappear even though the
+     project was still open. These two helpers let those six pages carry
+     the same project nav markup (copy-pasted from project.html, ids
+     unchanged) and wire it up consistently, without duplicating the menu
+     open/close plumbing six times over.
+
+     Deliberately excludes the Workflow menu (Promote/Demote/Return) and
+     the "Download PDF"/"AI Analysis" actions — those need project.html's
+     live workflow-polling and PDF-generation code, which isn't worth
+     re-implementing on every satellite screen. Editing the project
+     record, deleting it, and jumping to Financing/Investment Proposal/
+     FSU Scoring/Self-Assessment all stay available everywhere; anything
+     heavier is still one click away via the "Project" menu → back into
+     project.html. */
+
+  /* Generic open/close behavior for any .menu / .menu-panel pair inside
+     rootEl — same plain show/hide-via-"open"-class pattern project.html
+     has always used inline, just scoped and reusable. Call once per page
+     after the nav markup exists in the DOM. */
+  initDropdownMenus(rootEl) {
+    const menus = Array.from(rootEl.querySelectorAll('.menu'));
+    if (!menus.length) return;
+    function keepPanelOnScreen(menu) {
+      const panel = menu.querySelector('.menu-panel');
+      if (!panel) return;
+      panel.style.transform = '';
+      const rect = panel.getBoundingClientRect();
+      const margin = 10;
+      let shift = 0;
+      if (rect.left < margin) shift = margin - rect.left;
+      else if (rect.right > window.innerWidth - margin) shift = (window.innerWidth - margin) - rect.right;
+      if (shift) panel.style.transform = `translateX(${shift}px)`;
+    }
+    function closeMenus(except) {
+      menus.forEach((m) => {
+        if (m === except) return;
+        m.classList.remove('open');
+        const trigger = m.querySelector('.menu-trigger');
+        if (trigger) trigger.setAttribute('aria-expanded', 'false');
+      });
+    }
+    menus.forEach((menu) => {
+      const trigger = menu.querySelector('.menu-trigger');
+      if (!trigger) return;
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const willOpen = !menu.classList.contains('open');
+        closeMenus();
+        menu.classList.toggle('open', willOpen);
+        trigger.setAttribute('aria-expanded', String(willOpen));
+        if (willOpen) keepPanelOnScreen(menu);
+      });
+      menu.querySelectorAll('.menu-item').forEach((item) => {
+        item.addEventListener('click', () => closeMenus());
+      });
+    });
+    document.addEventListener('click', () => closeMenus());
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMenus();
+    });
+  },
+
+  /* Sets hrefs/visibility on the shared project-nav elements (same ids
+     as project.html's #navProjectMenu/#navFinancingLink/#navDocsMenu/
+     #navAnalysisMenu/#navHelpLink). `opts`:
+       projectId, project (row, needs .name for the delete confirm),
+       isOwner, isAssignedAdvisor, isAdmin, fsuEligible, canEditProposal.
+     Safe to call even if some of these elements aren't present on the
+     calling page (checks each one first) — every caller currently
+     includes the full markup, but this keeps it from throwing if a page
+     later trims it further. */
+  wireProjectNav(opts) {
+    const { projectId, project, isOwner, isAssignedAdvisor, isAdmin, fsuEligible, canEditProposal } = opts;
+    const byId = (id) => document.getElementById(id);
+
+    const helpLink = byId('navHelpLink');
+    if (helpLink) helpLink.addEventListener('click', (e) => e.preventDefault());
+
+    const financingLink = byId('navFinancingLink');
+    if (financingLink) financingLink.href = `project-financing.html?id=${projectId}`;
+
+    if (isOwner || isAssignedAdvisor) {
+      const editLink = byId('navEditLink');
+      if (editLink) {
+        editLink.href = `new-project.html?id=${projectId}`;
+        editLink.style.display = 'flex';
+      }
+      if (fsuEligible) {
+        const fsuLink = byId('navFsuLink');
+        if (fsuLink) {
+          fsuLink.href = `fsu-scoring.html?id=${projectId}`;
+          fsuLink.style.display = 'flex';
+        }
+      }
+    }
+    if (isOwner) {
+      const assessLink = byId('navAssessLink');
+      if (assessLink) {
+        assessLink.href = `assessment.html?id=${projectId}`;
+        assessLink.style.display = 'flex';
+      }
+    }
+    if (isOwner || isAdmin) {
+      const deleteLink = byId('navDeleteLink');
+      if (deleteLink) {
+        deleteLink.style.display = 'flex';
+        deleteLink.addEventListener('click', async () => {
+          const lang = this.currentLang();
+          const msg = lang === 'es'
+            ? `¿Está seguro que desea eliminar definitivamente el proyecto "${project.name}"? Esta acción no se puede deshacer — se borran también sus documentos y análisis.`
+            : `Are you sure you want to permanently delete the project "${project.name}"? This can't be undone — its documents and analysis will be deleted too.`;
+          if (!confirm(msg)) return;
+          deleteLink.disabled = true;
+          try {
+            await this.deleteProject(projectId);
+            location.href = 'dashboard.html';
+          } catch (err) {
+            alert(lang === 'es'
+              ? `No se pudo eliminar el proyecto: ${err.message || err}`
+              : `Couldn't delete the project: ${err.message || err}`);
+            deleteLink.disabled = false;
+          }
+        });
+      }
+    }
+    if (canEditProposal) {
+      const proposalLink = byId('navDownloadProposalBtn');
+      if (proposalLink) {
+        proposalLink.href = `investment-proposal.html?id=${projectId}`;
+        proposalLink.style.display = 'inline-flex';
+      }
+    }
+    // Hide the Analysis dropdown entirely rather than leave it openable
+    // with nothing inside, for a viewer who's neither the owner nor the
+    // assigned advisor (both FSU Scoring and Self-Assessment stay hidden
+    // for them).
+    const analysisMenu = byId('navAnalysisMenu');
+    if (analysisMenu) {
+      const anyVisible = Array.from(analysisMenu.querySelectorAll('.menu-item'))
+        .some((el) => el.style.display !== 'none');
+      analysisMenu.style.display = anyVisible ? '' : 'none';
+    }
   },
 };
 
