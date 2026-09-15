@@ -4008,7 +4008,567 @@ const I18N = {
   "pd.sc.browse": { "en": "Browse Library", "es": "Ver Biblioteca" },
   "pd.sc.empty": { "en": "No success cases linked yet.", "es": "Todavía no hay casos de éxito vinculados." },
   "pd.sc.pick": { "en": "Link a success case as reference", "es": "Vincular un caso de éxito como referencia" },
-  "pd.sc.add": { "en": "Link", "es": "Vincular" }
+  "pd.sc.add": { "en": "Link", "es": "Vincular" },
+  "wp3.crumb": {
+    "en": "White Paper",
+    "es": "Documento Técnico"
+  },
+  "wp3.eyebrow": {
+    "en": "White Paper &middot; September 2026",
+    "es": "Documento Técnico &middot; Septiembre 2026"
+  },
+  "wp3.h1": {
+    "en": "AI Adoption for Public Sector Infrastructure",
+    "es": "Adopción de IA para infraestructura del sector público"
+  },
+  "wp3.lede": {
+    "en": "Why most government AI initiatives stall between pilot and production &mdash; and a practical path from ambition to governed, monitored deployment across digital infrastructure programs.",
+    "es": "Por qué la mayoría de las iniciativas de IA en gobierno se estancan entre el piloto y la producción &mdash; y un camino práctico desde la ambición hasta un despliegue gobernado y monitoreado en programas de infraestructura digital."
+  },
+  "wp3.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "wp3.toc.whynow": {
+    "en": "Why Now",
+    "es": "Por Qué Ahora"
+  },
+  "wp3.toc.barriers": {
+    "en": "Five Structural Barriers",
+    "es": "Cinco Barreras Estructurales"
+  },
+  "wp3.toc.framework": {
+    "en": "The Adoption Framework",
+    "es": "El Framework de Adopción"
+  },
+  "wp3.toc.governance": {
+    "en": "Governance &amp; Human-in-the-Loop",
+    "es": "Gobernanza y Supervisión Humana"
+  },
+  "wp3.toc.financing": {
+    "en": "Financing &amp; Procurement",
+    "es": "Financiamiento y Adquisiciones"
+  },
+  "wp3.toc.risk": {
+    "en": "Risk Register",
+    "es": "Registro de Riesgos"
+  },
+  "wp3.toc.roadmap": {
+    "en": "A 180-Day Roadmap",
+    "es": "Hoja de Ruta de 180 Días"
+  },
+  "wp3.toc.conclusion": {
+    "en": "Conclusion &amp; Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "wp3.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "wp3.s1.p1": {
+    "en": "Every ministry of communications, public utility and development bank INA has advised in the past two years has an AI pilot underway &mdash; a chatbot for citizen services, a predictive-maintenance model for a fiber network, a scoring tool for permit reviews. Very few have a second one running at the same time, and fewer still have retired a pilot into standard operating procedure. The gap between AI enthusiasm and AI infrastructure &mdash; the governance, data, procurement and workforce foundations that let a pilot survive contact with a real budget cycle &mdash; is where public sector adoption actually fails.",
+    "es": "Todos los ministerios de comunicaciones, empresas públicas de servicios y bancos de desarrollo que INA asesoró en los últimos dos años tienen un piloto de IA en marcha &mdash; un chatbot de atención al ciudadano, un modelo de mantenimiento predictivo para una red de fibra, una herramienta de scoring para revisión de permisos. Muy pocos tienen un segundo piloto corriendo al mismo tiempo, y menos aún lograron que un piloto pase a ser procedimiento operativo estándar. La brecha entre el entusiasmo por la IA y la infraestructura de IA &mdash; la gobernanza, los datos, las adquisiciones y las capacidades del personal que permiten que un piloto sobreviva a un ciclo presupuestario real &mdash; es donde realmente fracasa la adopción en el sector público."
+  },
+  "wp3.s1.p2": {
+    "en": "This paper sets out a practical adoption path for public sector infrastructure organizations: what is different about applying AI inside government versus inside a private operator, the five barriers that recur across the projects INA has structured, an adoption framework built around five pillars, and a concrete first-180-days roadmap that a mid-sized ministry, utility or program office can execute without waiting for a national AI strategy to be finalized first.",
+    "es": "Este documento plantea un camino de adopción práctico para organizaciones de infraestructura del sector público: qué es diferente al aplicar IA dentro de un gobierno versus dentro de un operador privado, las cinco barreras que se repiten en los proyectos que INA ha estructurado, un framework de adopción construido en torno a cinco pilares, y una hoja de ruta concreta para los primeros 180 días que un ministerio, empresa pública u oficina de programa de tamaño mediano puede ejecutar sin esperar a que se termine de definir una estrategia nacional de IA."
+  },
+  "wp3.s1.quote": {
+    "en": "The public sector does not have an AI adoption problem. It has a project structuring problem that AI happens to be exposing faster than any prior technology wave.",
+    "es": "El sector público no tiene un problema de adopción de IA. Tiene un problema de estructuración de proyectos que la IA está exponiendo más rápido que cualquier ola tecnológica anterior."
+  },
+  "wp3.s1.quote.cite": {
+    "en": "INA AI Advisory Methodology&trade; &mdash; Field Notes, 2026",
+    "es": "Metodología de Asesoría en IA de INA&trade; &mdash; Notas de Campo, 2026"
+  },
+  "wp3.s2.kicker": {
+    "en": "Context",
+    "es": "Contexto"
+  },
+  "wp3.s2.p1": {
+    "en": "Three trends are converging on public infrastructure programs at the same time, and each raises the cost of waiting.",
+    "es": "Tres tendencias están convergiendo sobre los programas de infraestructura pública al mismo tiempo, y cada una eleva el costo de esperar."
+  },
+  "wp3.s2.block.title": {
+    "en": "What's Converging",
+    "es": "Qué Está Convergiendo"
+  },
+  "wp3.s2.item1.b": {
+    "en": "Infrastructure itself is generating the data AI needs.",
+    "es": "La propia infraestructura está generando los datos que la IA necesita."
+  },
+  "wp3.s2.item1.d": {
+    "en": "Fiber networks, water and power grids, and digital public services now produce continuous operational telemetry &mdash; the raw material for predictive maintenance, anomaly detection and demand forecasting that simply didn't exist a decade ago.",
+    "es": "Las redes de fibra, las redes de agua y energía, y los servicios públicos digitales ahora producen telemetría operativa continua &mdash; la materia prima para el mantenimiento predictivo, la detección de anomalías y la previsión de demanda que simplemente no existía hace una década."
+  },
+  "wp3.s2.item2.b": {
+    "en": "Financing is starting to require it.",
+    "es": "El financiamiento está empezando a exigirlo."
+  },
+  "wp3.s2.item2.d": {
+    "en": "Multilateral development banks are increasingly asking sponsors how a project will use data and automation to sustain performance post-disbursement, not just how it will be built.",
+    "es": "Los bancos multilaterales de desarrollo preguntan cada vez más a los sponsors cómo un proyecto va a usar datos y automatización para sostener el desempeño después del desembolso, no solo cómo se va a construir."
+  },
+  "wp3.s2.item3.b": {
+    "en": "Citizens already compare government services to consumer AI.",
+    "es": "Los ciudadanos ya comparan los servicios de gobierno con la IA de consumo."
+  },
+  "wp3.s2.item3.d": {
+    "en": "Expectations set by consumer-grade AI assistants are migrating into how citizens judge permitting turnaround, service outages and public communication &mdash; raising the political cost of visibly falling behind.",
+    "es": "Las expectativas generadas por los asistentes de IA de consumo están migrando hacia cómo los ciudadanos juzgan los tiempos de tramitación de permisos, los cortes de servicio y la comunicación pública &mdash; elevando el costo político de quedar visiblemente atrás."
+  },
+  "wp3.s2.callout.lab": {
+    "en": "Reality Check",
+    "es": "Chequeo de Realidad"
+  },
+  "wp3.s2.callout.p": {
+    "en": "None of this means every agency should be building large language models. It means every agency structuring a digital infrastructure program in 2026 needs an explicit position on where AI fits &mdash; even if that position is &ldquo;not yet, and here is why.&rdquo;",
+    "es": "Nada de esto significa que cada organismo deba construir sus propios modelos de lenguaje. Significa que todo organismo que estructure un programa de infraestructura digital en 2026 necesita una posición explícita sobre dónde encaja la IA &mdash; incluso si esa posición es &ldquo;todavía no, y esta es la razón&rdquo;."
+  },
+  "wp3.s3.kicker": {
+    "en": "Diagnosis",
+    "es": "Diagnóstico"
+  },
+  "wp3.s3.p1": {
+    "en": "These are the barriers INA sees repeat across public infrastructure AI initiatives, regardless of country or sector.",
+    "es": "Estas son las barreras que INA observa repetirse en las iniciativas de IA de infraestructura pública, sin importar el país o el sector."
+  },
+  "wp3.s3.b1.t": {
+    "en": "Data locked inside vendor systems",
+    "es": "Datos encerrados en sistemas de proveedores"
+  },
+  "wp3.s3.b1.d": {
+    "en": "Network management, billing and asset systems are frequently procured as closed platforms. The agency owns the infrastructure but not an exportable, model-ready copy of its own operational data.",
+    "es": "Los sistemas de gestión de red, facturación y activos suelen adquirirse como plataformas cerradas. El organismo es dueño de la infraestructura, pero no de una copia exportable y lista para usar en modelos de sus propios datos operativos."
+  },
+  "wp3.s3.b2.t": {
+    "en": "No accountable owner between IT and the program office",
+    "es": "Sin un responsable claro entre TI y la oficina de programa"
+  },
+  "wp3.s3.b2.d": {
+    "en": "AI pilots get sponsored by whichever unit finds a use case first. Without a standing owner, each pilot restarts governance, procurement and risk review from zero.",
+    "es": "Los pilotos de IA quedan a cargo de la primera unidad que encuentra un caso de uso. Sin un responsable permanente, cada piloto vuelve a empezar de cero la gobernanza, las adquisiciones y la revisión de riesgos."
+  },
+  "wp3.s3.b3.t": {
+    "en": "Procurement rules written for software, not for models",
+    "es": "Reglas de adquisición pensadas para software, no para modelos"
+  },
+  "wp3.s3.b3.d": {
+    "en": "Standard IT procurement assumes a fixed deliverable. It rarely addresses model retraining, drift monitoring, or the right to audit training data &mdash; all of which need to be contractual, not aspirational.",
+    "es": "Las adquisiciones de TI estándar asumen un entregable fijo. Rara vez contemplan el reentrenamiento del modelo, el monitoreo de drift o el derecho a auditar los datos de entrenamiento &mdash; todo lo cual debe quedar establecido en el contrato, no como una aspiración."
+  },
+  "wp3.s3.b4.t": {
+    "en": "Skills concentrated in one or two people",
+    "es": "Capacidades concentradas en una o dos personas"
+  },
+  "wp3.s3.b4.d": {
+    "en": "A single technically fluent champion often carries an entire program's AI literacy. When that person moves on, so does institutional capacity to evaluate vendor claims.",
+    "es": "Con frecuencia, una sola persona con fluidez técnica sostiene todo el conocimiento de IA de un programa. Cuando esa persona se va, se va también la capacidad institucional para evaluar lo que promete cada proveedor."
+  },
+  "wp3.s3.b5.t": {
+    "en": "Governance arrives after the first incident, not before",
+    "es": "La gobernanza llega después del primer incidente, no antes"
+  },
+  "wp3.s3.b5.d": {
+    "en": "Ethics review, bias testing and human-in-the-loop checkpoints are usually written after a model has already made a visible mistake &mdash; at far higher political cost than if they had shipped with the pilot.",
+    "es": "La revisión ética, las pruebas de sesgo y los puntos de control con supervisión humana suelen redactarse recién después de que un modelo ya cometió un error visible &mdash; a un costo político mucho mayor que si hubieran estado desde el lanzamiento del piloto."
+  },
+  "wp3.s4.kicker": {
+    "en": "Methodology",
+    "es": "Metodología"
+  },
+  "wp3.s4.p1": {
+    "en": "INA applies its <b style=\"color:var(--text);\">AI Advisory Methodology&trade; (F4)</b> &mdash; one of the seven INA Frameworks&trade; &mdash; to public sector infrastructure programs. It treats AI adoption as a governance discipline that moves across five pillars, not as a single technology purchase.",
+    "es": "INA aplica su <b style=\"color:var(--text);\">Metodología de Asesoría en IA&trade; (F4)</b> &mdash; uno de los siete INA Frameworks&trade; &mdash; a programas de infraestructura del sector público. Trata la adopción de IA como una disciplina de gobernanza que avanza a través de cinco pilares, no como la compra de una única tecnología."
+  },
+  "wp3.s4.th1": {
+    "en": "Pillar",
+    "es": "Pilar"
+  },
+  "wp3.s4.th2": {
+    "en": "Applied to Public Infrastructure",
+    "es": "Aplicado a Infraestructura Pública"
+  },
+  "wp3.s4.th3": {
+    "en": "Key Deliverable",
+    "es": "Entregable Clave"
+  },
+  "wp3.s4.r1.pillar": {
+    "en": "Strategy &amp; Use-Case Prioritization",
+    "es": "Estrategia y Priorización de Casos de Uso"
+  },
+  "wp3.s4.r1.appl": {
+    "en": "Rank candidate use cases (predictive maintenance, permit triage, demand forecasting, fraud detection in public works spend) by data readiness and citizen impact, not by vendor pitch.",
+    "es": "Ordenar los casos de uso candidatos (mantenimiento predictivo, clasificación de permisos, previsión de demanda, detección de fraude en el gasto de obra pública) según la disponibilidad de datos y el impacto en el ciudadano, no según la propuesta del proveedor."
+  },
+  "wp3.s4.r1.deliv": {
+    "en": "Use-Case Register",
+    "es": "Registro de Casos de Uso"
+  },
+  "wp3.s4.r2.pillar": {
+    "en": "Data Readiness",
+    "es": "Disponibilidad de Datos"
+  },
+  "wp3.s4.r2.appl": {
+    "en": "Establish which operational data the agency can legally export, clean and retain outside vendor platforms before any model is scoped.",
+    "es": "Establecer qué datos operativos puede el organismo exportar, limpiar y conservar legalmente fuera de las plataformas de los proveedores, antes de definir el alcance de cualquier modelo."
+  },
+  "wp3.s4.r2.deliv": {
+    "en": "Data Readiness Report",
+    "es": "Informe de Disponibilidad de Datos"
+  },
+  "wp3.s4.r3.pillar": {
+    "en": "Technology &amp; Infrastructure",
+    "es": "Tecnología e Infraestructura"
+  },
+  "wp3.s4.r3.appl": {
+    "en": "Decide build-vs-buy-vs-partner per use case, and where model inference needs to run relative to legacy OT/SCADA and network management systems.",
+    "es": "Definir, caso por caso, si construir, comprar o asociarse, y dónde debe correr la inferencia del modelo en relación con los sistemas heredados de OT/SCADA y gestión de red."
+  },
+  "wp3.s4.r3.deliv": {
+    "en": "Reference Architecture",
+    "es": "Arquitectura de Referencia"
+  },
+  "wp3.s4.r4.pillar": {
+    "en": "Governance &amp; Ethics",
+    "es": "Gobernanza y Ética"
+  },
+  "wp3.s4.r4.appl": {
+    "en": "Define who can approve a model going live, what human-in-the-loop checkpoints are non-negotiable, and how bias and error rates get monitored post-launch.",
+    "es": "Definir quién puede aprobar que un modelo entre en producción, qué puntos de control con supervisión humana son innegociables, y cómo se monitorean el sesgo y la tasa de error después del lanzamiento."
+  },
+  "wp3.s4.r4.deliv": {
+    "en": "Governance Charter",
+    "es": "Carta de Gobernanza"
+  },
+  "wp3.s4.r5.pillar": {
+    "en": "Adoption &amp; Change Management",
+    "es": "Adopción y Gestión del Cambio"
+  },
+  "wp3.s4.r5.appl": {
+    "en": "Build frontline staff capability and trust before scale-up &mdash; the pillar most public programs skip, and the one most correlated with pilots that survive.",
+    "es": "Desarrollar la capacidad y la confianza del personal de primera línea antes de escalar &mdash; el pilar que más se salta la mayoría de los programas públicos, y el que más se correlaciona con los pilotos que logran sobrevivir."
+  },
+  "wp3.s4.r5.deliv": {
+    "en": "Adoption Roadmap",
+    "es": "Hoja de Ruta de Adopción"
+  },
+  "wp3.s4.stages.subhead": {
+    "en": "Adoption Stages",
+    "es": "Etapas de Adopción"
+  },
+  "wp3.s4.stages.p": {
+    "en": "Programs move through four stages. Most public sector AI initiatives INA reviews sit at Stage 1 with the visibility of Stage 3 &mdash; a single successful pilot creates the appearance of maturity the underlying governance doesn't yet support.",
+    "es": "Los programas atraviesan cuatro etapas. La mayoría de las iniciativas de IA del sector público que INA revisa están en la Etapa 1 con la visibilidad de la Etapa 3 &mdash; un único piloto exitoso crea una apariencia de madurez que la gobernanza subyacente todavía no sostiene."
+  },
+  "wp3.s4.stage1.range": {
+    "en": "Stage 1",
+    "es": "Etapa 1"
+  },
+  "wp3.s4.stage1.label": {
+    "en": "Exploratory &mdash; ad hoc pilots, no standing governance",
+    "es": "Exploratoria &mdash; pilotos ad hoc, sin gobernanza permanente"
+  },
+  "wp3.s4.stage2.range": {
+    "en": "Stage 2",
+    "es": "Etapa 2"
+  },
+  "wp3.s4.stage2.label": {
+    "en": "Piloted &mdash; governed pilots, still isolated per unit",
+    "es": "Pilotada &mdash; pilotos gobernados, todavía aislados por unidad"
+  },
+  "wp3.s4.stage3.range": {
+    "en": "Stage 3",
+    "es": "Etapa 3"
+  },
+  "wp3.s4.stage3.label": {
+    "en": "Scaling &mdash; shared data layer, cross-department reuse",
+    "es": "Escalando &mdash; capa de datos compartida, reutilización entre áreas"
+  },
+  "wp3.s4.stage4.range": {
+    "en": "Stage 4",
+    "es": "Etapa 4"
+  },
+  "wp3.s4.stage4.label": {
+    "en": "Institutionalized &mdash; audited, monitored, standard procedure",
+    "es": "Institucionalizada &mdash; auditada, monitoreada, procedimiento estándar"
+  },
+  "wp3.s5.kicker": {
+    "en": "Non-Negotiables",
+    "es": "No Negociables"
+  },
+  "wp3.s5.p1": {
+    "en": "Every AI Advisory engagement INA runs applies the same principle used across all seven INA Frameworks&trade;: no AI agent or model holds final decision authority over a public resource, a citizen-facing determination, or public funds. Its role is always assistive.",
+    "es": "Todo proyecto de Asesoría en IA que ejecuta INA aplica el mismo principio que atraviesa los siete INA Frameworks&trade;: ningún agente o modelo de IA tiene la autoridad final de decisión sobre un recurso público, una determinación que afecte a un ciudadano, o fondos públicos. Su rol siempre es asistir."
+  },
+  "wp3.s5.can.title": {
+    "en": "What AI Can Do",
+    "es": "Lo Que la IA Puede Hacer"
+  },
+  "wp3.s5.can.li1": {
+    "en": "Draft a first-pass risk score, recommendation or summary",
+    "es": "Redactar un primer borrador de score de riesgo, recomendación o resumen"
+  },
+  "wp3.s5.can.li2": {
+    "en": "Flag anomalies in asset performance or spend for human review",
+    "es": "Señalar anomalías en el desempeño de activos o en el gasto para revisión humana"
+  },
+  "wp3.s5.can.li3": {
+    "en": "Accelerate document review and comparative analysis",
+    "es": "Acelerar la revisión de documentos y el análisis comparativo"
+  },
+  "wp3.s5.stays.title": {
+    "en": "What Stays Human",
+    "es": "Lo Que Sigue Siendo Humano"
+  },
+  "wp3.s5.stays.li1": {
+    "en": "Approving a permit, benefit, penalty or procurement award",
+    "es": "Aprobar un permiso, un beneficio, una sanción o una adjudicación"
+  },
+  "wp3.s5.stays.li2": {
+    "en": "Accepting a model's output as final without a named reviewer",
+    "es": "Aceptar el resultado de un modelo como definitivo sin un revisor identificado"
+  },
+  "wp3.s5.stays.li3": {
+    "en": "Committing public funds or signing a contract",
+    "es": "Comprometer fondos públicos o firmar un contrato"
+  },
+  "wp3.s5.callout.lab": {
+    "en": "Human-in-the-Loop",
+    "es": "Supervisión Humana"
+  },
+  "wp3.s5.callout.p": {
+    "en": "A useful test for any proposed use case: name the specific person who is accountable if the model is wrong, and confirm they see the model's output before it affects a citizen or a budget line &mdash; not after.",
+    "es": "Una prueba útil para cualquier caso de uso propuesto: nombrar a la persona específica responsable si el modelo se equivoca, y confirmar que esa persona ve el resultado del modelo antes de que afecte a un ciudadano o una partida presupuestaria &mdash; no después."
+  },
+  "wp3.s6.kicker": {
+    "en": "Enablement",
+    "es": "Habilitación"
+  },
+  "wp3.s6.p1": {
+    "en": "AI capability for public infrastructure is rarely financed as a standalone line item. It is more often embedded inside a broader connectivity, data center or digital government program &mdash; which means it needs to be scoped early enough to shape that program's business case.",
+    "es": "La capacidad de IA para infraestructura pública rara vez se financia como una partida independiente. Con más frecuencia queda incorporada dentro de un programa más amplio de conectividad, datacenter o gobierno digital &mdash; lo que significa que debe definirse su alcance lo bastante temprano como para influir en el business case de ese programa."
+  },
+  "wp3.s6.th1": {
+    "en": "Pathway",
+    "es": "Vía"
+  },
+  "wp3.s6.th2": {
+    "en": "Typical Fit",
+    "es": "Uso Típico"
+  },
+  "wp3.s6.th3": {
+    "en": "Key Consideration",
+    "es": "Consideración Clave"
+  },
+  "wp3.s6.r1.pathway": {
+    "en": "Multilateral development bank technical assistance",
+    "es": "Asistencia técnica de bancos multilaterales de desarrollo"
+  },
+  "wp3.s6.r1.fit": {
+    "en": "Data readiness assessments, governance charter design, use-case prioritization studies",
+    "es": "Evaluaciones de disponibilidad de datos, diseño de la carta de gobernanza, estudios de priorización de casos de uso"
+  },
+  "wp3.s6.r1.consider": {
+    "en": "Usually grant-funded and can start before a capital project is approved",
+    "es": "Suele financiarse con fondos no reembolsables y puede iniciarse antes de que se apruebe un proyecto de capital"
+  },
+  "wp3.s6.r2.pathway": {
+    "en": "Embedded within capital project financing",
+    "es": "Incorporada dentro del financiamiento del proyecto de capital"
+  },
+  "wp3.s6.r2.fit": {
+    "en": "Predictive maintenance, network operations AI bundled into a fiber, FWA or datacenter loan",
+    "es": "Mantenimiento predictivo, IA de operaciones de red incluida en un préstamo de fibra, FWA o datacenter"
+  },
+  "wp3.s6.r2.consider": {
+    "en": "Must be scoped in the Business Case, not added after financial close",
+    "es": "Debe definirse en el Business Case, no agregarse después del cierre financiero"
+  },
+  "wp3.s6.r3.pathway": {
+    "en": "National digital government or innovation funds",
+    "es": "Fondos nacionales de gobierno digital o innovación"
+  },
+  "wp3.s6.r3.fit": {
+    "en": "Citizen-facing service pilots (permit triage, service chatbots)",
+    "es": "Pilotos de servicios de cara al ciudadano (clasificación de permisos, chatbots de atención)"
+  },
+  "wp3.s6.r3.consider": {
+    "en": "Typically smaller tickets, useful for proving Stage 1&ndash;2 pilots",
+    "es": "Habitualmente montos menores, útiles para validar pilotos de Etapa 1&ndash;2"
+  },
+  "wp3.s6.r4.pathway": {
+    "en": "Vendor-financed pilots",
+    "es": "Pilotos financiados por el proveedor"
+  },
+  "wp3.s6.r4.fit": {
+    "en": "Fast proof-of-concept for a single use case",
+    "es": "Prueba de concepto rápida para un único caso de uso"
+  },
+  "wp3.s6.r4.consider": {
+    "en": "Negotiate data portability and exit terms before the pilot, not at renewal",
+    "es": "Negociar la portabilidad de datos y las condiciones de salida antes del piloto, no en la renovación"
+  },
+  "wp3.s6.footnote": {
+    "en": "See INA's <a href=\"finance.html\" style=\"color:var(--amber-deep);\">Multilateral Finance</a> page and the <b style=\"color:var(--text);\">Multilateral Finance Navigator&trade; (F6)</b> for how AI-enabled components are evaluated alongside the rest of a project's financing structure.",
+    "es": "Ver la página de <a href=\"finance.html\" style=\"color:var(--amber-deep);\">Financiamiento Multilateral</a> de INA y el <b style=\"color:var(--text);\">Multilateral Finance Navigator&trade; (F6)</b> para conocer cómo se evalúan los componentes habilitados por IA junto con el resto de la estructura de financiamiento de un proyecto."
+  },
+  "wp3.s7.kicker": {
+    "en": "Risk",
+    "es": "Riesgo"
+  },
+  "wp3.s7.r1.risk": {
+    "en": "Vendor lock-in on proprietary models or data formats",
+    "es": "Dependencia de un proveedor por modelos o formatos de datos propietarios (vendor lock-in)"
+  },
+  "wp3.s7.r1.mitig": {
+    "en": "Contractual data portability and export rights, negotiated before signature",
+    "es": "Derechos contractuales de portabilidad y exportación de datos, negociados antes de la firma"
+  },
+  "wp3.s7.r2.risk": {
+    "en": "Biased or unrepresentative training data",
+    "es": "Datos de entrenamiento sesgados o no representativos"
+  },
+  "wp3.s7.r2.mitig": {
+    "en": "Bias testing against demographic and geographic segments before go-live",
+    "es": "Pruebas de sesgo contra segmentos demográficos y geográficos antes de la puesta en producción"
+  },
+  "wp3.s7.r3.risk": {
+    "en": "Model outputs treated as final without review",
+    "es": "Resultados del modelo tratados como definitivos sin revisión"
+  },
+  "wp3.s7.r3.mitig": {
+    "en": "Named human-in-the-loop reviewer at every citizen- or fund-affecting decision",
+    "es": "Un revisor humano identificado en cada decisión que afecte a un ciudadano o a fondos públicos"
+  },
+  "wp3.s7.r4.risk": {
+    "en": "Sensitive citizen or operational data exposed to external AI providers",
+    "es": "Datos sensibles de ciudadanos u operativos expuestos a proveedores externos de IA"
+  },
+  "wp3.s7.r4.mitig": {
+    "en": "Data-handling policy and confidentiality terms fixed before any pilot starts",
+    "es": "Política de manejo de datos y términos de confidencialidad definidos antes de iniciar cualquier piloto"
+  },
+  "wp3.s7.r5.risk": {
+    "en": "Pilot fatigue &mdash; no path from proof-of-concept to budget line",
+    "es": "Fatiga de pilotos &mdash; sin camino desde la prueba de concepto hasta una partida presupuestaria"
+  },
+  "wp3.s7.r5.mitig": {
+    "en": "Adoption Roadmap with a funded Stage 2&rarr;3 transition built in from day one",
+    "es": "Hoja de Ruta de Adopción con la transición de Etapa 2&rarr;3 financiada desde el primer día"
+  },
+  "wp3.s7.r6.risk": {
+    "en": "Legacy OT/SCADA systems unable to expose data safely",
+    "es": "Sistemas heredados de OT/SCADA que no pueden exponer datos de forma segura"
+  },
+  "wp3.s7.r6.mitig": {
+    "en": "Data Readiness assessment scoped before technology selection, not after",
+    "es": "Evaluación de Disponibilidad de Datos definida antes de seleccionar la tecnología, no después"
+  },
+  "wp3.s8.kicker": {
+    "en": "Execution",
+    "es": "Ejecución"
+  },
+  "wp3.s8.p1": {
+    "en": "A program office does not need a finished national AI strategy to start. It needs these four moves, in this order.",
+    "es": "Una oficina de programa no necesita una estrategia nacional de IA terminada para empezar. Necesita estos cuatro movimientos, en este orden."
+  },
+  "wp3.s8.p1t": {
+    "en": "Days 1&ndash;30 &middot; Name an owner and register use cases",
+    "es": "Días 1&ndash;30 &middot; Nombrar un responsable y registrar casos de uso"
+  },
+  "wp3.s8.p1d": {
+    "en": "Designate a single accountable owner for AI adoption inside the program office. Inventory every AI idea already circulating &mdash; formal or informal &mdash; into one Use-Case Register.",
+    "es": "Designar un único responsable de la adopción de IA dentro de la oficina de programa. Relevar todas las ideas de IA que ya circulan &mdash; formales o informales &mdash; en un único Registro de Casos de Uso."
+  },
+  "wp3.s8.p1g": {
+    "en": "Gate &mdash; Ownership confirmed",
+    "es": "Gate &mdash; Responsable confirmado"
+  },
+  "wp3.s8.p2t": {
+    "en": "Days 31&ndash;90 &middot; Assess data readiness and draft the governance charter",
+    "es": "Días 31&ndash;90 &middot; Evaluar la disponibilidad de datos y redactar la carta de gobernanza"
+  },
+  "wp3.s8.p2d": {
+    "en": "Confirm which operational data can legally be exported from vendor systems. In parallel, draft the Governance Charter defining approval authority and human-in-the-loop checkpoints.",
+    "es": "Confirmar qué datos operativos pueden exportarse legalmente de los sistemas de los proveedores. En paralelo, redactar la Carta de Gobernanza que defina la autoridad de aprobación y los puntos de control con supervisión humana."
+  },
+  "wp3.s8.p2g": {
+    "en": "Gate &mdash; Charter approved",
+    "es": "Gate &mdash; Carta aprobada"
+  },
+  "wp3.s8.p3t": {
+    "en": "Days 91&ndash;150 &middot; Run one governed pilot to completion",
+    "es": "Días 91&ndash;150 &middot; Llevar un piloto gobernado hasta el final"
+  },
+  "wp3.s8.p3d": {
+    "en": "Select the single highest-readiness use case from the register and run it end-to-end under the new charter &mdash; including the human reviewer step, not just the model.",
+    "es": "Seleccionar del registro el caso de uso con mayor nivel de preparación y ejecutarlo de punta a punta bajo la nueva carta &mdash; incluyendo el paso de revisión humana, no solo el modelo."
+  },
+  "wp3.s8.p3g": {
+    "en": "Gate &mdash; Pilot review",
+    "es": "Gate &mdash; Revisión del piloto"
+  },
+  "wp3.s8.p4t": {
+    "en": "Days 151&ndash;180 &middot; Fund the transition to Stage 2&ndash;3",
+    "es": "Días 151&ndash;180 &middot; Financiar la transición a la Etapa 2&ndash;3"
+  },
+  "wp3.s8.p4d": {
+    "en": "Use the completed pilot's results to write the budget line or financing request that carries the use case into standard operating procedure &mdash; before institutional momentum fades.",
+    "es": "Usar los resultados del piloto completado para redactar la partida presupuestaria o la solicitud de financiamiento que lleve el caso de uso a ser procedimiento operativo estándar &mdash; antes de que se pierda el impulso institucional."
+  },
+  "wp3.s8.p4g": {
+    "en": "Gate &mdash; Budget secured",
+    "es": "Gate &mdash; Presupuesto asegurado"
+  },
+  "wp3.s9.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "wp3.s9.p1": {
+    "en": "AI adoption in public sector infrastructure succeeds or fails on the same discipline that determines whether any infrastructure project succeeds: clear ownership, data that is actually available when needed, procurement written for what is really being bought, and governance that exists before the first incident rather than after it. Treat AI as a new layer on the same Project Structuring Framework&trade; discipline already applied to fiber, spectrum and datacenter programs, and it stops being a special case.",
+    "es": "La adopción de IA en infraestructura del sector público tiene éxito o fracasa por la misma disciplina que determina el éxito de cualquier proyecto de infraestructura: responsabilidad clara, datos realmente disponibles cuando se necesitan, adquisiciones redactadas para lo que efectivamente se está comprando, y gobernanza que existe antes del primer incidente y no después. Si se trata a la IA como una nueva capa sobre la misma disciplina del Project Structuring Framework&trade; ya aplicada a programas de fibra, espectro y datacenters, deja de ser un caso especial."
+  },
+  "wp3.s9.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "wp3.s9.rec1": {
+    "en": "Name one accountable owner for AI adoption before approving a second pilot.",
+    "es": "Nombrar un único responsable de la adopción de IA antes de aprobar un segundo piloto."
+  },
+  "wp3.s9.rec2": {
+    "en": "Negotiate data export and portability rights before signing any AI vendor contract.",
+    "es": "Negociar los derechos de exportación y portabilidad de datos antes de firmar cualquier contrato con un proveedor de IA."
+  },
+  "wp3.s9.rec3": {
+    "en": "Write the Governance Charter and human-in-the-loop checkpoints before go-live, not after an incident.",
+    "es": "Redactar la Carta de Gobernanza y los puntos de control con supervisión humana antes de la puesta en producción, no después de un incidente."
+  },
+  "wp3.s9.rec4": {
+    "en": "Scope AI components inside capital project business cases, not as a later add-on.",
+    "es": "Definir los componentes de IA dentro del business case del proyecto de capital, no como un agregado posterior."
+  },
+  "wp3.s9.rec5": {
+    "en": "Fund the Stage 2&rarr;3 transition for one pilot before starting a third.",
+    "es": "Financiar la transición de Etapa 2&rarr;3 de un piloto antes de iniciar un tercero."
+  },
+  "wp3.s9.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA AI Advisory Methodology&trade; (F4).",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA, basado en la Metodología de Asesoría en IA de INA&trade; (F4)."
+  },
+  "wp3.s9.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "wp3.s9.next.p": {
+    "en": "INA's advisory team can run this framework against your program in a structured engagement, starting with a Use-Case Register and Data Readiness assessment. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "El equipo de asesoría de INA puede aplicar este framework a su programa en un proyecto estructurado, comenzando con un Registro de Casos de Uso y una evaluación de Disponibilidad de Datos. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "know.wp3.read": {
+    "en": "Read the white paper &rarr;",
+    "es": "Leer el white paper &rarr;"
+  }
 };
 const SELECT_OPTIONS = {"type": {"en": ["Government / Regulator", "Development Finance Institution", "Investor / Infrastructure Fund", "Technology Company", "Other"], "es": ["Gobierno / Regulador", "Institución de Financiamiento para el Desarrollo", "Inversor / Fondo de Infraestructura", "Empresa Tecnológica", "Otro"]}};
 
