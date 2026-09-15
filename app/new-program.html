@@ -85,6 +85,17 @@
         <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.nameEn.help">Shown instead of the name above only when a viewer has the site in English — leave blank to always show the name above in both languages.</span></p>
       </div>
       <div class="field" style="margin-top:18px;"><label for="pgOrg"><span data-i18n="prog.f.org">Presenting organization</span></label><input id="pgOrg" type="text" required></div>
+      <!-- Optional English override for organization
+           (migration_v61_bilingual_organization_financing_entity.sql) —
+           Pablo, sep 2026 follow-up: "en la pantalla financing_program
+           también hay que traducir al inglés el contenido cuando está
+           seleccionado el idioma inglés." organization is almost always
+           entered in Spanish (e.g. "Ente Nacional de Comunicaciones
+           (ENACOM)"); same fallback convention as pgNameEn above. See
+           INAPlatform.programDisplayOrganization(). -->
+      <div class="field" style="margin-top:18px;"><label for="pgOrgEn"><span data-i18n="prog.f.orgEn">Presenting organization in English (optional)</span></label><input id="pgOrgEn" type="text">
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.orgEn.help">Shown instead of the organization above only when a viewer has the site in English — leave blank to always show the organization above in both languages.</span></p>
+      </div>
       <div class="field" style="margin-top:18px;">
         <label><span data-i18n="prog.f.orgType">Organization type</span></label>
         <div class="chk-group" id="orgTypeOptions"></div>
@@ -101,6 +112,16 @@
         <label for="pgFinancingEntity"><span data-i18n="prog.f.financingEntity">Financing entity (optional)</span></label>
         <input id="pgFinancingEntity" type="text" placeholder="BID, CAF, Banco Nación, ENACOM-FSU…">
         <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.financingEntity.help">The institution that actually finances this program — not the presenting organization above. For Universal Service Fund programs, use exactly "ENACOM-FSU" so it groups correctly on the project's Financing tab.</span></p>
+      </div>
+      <!-- Optional English override for financing_entity — same convention
+           as pgOrgEn above. Some values are already entered in English
+           (e.g. a DFC program's full name), others in Spanish (e.g. "Banco
+           Interamericano de Desarrollo (BID)") — this lets either be paired
+           with an explicit override for the other language. See
+           migration_v61_bilingual_organization_financing_entity.sql and
+           INAPlatform.programDisplayFinancingEntity(). -->
+      <div class="field" style="margin-top:18px;" id="financingEntityEnField"><label for="pgFinancingEntityEn"><span data-i18n="prog.f.financingEntityEn">Financing entity in English (optional)</span></label><input id="pgFinancingEntityEn" type="text">
+        <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="prog.f.financingEntityEn.help">Shown instead of the financing entity above only when a viewer has the site in English — leave blank to always show it in both languages.</span></p>
       </div>
       <!-- Program role — 'financing' means the program IS a funding source
            (further split by fundingStage below); 'umbrella' means it just
@@ -181,9 +202,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=69"></script>
+<script src="/assets/i18n.js?v=70"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=81"></script>
+<script src="/assets/platform.js?v=82"></script>
 <script src="/assets/script.js?v=14"></script>
 <script>
 (function () {
@@ -400,9 +421,11 @@
     document.getElementById('programRoleField').style.display = isUmbrella ? 'none' : '';
     document.getElementById('fundingStageField').style.display = isUmbrella ? 'none' : '';
     document.getElementById('financingEntityField').style.display = isUmbrella ? 'none' : '';
+    document.getElementById('financingEntityEnField').style.display = isUmbrella ? 'none' : '';
     document.getElementById('templateField').style.display = isUmbrella ? 'none' : '';
     if (isUmbrella) {
       document.getElementById('pgFinancingEntity').value = '';
+      document.getElementById('pgFinancingEntityEn').value = '';
       document.getElementById('pgTemplate').value = '';
     }
   }
@@ -665,12 +688,14 @@
       document.getElementById('pgName').value = program.name || '';
       document.getElementById('pgNameEn').value = program.name_en || '';
       document.getElementById('pgOrg').value = program.organization || '';
+      document.getElementById('pgOrgEn').value = program.organization_en || '';
       // An Initiative doesn't have a financing entity or a template (see
       // updateRoleDependentFieldsVisibility() above) — if this program
       // predates that rule (or was switched to 'umbrella' after having
       // financing-specific data), don't repopulate those now-hidden fields
       // from it.
       document.getElementById('pgFinancingEntity').value = editedIsUmbrella ? '' : (program.financing_entity || '');
+      document.getElementById('pgFinancingEntityEn').value = editedIsUmbrella ? '' : (program.financing_entity_en || '');
       document.getElementById('pgDesc').value = program.description || '';
       document.getElementById('pgDescEn').value = program.description_en || '';
       renderOrgTypeOptions(program.organization_type);
@@ -708,7 +733,9 @@
       name: document.getElementById('pgName').value,
       nameEn: document.getElementById('pgNameEn').value,
       organization: document.getElementById('pgOrg').value,
+      organizationEn: document.getElementById('pgOrgEn').value,
       financingEntity: document.getElementById('pgFinancingEntity').value,
+      financingEntityEn: document.getElementById('pgFinancingEntityEn').value,
       organizationType: (new FormData(form)).get('orgType') || 'public',
       fundingStage: (new FormData(form)).get('fundingStage') || 'financing',
       programRole: (new FormData(form)).get('programRole') || 'financing',
