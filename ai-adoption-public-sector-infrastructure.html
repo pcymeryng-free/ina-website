@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Adoption for Public Sector Infrastructure — INA Knowledge</title>
+<meta name="description" content="A practical white paper on how governments, utilities and development finance institutions can move AI adoption for infrastructure from pilot to governed, institutionalized capability.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=7">
+</head>
+<body>
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="word"><b>INA</b><span><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+    </a>
+    <nav class="links">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html" class="current"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a>
+    </nav>
+    <div class="lang-switch" aria-label="Language">
+      <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+    </div>
+    <a href="contact.html" class="btn amber"><span data-i18n="nav.cta">Request Advisory</span></a>
+    <button class="navToggle" aria-label="Toggle menu" id="navToggle">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" style="display:none; border-top:1px solid var(--paper-line); background:var(--paper);">
+    <div class="wrap" style="display:flex; flex-direction:column; padding:18px 32px; gap:16px;">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a><a href="contact.html"><span data-i18n="nav.contact">Contact</span></a>
+      <div class="lang-switch" style="margin-top:6px;"><button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button></div>
+    </div>
+  </div>
+</header>
+<section class="page-hero">
+  <div class="wrap">
+    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><a href="knowledge.html">Knowledge</a><span>/</span><span>White Paper</span></div>
+    <span class="eyebrow on-dark">White Paper &middot; September 2026</span>
+    <h1 class="h-page">AI Adoption for Public Sector Infrastructure</h1>
+    <p class="lede">Why most government AI initiatives stall between pilot and production &mdash; and a practical path from ambition to governed, monitored deployment across digital infrastructure programs.</p>
+  </div>
+</section>
+
+<section class="tight"><div class="wrap"><div class="fw-layout"><div class="fw-toc">
+  <span class="toc-label">On This Page</span>
+  <a href="#summary">Executive Summary</a>
+  <a href="#why-now">Why Now</a>
+  <a href="#barriers">Five Structural Barriers</a>
+  <a href="#framework">The Adoption Framework</a>
+  <a href="#governance">Governance &amp; Human-in-the-Loop</a>
+  <a href="#financing">Financing &amp; Procurement</a>
+  <a href="#risk">Risk Register</a>
+  <a href="#roadmap">A 180-Day Roadmap</a>
+  <a href="#conclusion">Conclusion &amp; Recommendations</a>
+</div>
+<div>
+
+<div class="fw-section" id="summary">
+  <div class="fw-kicker">
+    <span class="fnum-big">01</span>
+    <div class="fw-title"><small>Overview</small><h2>Executive Summary</h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;">Every ministry of communications, public utility and development bank INA has advised in the past two years has an AI pilot underway &mdash; a chatbot for citizen services, a predictive-maintenance model for a fiber network, a scoring tool for permit reviews. Very few have a second one running at the same time, and fewer still have retired a pilot into standard operating procedure. The gap between AI enthusiasm and AI infrastructure &mdash; the governance, data, procurement and workforce foundations that let a pilot survive contact with a real budget cycle &mdash; is where public sector adoption actually fails.</p>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px; margin-top:14px;">This paper sets out a practical adoption path for public sector infrastructure organizations: what is different about applying AI inside government versus inside a private operator, the five barriers that recur across the projects INA has structured, an adoption framework built around five pillars, and a concrete first-180-days roadmap that a mid-sized ministry, utility or program office can execute without waiting for a national AI strategy to be finalized first.</p>
+  <blockquote class="fw-quote">&ldquo;The public sector does not have an AI adoption problem. It has a project structuring problem that AI happens to be exposing faster than any prior technology wave.&rdquo;<cite>INA AI Advisory Methodology&trade; &mdash; Field Notes, 2026</cite></blockquote>
+</div>
+
+<div class="fw-section" id="why-now">
+  <div class="fw-kicker">
+    <span class="fnum-big">02</span>
+    <div class="fw-title"><small>Context</small><h2>Why Now</h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;">Three trends are converging on public infrastructure programs at the same time, and each raises the cost of waiting.</p>
+  <div class="info-block" style="margin-top:34px;"><h4>What's Converging</h4><ul style="gap:16px;">
+    <li><b style="color:var(--text);">Infrastructure itself is generating the data AI needs.</b><br><span style="color:var(--muted);">Fiber networks, water and power grids, and digital public services now produce continuous operational telemetry &mdash; the raw material for predictive maintenance, anomaly detection and demand forecasting that simply didn't exist a decade ago.</span></li>
+    <li><b style="color:var(--text);">Financing is starting to require it.</b><br><span style="color:var(--muted);">Multilateral development banks are increasingly asking sponsors how a project will use data and automation to sustain performance post-disbursement, not just how it will be built.</span></li>
+    <li><b style="color:var(--text);">Citizens already compare government services to consumer AI.</b><br><span style="color:var(--muted);">Expectations set by consumer-grade AI assistants are migrating into how citizens judge permitting turnaround, service outages and public communication &mdash; raising the political cost of visibly falling behind.</span></li>
+  </ul></div>
+  <div class="ai-callout"><span class="lab">Reality Check</span><p>None of this means every agency should be building large language models. It means every agency structuring a digital infrastructure program in 2026 needs an explicit position on where AI fits &mdash; even if that position is "not yet, and here is why."</p></div>
+</div>
+
+<div class="fw-section" id="barriers">
+  <div class="fw-kicker">
+    <span class="fnum-big">03</span>
+    <div class="fw-title"><small>Diagnosis</small><h2>Five Structural Barriers</h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;">These are the barriers INA sees repeat across public infrastructure AI initiatives, regardless of country or sector.</p>
+  <div class="phase-list">
+    <div class="phase-item"><div class="pn">1</div><div>
+      <h4>Data locked inside vendor systems</h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;">Network management, billing and asset systems are frequently procured as closed platforms. The agency owns the infrastructure but not an exportable, model-ready copy of its own operational data.</p>
+    </div></div>
+    <div class="phase-item"><div class="pn">2</div><div>
+      <h4>No accountable owner between IT and the program office</h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;">AI pilots get sponsored by whichever unit finds a use case first. Without a standing owner, each pilot restarts governance, procurement and risk review from zero.</p>
+    </div></div>
+    <div class="phase-item"><div class="pn">3</div><div>
+      <h4>Procurement rules written for software, not for models</h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;">Standard IT procurement assumes a fixed deliverable. It rarely addresses model retraining, drift monitoring, or the right to audit training data &mdash; all of which need to be contractual, not aspirational.</p>
+    </div></div>
+    <div class="phase-item"><div class="pn">4</div><div>
+      <h4>Skills concentrated in one or two people</h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;">A single technically fluent champion often carries an entire program's AI literacy. When that person moves on, so does institutional capacity to evaluate vendor claims.</p>
+    </div></div>
+    <div class="phase-item"><div class="pn">5</div><div>
+      <h4>Governance arrives after the first incident, not before</h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;">Ethics review, bias testing and human-in-the-loop checkpoints are usually written after a model has already made a visible mistake &mdash; at far higher political cost than if they had shipped with the pilot.</p>
+    </div></div>
+  </div>
+</div>
+
+<div class="fw-section" id="framework">
+  <div class="fw-kicker">
+    <span class="fnum-big">04</span>
+    <div class="fw-title"><small>Methodology</small><h2>The Adoption Framework</h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;">INA applies its <b style="color:var(--text);">AI Advisory Methodology&trade; (F4)</b> &mdash; one of the seven INA Frameworks&trade; &mdash; to public sector infrastructure programs. It treats AI adoption as a governance discipline that moves across five pillars, not as a single technology purchase.</p>
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th>Pillar</th><th>Applied to Public Infrastructure</th><th>Key Deliverable</th></tr>
+    <tr><td><b>Strategy &amp; Use-Case Prioritization</b></td><td>Rank candidate use cases (predictive maintenance, permit triage, demand forecasting, fraud detection in public works spend) by data readiness and citizen impact, not by vendor pitch.</td><td><small>Use-Case Register</small></td></tr>
+    <tr><td><b>Data Readiness</b></td><td>Establish which operational data the agency can legally export, clean and retain outside vendor platforms before any model is scoped.</td><td><small>Data Readiness Report</small></td></tr>
+    <tr><td><b>Technology &amp; Infrastructure</b></td><td>Decide build-vs-buy-vs-partner per use case, and where model inference needs to run relative to legacy OT/SCADA and network management systems.</td><td><small>Reference Architecture</small></td></tr>
+    <tr><td><b>Governance &amp; Ethics</b></td><td>Define who can approve a model going live, what human-in-the-loop checkpoints are non-negotiable, and how bias and error rates get monitored post-launch.</td><td><small>Governance Charter</small></td></tr>
+    <tr><td><b>Adoption &amp; Change Management</b></td><td>Build frontline staff capability and trust before scale-up &mdash; the pillar most public programs skip, and the one most correlated with pilots that survive.</td><td><small>Adoption Roadmap</small></td></tr>
+  </table></div>
+  <div class="subhead">Adoption Stages</div>
+  <p style="max-width:720px; color:var(--muted); font-size:14.5px; margin-top:6px;">Programs move through four stages. Most public sector AI initiatives INA reviews sit at Stage 1 with the visibility of Stage 3 &mdash; a single successful pilot creates the appearance of maturity the underlying governance doesn't yet support.</p>
+  <div class="score-scale">
+    <div><div class="range">Stage 1</div><div class="label">Exploratory &mdash; ad hoc pilots, no standing governance</div></div>
+    <div><div class="range">Stage 2</div><div class="label">Piloted &mdash; governed pilots, still isolated per unit</div></div>
+    <div><div class="range">Stage 3</div><div class="label">Scaling &mdash; shared data layer, cross-department reuse</div></div>
+    <div><div class="range">Stage 4</div><div class="label">Institutionalized &mdash; audited, monitored, standard procedure</div></div>
+  </div>
+</div>
+
+<div class="fw-section" id="governance">
+  <div class="fw-kicker">
+    <span class="fnum-big">05</span>
+    <div class="fw-title"><small>Non-Negotiables</small><h2>Governance &amp; Human-in-the-Loop</h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;">Every AI Advisory engagement INA runs applies the same principle used across all seven INA Frameworks&trade;: no AI agent or model holds final decision authority over a public resource, a citizen-facing determination, or public funds. Its role is always assistive.</p>
+  <div class="two-col">
+    <div class="info-block"><h4>What AI Can Do</h4><ul>
+      <li>Draft a first-pass risk score, recommendation or summary</li>
+      <li>Flag anomalies in asset performance or spend for human review</li>
+      <li>Accelerate document review and comparative analysis</li>
+    </ul></div>
+    <div class="info-block"><h4>What Stays Human</h4><ul>
+      <li>Approving a permit, benefit, penalty or procurement award</li>
+      <li>Accepting a model's output as final without a named reviewer</li>
+      <li>Committing public funds or signing a contract</li>
+    </ul></div>
+  </div>
+  <div class="ai-callout"><span class="lab">Human-in-the-Loop</span><p>A useful test for any proposed use case: name the specific person who is accountable if the model is wrong, and confirm they see the model's output before it affects a citizen or a budget line &mdash; not after.</p></div>
+</div>
+
+<div class="fw-section" id="financing">
+  <div class="fw-kicker">
+    <span class="fnum-big">06</span>
+    <div class="fw-title"><small>Enablement</small><h2>Financing &amp; Procurement Pathways</h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;">AI capability for public infrastructure is rarely financed as a standalone line item. It is more often embedded inside a broader connectivity, data center or digital government program &mdash; which means it needs to be scoped early enough to shape that program's business case.</p>
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th>Pathway</th><th>Typical Fit</th><th>Key Consideration</th></tr>
+    <tr><td><b>Multilateral development bank technical assistance</b></td><td>Data readiness assessments, governance charter design, use-case prioritization studies</td><td><small>Usually grant-funded and can start before a capital project is approved</small></td></tr>
+    <tr><td><b>Embedded within capital project financing</b></td><td>Predictive maintenance, network operations AI bundled into a fiber, FWA or datacenter loan</td><td><small>Must be scoped in the Business Case, not added after financial close</small></td></tr>
+    <tr><td><b>National digital government or innovation funds</b></td><td>Citizen-facing service pilots (permit triage, service chatbots)</td><td><small>Typically smaller tickets, useful for proving Stage 1&ndash;2 pilots</small></td></tr>
+    <tr><td><b>Vendor-financed pilots</b></td><td>Fast proof-of-concept for a single use case</td><td><small>Negotiate data portability and exit terms before the pilot, not at renewal</small></td></tr>
+  </table></div>
+  <p style="margin-top:22px; font-size:13.5px; color:var(--muted);">See INA's <a href="finance.html" style="color:var(--amber-deep);">Multilateral Finance</a> page and the <b style="color:var(--text);">Multilateral Finance Navigator&trade; (F6)</b> for how AI-enabled components are evaluated alongside the rest of a project's financing structure.</p>
+</div>
+
+<div class="fw-section" id="risk">
+  <div class="fw-kicker">
+    <span class="fnum-big">07</span>
+    <div class="fw-title"><small>Risk</small><h2>Risk Register</h2></div>
+  </div>
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th>Risk</th><th>Probability</th><th>Impact</th><th>Primary Mitigation</th></tr>
+    <tr><td><b>Vendor lock-in on proprietary models or data formats</b></td><td>High</td><td>High</td><td><small>Contractual data portability and export rights, negotiated before signature</small></td></tr>
+    <tr><td><b>Biased or unrepresentative training data</b></td><td>Medium</td><td>High</td><td><small>Bias testing against demographic and geographic segments before go-live</small></td></tr>
+    <tr><td><b>Model outputs treated as final without review</b></td><td>Medium</td><td>High</td><td><small>Named human-in-the-loop reviewer at every citizen- or fund-affecting decision</small></td></tr>
+    <tr><td><b>Sensitive citizen or operational data exposed to external AI providers</b></td><td>Medium</td><td>High</td><td><small>Data-handling policy and confidentiality terms fixed before any pilot starts</small></td></tr>
+    <tr><td><b>Pilot fatigue &mdash; no path from proof-of-concept to budget line</b></td><td>High</td><td>Medium</td><td><small>Adoption Roadmap with a funded Stage 2&rarr;3 transition built in from day one</small></td></tr>
+    <tr><td><b>Legacy OT/SCADA systems unable to expose data safely</b></td><td>Medium</td><td>Medium</td><td><small>Data Readiness assessment scoped before technology selection, not after</small></td></tr>
+  </table></div>
+</div>
+
+<div class="fw-section" id="roadmap">
+  <div class="fw-kicker">
+    <span class="fnum-big">08</span>
+    <div class="fw-title"><small>Execution</small><h2>A 180-Day Roadmap</h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;">A program office does not need a finished national AI strategy to start. It needs these four moves, in this order.</p>
+  <div class="phase-list">
+    <div class="phase-item"><div class="pn">I</div><div>
+      <h4>Days 1&ndash;30 &middot; Name an owner and register use cases</h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;">Designate a single accountable owner for AI adoption inside the program office. Inventory every AI idea already circulating &mdash; formal or informal &mdash; into one Use-Case Register.</p>
+      <span class="pgate">Gate &mdash; Ownership confirmed</span>
+    </div></div>
+    <div class="phase-item"><div class="pn">II</div><div>
+      <h4>Days 31&ndash;90 &middot; Assess data readiness and draft the governance charter</h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;">Confirm which operational data can legally be exported from vendor systems. In parallel, draft the Governance Charter defining approval authority and human-in-the-loop checkpoints.</p>
+      <span class="pgate">Gate &mdash; Charter approved</span>
+    </div></div>
+    <div class="phase-item"><div class="pn">III</div><div>
+      <h4>Days 91&ndash;150 &middot; Run one governed pilot to completion</h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;">Select the single highest-readiness use case from the register and run it end-to-end under the new charter &mdash; including the human reviewer step, not just the model.</p>
+      <span class="pgate">Gate &mdash; Pilot review</span>
+    </div></div>
+    <div class="phase-item"><div class="pn">IV</div><div>
+      <h4>Days 151&ndash;180 &middot; Fund the transition to Stage 2&ndash;3</h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;">Use the completed pilot's results to write the budget line or financing request that carries the use case into standard operating procedure &mdash; before institutional momentum fades.</p>
+      <span class="pgate">Gate &mdash; Budget secured</span>
+    </div></div>
+  </div>
+</div>
+
+<div class="fw-section" id="conclusion">
+  <div class="fw-kicker">
+    <span class="fnum-big">09</span>
+    <div class="fw-title"><small>Closing</small><h2>Conclusion &amp; Recommendations</h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;">AI adoption in public sector infrastructure succeeds or fails on the same discipline that determines whether any infrastructure project succeeds: clear ownership, data that is actually available when needed, procurement written for what is really being bought, and governance that exists before the first incident rather than after it. Treat AI as a new layer on the same Project Structuring Framework&trade; discipline already applied to fiber, spectrum and datacenter programs, and it stops being a special case.</p>
+  <div class="info-block" style="margin-top:26px;"><h4>Recommendations</h4><ol>
+    <li>Name one accountable owner for AI adoption before approving a second pilot.</li>
+    <li>Negotiate data export and portability rights before signing any AI vendor contract.</li>
+    <li>Write the Governance Charter and human-in-the-loop checkpoints before go-live, not after an incident.</li>
+    <li>Scope AI components inside capital project business cases, not as a later add-on.</li>
+    <li>Fund the Stage 2&rarr;3 transition for one pilot before starting a third.</li>
+  </ol></div>
+  <p style="margin-top:40px; font-size:11.5px; color:var(--muted); font-family:var(--mono);">Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA AI Advisory Methodology&trade; (F4).</p>
+  <div class="ai-callout" style="margin-top:34px;"><span class="lab">Next Step</span><p>INA's advisory team can run this framework against your program in a structured engagement, starting with a Use-Case Register and Data Readiness assessment. <a href="contact.html" style="color:var(--amber);">Request Advisory &rarr;</a></p></div>
+</div>
+
+</div></div></div></section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="brand" style="color:var(--text-on-dark);">
+          <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+          <span class="word" style="color:var(--text-on-dark);"><b>INA</b><span style="color:var(--muted-on-dark);"><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+        </span>
+        <p style="margin-top:18px; font-size:13.5px; max-width:280px;"><span data-i18n="footer.tagline">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</span></p>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.platform">Platform</span></h5>
+        <ul><li><a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a></li><li><a href="framework.html"><span data-i18n="footer.frameworks">Frameworks&trade;</span></a></li><li><a href="services.html"><span data-i18n="nav.services">Services</span></a></li><li><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a></li><li><a href="advisory-board.html"><span data-i18n="footer.board">Advisory Board</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.resources">Resources</span></h5>
+        <ul><li><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a></li><li><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a></li><li><a href="finance.html"><span data-i18n="footer.finance">Multilateral Finance</span></a></li><li><a href="platform.html"><span data-i18n="footer.roadmap">Platform Roadmap</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.connect">Connect</span></h5>
+        <ul><li><a href="contact.html"><span data-i18n="footer.contact">Contact</span></a></li><li><a href="contact.html"><span data-i18n="footer.request">Request Advisory</span></a></li><li><a href="contact.html"><span data-i18n="footer.profile">Company Profile</span></a></li></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span><span data-i18n="footer.rights">&copy; 2026 International Network Advisors (INA). All rights reserved.</span></span>
+      <span><span data-i18n="footer.tag2">Digital Infrastructure Intelligence</span></span>
+    </div>
+  </div>
+</footer>
+<script src="assets/i18n.js?v=10"></script>
+<script src="assets/script.js?v=15"></script>
+</body>
+</html>
