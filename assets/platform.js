@@ -5385,7 +5385,7 @@ const INAPlatform = {
      supabase/migration_v19_program_permissions.sql); a standard user's
      insert is rejected at the database level even if the UI hiding the
      "Create Program" button were somehow bypassed. */
-  async createProgram({ name, nameEn, organization, organizationType, financingEntity, types, description, templateKey, fundingStage, programRole }) {
+  async createProgram({ name, nameEn, organization, organizationType, financingEntity, types, description, descriptionEn, templateKey, fundingStage, programRole }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
@@ -5404,6 +5404,9 @@ const INAPlatform = {
         financing_entity: financingEntity || null,
         types: types || [],
         description: description || null,
+        // Optional — see programDisplayDescription() above and
+        // migration_v60_bilingual_title_description.sql.
+        description_en: descriptionEn || null,
         template_key: templateKey || null,
         funding_stage: fundingStage === 'preparation' ? 'preparation' : 'financing',
         // 'umbrella' = groups several independently-financed projects, not
@@ -5424,7 +5427,7 @@ const INAPlatform = {
      'financing' (funds the project's implementation — FSU, BID, etc.,
      default) — see PROGRAM_FUNDING_STAGE_LABELS below and
      supabase/migration_v21_program_funding_stage_and_applications.sql. */
-  async updateProgram(id, { name, nameEn, organization, organizationType, financingEntity, types, description, templateKey, fundingStage, programRole }) {
+  async updateProgram(id, { name, nameEn, organization, organizationType, financingEntity, types, description, descriptionEn, templateKey, fundingStage, programRole }) {
     const { data, error } = await supabaseClient
       .from('programs')
       .update({
@@ -5435,6 +5438,7 @@ const INAPlatform = {
         financing_entity: financingEntity || null,
         types: types || [],
         description: description || null,
+        description_en: descriptionEn || null,
         template_key: templateKey || null,
         funding_stage: fundingStage === 'preparation' ? 'preparation' : 'financing',
         program_role: programRole === 'umbrella' ? 'umbrella' : 'financing',
@@ -5717,9 +5721,11 @@ const INAPlatform = {
   },
 
   /* Advisor/admin-only — enforced by success_cases_insert_advisor_or_admin
-     RLS. summaryEn/metrics/beneficiariesCount/sourceLabel/sourceUrl/region
-     are all optional. */
-  async createSuccessCase({ title, provider, country, region, sector, summaryEs, summaryEn, beneficiariesCount, metricsEs, metricsEn, sourceLabel, sourceUrl }) {
+     RLS. titleEn/summaryEn/metrics/beneficiariesCount/sourceLabel/
+     sourceUrl/region are all optional. titleEn added sep 2026 — see
+     successCaseDisplayTitle() below and
+     migration_v60_bilingual_title_description.sql. */
+  async createSuccessCase({ title, titleEn, provider, country, region, sector, summaryEs, summaryEn, beneficiariesCount, metricsEs, metricsEn, sourceLabel, sourceUrl }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
@@ -5727,6 +5733,7 @@ const INAPlatform = {
       .insert({
         created_by: session.user.id,
         title,
+        title_en: titleEn || null,
         provider: provider || 'Starlink',
         country,
         region: region || null,
@@ -5748,11 +5755,12 @@ const INAPlatform = {
   /* Advisor/admin-only — enforced by success_cases_update_advisor_or_admin
      RLS (no "owner" concept, same as Master Data — any advisor/admin can
      edit any case). */
-  async updateSuccessCase(id, { title, provider, country, region, sector, summaryEs, summaryEn, beneficiariesCount, metricsEs, metricsEn, sourceLabel, sourceUrl }) {
+  async updateSuccessCase(id, { title, titleEn, provider, country, region, sector, summaryEs, summaryEn, beneficiariesCount, metricsEs, metricsEn, sourceLabel, sourceUrl }) {
     const { data, error } = await supabaseClient
       .from('success_cases')
       .update({
         title,
+        title_en: titleEn || null,
         provider: provider || 'Starlink',
         country,
         region: region || null,
@@ -5788,7 +5796,7 @@ const INAPlatform = {
   async listProjectSuccessCases(projectId) {
     const { data, error } = await supabaseClient
       .from('project_success_cases')
-      .select('*, success_cases(title, provider, country, region, sector, summary_es, summary_en, source_label, source_url)')
+      .select('*, success_cases(title, title_en, provider, country, region, sector, summary_es, summary_en, source_label, source_url)')
       .eq('project_id', projectId)
       .order('linked_at', { ascending: true });
     if (error) throw error;
@@ -5821,7 +5829,7 @@ const INAPlatform = {
         user_id: session.user.id,
         note: note || null,
       })
-      .select('*, success_cases(title, provider, country, region, sector, summary_es, summary_en, source_label, source_url)')
+      .select('*, success_cases(title, title_en, provider, country, region, sector, summary_es, summary_en, source_label, source_url)')
       .single();
     if (error) throw error;
     return data;
@@ -5997,6 +6005,30 @@ const INAPlatform = {
     const targetLang = lang || currentLang();
     if (targetLang === 'en' && program.name_en) return program.name_en;
     return program.name || '';
+  },
+
+  // Same fallback convention as programDisplayName() above, for the
+  // program's free-text description — Pablo, sep 2026: "tanto en Success
+  // Cases como en Financing Programs hay que poner en inglés todo el
+  // contenido cuando el idioma seleccionado es el inglés". See
+  // migration_v60_bilingual_title_description.sql.
+  programDisplayDescription(program, lang) {
+    if (!program) return '';
+    const targetLang = lang || currentLang();
+    if (targetLang === 'en' && program.description_en) return program.description_en;
+    return program.description || '';
+  },
+
+  // Same fallback convention, for a success_cases row's title — see
+  // migration_v60_bilingual_title_description.sql and the comment above
+  // programDisplayName(). `successCase` can be either a full success_cases
+  // row or a plain { title, title_en } shape (e.g. from a
+  // project_success_cases embed).
+  successCaseDisplayTitle(successCase, lang) {
+    if (!successCase) return '';
+    const targetLang = lang || currentLang();
+    if (targetLang === 'en' && successCase.title_en) return successCase.title_en;
+    return successCase.title || '';
   },
 
   // Agreed convention (migration_v36_program_financing_entity.sql): a
