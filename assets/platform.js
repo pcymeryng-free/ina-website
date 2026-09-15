@@ -5385,7 +5385,7 @@ const INAPlatform = {
      supabase/migration_v19_program_permissions.sql); a standard user's
      insert is rejected at the database level even if the UI hiding the
      "Create Program" button were somehow bypassed. */
-  async createProgram({ name, nameEn, organization, organizationType, financingEntity, types, description, descriptionEn, templateKey, fundingStage, programRole }) {
+  async createProgram({ name, nameEn, organization, organizationEn, organizationType, financingEntity, financingEntityEn, types, description, descriptionEn, templateKey, fundingStage, programRole }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
@@ -5398,10 +5398,16 @@ const INAPlatform = {
         // "not provided" here, same convention as description below.
         name_en: nameEn || null,
         organization,
+        // Optional — see programDisplayOrganization() above and
+        // migration_v61_bilingual_organization_financing_entity.sql.
+        organization_en: organizationEn || null,
         organization_type: organizationType || 'public',
         // Who actually finances the program — distinct from organization
         // above (who presents it). See migration_v36_program_financing_entity.sql.
         financing_entity: financingEntity || null,
+        // Optional — see programDisplayFinancingEntity() above and
+        // migration_v61_bilingual_organization_financing_entity.sql.
+        financing_entity_en: financingEntityEn || null,
         types: types || [],
         description: description || null,
         // Optional — see programDisplayDescription() above and
@@ -5427,15 +5433,17 @@ const INAPlatform = {
      'financing' (funds the project's implementation — FSU, BID, etc.,
      default) — see PROGRAM_FUNDING_STAGE_LABELS below and
      supabase/migration_v21_program_funding_stage_and_applications.sql. */
-  async updateProgram(id, { name, nameEn, organization, organizationType, financingEntity, types, description, descriptionEn, templateKey, fundingStage, programRole }) {
+  async updateProgram(id, { name, nameEn, organization, organizationEn, organizationType, financingEntity, financingEntityEn, types, description, descriptionEn, templateKey, fundingStage, programRole }) {
     const { data, error } = await supabaseClient
       .from('programs')
       .update({
         name,
         name_en: nameEn || null,
         organization,
+        organization_en: organizationEn || null,
         organization_type: organizationType || 'public',
         financing_entity: financingEntity || null,
+        financing_entity_en: financingEntityEn || null,
         types: types || [],
         description: description || null,
         description_en: descriptionEn || null,
@@ -6017,6 +6025,33 @@ const INAPlatform = {
     const targetLang = lang || currentLang();
     if (targetLang === 'en' && program.description_en) return program.description_en;
     return program.description || '';
+  },
+
+  // Same fallback convention, for the program's "presenting organization"
+  // free-text field — Pablo, sep 2026 follow-up: "en la pantalla
+  // financing_program también hay que traducir al inglés el contenido
+  // cuando está seleccionado el idioma inglés." organization is almost
+  // always entered in Spanish (e.g. "Ente Nacional de Comunicaciones
+  // (ENACOM)") and showed up untranslated in English mode. See
+  // migration_v61_bilingual_organization_financing_entity.sql.
+  programDisplayOrganization(program, lang) {
+    if (!program) return '';
+    const targetLang = lang || currentLang();
+    if (targetLang === 'en' && program.organization_en) return program.organization_en;
+    return program.organization || '';
+  },
+
+  // Same fallback convention, for financing_entity — who actually funds the
+  // program (distinct from organization above, who presents it). Some
+  // values are already entered in English (e.g. DFC's full name), others in
+  // Spanish (e.g. "Banco Interamericano de Desarrollo (BID)") — this lets
+  // either be paired with an explicit override for the other language. See
+  // migration_v61_bilingual_organization_financing_entity.sql.
+  programDisplayFinancingEntity(program, lang) {
+    if (!program) return '';
+    const targetLang = lang || currentLang();
+    if (targetLang === 'en' && program.financing_entity_en) return program.financing_entity_en;
+    return program.financing_entity || '';
   },
 
   // Same fallback convention, for a success_cases row's title — see
