@@ -4443,10 +4443,10 @@ Pablo's request: "en Financing Management de un proyecto, separar la función de
 
 Pablo's request: "El alta de un nuevo Success case se debería poder cargar a partir de un documento pdf subido a la plataforma. Luego completar los datos restantes, si fuera necesario, a mano." Same "propose values, never write anything, advisor reviews before saving" shape already used by `api/extract-business-card.js` (Master Data → Contacts) and `api/extract-template-data.js` (guided templates' "Autocomplete from documents").
 
-- **New serverless function `api/extract-success-case.js`:** the case-study PDF is sent straight from the browser as base64 in the request body — there's no `success_cases` row yet to attach a document to, so unlike `extract-template-data.js` (which reads documents already attached to an existing project) this endpoint takes the file directly, same shape as `extract-business-card.js`'s photo upload. Text-only extraction via `pdf-parse` (same pinned 1.1.4 version used elsewhere), then one LLM call using the SAME `LLM_PROVIDER` switch/credentials as AI Analysis/Autocomplete (anthropic/groq/bedrock/bedrock-mock/local) — no vision model needed since it's reading a text PDF, not a photo. Gated to advisor/admin (role read server-side via the service role key), matching `migration_v59_success_cases.sql`'s insert policy. Returns `{ ok, fields: { title, provider, country, region, sector, summary_es, summary_en, beneficiaries_count, metrics_es, metrics_en, source_label }, documentUsed }` — `sector` is validated server-side against the exact 7-value taxonomy from the DB check constraint, never a value outside it. If the source document actually covers several distinct cases, the prompt tells the model to extract only the first/most prominent one rather than merging them.
-- **`assets/platform.js`:** `extractSuccessCaseUrl()` (same production/relative hosting split as every other AI endpoint helper) and `INAPlatform.extractSuccessCase(pdfBase64, fileName)` — posts to the endpoint with the signed-in user's bearer token, throws with the server's error message on failure. Purely a proposal call: nothing is written to `success_cases` here, `createSuccessCase()` still runs separately once the advisor submits the form.
-- **`app/new-success-case.html` — "Cargar desde un documento PDF" box:** sits above the form, create-mode only (hidden entirely when editing an existing case — re-running extraction over an already-saved entry has no clear merge behavior worth building for a low-traffic reference form). A file input (`accept="application/pdf"`) triggers `fileToBase64()` (same FileReader pattern as `master-data.html`'s business-card upload) → `INAPlatform.extractSuccessCase()` → `prefillFromPdfExtraction()` fills in every matching form field (title, provider, country, region, sector radio, both summaries, beneficiaries count, both metrics fields, source label) — all of it stays in ordinary editable inputs, exactly per Pablo's "completar los datos restantes ... a mano." Status text cycles "Leyendo el PDF…" → a ✓ confirmation → or the error message on failure.
-- **Routing:** `vercel.json` rewrite `/extract-success-case → /api/extract-success-case`; `local-server.js` now also `require()`s and registers the handler (`app.post('/api/extract-success-case', ...)`), and its shared `express.json()` body limit was raised from 2mb to 20mb so a base64-encoded PDF has room — this limit is shared by every endpoint local-server.js serves, not new per-route config.
+- **New serverless function `api/extract-success-case.js`:** the client uploads the case-study PDF to Supabase Storage FIRST and sends only `{storagePath, fileName}` in the request body — there's no `success_cases` row yet to attach a document to, so the temp path lives under `${userId}/tmp-extractions/{timestamp}_{filename}` in the existing `project-documents` bucket (reusing the same "own folder" RLS policies every other upload here already relies on — no new migration needed) and the server downloads it via the service-role key, same pattern `extract-template-data.js` already uses for documents attached to an existing project. **This replaced an earlier design that sent the PDF directly as base64 in the request body** — that worked fine locally but broke in real production on Vercel with a `413 Content Too Large` error, because Vercel's Node.js serverless functions enforce a hard ~4.5MB request body ceiling that cannot be raised via any app-level config. Because the service-role key bypasses Storage RLS entirely, the handler manually verifies `storagePath` starts with the CALLING user's own `${user.id}/tmp-extractions/` prefix before ever downloading it — otherwise an authenticated-but-unrelated user could ask the endpoint to read someone else's file. Text-only extraction via `pdf-parse` (same pinned 1.1.4 version used elsewhere), then one LLM call using the SAME `LLM_PROVIDER` switch/credentials as AI Analysis/Autocomplete (anthropic/groq/bedrock/bedrock-mock/local) — no vision model needed since it's reading a text PDF, not a photo. Gated to advisor/admin (role read server-side via the service role key), matching `migration_v59_success_cases.sql`'s insert policy. Returns `{ ok, fields: { title, provider, country, region, sector, summary_es, summary_en, beneficiaries_count, metrics_es, metrics_en, source_label }, documentUsed }` — `sector` is validated server-side against the exact 7-value taxonomy from the DB check constraint, never a value outside it. If the source document actually covers several distinct cases, the prompt tells the model to extract only the first/most prominent one rather than merging them.
+- **`assets/platform.js`:** two new helpers shared by both PDF-extraction features — `uploadTempExtractionFile(file)` uploads to the temp Storage path above and returns it, `deleteTempExtractionFile(storagePath)` best-effort removes it afterward (a leftover temp file is harmless — same "own folder" RLS — but there's no reason to keep it). `extractSuccessCaseUrl()` (same production/relative hosting split as every other AI endpoint helper) and `INAPlatform.extractSuccessCase(storagePath, fileName)` — posts to the endpoint with the signed-in user's bearer token, throws with the server's error message on failure. Purely a proposal call: nothing is written to `success_cases` here, `createSuccessCase()` still runs separately once the advisor submits the form.
+- **`app/new-success-case.html` — "Cargar desde un documento PDF" box:** sits above the form, create-mode only (hidden entirely when editing an existing case — re-running extraction over an already-saved entry has no clear merge behavior worth building for a low-traffic reference form). A file input (`accept="application/pdf"`) triggers `uploadTempExtractionFile()` → `INAPlatform.extractSuccessCase(storagePath, file.name)` → `prefillFromPdfExtraction()` fills in every matching form field (title, provider, country, region, sector radio, both summaries, beneficiaries count, both metrics fields, source label) — all of it stays in ordinary editable inputs, exactly per Pablo's "completar los datos restantes ... a mano." → `deleteTempExtractionFile()` cleans up the temp upload in a `finally` block regardless of outcome. Status text cycles "Subiendo el PDF…" → "Leyendo el PDF…" → a ✓ confirmation → or the error message on failure.
+- **Routing:** `vercel.json` rewrite `/extract-success-case → /api/extract-success-case`; `local-server.js` now also `require()`s and registers the handler (`app.post('/api/extract-success-case', ...)`). Its shared `express.json()` body limit no longer needs to accommodate a base64 PDF (see the 413 fix above) — see the body-limit note under "New Project" below, where it was lowered back down.
 - **i18n:** new `sc.f.uploadPdf`, `sc.f.uploadPdf.help`, `sc.f.uploadPdf.btn` keys.
 - **Cache-busting version bump:** `platform.js?v=76` → `?v=77`, `i18n.js?v=66` → `?v=67` across every `app/*.html` file (no `style.css` changes this round).
 
@@ -4456,14 +4456,26 @@ Pablo's request: "El alta de un nuevo Success case se debería poder cargar a pa
 
 Pablo's request: "En forma similar [a Success Cases], cuando se carga un proyecto nuevo se debe tener la opción de hacerlo desde uno o varios PDF y que un agente lea los documentos y obtenga todos los atributos posibles. Luego, permitir la edición de los datos como hasta ahora." Same "propose values, never write anything, user reviews before saving" shape as the Success Cases PDF-autofill feature above, extended to accept several files in one request and targeting `new-project.html`'s much larger wizard field set.
 
-- **New serverless function `api/extract-project-data.js`:** accepts an ARRAY of PDFs (`{files: [{pdfBase64, fileName}, ...]}`, up to `MAX_FILES=5`) sent directly as base64 — there's no project row yet to attach documents to, same direct-upload shape as `extract-success-case.js`, extended to concatenate multiple documents' text server-side (same concatenation approach `extract-template-data.js` already uses for multi-document projects) before ONE model call, rather than one call per file. Unlike `extract-template-data.js` (a generic engine driven by a caller-supplied field list, since guided templates vary per program), this endpoint's field list is FIXED in the file as a constant — `new-project.html`'s creation wizard is the same shape for every project. Covers Step 1 (name, projectType, generatingEntityName, generatingEntityType, description, country, beneficiaryCount, durationValue/durationUnit, priority, technicalCriticality, complexity) and Step 3 budget fields (budgetAmount, budgetAmountUsd, exchangeRate, financingRequiredPercentage). **Does NOT cover FSU/program-application/other-financing fields** — those were already moved out of project creation entirely in an earlier round and now live only on `app/project-financing.html`, reachable once the project exists, so there's nothing on the creation wizard for this endpoint to target for them. `select` fields (projectType, generatingEntityType, country, durationUnit, priority, technicalCriticality, complexity) are validated server-side against the exact allowed values copied from `assets/platform.js`'s taxonomies — never a value outside the list. NOT gated to advisor/admin (unlike the Success Cases/business-card endpoints) — creating a project has never required a special role, so this only verifies a valid session.
-- **`assets/platform.js`:** `extractProjectDataUrl()` (same hosting split as every other AI endpoint helper) and `INAPlatform.extractProjectData(files)` — posts the file array with the signed-in user's bearer token. Purely a proposal call: nothing is written to `projects` here, `createProject()` still runs separately once the user reviews Step 1 and clicks "Continue."
-- **`app/new-project.html` — "Cargar desde uno o varios PDF" box:** sits above the wizard, create-mode only (hidden when editing an existing project — same reasoning as the Success Cases box: re-running extraction over an already-saved project could clobber hand-edited fields). The file input allows `multiple` file selection (unlike the Success Cases box, which is single-file); each file is read client-side via `fileToBase64()` and sent together in one `extractProjectData()` call. `prefillFromPdfExtraction()` sets every matching Step 1/Step 3 field — since every `<select>` on the page is already populated synchronously at page load (`renderTypeOptions()`/`renderCountryOptions()`/etc. all run immediately, not lazily), setting `.value` on them works immediately with no extra wiring. Status text cycles "Leyendo el/los documento(s)…" → a ✓ count of fields filled (+ a note on any file that couldn't be read) → or the error message on failure.
-- **Routing:** `vercel.json` rewrite `/extract-project-data → /api/extract-project-data`; `local-server.js` now also `require()`s and registers the handler. Its shared `express.json()` body limit was raised again, from 20mb to 40mb (it was already bumped once for the single-file Success Cases endpoint) since this endpoint can carry up to 5 base64 PDFs in one request.
+- **New serverless function `api/extract-project-data.js`:** accepts an ARRAY of `{files: [{storagePath, fileName}, ...]}` (up to `MAX_FILES=5`) — each file is uploaded to a TEMPORARY Storage path first via `uploadTempExtractionFile()` (see the Success Cases section above for the path convention and why it needs no new migration), and only the short paths travel in the request body. There's no project row yet to attach documents to, so every path lives under `${userId}/tmp-extractions/...` and the server downloads each one via the service-role key before concatenating their text (same concatenation approach `extract-template-data.js` already uses for multi-document projects) into ONE model call, rather than one call per file. **This replaced an earlier design that sent every PDF directly as base64 in the request body** — that worked locally but broke in real production on Vercel with `413 Content Too Large`, and several files together crossed Vercel's hard ~4.5MB serverless request-body ceiling even more easily than the single-file Success Cases case. Same security check as Success Cases: since the service-role key bypasses Storage RLS, the handler verifies EVERY `storagePath` in the array starts with the calling user's own `${user.id}/tmp-extractions/` prefix before downloading any of them. Unlike `extract-template-data.js` (a generic engine driven by a caller-supplied field list, since guided templates vary per program), this endpoint's field list is FIXED in the file as a constant — `new-project.html`'s creation wizard is the same shape for every project. Covers Step 1 (name, projectType, generatingEntityName, generatingEntityType, description, country, beneficiaryCount, durationValue/durationUnit, priority, technicalCriticality, complexity) and Step 3 budget fields (budgetAmount, budgetAmountUsd, exchangeRate, financingRequiredPercentage). **Does NOT cover FSU/program-application/other-financing fields** — those were already moved out of project creation entirely in an earlier round and now live only on `app/project-financing.html`, reachable once the project exists, so there's nothing on the creation wizard for this endpoint to target for them. `select` fields (projectType, generatingEntityType, country, durationUnit, priority, technicalCriticality, complexity) are validated server-side against the exact allowed values copied from `assets/platform.js`'s taxonomies — never a value outside the list. NOT gated to advisor/admin (unlike the Success Cases/business-card endpoints) — creating a project has never required a special role, so this only verifies a valid session.
+- **`assets/platform.js`:** `extractProjectDataUrl()` (same hosting split as every other AI endpoint helper) and `INAPlatform.extractProjectData(files)` — posts the `{storagePath, fileName}` array with the signed-in user's bearer token. Purely a proposal call: nothing is written to `projects` here, `createProject()` still runs separately once the user reviews Step 1 and clicks "Continue." Reuses the same `uploadTempExtractionFile()`/`deleteTempExtractionFile()` helper pair documented under Success Cases above.
+- **`app/new-project.html` — "Cargar desde uno o varios PDF" box:** sits above the wizard, create-mode only (hidden when editing an existing project — same reasoning as the Success Cases box: re-running extraction over an already-saved project could clobber hand-edited fields). The file input allows `multiple` file selection (unlike the Success Cases box, which is single-file); each selected file is uploaded via its own `uploadTempExtractionFile()` call (collected into an array of `{storagePath, fileName}`), then all of them are sent together in one `extractProjectData()` call. `prefillFromPdfExtraction()` sets every matching Step 1/Step 3 field — since every `<select>` on the page is already populated synchronously at page load (`renderTypeOptions()`/`renderCountryOptions()`/etc. all run immediately, not lazily), setting `.value` on them works immediately with no extra wiring. All temp files are deleted in a `finally` block once extraction finishes, success or failure. Status text cycles "Subiendo …" → "Leyendo el/los documento(s)…" → a ✓ count of fields filled (+ a note on any file that couldn't be read) → or the error message on failure.
+- **Routing:** `vercel.json` rewrite `/extract-project-data → /api/extract-project-data`; `local-server.js` now also `require()`s and registers the handler. Its shared `express.json()` body limit was bumped twice (2mb → 20mb → 40mb) across the earlier base64-in-body rounds to make room for up to 5 base64 PDFs in one request — now that neither `extract-success-case.js` nor `extract-project-data.js` sends file bytes in the body at all (both take a short `storagePath` string instead), that limit was **lowered back down to 5mb**, since nothing `local-server.js` routes to needs a large body anymore.
 - **i18n:** new `np.f.uploadPdf`, `np.f.uploadPdf.help`, `np.f.uploadPdf.btn` keys. No new CSS — reuses the same `.new-org-box` styling as the Success Cases upload box.
 - **Cache-busting version bump:** `platform.js?v=77` → `?v=78`, `i18n.js?v=67` → `?v=68` across every `app/*.html` file (no `style.css` changes this round).
 
 **To use:** Dashboard → "New Project" → "Cargar desde uno o varios PDF" → pick one or several PDFs (technical folder, terms of reference, project brief, etc.) → Step 1 and Step 3 fields populate automatically → review, complete anything missing or wrong by hand, then continue through the wizard exactly as before.
+
+### Fix (sep 2026): `413 Content Too Large` on both PDF-extraction endpoints — switched to Storage-based upload
+
+Pablo reported this in production (Bluehost frontend + Vercel backend): `POST .../api/extract-success-case 413 (Content Too Large)`. Root cause: Vercel's Node.js serverless functions enforce a hard ~4.5MB request body ceiling that cannot be raised via any app-level config (`vercel.json`, `module.exports.config`, etc.) — it's a platform limit, not an application one. Both `api/extract-success-case.js` and `api/extract-project-data.js` originally sent the PDF(s) as base64 directly in the POST body, which exceeds that ceiling for any realistically-sized PDF (base64 inflates size ~33%, and several files together made it worse for the project-data endpoint). This never showed up in local testing against `local-server.js` (an Express server with a configurable, much larger body limit) — only real Vercel traffic hits the platform ceiling.
+
+**The fix:** both features now upload the PDF(s) to Supabase Storage FIRST (`project-documents` bucket, temporary path `${userId}/tmp-extractions/{timestamp}_{filename}` — deliberately reusing the SAME "own folder" RLS policies (`doc_upload_own_folder`/`doc_read_own_folder_or_advisor`/`doc_delete_own_folder`) every other upload in this app already relies on, so no new migration was needed) and send only the short storage path(s) in the JSON body. The serverless function downloads the actual bytes server-side via the service-role key — same Storage-read pattern `api/extract-template-data.js` already used for documents attached to an existing project — and everything downstream (pdf-parse, the LLM call, field normalization) is unchanged. Because the service-role key bypasses Storage RLS entirely, both handlers now manually verify that every `storagePath` they're asked to read starts with the CALLING user's own `${user.id}/tmp-extractions/` prefix before downloading it, closing the gap that key would otherwise open. The client deletes the temp file(s) right after extraction finishes (`deleteTempExtractionFile()`, best-effort, non-blocking — a leftover temp file is harmless but there's no reason to keep it).
+
+See the two feature sections above for the full detail; this note exists so the "413" symptom and its cause are easy to find later.
+
+**Follow-up (same day):** after this fix, Pablo hit `"PDF too large. Please use a smaller file."` on a real case-study PDF just over 25MB — that was a leftover safety cap from the old base64 design (it used to sit defensively under Vercel's ~4.5MB body ceiling). Since the file no longer travels through the request body, that ceiling doesn't apply anymore, so the cap was raised from 25MB to 40MB in both `api/extract-success-case.js` and `api/extract-project-data.js` (per-file, for the latter). 40MB stays comfortably under Supabase Storage's default per-file upload limit and each function's memory/duration budget for `pdf-parse`.
+
+**Follow-up 2 (same day):** Pablo: "cuando se carga un proyecto nuevo. Si se ingresa un pdf al inicio, el mismo debería figurar en los documentos adjuntos." The PDF(s) picked in the "Cargar desde uno o varios PDF" autofill box (above step 1) were being uploaded to the TEMPORARY `tmp-extractions` Storage path for extraction only, then deleted right after — they never became real project documents, since step 1 runs before the project even exists (step 2's document zones need a real project id, which is why the wizard creates the project record at step 1's "Continue," not at final submit — see the step-2 comment in `app/new-project.html`). Fixed client-side only, no new endpoint needed: `app/new-project.html` now keeps the actual `File` objects the user picked (`pendingAutofillFiles`, set right after they're uploaded for extraction) and, right after `INAPlatform.createProject()` succeeds in the step-1 "Continue" handler, re-uploads each one via the SAME `INAPlatform.uploadDocument(activeProjectId, file, 'other')` call every step-2 drop zone already uses — filed under the "Other attachments" category since these source documents don't reliably map to one of the six specific ones. Each upload is best-effort (one failing file logs to console and doesn't block the user from continuing — they can always attach it manually in step 2), and `renderExistingDocs()` runs afterward so step 2 already shows them when it opens. `pendingAutofillFiles` is cleared once attached so revisiting step 1 (which just calls `goToStep(2)` once `activeProjectId` is already set) never re-attaches the same files twice. No DB/serverless changes — `app/new-success-case.html`'s Success Cases box is unaffected (Success Cases don't have their own document-attachment feature to plug into).
    - `updateProjectFinancing(id, {...})` — a lightweight partial-patch
      helper distinct from `updateProject()`: it only writes keys explicitly
      passed (checked via `!== undefined`) and never touches
@@ -4873,7 +4885,399 @@ same table without a schema change.
 `data_success_cases_starlink.sql`, in the Supabase SQL Editor (in that
 order).
 
-## Known limitations (v1)
+### Follow-up (sep 2026): linked success cases now feed the AI analysis (`api/analyze-project.js`)
+
+Pablo: "Agregar la posibilidad de asociar un proyecto a un caso de uso
+cargado en el sistema. y utilizar los datos del caso de éxito en el
+análisis de IA." The "associate" half already existed in full (the
+`project.html` "Reference Success Cases" section documented above) — no
+code changes needed there. The "use in the AI analysis" half was the gap:
+`api/analyze-project.js` had zero awareness of any linked case. Fixed by:
+
+- Right after the existing `project_documents` fetch, a second
+  `supabaseRest()` call reads `project_success_cases` for the project
+  being analyzed, with the linked `success_cases` row embedded in the same
+  request (`?select=note,success_cases(title,provider,country,region,
+  sector,summary_es,summary_en,metrics_es,metrics_en,source_label,
+  source_url)`) — the same embedded-resource shape
+  `listProjectSuccessCases()` already uses client-side in `platform.js`.
+- Each linked case (title/provider/country/region/sector, summary,
+  metrics, the linking note, and source) is formatted into a "REFERENCE
+  SUCCESS CASES" block appended to `projectText` right after the base
+  project description, before documents are appended. English fields
+  (`summary_en`/`metrics_en`) are preferred, falling back to the required
+  Spanish ones, since English text on a case is optional at creation time.
+  Kept English-only since this is model input, not a user-facing field.
+- Because every provider branch (Anthropic/Groq/Bedrock/local) builds its
+  request from the same shared `projectText` string, this flows through
+  automatically with no per-provider changes needed. The one exception is
+  `bedrock-mock`, whose canned response never reads `projectText` at all —
+  the fetch still runs there (harmless, just unused) rather than adding a
+  special case.
+- `SYSTEM_PROMPT` was updated to tell the model reference cases may be
+  present and how to use them: as precedent to inform
+  `financing_recommendations` and `gap_roadmap`, and to compare/contrast
+  approaches in rationales — explicitly instructed NOT to let a strong
+  reference case inflate this project's own dimension scores in place of
+  evidence the project itself provides.
+- No DB, `platform.js`, or `project.html` changes were needed — this was
+  entirely a prompt-construction change in `api/analyze-project.js`.
+
+### Follow-up (sep 2026): fixed "Link does nothing" + "Browse Library → login" bugs in Reference Success Cases
+
+Pablo reported two bugs in `project.html`'s "Reference Success Cases"
+section right after the above shipped:
+
+1. **"elijo el caso y presiono link pero no hace nada"** — `Link` silently
+   did nothing. Root cause: `INAPlatform.linkSuccessCaseToProject()`
+   inserted the `project_success_cases` row and `.select().single()`'d it
+   back, but without embedding the related `success_cases` row.
+   `renderSuccessCases()` reads `row.success_cases` and does
+   `if (!c) return;` for any row missing it — a defensive guard, not an
+   error path — so the newly-linked row was silently skipped when
+   re-rendering the list. The link itself had actually succeeded in the
+   database the whole time; only the on-screen feedback was broken. Fixed
+   in `assets/platform.js`: `linkSuccessCaseToProject()`'s `.select()` now
+   asks for the same `success_cases(title, provider, country, region,
+   sector, summary_es, summary_en, source_label, source_url)` embed that
+   `listProjectSuccessCases()` already uses, so the returned row is
+   immediately renderable without a second fetch.
+2. **"si elijo Browse Library va a la pantalla de login"** — the button
+   opened `success-cases.html` with `target="_blank"`. The platform's
+   session is deliberately stored in `sessionStorage`, not `localStorage`
+   (see the `supabaseClient` setup comment in `platform.js` — a sep-2026
+   choice so closing the browser always forces a fresh sign-in). A side
+   effect: `sessionStorage` is scoped per-tab and is never inherited by a
+   newly opened tab, even same-origin, so the new tab had no session at
+   all and `success-cases.html`'s `requireAuth()` correctly-but-
+   unexpectedly bounced it to `login.html`. Fixed in `app/project.html` by
+   dropping `target="_blank"` (and the now-redundant `rel="noopener"`) so
+   the link navigates in the same tab and inherits the existing session.
+- No DB migration needed for either fix.
+- Versions bumped: `platform.js?v=80` across all `app/*.html`.
+
+### Follow-up (sep 2026): full bilingual content in Success Cases + Financing Programs — migration_v60
+
+Pablo: "tanto en Success Cases como en Financing Programs hay que poner en
+inglés todo el contenido cuando el idioma seleccionado es el inglés y en
+español cuando el idioma seleccionado es el español." An audit of both
+features found every field already had an English counterpart and a
+working fallback (`summary_es`/`summary_en`, `metrics_es`/`metrics_en`,
+`programs.name`/`name_en` from migration_v57) **except two**, both fixed
+here:
+
+1. **`success_cases.title`** — the case title itself (e.g. "Conexión de
+   2.000 instituciones educativas") was Spanish-only and rendered as-is
+   everywhere regardless of the viewer's selected language, even though
+   `summary`/`metrics` on the very same row already switched correctly.
+2. **`programs.description`** — same gap for the free-text description
+   shown on `app/financing-program.html`'s detail page and
+   `app/initiatives.html`'s list (Iniciativas are `programs` rows too).
+
+**DB**: `migration_v60_bilingual_title_description.sql` adds
+`success_cases.title_en` and `programs.description_en`, both optional,
+same NULL-falls-back-to-base-language convention as `programs.name_en`.
+
+**`assets/platform.js`**:
+- `createSuccessCase`/`updateSuccessCase` now accept `titleEn` → `title_en`.
+- `createProgram`/`updateProgram` now accept `descriptionEn` → `description_en`.
+- New `successCaseDisplayTitle(successCase, lang)` and
+  `programDisplayDescription(program, lang)` helpers, mirroring the
+  existing `programDisplayName()` pattern exactly.
+- The two `success_cases(...)` embedded-select strings (in
+  `listProjectSuccessCases()` and `linkSuccessCaseToProject()`) now also
+  select `title_en`.
+
+**UI**:
+- `app/new-success-case.html` — new optional "Title in English" field,
+  populated in edit mode, sent as `titleEn` on save.
+- `app/success-cases.html` — card title, search haystack, and the delete
+  confirmation dialog all go through `successCaseDisplayTitle()`.
+- `app/project.html` — the linked-case card title and the link-picker's
+  option text (`"<title> — <country>"`) both go through
+  `successCaseDisplayTitle()`.
+- `app/new-program.html` — new optional "Description in English" textarea
+  next to the existing description field, populated in edit mode, sent as
+  `descriptionEn` on save.
+- `app/financing-program.html` and `app/initiatives.html` — both now
+  render `programDisplayDescription(pg, lang)` instead of the raw
+  `pg.description`.
+
+**Seed data**: `data_success_cases_titles_en_backfill.sql` — English
+titles for the 21 existing Starlink case studies (guarded with `title_en
+is null` so it never overwrites a manually-edited value). A few titles
+that are proper program names shared across languages (e.g. "Enseña por
+Bolivia + One Laptop Per Child") are intentionally left untranslated —
+`successCaseDisplayTitle()` already falls back to `title` for those.
+
+**To apply**: run `migration_v60_bilingual_title_description.sql`, then
+(optionally) `data_success_cases_titles_en_backfill.sql`, in the Supabase
+SQL Editor.
+
+- Versions bumped: `platform.js?v=81`, `i18n.js?v=69` across all `app/*.html`.
+
+### Follow-up (sep 2026): bilingual organization + financing entity on Financing Programs — migration_v61
+
+Pablo's follow-up after the previous round: "en la pantalla financing_program
+también hay que traducir al inglés el contenido cuando está seleccionado el
+idioma inglés." Two more free-text `programs` fields were still
+single-language only and showed up untranslated regardless of the language
+toggle:
+
+- `programs.organization` — the entity presenting the program (almost always
+  entered in Spanish, e.g. "Ente Nacional de Comunicaciones (ENACOM)"),
+  shown on `financing-program.html`, `financing-programs.html`, and
+  `initiatives.html`.
+- `programs.financing_entity` — who actually finances it. Some values are
+  already entered in English (e.g. a DFC program's full legal name), others
+  in Spanish (e.g. "Banco Interamericano de Desarrollo (BID)") — either
+  direction was showing up wrong once the viewer switched language.
+
+**DB**: `migration_v61_bilingual_organization_financing_entity.sql` adds
+`programs.organization_en` and `programs.financing_entity_en`, both
+nullable, same optional-override-with-fallback convention as `name_en`
+(migration_v57) and `description_en`/`success_cases.title_en`
+(migration_v60) — leaving them blank changes nothing.
+
+**platform.js**:
+- `createProgram()`/`updateProgram()` — new `organizationEn`/
+  `financingEntityEn` params, saved as `organization_en`/
+  `financing_entity_en`.
+- New `programDisplayOrganization(program, lang)` and
+  `programDisplayFinancingEntity(program, lang)` helpers, same shape as
+  `programDisplayName()`/`programDisplayDescription()`.
+
+**UI**:
+- `app/new-program.html` — two new optional fields ("Presenting
+  organization in English" and "Financing entity in English"), populated in
+  edit mode, sent on save. Both are hidden/cleared for `program_role =
+  'umbrella'` (Initiatives), same as the base financing-entity field.
+- `app/financing-program.html` — the org line and the "Finances: X" badge
+  both go through the new display helpers; the delete-confirmation dialog
+  also now uses `programDisplayName()` instead of the raw `name` (this one
+  had been missed when `name_en` was introduced).
+- `app/financing-programs.html` — same two spots in `mainInnerHtml()`, plus
+  `organization_en` added to the search haystack.
+- `app/initiatives.html` — the org line in the initiative card.
+
+**To apply**: run `migration_v61_bilingual_organization_financing_entity.sql`
+in the Supabase SQL Editor. No backfill script this round — existing
+programs will keep showing their base-language `organization`/
+`financing_entity` in both languages until someone fills in the new
+optional fields on `new-program.html`.
+
+- Versions bumped: `platform.js?v=82`, `i18n.js?v=70` across all `app/*.html`.
+
+### Follow-up (sep 2026): Master Data nav bug + standalone menu item — migration_v62
+
+**What happened**: Pablo created a user (`skaplan.inaai.co`), assigned it the
+configurable custom role "Master Data Management" (native `profiles.role`
+stayed `'user'`, `custom_role_id` set to that role — correct, per
+`migration_v46_role_permissions.sql`), with "Ver"+"Editar" checked on the
+`master_data` entity in `app/roles.html`. Logging in as that user: (1) the
+Admin dropdown / Master Data link didn't appear anywhere, and (2) the
+dashboard showed the "no projects, submit your first one" empty state even
+though this user has no permission to create a project. Separately, Pablo
+asked to pull Master Data out of the Admin dropdown into its own top-level
+nav item, visible to any user with Master Data access regardless of
+User-Management access.
+
+**Root cause of the nav bug**: `migration_v46_role_permissions.sql`'s RLS on
+`public.roles`/`public.role_permissions` only allowed `SELECT` for whoever
+already had `'user_management'` access (Admin, or a custom role granted that
+entity). A user with a custom role scoped to some *other* entity only (like
+`master_data`) couldn't read even their own `roles`/`role_permissions` row.
+`getProfile()`'s nested embed (`custom_role:roles(id, name,
+role_permissions(...))`) is filtered by that same RLS, so it silently
+resolved to `custom_role: null` for this user — not an error, just an empty
+embed — and `entityPermission()` in `assets/platform.js` then returned
+`{ can_view:false, can_edit:false }` for every single entity, not just
+`user_management`. This is a general bug: **any** custom role that doesn't
+also include `user_management` access was invisible client-side to its own
+holder, no matter what it was actually granted.
+
+**DB fix** (`supabase/migration_v62_roles_self_select.sql`): adds two
+additive `SELECT` policies — a user can read the one `roles` row and the
+`role_permissions` rows that match their own `profiles.custom_role_id`, even
+without `user_management`. Multiple `SELECT` policies on the same table are
+OR'd together in Postgres RLS, so this only widens visibility (a user can
+now see their own assigned role) and changes nothing about who can manage
+roles (create/rename/edit permissions, or see *other* users' roles) —
+that still requires `user_management`, exactly as before.
+
+**Nav redesign** — Master Data moved out of the Admin dropdown into a
+standalone top-level `<a>` link (`id="masterDataNavLink"`), gated purely by
+`INAPlatform.canManageMasterData(profile)`, independent of
+`canManageUsers(profile)`. The Admin dropdown now only ever contains "User
+Management" + "Roles" (both still gated by `user_management` access) — if a
+user has neither Master Data nor User Management access, neither nav item
+shows. Applied identically across all 16 `app/*.html` pages that carry this
+nav block: `success-cases.html`, `roles.html`, `roadmap-templates.html`,
+`roadmap-instance.html`, `project-template.html`, `profile.html`,
+`new-success-case.html`, `new-roadmap-template.html`, `new-project.html`,
+`new-program.html`, `master-data.html`, `initiatives.html`,
+`financing-programs.html`, `financing-program.html`, `dashboard.html`,
+`admin.html`. `master-data.html`'s own link also gets `class="active"`,
+matching the existing convention used by `roadmapsNavLink`/`dashboard.html`.
+
+**Dashboard empty-state fix** (`app/dashboard.html`): added
+`INAPlatform.canManageProjects(profile)` (new helper in
+`assets/platform.js`, mirrors `canManageRoadmaps()`/`canManageRisks()`,
+checks `entityPermission(profile, 'projects').can_edit`). The header
+"Submit New Project" button (`#newProjectBtnHeader`) is now hidden for a
+user without `projects` edit access, and the "no projects" empty state
+(now built by a `showEmptyState()` helper, called both on initial load and
+after deleting the last project) swaps its CTA button and lede text for a
+`dash.empty.lede.noPermission` message ("You don't have any projects
+assigned to you yet.") instead of inviting them to submit one they can't
+save. The default "Usuario" signup role still has `projects` edit
+access (scope `'own'`), so this only changes behavior for a custom role
+that doesn't grant `projects` at all — exactly Pablo's "Master Data
+Management" case.
+
+**To apply**: run `migration_v62_roles_self_select.sql` in the Supabase SQL
+Editor. No data changes, no re-login required — the next `getProfile()` call
+(e.g. a page refresh) will pick it up immediately.
+
+- Versions bumped: `platform.js?v=83`, `i18n.js?v=71` across all `app/*.html`.
+
+### Follow-up (sep 2026): Master Data nav — submenu with its 4 sections
+
+Pablo asked for the "Master Data" nav item to expand into its 4 sections —
+Contacts, Companies, Products, Public Agencies (`app/master-data.html`'s
+tabs) — so picking one goes straight to that screen instead of always
+landing on Contacts.
+
+**`app/master-data.html`**: now reads `?tab=<contacts|companies|products|
+agencies>` from the URL on load and switches to it via the existing
+`switchTab()` (falls back to the default Contacts tab for a bare load or an
+unrecognized value).
+
+**Nav markup** (all 16 `app/*.html` pages that carry the Master Data nav —
+same list as the previous follow-up above): the standalone `<a
+id="masterDataNavLink">` became a dropdown (`id="masterDataNavMenu"`, same
+`.menu`/`.nav-menu`/`.menu-trigger`/`.menu-panel` structure as the Admin
+dropdown) with 4 `<a class="menu-item">` items pointing at
+`master-data.html?tab=contacts` etc., reusing the existing
+`md.tab.contacts/companies/products/agencies` i18n keys (already used by
+the tabs themselves). `master-data.html`'s own trigger gets `class="...
+active"`, matching the convention used elsewhere (`roadmapsNavLink`,
+`masterDataNavLink` before it).
+
+**Dropdown click-to-open was missing on these 16 pages.** While wiring this,
+found that `INAPlatform.initDropdownMenus()` — the shared open/close
+handler for any `.menu`/`.menu-panel` pair — was only ever called on the 7
+"persistent project nav" pages (`project-financing.html`,
+`investment-proposal.html`, `risk-matrix.html`, `fsu-scoring.html`,
+`assessment.html`, `roadmap-instance.html`, `financing-recommendation.html`).
+The other 16 pages' Admin/Master Data dropdown triggers had no click
+handler bound at all — the CSS `.menu.open .menu-panel{display:flex}` rule
+only ever fires once JS adds the `open` class, and nothing did. Added
+`INAPlatform.initDropdownMenus(document.querySelector('.app-nav'))` to all
+16 pages (right after the nav-visibility block finishes), which now also
+makes the pre-existing Admin dropdown (User Management/Roles) clickable on
+those pages for the first time. `app/roadmap-instance.html` has two
+`.app-nav` elements (`#genericNav`/`#projectNav`, toggled depending on
+whether the roadmap instance has a linked project) — `querySelector` picks
+the first (`#genericNav`, where the Master Data menu lives); the
+project-linked case already had its own separate `initDropdownMenus(
+projectNavEl)` call, untouched.
+
+No DB changes, no version bump needed (only inline `<script>` blocks and
+markup changed — nothing in `assets/platform.js` or `assets/i18n.js`).
+
+### Follow-up (sep 2026): Admin menu regression — duplicate click handler
+
+Right after the submenu above shipped, Pablo reported "ahora no funciona el
+menu de Admin" — the Admin dropdown button stopped responding to clicks
+entirely (no console errors, worked the same in incognito). Root cause:
+`assets/script.js` (loaded on every page, including all of `app/*.html`)
+had its own legacy click handler for `#adminNavMenu`, written back when
+Admin was first turned into a dropdown (before `INAPlatform
+.initDropdownMenus()` existed as a shared helper). The previous follow-up
+above added `INAPlatform.initDropdownMenus(document.querySelector(
+'.app-nav'))` to all 16 pages — which ALSO wires `#adminNavMenu`, since it
+wires every `.menu` under `.app-nav`. With both handlers bound to the same
+`#adminNavMenuBtn`, every click toggled the `open` class twice in one
+event, canceling out — the menu looked completely dead. Confirmed live via
+a fetch-and-replay test against the production `platform.js`/`dashboard
+.html` in a real browser before touching anything.
+
+**Fix**: deleted the legacy `#adminNavMenu` block from `assets/script.js`
+(~40 lines) — `initDropdownMenus()` already covers it on every page that
+has `#adminNavMenu` (verified against all 16 before removing). Bumped
+`script.js?v=14→15` across all 40 HTML files that load it (site-wide, not
+just `app/*.html`, since `script.js` is shared with the marketing pages).
+
+### Follow-up (sep 2026): Master Data / Roadmaps invisible for EVERY custom role — PGRST201 ambiguous embed
+
+After the two fixes above, Pablo tested `skaplan` (custom role "Gestión
+Master Data", `role_permissions` correctly loaded — `master_data`
+can_view/can_edit=true, `roadmaps` can_view=true) end-to-end and found the
+dashboard still showed no projects with no CTA (correct) but the Master
+Data and Roadmaps nav items still never appeared, even after confirming
+`assets/platform.js` was freshly deployed (bumped `?v=83→84` to rule out a
+CDN/proxy caching the old file under the old URL — that was real and
+fixed, but not the whole story).
+
+Console debugging (running `getProfile()`'s exact query directly, bypassing
+its own error handling) surfaced the actual cause: **`PGRST201`** —
+`"Could not embed because more than one relationship was found for
+'profiles' and 'roles'"`. `public.roles` has TWO FK relationships touching
+`public.profiles`: `profiles.custom_role_id -> roles.id` (what the embed
+wants) and `roles.created_by -> profiles.id` (who created the role,
+unrelated to permissions). `getProfile()`'s embed (`custom_role:roles(...)`,
+no FK specified) is ambiguous to PostgREST with two relationships present,
+and that error's message contains the word "relationship" — which matches
+`getProfile()`'s own `isMissingRolesSchema` fallback regex (added earlier
+to tolerate the migration not being run yet), so the error was silently
+swallowed and every affected profile fetch returned with **no `custom_role`
+key at all** (not `null` — genuinely absent), same end symptom as the
+`migration_v62` RLS bug but a completely different, unrelated cause. This
+almost certainly never worked for any custom-role `'user'` account since
+`migration_v46_role_permissions.sql` first shipped `roles.created_by` — it
+just took directly querying Postgres from the browser console to surface
+the real Postgres error instead of the swallowed one.
+
+**Fix**: `assets/platform.js`'s `getProfile()` — `custom_role:roles(...)` →
+`custom_role:roles!custom_role_id(...)`. The `!custom_role_id` suffix is
+PostgREST's syntax for naming the exact FK to embed through, removing the
+ambiguity for good. No DB migration needed — purely a client-side query
+fix. Bumped `platform.js?v=84→85` across all 30 files that load it.
+
+### Follow-up (sep 2026): Workflow menu stayed empty right after AI Analysis set the first readiness_stage
+
+Pablo ran AI Analysis on the PUMA project (Cable Submarino PUMA,
+Argentina-Sudáfrica) while it was still "Not Analizado". The analysis
+completed and moved it to Concept Stage (confirmed in the stepper), but
+clicking the "Workflow" button (both the nav-bar dropdown and its twin in
+the page header) appeared to do nothing.
+
+Root cause in `app/project.html`: the Promote/Demote/Return-to-Not-Analyzed
+items inside the Workflow dropdown are populated by a separate function,
+`renderWorkflowActionsMenu(project)`, from the one that draws the stepper
+and history (`renderWorkflow()`, called inside `renderProject()`). Every
+other place that re-renders the project after a data change calls both —
+`refreshProjectAndWorkflow()` (Take Project), the lang-switch handler, and
+the initial page load — except `poll()`, the function that watches AI
+Analysis progress and re-renders the project every 4s while it runs. Its
+success branch called `renderProject(project)` but never
+`renderWorkflowActionsMenu(project)`, so once the project reached its
+first `readiness_stage` *while the viewer was already sitting on the page
+watching the analysis run* (as opposed to reloading afterward), the
+dropdown kept showing whatever it showed before analysis started — for a
+project that started at "Not Analizado", that's every item hidden, i.e.
+an empty panel. The button itself worked (the panel was toggling open),
+it just had nothing visible inside it, which reads as "the button does
+nothing."
+
+**Fix**: `app/project.html`'s `poll()` now calls
+`renderWorkflowActionsMenu(project)` right after `renderProject(project)`,
+matching every other render-project call site. Reloading the page was
+always a workaround (the initial-load path calls both correctly) — this
+fix removes the need to reload.
+
+
 
 - Document parsing is limited to PDF, PNG/JPEG and plain text/Markdown/CSV
   files. Word documents (.docx), Excel files, etc. are listed by filename in

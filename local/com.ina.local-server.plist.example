@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd agent that keeps local-server.js running in the background —
+  starts automatically at login, restarts itself if it crashes, and
+  doesn't need a Terminal window left open. Needed once local-server.js is
+  serving PRODUCTION traffic (via the Cloudflare Tunnel) rather than just
+  your own local testing, since real site visitors now depend on it staying
+  up. See "Making production use your local model (replacing Vercel)" in
+  PLATFORM_SETUP.md.
+
+  HOW TO USE:
+    1. Replace NODE_BINARY_PATH_HERE below with the output of `which node`
+       (launchd doesn't see your shell's PATH, so this must be the full
+       absolute path — e.g. /opt/homebrew/bin/node on Apple Silicon with
+       Homebrew, /usr/local/bin/node on Intel Homebrew).
+    2. Copy this file to ~/Library/LaunchAgents/com.ina.local-server.plist
+       (the WorkingDirectory/local-server.js path below is already filled
+       in with your project folder's real path).
+    3. Load it: launchctl load ~/Library/LaunchAgents/com.ina.local-server.plist
+    4. Check it's running: launchctl list | grep com.ina.local-server
+    5. Logs land in local/logs/local-server.out.log and .err.log (inside
+       your project folder) — check .err.log first if something's wrong.
+    6. To stop it: launchctl unload ~/Library/LaunchAgents/com.ina.local-server.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.ina.local-server</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>NODE_BINARY_PATH_HERE</string>
+    <string>/Users/pablocymeryng/Claude/Projects/INA DIGITAL PLATFORM/local-server.js</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/pablocymeryng/Claude/Projects/INA DIGITAL PLATFORM</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/pablocymeryng/Claude/Projects/INA DIGITAL PLATFORM/local/logs/local-server.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/pablocymeryng/Claude/Projects/INA DIGITAL PLATFORM/local/logs/local-server.err.log</string>
+</dict>
+</plist>

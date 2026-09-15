@@ -1,0 +1,17 @@
+node_modules/
+.env.local
+.DS_Store
+local/logs/*.log
+
+# Sensitive / heavy files kept local-only
+Contactos_INA_2026-09.xlsx
+Contactos_INA_tarjetas_2026-09.xlsx
+*.mp4
+INA_Company_Profile_EN.pdf
+INA_Company_Profile_ES.pdf
+INA_Project_Structuring_Framework_y_Plataforma.pdf
+Manual_Usuario_Plataforma_INA.pdf
+Plataforma_INA_Funcionalidades_y_IA.pdf
+Plataforma_INA_Presentacion_Equipo.pptx
+Project Template — INA Platform.pdf
+tools/

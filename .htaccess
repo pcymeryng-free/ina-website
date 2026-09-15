@@ -1,0 +1,33 @@
+# ============================================================================
+# INA Platform / INA Website — Bluehost (Apache) config
+#
+# Mirrors the "redirects" array in vercel.json (used on Vercel, the dev/test
+# environment) so old bookmarked/indexed URLs keep working on the production
+# domain too. Also disables directory listing.
+#
+# NOTE: an earlier version of this file added a blanket
+# "Cache-Control: no-cache" header for every .html response, to stop
+# Bluehost from serving stale cached copies of app/*.html after an upload.
+# Removed again — it turned out to also strip caching from 301 redirect
+# responses themselves, which unmasked (and made every single request
+# retrigger) a pre-existing self-redirect issue on the www subdomain
+# (https://www.international-network-advisors.com/app/login.html kept
+# 301-ing to itself), previously hidden by normal browser redirect
+# caching. Signing in reliably matters more than avoiding an occasional
+# manual cache-bypass (?x=1 trick) when testing right after an upload.
+# ============================================================================
+
+RewriteEngine On
+
+RewriteRule ^login\.html$ /app/login.html [R=301,L]
+RewriteRule ^register\.html$ /app/register.html [R=301,L]
+RewriteRule ^dashboard\.html$ /app/dashboard.html [R=301,L]
+RewriteRule ^new-project\.html$ /app/new-project.html [R=301,L]
+RewriteRule ^project\.html$ /app/project.html [R=301,L]
+RewriteRule ^app/security\.html$ /app/profile.html [R=301,L]
+RewriteRule ^app/gestion-templates\.html$ /app/roadmap-templates.html [R=301,L]
+RewriteRule ^app/new-gestion-template\.html$ /app/new-roadmap-template.html [R=301,L]
+RewriteRule ^app/gestion-instance\.html$ /app/roadmap-instance.html [R=301,L]
+RewriteRule ^app/?$ /app/index.html [R=302,L]
+
+Options -Indexes

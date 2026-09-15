@@ -51,12 +51,22 @@
       <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
       <a href="success-cases.html"><span data-i18n="sc.nav">Success Cases</span></a>
       <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <div class="menu nav-menu" id="masterDataNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="masterDataNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="md.nav">Master Data</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="masterDataNavMenuPanel">
+          <a href="master-data.html?tab=contacts" class="menu-item"><span data-i18n="md.tab.contacts">Contacts</span></a>
+          <a href="master-data.html?tab=companies" class="menu-item"><span data-i18n="md.tab.companies">Companies</span></a>
+          <a href="master-data.html?tab=products" class="menu-item"><span data-i18n="md.tab.products">Products</span></a>
+          <a href="master-data.html?tab=agencies" class="menu-item"><span data-i18n="md.tab.agencies">Public Agencies</span></a>
+        </div>
+      </div>
       <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
         <button type="button" class="nav-menu-trigger menu-trigger" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
           <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
         </button>
         <div class="menu-panel" id="adminNavMenuPanel">
-          <a href="master-data.html" id="masterDataMenuItem" class="menu-item" style="display:none;"><span data-i18n="md.nav">Master Data</span></a>
           <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
           <a href="roles.html" id="rolesMenuItem" class="menu-item" style="display:none;"><span data-i18n="roles.nav">Roles</span></a>
         </div>
@@ -83,7 +93,7 @@
         <h1 class="h-section" style="margin-top:14px;"><span data-i18n="dash.h1">Projects</span></h1>
         <p class="who" id="whoami"></p>
       </div>
-      <a href="new-project.html" class="btn amber"><span data-i18n="dash.newProject">Submit New Project</span></a>
+      <a href="new-project.html" class="btn amber" id="newProjectBtnHeader"><span data-i18n="dash.newProject">Submit New Project</span></a>
     </div>
 
     <div id="advisorBanner" class="advisor-banner" style="display:none;">
@@ -171,8 +181,8 @@
     <div id="emptyState" class="empty-state" style="display:none;">
       <div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h6l2 2h8v10H4z"/><path d="M12 12v5M9.5 14.5h5"/></svg></div>
       <p style="font-size:15px; color:var(--text);"><span data-i18n="dash.empty.title">No projects yet.</span></p>
-      <p style="margin-top:8px;"><span data-i18n="dash.empty.lede">Submit your first project to get an Investment Readiness Index&trade; score and financing recommendations.</span></p>
-      <a href="new-project.html" class="btn amber" style="margin-top:20px;"><span data-i18n="dash.newProject">Submit New Project</span></a>
+      <p style="margin-top:8px;" id="emptyStateLede"><span data-i18n="dash.empty.lede">Submit your first project to get an Investment Readiness Index&trade; score and financing recommendations.</span></p>
+      <a href="new-project.html" class="btn amber" style="margin-top:20px;" id="emptyStateCta"><span data-i18n="dash.newProject">Submit New Project</span></a>
     </div>
 
     <!-- Print-only rendering of the currently filtered project list — hidden
@@ -192,11 +202,11 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=70"></script>
+<script src="/assets/i18n.js?v=71"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="/assets/platform.js?v=82"></script>
-<script src="/assets/script.js?v=14"></script>
+<script src="/assets/platform.js?v=85"></script>
+<script src="/assets/script.js?v=15"></script>
 <script>
 (function () {
   const signOutBtn = document.getElementById('signOutBtn');
@@ -233,6 +243,12 @@
   let allProjects = [];
   let currentUserId = null;
   let currentIsAdmin = false;
+  // Defaults to true (same lenient fallback as the surrounding profile
+  // try/catch below — "profile not critical to show projects") so a
+  // getProfile() failure never wrongly hides the CTA from someone who
+  // actually can create projects. Only flips to false once we've
+  // successfully read the profile AND canManageProjects() says no.
+  let canCreateProjects = true;
   // project_id -> array of { program_id, programs: { name, funding_stage } }
   // — every financing/preparation Program each visible project has applied
   // to (project_programs), in ADDITION to the single "umbrella" program_id
@@ -1298,6 +1314,29 @@
     });
   }
 
+  // Shows the "no projects" empty state, adapting its CTA/copy to whether
+  // this user is even allowed to create one (see canCreateProjects above —
+  // a custom role like "Master Data Management" has no 'projects' access,
+  // so pointing it at "Submit your first project" would just lead to a
+  // permission error on save).
+  function showEmptyState() {
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('emptyStateCta').style.display = canCreateProjects ? 'inline-block' : 'none';
+    // Both branches use a [data-i18n]-tagged span so assets/i18n.js's own
+    // lang-btn listener keeps translating it correctly on later toggles,
+    // same as the rest of this page's static chrome.
+    document.getElementById('emptyStateLede').innerHTML = canCreateProjects
+      ? '<span data-i18n="dash.empty.lede">Submit your first project to get an Investment Readiness Index&trade; score and financing recommendations.</span>'
+      : '<span data-i18n="dash.empty.lede.noPermission">You don\'t have any projects assigned to you yet.</span>';
+    // The span above is inserted after assets/i18n.js's own
+    // DOMContentLoaded translation pass already ran, so without this call
+    // it would show its hardcoded English fallback until the next lang-btn
+    // click. applyLang() (global, defined in assets/i18n.js) re-translates
+    // every [data-i18n] element in the document right now, in the
+    // viewer's actual current language.
+    if (typeof applyLang === 'function') applyLang(lang());
+  }
+
   async function deleteProject(p) {
     const msg = lang() === 'es'
       ? `¿Está seguro que desea eliminar definitivamente el proyecto "${p.name}"? Esta acción no se puede deshacer — se borran también sus documentos y análisis.`
@@ -1308,7 +1347,7 @@
       allProjects = allProjects.filter((proj) => proj.id !== p.id);
       if (!allProjects.length) {
         document.getElementById('dashBody').style.display = 'none';
-        document.getElementById('emptyState').style.display = 'block';
+        showEmptyState();
         return;
       }
       renderStats();
@@ -1374,13 +1413,19 @@
       // 'user_management' permission.
       const canManageUsersNav = INAPlatform.canManageUsers(profile);
       const canMasterData = INAPlatform.canManageMasterData(profile);
-      if (canManageUsersNav || canMasterData) document.getElementById('adminNavMenu').style.display = 'flex';
-      if (canMasterData) document.getElementById('masterDataMenuItem').style.display = 'flex';
+      if (canManageUsersNav) document.getElementById('adminNavMenu').style.display = 'flex';
+      if (canMasterData) document.getElementById('masterDataNavMenu').style.display = 'flex';
+      INAPlatform.initDropdownMenus(document.querySelector('.app-nav'));
       if (canManageUsersNav) document.getElementById('adminUsersMenuItem').style.display = 'flex';
       if (canManageUsersNav) document.getElementById('rolesMenuItem').style.display = 'flex';
       if (INAPlatform.canViewRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
       advisor = INAPlatform.isAdvisor(profile);
       if (advisor) document.getElementById('advisorBanner').style.display = 'flex';
+      // See canCreateProjects declaration above — a custom role (like
+      // "Master Data Management") that doesn't grant 'projects' access
+      // shouldn't be prompted to submit a project it can't actually save.
+      canCreateProjects = INAPlatform.canManageProjects(profile);
+      if (!canCreateProjects) document.getElementById('newProjectBtnHeader').style.display = 'none';
     } catch (e) { /* profile not critical to show projects */ }
 
     try {
@@ -1395,7 +1440,7 @@
     document.getElementById('loadingState').style.display = 'none';
 
     if (!allProjects.length) {
-      document.getElementById('emptyState').style.display = 'block';
+      showEmptyState();
       return;
     }
 

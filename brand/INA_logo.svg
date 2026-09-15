@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 140" width="640" height="140">
+  <g transform="translate(10,20)">
+    <path d="M7 23 16 9 25 23M7 23H25" transform="scale(3.2)" stroke="#0B1526" stroke-width="1.4" fill="none" opacity=".55"/>
+    <circle cx="22.4" cy="73.6" r="8.3" fill="#D9922E"/>
+    <circle cx="51.2" cy="28.8" r="8.3" fill="#D9922E"/>
+    <circle cx="80" cy="73.6" r="8.3" fill="#D9922E"/>
+  </g>
+  <text x="150" y="88" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="72" fill="#0B1526">INA</text>
+  <text x="300" y="78" font-family="'IBM Plex Mono', 'SFMono-Regular', Menlo, monospace" font-weight="600" font-size="17" letter-spacing="2.2" fill="#5B6670">INTERNATIONAL NETWORK ADVISORS</text>
+</svg>

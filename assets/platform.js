@@ -4395,6 +4395,20 @@ const INAPlatform = {
     return true;
   },
 
+  /* Projects (entity 'projects') — the default "Usuario" signup role has
+     can_edit:true/scope:'own' here (see migration_v46_role_permissions.sql),
+     so any regular self-registered user can still submit their own
+     projects exactly as before this RBAC system existed. A custom role
+     that doesn't grant 'projects' access at all (e.g. a "Master Data
+     Management" role scoped only to 'master_data') gets can_edit:false —
+     used by app/dashboard.html to hide the "Submit New Project" button and
+     empty-state CTA for a user who has literally no project of their own
+     and no permission to create one, instead of prompting them to do
+     something they'll just get a permission error on. */
+  canManageProjects(profile) {
+    return entityPermission(profile, 'projects').can_edit;
+  },
+
   /* Programs can only be created/edited by an advisor, admin, or a custom
      role with edit access on 'initiatives'/'financing' — see
      migration_v46_role_permissions.sql (programs_insert_advisor_or_admin /
@@ -4766,12 +4780,32 @@ const INAPlatform = {
      for profile.role === 'user' (profiles.custom_role_id is null for
      admin/advisor, whose access is fully determined by profiles.role
      itself). Harmless/cheap for admin/advisor: PostgREST just returns
-     custom_role: null when custom_role_id is null. */
+     custom_role: null when custom_role_id is null.
+
+     `roles!custom_role_id` (NOT plain `roles`) — sep 2026, Pablo: user
+     skaplan had a custom role ("Gestión Master Data") assigned and correct
+     role_permissions rows in the DB, but the Master Data nav item never
+     appeared and the dashboard treated them as having no permissions at
+     all, exactly like the pre-migration_v62 RLS bug this embed was built
+     to avoid. Root cause was different this time: public.roles has TWO FK
+     relationships to/from public.profiles — profiles.custom_role_id ->
+     roles.id (what we want) AND roles.created_by -> profiles.id (who
+     created a configurable role, unrelated) — so plain `roles(...)` is
+     ambiguous to PostgREST, which errors PGRST201 ("more than one
+     relationship was found for 'profiles' and 'roles'"). That error
+     matched the `isMissingRolesSchema` fallback regex below (it contains
+     the word "relationship"), so getProfile() silently swallowed it and
+     returned a profile with NO custom_role key at all — this has likely
+     never worked for ANY custom-role 'user' account since migration_v46
+     shipped, just never been caught because nothing surfaced the real
+     Postgres error until this session's console debugging. The
+     `!custom_role_id` suffix tells PostgREST exactly which FK to embed
+     through, removing the ambiguity for good. */
   async getProfile(userId) {
     if (!supabaseClient) return null;
     const { data, error } = await supabaseClient
       .from('profiles')
-      .select('*, custom_role:roles(id, name, role_permissions(entity, can_view, can_edit, scope))')
+      .select('*, custom_role:roles!custom_role_id(id, name, role_permissions(entity, can_view, can_edit, scope))')
       .eq('id', userId)
       .single();
     if (!error) return data;

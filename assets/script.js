@@ -11,47 +11,24 @@ if (navToggle && mobileMenu) {
 }
 
 // ============ Admin nav dropdown menu (app/*.html header) ============
-// Reuses the same .menu/.nav-menu/.menu-trigger/.menu-panel/.menu-item
-// component app/project.html pioneered for its own Project/Analysis nav
-// menus (see assets/app.css) — wired centrally here instead of repeating
-// this open/close/outside-click/Escape logic in the 14 other app/*.html
-// pages that now carry a dropdown "Admin" menu (currently just one item,
-// "User Management" → admin.html — see the "Master Data se desprende del
-// menu admin" request; more admin-only tools can be added as additional
-// .menu-item rows later without any JS changes here).
+// REMOVED (sep 2026): this used to be the only wiring for #adminNavMenu's
+// open/close behavior, scoped narrowly to that one id specifically so it
+// wouldn't double-wire project.html's separate Project/Analysis nav menus
+// (see the long comment this replaced, in git history / prior versions of
+// this file, for the full "why scoped" reasoning).
 //
-// Scoped to the specific #adminNavMenu id, NOT a broad ".nav-menu"
-// selector — project.html has its own "Project"/"Analysis" nav menus
-// (also .menu.nav-menu, inside the same .app-nav) with their own,
-// separate wiring (including extra keepMenuPanelOnScreen() positioning
-// logic project.html needs and this one doesn't). A broad selector here
-// would double-wire those and break them; project.html doesn't have
-// #adminNavMenu at all, so this only ever touches the Admin dropdown.
-const adminNavMenu = document.getElementById('adminNavMenu');
-if (adminNavMenu) {
-  const adminNavTrigger = adminNavMenu.querySelector('.menu-trigger');
-  function closeAdminNavMenu() {
-    adminNavMenu.classList.remove('open');
-    adminNavTrigger.setAttribute('aria-expanded', 'false');
-  }
-  adminNavTrigger.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const willOpen = !adminNavMenu.classList.contains('open');
-    if (willOpen) {
-      adminNavMenu.classList.add('open');
-      adminNavTrigger.setAttribute('aria-expanded', 'true');
-    } else {
-      closeAdminNavMenu();
-    }
-  });
-  adminNavMenu.querySelectorAll('.menu-item').forEach((item) => {
-    item.addEventListener('click', closeAdminNavMenu);
-  });
-  document.addEventListener('click', closeAdminNavMenu);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeAdminNavMenu();
-  });
-}
+// It's gone now because INAPlatform.initDropdownMenus() (assets/platform.js)
+// is called directly by every app/*.html page that has a #adminNavMenu or
+// #masterDataNavMenu dropdown (added when Master Data got its own nav
+// menu) — a GENERIC handler that wires every .menu inside the page's
+// .app-nav, #adminNavMenu included. With both this block AND that call
+// attaching a click listener to the same #adminNavMenuBtn, every click
+// toggled the 'open' class TWICE in the same event — once each handler —
+// which cancels out and makes the menu look completely dead (Pablo: "ahora
+// no funciona el menu de Admin"). Keeping only the platform.js-driven one
+// fixes it; nothing here duplicated functionality that isn't already
+// covered by initDropdownMenus() on every page that has #adminNavMenu
+// (verified against all 16 of them before deleting this).
 
 // ============ Reveal on scroll ============
 const revealEls = document.querySelectorAll('.reveal');

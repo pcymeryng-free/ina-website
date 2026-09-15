@@ -3423,6 +3423,7 @@ const I18N = {
   "auth.signOut": { "en": "Sign out", "es": "Cerrar sesión" },
   "dash.advisor.banner": { "en": "Advisor view: showing every project submitted to the platform, not only your own.", "es": "Vista de asesor: se muestran todos los proyectos enviados a la plataforma, no solo los tuyos." },
   "dash.empty.lede": { "en": "Submit your first project to get an Investment Readiness Index&trade; score and financing recommendations.", "es": "Enviá tu primer proyecto para obtener un puntaje del Investment Readiness Index&trade; y recomendaciones de financiamiento." },
+  "dash.empty.lede.noPermission": { "en": "You don't have any projects assigned to you yet.", "es": "Todavía no tenés proyectos asignados." },
   "dash.empty.title": { "en": "No projects yet.", "es": "Todavía no hay proyectos." },
   "dash.filter.clear": { "en": "Clear filters", "es": "Limpiar filtros" },
   "dash.print": { "en": "Print list", "es": "Imprimir lista" },

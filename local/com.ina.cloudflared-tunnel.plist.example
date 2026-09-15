@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd agent that keeps the Cloudflare Tunnel itself running in the
+  background (separate from local-server.js — see
+  com.ina.local-server.plist.example in this same folder, you need BOTH
+  running for production traffic to actually reach your Mac). See "Making
+  production use your local model (replacing Vercel)" in PLATFORM_SETUP.md.
+
+  NOTE: `cloudflared service install` (Cloudflare's own built-in installer,
+  run once as `sudo cloudflared service install`) does this same job and is
+  arguably simpler/more official than this file — use whichever you
+  already got working; this is provided as a fallback / for consistency
+  with how local-server.js is kept alive.
+
+  HOW TO USE:
+    1. Replace CLOUDFLARED_BINARY_PATH_HERE below with the output of
+       `which cloudflared` (e.g. /opt/homebrew/bin/cloudflared on Apple
+       Silicon Homebrew).
+    2. Make sure ~/.cloudflared/config.yml exists first (copy + fill in
+       cloudflared-config.yml.example in this folder).
+    3. Copy this file to
+       ~/Library/LaunchAgents/com.ina.cloudflared-tunnel.plist
+    4. Load it: launchctl load ~/Library/LaunchAgents/com.ina.cloudflared-tunnel.plist
+    5. Check it's running: launchctl list | grep com.ina.cloudflared-tunnel
+    6. Logs land in local/logs/cloudflared.out.log and .err.log (inside
+       your project folder).
+    7. To stop it: launchctl unload ~/Library/LaunchAgents/com.ina.cloudflared-tunnel.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.ina.cloudflared-tunnel</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>CLOUDFLARED_BINARY_PATH_HERE</string>
+    <string>tunnel</string>
+    <string>run</string>
+    <string>ina-local-api</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/pablocymeryng/Claude/Projects/INA DIGITAL PLATFORM/local/logs/cloudflared.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/pablocymeryng/Claude/Projects/INA DIGITAL PLATFORM/local/logs/cloudflared.err.log</string>
+</dict>
+</plist>
