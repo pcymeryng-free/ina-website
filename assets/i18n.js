@@ -3872,6 +3872,8 @@ const I18N = {
   "md.contacts.col.org": { "en": "Company / Agency", "es": "Empresa / Organismo" },
   "md.contacts.col.email": { "en": "Email", "es": "Email" },
   "md.contacts.col.phone": { "en": "Phone", "es": "Teléfono" },
+  "md.contacts.col.addedby": { "en": "Added by", "es": "Cargado por" },
+  "md.contacts.col.dateadded": { "en": "Date Added", "es": "Fecha de Carga" },
   "md.contacts.f.fullName": { "en": "Full name", "es": "Nombre completo" },
   "md.contacts.f.email": { "en": "Email", "es": "Email" },
   "md.contacts.f.phone": { "en": "Phone", "es": "Teléfono" },

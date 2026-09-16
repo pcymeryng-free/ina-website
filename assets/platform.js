@@ -7227,7 +7227,7 @@ const INAPlatform = {
   async listContacts() {
     const { data, error } = await supabaseClient
       .from('contacts')
-      .select('*, companies(id, name, country), public_agencies(id, name, country)')
+      .select('*, companies(id, name, country), public_agencies(id, name, country), created_by_profile:profiles!contacts_created_by_fkey(full_name)')
       .order('full_name', { ascending: true });
     if (error) throw error;
     return data;
