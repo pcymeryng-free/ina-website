@@ -4568,6 +4568,5098 @@ const I18N = {
   "know.wp3.read": {
     "en": "Read the white paper &rarr;",
     "es": "Leer el white paper &rarr;"
+  },
+  "know.tk.read": {
+    "en": "Read the template &rarr;",
+    "es": "Leer la plantilla &rarr;"
+  },
+  "know.tr.read": {
+    "en": "Read the report &rarr;",
+    "es": "Leer el informe &rarr;"
+  },
+  "know.ig.read": {
+    "en": "Read the guide &rarr;",
+    "es": "Leer la guía &rarr;"
+  },
+  "tk1.crumb": {
+    "en": "Template",
+    "es": "Plantilla"
+  },
+  "tk1.cta.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "tk1.cta.p": {
+    "en": "INA's advisory team can customize this toolkit's templates to your project's sector, size and jurisdiction. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "El equipo de asesoría de INA puede personalizar las plantillas de este kit según el sector, tamaño y jurisdicción de tu proyecto. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "tk1.eyebrow": {
+    "en": "Template &middot; September 2026",
+    "es": "Plantilla &middot; Septiembre 2026"
+  },
+  "tk1.h1": {
+    "en": "Project Structuring Framework&trade; Toolkit",
+    "es": "Kit de la Metodología de Estructuración de Proyectos&trade;"
+  },
+  "tk1.lede": {
+    "en": "The deliverable-by-deliverable toolkit behind INA's Project Structuring Framework&trade; (F1) &mdash; what to produce at each of the five phases, and who owns it.",
+    "es": "El kit de entregables detrás de la Metodología de Estructuración de Proyectos&trade; de INA (F1) &mdash; qué producir en cada una de las cinco fases, y quién es responsable."
+  },
+  "tk1.p1.d": {
+    "en": "Confirms the problem is real, the sponsor is aligned, and the project is worth structuring before any budget is committed.",
+    "es": "Confirma que el problema es real, que el sponsor está alineado, y que el proyecto vale la pena estructurar antes de comprometer presupuesto."
+  },
+  "tk1.p1.g": {
+    "en": "Gate 1 &mdash; Go/no-go decision",
+    "es": "Gate 1 &mdash; Decisión de continuar o no"
+  },
+  "tk1.p1.t": {
+    "en": "Strategic Diagnosis and Alignment",
+    "es": "Diagnóstico Estratégico y Alineación"
+  },
+  "tk1.p2.d": {
+    "en": "Turns the diagnosis into a bankable case: technical alternatives, financing sources and a preliminary risk view.",
+    "es": "Convierte el diagnóstico en un caso bancable: alternativas técnicas, fuentes de financiamiento y una visión preliminar de riesgos."
+  },
+  "tk1.p2.g": {
+    "en": "Gate 2 &mdash; Investment decision",
+    "es": "Gate 2 &mdash; Decisión de inversión"
+  },
+  "tk1.p2.t": {
+    "en": "Feasibility, Business Case &amp; Financial Structuring",
+    "es": "Factibilidad, Business Case y Estructuración Financiera"
+  },
+  "tk1.p3.d": {
+    "en": "Locks how the project will be governed and which contract model transfers risk to the vendor, before tendering opens.",
+    "es": "Define cómo se va a gobernar el proyecto y qué modelo contractual transfiere el riesgo al proveedor, antes de abrir la licitación."
+  },
+  "tk1.p3.g": {
+    "en": "Gate 3 &mdash; Authorization to launch procurement",
+    "es": "Gate 3 &mdash; Autorización para lanzar la adquisición"
+  },
+  "tk1.p3.t": {
+    "en": "Governance Design and Contractual Model",
+    "es": "Diseño de Gobernanza y Modelo Contractual"
+  },
+  "tk1.p4.d": {
+    "en": "Runs the tender and delivery under active schedule, cost and quality control.",
+    "es": "Ejecuta la licitación y la entrega bajo control activo de cronograma, costo y calidad."
+  },
+  "tk1.p4.g": {
+    "en": "Gate 4 &mdash; Solution acceptance",
+    "es": "Gate 4 &mdash; Aceptación de la solución"
+  },
+  "tk1.p4.t": {
+    "en": "Procurement and Implementation",
+    "es": "Adquisición e Implementación"
+  },
+  "tk1.p5.d": {
+    "en": "Sustains adoption, tracks performance, and closes the loop with a lessons-learned record for the next project.",
+    "es": "Sostiene la adopción, monitorea el desempeño y cierra el ciclo con un registro de lecciones aprendidas para el próximo proyecto."
+  },
+  "tk1.p5.g": {
+    "en": "Continuous &mdash; no further gate",
+    "es": "Continuo &mdash; sin gate adicional"
+  },
+  "tk1.p5.t": {
+    "en": "Monitoring, Change Management &amp; Continuous Improvement",
+    "es": "Monitoreo, Gestión del Cambio y Mejora Continua"
+  },
+  "tk1.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "tk1.s1.p1": {
+    "en": "The Project Structuring Framework&trade; produces a fixed set of documents at each phase &mdash; not templates to fill in isolation, but a chain where each deliverable feeds the next gate decision. This toolkit lists every deliverable, its purpose, and who is accountable for producing it, so a program office can staff and schedule structuring work before it starts, not discover the gaps mid-phase.",
+    "es": "La Metodología de Estructuración de Proyectos&trade; produce un conjunto fijo de documentos en cada fase &mdash; no son plantillas para completar de forma aislada, sino una cadena donde cada entregable alimenta la siguiente decisión de gate. Este kit lista cada entregable, su propósito y quién es responsable de producirlo, para que una oficina de programa pueda dotar de personal y planificar el trabajo de estructuración antes de empezar, no descubrir los vacíos a mitad de fase."
+  },
+  "tk1.s1.title": {
+    "en": "What This Toolkit Is",
+    "es": "Qué Es Este Kit"
+  },
+  "tk1.s2.kicker": {
+    "en": "Reference",
+    "es": "Referencia"
+  },
+  "tk1.s2.r1.deliv": {
+    "en": "Strategic Diagnosis Document &middot; Alignment Letter",
+    "es": "Documento de Diagnóstico Estratégico &middot; Carta de Alineación"
+  },
+  "tk1.s2.r1.owner": {
+    "en": "Executive Sponsor",
+    "es": "Sponsor Ejecutivo"
+  },
+  "tk1.s2.r1.phase": {
+    "en": "I &middot; Strategic Diagnosis",
+    "es": "I &middot; Diagnóstico Estratégico"
+  },
+  "tk1.s2.r1.purpose": {
+    "en": "Establish the problem to solve and confirm executive sponsorship",
+    "es": "Establecer el problema a resolver y confirmar el patrocinio ejecutivo"
+  },
+  "tk1.s2.r2.deliv": {
+    "en": "Business Case &middot; 5-Year Financial Model &middot; Financing Sources Analysis &middot; Preliminary Risk Matrix",
+    "es": "Business Case &middot; Modelo Financiero a 5 Años &middot; Análisis de Fuentes de Financiamiento &middot; Matriz de Riesgos Preliminar"
+  },
+  "tk1.s2.r2.owner": {
+    "en": "PMO &amp; Finance Lead",
+    "es": "PMO y Responsable Financiero"
+  },
+  "tk1.s2.r2.phase": {
+    "en": "II &middot; Feasibility &amp; Business Case",
+    "es": "II &middot; Factibilidad y Business Case"
+  },
+  "tk1.s2.r2.purpose": {
+    "en": "Determine viability and build the investment decision",
+    "es": "Determinar la viabilidad y construir la decisión de inversión"
+  },
+  "tk1.s2.r3.deliv": {
+    "en": "Project Governance Manual &middot; Technical Specifications &amp; Contract Template &middot; RACI Matrix",
+    "es": "Manual de Gobernanza del Proyecto &middot; Especificaciones Técnicas y Plantilla de Contrato &middot; Matriz RACI"
+  },
+  "tk1.s2.r3.owner": {
+    "en": "Legal Counsel &amp; Technical Committee",
+    "es": "Asesoría Legal y Comité Técnico"
+  },
+  "tk1.s2.r3.phase": {
+    "en": "III &middot; Governance &amp; Contractual Model",
+    "es": "III &middot; Gobernanza y Modelo Contractual"
+  },
+  "tk1.s2.r3.purpose": {
+    "en": "Define how the project is governed and how risk transfers to vendors",
+    "es": "Definir cómo se gobierna el proyecto y cómo se transfiere el riesgo a los proveedores"
+  },
+  "tk1.s2.r4.deliv": {
+    "en": "Awarded Contract &amp; Execution Plan &middot; Progress Reports &middot; Milestone Acceptance &amp; Go-Live Sign-off",
+    "es": "Contrato Adjudicado y Plan de Ejecución &middot; Informes de Avance &middot; Aceptación de Hitos y Sign-off de Puesta en Marcha"
+  },
+  "tk1.s2.r4.owner": {
+    "en": "PMO",
+    "es": "PMO"
+  },
+  "tk1.s2.r4.phase": {
+    "en": "IV &middot; Procurement &amp; Implementation",
+    "es": "IV &middot; Adquisición e Implementación"
+  },
+  "tk1.s2.r4.purpose": {
+    "en": "Execute procurement and control scope, time, cost and quality",
+    "es": "Ejecutar la adquisición y controlar alcance, tiempo, costo y calidad"
+  },
+  "tk1.s2.r5.deliv": {
+    "en": "Executed Change Management Plan &middot; Performance Dashboard &middot; Closure &amp; Lessons-Learned Report",
+    "es": "Plan de Gestión del Cambio Ejecutado &middot; Panel de Desempeño &middot; Informe de Cierre y Lecciones Aprendidas"
+  },
+  "tk1.s2.r5.owner": {
+    "en": "PMO &amp; Executive Sponsor",
+    "es": "PMO y Sponsor Ejecutivo"
+  },
+  "tk1.s2.r5.phase": {
+    "en": "V &middot; Monitoring &amp; Change Management",
+    "es": "V &middot; Monitoreo y Gestión del Cambio"
+  },
+  "tk1.s2.r5.purpose": {
+    "en": "Sustain adoption and capture lessons for future projects",
+    "es": "Sostener la adopción y capturar lecciones para futuros proyectos"
+  },
+  "tk1.s2.sub": {
+    "en": "Phase-by-Phase Detail",
+    "es": "Detalle Fase por Fase"
+  },
+  "tk1.s2.th1": {
+    "en": "Phase",
+    "es": "Fase"
+  },
+  "tk1.s2.th2": {
+    "en": "Deliverables",
+    "es": "Entregables"
+  },
+  "tk1.s2.th3": {
+    "en": "Purpose",
+    "es": "Propósito"
+  },
+  "tk1.s2.th4": {
+    "en": "Typical Owner",
+    "es": "Responsable Típico"
+  },
+  "tk1.s2.title": {
+    "en": "Deliverables by Phase",
+    "es": "Entregables por Fase"
+  },
+  "tk1.s3.col1.li1": {
+    "en": "Assign a named owner to every deliverable before Phase I starts, not when the deadline arrives",
+    "es": "Asignar un responsable nombrado a cada entregable antes de que empiece la Fase I, no cuando llega la fecha límite"
+  },
+  "tk1.s3.col1.li2": {
+    "en": "Treat each gate as a real decision point &mdash; skipping a gate to save time is how projects lose control later",
+    "es": "Tratar cada gate como una decisión real &mdash; saltear un gate para ganar tiempo es la forma en que los proyectos pierden control más adelante"
+  },
+  "tk1.s3.col1.li3": {
+    "en": "Keep every deliverable in one shared repository, version-controlled and linked to the gate it supported",
+    "es": "Mantener cada entregable en un único repositorio compartido, con control de versiones y vinculado al gate que respaldó"
+  },
+  "tk1.s3.col1.title": {
+    "en": "For Sponsors",
+    "es": "Para Sponsors"
+  },
+  "tk1.s3.col2.li1": {
+    "en": "Scale the depth of each deliverable to the project's size &mdash; a small FWA rollout doesn't need a submarine-cable-grade Business Case",
+    "es": "Ajustar la profundidad de cada entregable al tamaño del proyecto &mdash; un despliegue FWA pequeño no necesita un Business Case del nivel de un cable submarino"
+  },
+  "tk1.s3.col2.li2": {
+    "en": "Reuse the Risk Matrix and RACI Matrix from Phase II/III as living documents through Phase V, not one-off artifacts",
+    "es": "Reutilizar la Matriz de Riesgos y la Matriz RACI de las Fases II/III como documentos vivos hasta la Fase V, no como artefactos de una sola vez"
+  },
+  "tk1.s3.col2.li3": {
+    "en": "Pair this toolkit with INA's <a href=\"risk-register-template.html\" style=\"color:var(--amber-deep);\">Risk Register Template</a> and <a href=\"stage-gate-checklist.html\" style=\"color:var(--amber-deep);\">Stage-Gate Checklist</a> for a complete structuring kit",
+    "es": "Combinar este kit con la <a href=\"risk-register-template.html\" style=\"color:var(--amber-deep);\">Plantilla de Registro de Riesgos</a> y el <a href=\"stage-gate-checklist.html\" style=\"color:var(--amber-deep);\">Checklist por Etapas</a> de INA para un kit de estructuración completo"
+  },
+  "tk1.s3.col2.title": {
+    "en": "For Advisors",
+    "es": "Para Asesores"
+  },
+  "tk1.s3.kicker": {
+    "en": "Usage",
+    "es": "Uso"
+  },
+  "tk1.s3.title": {
+    "en": "How to Use This Toolkit",
+    "es": "Cómo Usar Este Kit"
+  },
+  "tk2.crumb": {
+    "en": "Template",
+    "es": "Plantilla"
+  },
+  "tk2.cta.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "tk2.cta.p": {
+    "en": "Pair this register with INA's <a href=\"project-structuring-framework-toolkit.html\" style=\"color:var(--amber);\">Project Structuring Framework&trade; Toolkit</a>, or request a facilitated risk workshop. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "Combiná este registro con el <a href=\"project-structuring-framework-toolkit.html\" style=\"color:var(--amber);\">Kit de la Metodología de Estructuración de Proyectos&trade;</a> de INA, o solicitá un taller de riesgos facilitado. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "tk2.eyebrow": {
+    "en": "Template &middot; September 2026",
+    "es": "Plantilla &middot; Septiembre 2026"
+  },
+  "tk2.h1": {
+    "en": "Risk Register Template",
+    "es": "Plantilla de Registro de Riesgos"
+  },
+  "tk2.lede": {
+    "en": "A ready-to-use risk register structured around the ten categories of INA's Project Risk Assessment Framework&trade; (F5), with worked examples for each.",
+    "es": "Un registro de riesgos listo para usar, estructurado en torno a las diez categorías de la Metodología de Evaluación de Riesgos de Proyectos&trade; de INA (F5), con ejemplos resueltos para cada una."
+  },
+  "tk2.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "tk2.s1.legend.closed": {
+    "en": "Closed &mdash; risk no longer applies or is fully mitigated",
+    "es": "Cerrado &mdash; el riesgo ya no aplica o está totalmente mitigado"
+  },
+  "tk2.s1.legend.mitig": {
+    "en": "Mitigating &mdash; mitigation actions in progress",
+    "es": "En mitigación &mdash; acciones de mitigación en curso"
+  },
+  "tk2.s1.legend.open": {
+    "en": "Open &mdash; identified, mitigation not yet in place",
+    "es": "Abierto &mdash; identificado, sin mitigación implementada todavía"
+  },
+  "tk2.s1.legend.title": {
+    "en": "Status Legend",
+    "es": "Referencia de Estados"
+  },
+  "tk2.s1.p1": {
+    "en": "Copy the table below into your own project tracker at Phase II and keep it live through Phase V &mdash; a risk register that stops updating after the Business Case is signed isn't a risk register, it's an archive. Score Probability and Impact independently as Low/Medium/High, assign a single named owner per risk, and review the full register at every gate.",
+    "es": "Copiá la tabla siguiente a tu propio seguimiento de proyecto en la Fase II y mantenela viva hasta la Fase V &mdash; un registro de riesgos que deja de actualizarse después de firmado el Business Case no es un registro de riesgos, es un archivo histórico. Puntuá Probabilidad e Impacto de forma independiente como Baja/Media/Alta, asigná un único responsable nombrado por riesgo, y revisá el registro completo en cada gate."
+  },
+  "tk2.s1.title": {
+    "en": "How to Use This Register",
+    "es": "Cómo Usar Este Registro"
+  },
+  "tk2.s2.kicker": {
+    "en": "Template",
+    "es": "Plantilla"
+  },
+  "tk2.s2.r1.cat": {
+    "en": "Strategic",
+    "es": "Estratégico"
+  },
+  "tk2.s2.r1.mitig": {
+    "en": "Alignment re-confirmed at every gate, not only at kickoff",
+    "es": "Alineación reconfirmada en cada gate, no solo al inicio"
+  },
+  "tk2.s2.r1.owner": {
+    "en": "Executive Sponsor",
+    "es": "Sponsor Ejecutivo"
+  },
+  "tk2.s2.r1.risk": {
+    "en": "Project no longer aligned with sponsor's current priorities",
+    "es": "El proyecto ya no está alineado con las prioridades actuales del sponsor"
+  },
+  "tk2.s2.r1.status": {
+    "en": "Open",
+    "es": "Abierto"
+  },
+  "tk2.s2.r10.cat": {
+    "en": "Climate",
+    "es": "Climático"
+  },
+  "tk2.s2.r10.mitig": {
+    "en": "Climate exposure screening included in site/route selection",
+    "es": "Screening de exposición climática incluido en la selección de sitio/ruta"
+  },
+  "tk2.s2.r10.owner": {
+    "en": "Technical Committee",
+    "es": "Comité Técnico"
+  },
+  "tk2.s2.r10.risk": {
+    "en": "Physical assets exposed to flooding, heat or storm intensification",
+    "es": "Activos físicos expuestos a inundaciones, calor o intensificación de tormentas"
+  },
+  "tk2.s2.r10.status": {
+    "en": "Open",
+    "es": "Abierto"
+  },
+  "tk2.s2.r2.cat": {
+    "en": "Regulatory",
+    "es": "Regulatorio"
+  },
+  "tk2.s2.r2.mitig": {
+    "en": "Regulatory filings started in Phase II, ahead of technical design close",
+    "es": "Trámites regulatorios iniciados en la Fase II, antes del cierre del diseño técnico"
+  },
+  "tk2.s2.r2.owner": {
+    "en": "Legal Counsel",
+    "es": "Asesoría Legal"
+  },
+  "tk2.s2.r2.risk": {
+    "en": "Permitting or spectrum approval delayed beyond schedule",
+    "es": "Aprobación de permisos o espectro demorada más allá del cronograma"
+  },
+  "tk2.s2.r2.status": {
+    "en": "Mitigating",
+    "es": "En mitigación"
+  },
+  "tk2.s2.r3.cat": {
+    "en": "Technical",
+    "es": "Técnico"
+  },
+  "tk2.s2.r3.mitig": {
+    "en": "Independent technical peer review before Gate 2",
+    "es": "Revisión técnica independiente antes del Gate 2"
+  },
+  "tk2.s2.r3.owner": {
+    "en": "Technical Committee",
+    "es": "Comité Técnico"
+  },
+  "tk2.s2.r3.risk": {
+    "en": "Chosen technical architecture doesn't scale to projected demand",
+    "es": "La arquitectura técnica elegida no escala a la demanda proyectada"
+  },
+  "tk2.s2.r3.status": {
+    "en": "Open",
+    "es": "Abierto"
+  },
+  "tk2.s2.r4.cat": {
+    "en": "Financial",
+    "es": "Financiero"
+  },
+  "tk2.s2.r4.mitig": {
+    "en": "Cost model benchmarked externally before financial close",
+    "es": "Modelo de costos comparado externamente antes del cierre financiero"
+  },
+  "tk2.s2.r4.owner": {
+    "en": "PMO &amp; Finance Lead",
+    "es": "PMO y Responsable Financiero"
+  },
+  "tk2.s2.r4.risk": {
+    "en": "Actual cost exceeds the Business Case estimate",
+    "es": "El costo real supera la estimación del Business Case"
+  },
+  "tk2.s2.r4.status": {
+    "en": "Mitigating",
+    "es": "En mitigación"
+  },
+  "tk2.s2.r5.cat": {
+    "en": "Market",
+    "es": "Mercado"
+  },
+  "tk2.s2.r5.mitig": {
+    "en": "Demand study refreshed at Gate 2 with independent data",
+    "es": "Estudio de demanda actualizado en el Gate 2 con datos independientes"
+  },
+  "tk2.s2.r5.owner": {
+    "en": "Commercial Lead",
+    "es": "Responsable Comercial"
+  },
+  "tk2.s2.r5.risk": {
+    "en": "Demand assumptions don't hold once the service launches",
+    "es": "Los supuestos de demanda no se sostienen una vez lanzado el servicio"
+  },
+  "tk2.s2.r5.status": {
+    "en": "Open",
+    "es": "Abierto"
+  },
+  "tk2.s2.r6.cat": {
+    "en": "Counterparty",
+    "es": "Contraparte"
+  },
+  "tk2.s2.r6.mitig": {
+    "en": "Financial due diligence on shortlisted vendors before award",
+    "es": "Due diligence financiera de los proveedores preseleccionados antes de la adjudicación"
+  },
+  "tk2.s2.r6.owner": {
+    "en": "PMO",
+    "es": "PMO"
+  },
+  "tk2.s2.r6.risk": {
+    "en": "Key vendor's financial or delivery capacity in doubt",
+    "es": "Dudas sobre la capacidad financiera o de entrega de un proveedor clave"
+  },
+  "tk2.s2.r6.status": {
+    "en": "Closed",
+    "es": "Cerrado"
+  },
+  "tk2.s2.r7.cat": {
+    "en": "Operational",
+    "es": "Operacional"
+  },
+  "tk2.s2.r7.mitig": {
+    "en": "Change management plan started in Phase III, not after delivery",
+    "es": "Plan de gestión del cambio iniciado en la Fase III, no después de la entrega"
+  },
+  "tk2.s2.r7.owner": {
+    "en": "PMO",
+    "es": "PMO"
+  },
+  "tk2.s2.r7.risk": {
+    "en": "Operating team not ready to run the delivered system",
+    "es": "El equipo operativo no está listo para operar el sistema entregado"
+  },
+  "tk2.s2.r7.status": {
+    "en": "Mitigating",
+    "es": "En mitigación"
+  },
+  "tk2.s2.r8.cat": {
+    "en": "Environmental &amp; Social",
+    "es": "Ambiental y Social"
+  },
+  "tk2.s2.r8.mitig": {
+    "en": "Environmental and social screening completed before Gate 3",
+    "es": "Screening ambiental y social completado antes del Gate 3"
+  },
+  "tk2.s2.r8.owner": {
+    "en": "Technical Committee",
+    "es": "Comité Técnico"
+  },
+  "tk2.s2.r8.risk": {
+    "en": "Construction impacts unaddressed community or environmental concerns",
+    "es": "La construcción impacta preocupaciones comunitarias o ambientales no atendidas"
+  },
+  "tk2.s2.r8.status": {
+    "en": "Open",
+    "es": "Abierto"
+  },
+  "tk2.s2.r9.cat": {
+    "en": "Governance",
+    "es": "Gobernanza"
+  },
+  "tk2.s2.r9.mitig": {
+    "en": "RACI Matrix signed off before Gate 3, reviewed at each gate",
+    "es": "Matriz RACI aprobada antes del Gate 3, revisada en cada gate"
+  },
+  "tk2.s2.r9.owner": {
+    "en": "Steering Committee",
+    "es": "Comité de Dirección"
+  },
+  "tk2.s2.r9.risk": {
+    "en": "Decision authority unclear once implementation starts",
+    "es": "La autoridad de decisión no está clara una vez que arranca la implementación"
+  },
+  "tk2.s2.r9.status": {
+    "en": "Closed",
+    "es": "Cerrado"
+  },
+  "tk2.s2.th.cat": {
+    "en": "Category",
+    "es": "Categoría"
+  },
+  "tk2.s2.th.owner": {
+    "en": "Owner",
+    "es": "Responsable"
+  },
+  "tk2.s2.th.status": {
+    "en": "Status",
+    "es": "Estado"
+  },
+  "tk2.s2.title": {
+    "en": "Register by Category",
+    "es": "Registro por Categoría"
+  },
+  "tk2.s3.col1.li1": {
+    "en": "Re-score every open risk &mdash; don't just add new ones",
+    "es": "Repuntuar cada riesgo abierto &mdash; no solo agregar riesgos nuevos"
+  },
+  "tk2.s3.col1.li2": {
+    "en": "Close risks that no longer apply, with a one-line reason",
+    "es": "Cerrar los riesgos que ya no aplican, con una razón de una línea"
+  },
+  "tk2.s3.col1.li3": {
+    "en": "Escalate any High/High risk without a named owner to the Steering Committee",
+    "es": "Escalar al Comité de Dirección cualquier riesgo Alta/Alto sin responsable nombrado"
+  },
+  "tk2.s3.col1.title": {
+    "en": "At Every Gate",
+    "es": "En Cada Gate"
+  },
+  "tk2.s3.col2.li1": {
+    "en": "Treating the register as a Phase II artifact instead of a living document",
+    "es": "Tratar el registro como un artefacto de la Fase II en lugar de un documento vivo"
+  },
+  "tk2.s3.col2.li2": {
+    "en": "Scoring risk without a named, accountable owner",
+    "es": "Puntuar un riesgo sin un responsable nombrado y con rendición de cuentas"
+  },
+  "tk2.s3.col2.li3": {
+    "en": "Leaving AI-agent-flagged anomalies out of the register entirely",
+    "es": "Dejar afuera del registro las anomalías señaladas por agentes de IA"
+  },
+  "tk2.s3.col2.title": {
+    "en": "Common Mistakes",
+    "es": "Errores Comunes"
+  },
+  "tk2.s3.kicker": {
+    "en": "Discipline",
+    "es": "Disciplina"
+  },
+  "tk2.s3.title": {
+    "en": "Keeping It Alive Through the Lifecycle",
+    "es": "Mantenerlo Vivo a lo Largo del Ciclo de Vida"
+  },
+  "tk3.crumb": {
+    "en": "Checklist",
+    "es": "Checklist"
+  },
+  "tk3.cta.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "tk3.cta.p": {
+    "en": "Use this alongside INA's <a href=\"project-structuring-framework-toolkit.html\" style=\"color:var(--amber);\">Project Structuring Framework&trade; Toolkit</a>, or ask INA to facilitate a gate review. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "Usá esto junto con el <a href=\"project-structuring-framework-toolkit.html\" style=\"color:var(--amber);\">Kit de la Metodología de Estructuración de Proyectos&trade;</a> de INA, o pedile a INA que facilite una revisión de gate. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "tk3.eyebrow": {
+    "en": "Checklist &middot; September 2026",
+    "es": "Checklist &middot; Septiembre 2026"
+  },
+  "tk3.g1.i1": {
+    "en": "Is an executive sponsor formally designated, by name?",
+    "es": "¿Hay un sponsor ejecutivo formalmente designado, por nombre?"
+  },
+  "tk3.g1.i2": {
+    "en": "Is the problem defined in verifiable terms, not as a generic intention?",
+    "es": "¿El problema está definido en términos verificables, no como una intención genérica?"
+  },
+  "tk3.g1.i3": {
+    "en": "Does the Strategic Diagnosis Document exist and is it signed?",
+    "es": "¿Existe el Documento de Diagnóstico Estratégico y está firmado?"
+  },
+  "tk3.g1.i4": {
+    "en": "Is the Alignment Letter signed by all relevant stakeholder units?",
+    "es": "¿La Carta de Alineación está firmada por todas las unidades interesadas relevantes?"
+  },
+  "tk3.g1.i5": {
+    "en": "Has at least a rough order-of-magnitude budget range been discussed?",
+    "es": "¿Se discutió al menos un rango presupuestario de orden de magnitud?"
+  },
+  "tk3.g1.kicker": {
+    "en": "Gate 1",
+    "es": "Gate 1"
+  },
+  "tk3.g1.title": {
+    "en": "Go/No-Go Decision",
+    "es": "Decisión de Continuar o No"
+  },
+  "tk3.g2.i1": {
+    "en": "Have at least two comparable technical alternatives been evaluated?",
+    "es": "¿Se evaluaron al menos dos alternativas técnicas comparables?"
+  },
+  "tk3.g2.i2": {
+    "en": "Is the 5-Year Financial Model built and reviewed by someone outside the project team?",
+    "es": "¿El Modelo Financiero a 5 Años está construido y revisado por alguien fuera del equipo del proyecto?"
+  },
+  "tk3.g2.i3": {
+    "en": "Is confirmed budget availability, or an identified funding source, in place?",
+    "es": "¿Hay disponibilidad de presupuesto confirmada, o una fuente de financiamiento identificada?"
+  },
+  "tk3.g2.i4": {
+    "en": "Does the Preliminary Risk Matrix cover all ten F5 risk categories?",
+    "es": "¿La Matriz de Riesgos Preliminar cubre las diez categorías de riesgo de F5?"
+  },
+  "tk3.g2.i5": {
+    "en": "Has the Business Case been validated against at least one external benchmark?",
+    "es": "¿El Business Case fue validado contra al menos un benchmark externo?"
+  },
+  "tk3.g2.kicker": {
+    "en": "Gate 2",
+    "es": "Gate 2"
+  },
+  "tk3.g2.title": {
+    "en": "Investment Decision",
+    "es": "Decisión de Inversión"
+  },
+  "tk3.g3.i1": {
+    "en": "Was the contractual model legally validated before drafting tender documentation?",
+    "es": "¿El modelo contractual fue validado legalmente antes de redactar la documentación de licitación?"
+  },
+  "tk3.g3.i2": {
+    "en": "Is the RACI Matrix signed off by every party it names?",
+    "es": "¿La Matriz RACI está aprobada por cada parte que nombra?"
+  },
+  "tk3.g3.i3": {
+    "en": "Do the technical specifications reflect the alternative selected at Gate 2, not an earlier draft?",
+    "es": "¿Las especificaciones técnicas reflejan la alternativa elegida en el Gate 2, no un borrador anterior?"
+  },
+  "tk3.g3.i4": {
+    "en": "Is a change management plan defined and resourced before implementation begins?",
+    "es": "¿Hay un plan de gestión del cambio definido y con recursos antes de que empiece la implementación?"
+  },
+  "tk3.g3.i5": {
+    "en": "Have environmental and social screening steps been completed where applicable?",
+    "es": "¿Se completaron los pasos de screening ambiental y social cuando corresponde?"
+  },
+  "tk3.g3.kicker": {
+    "en": "Gate 3",
+    "es": "Gate 3"
+  },
+  "tk3.g3.title": {
+    "en": "Authorization to Launch Procurement",
+    "es": "Autorización para Lanzar la Adquisición"
+  },
+  "tk3.g4.i1": {
+    "en": "Do delivered milestones match the Execution Plan's acceptance criteria?",
+    "es": "¿Los hitos entregados coinciden con los criterios de aceptación del Plan de Ejecución?"
+  },
+  "tk3.g4.i2": {
+    "en": "Have all contractual SLAs been tested, not just documented?",
+    "es": "¿Se probaron todos los SLA contractuales, no solo se documentaron?"
+  },
+  "tk3.g4.i3": {
+    "en": "Is the Go-Live Sign-off signed by both the PMO and the receiving operations team?",
+    "es": "¿El Sign-off de Puesta en Marcha está firmado tanto por la PMO como por el equipo de operaciones que recibe?"
+  },
+  "tk3.g4.i4": {
+    "en": "Are all open risk register items reviewed and either closed or explicitly carried into Phase V?",
+    "es": "¿Se revisaron todos los ítems abiertos del registro de riesgos, cerrándolos o llevándolos explícitamente a la Fase V?"
+  },
+  "tk3.g4.kicker": {
+    "en": "Gate 4",
+    "es": "Gate 4"
+  },
+  "tk3.g4.title": {
+    "en": "Solution Acceptance",
+    "es": "Aceptación de la Solución"
+  },
+  "tk3.g5.i1": {
+    "en": "Is the Performance Dashboard reviewed on a fixed cadence, not ad hoc?",
+    "es": "¿El Panel de Desempeño se revisa con una cadencia fija, no de forma ad hoc?"
+  },
+  "tk3.g5.i2": {
+    "en": "Is adoption tracked at 30/60/90 days post-launch, per INA's standard KPI set?",
+    "es": "¿Se mide la adopción a los 30/60/90 días post-lanzamiento, según el set de KPI estándar de INA?"
+  },
+  "tk3.g5.i3": {
+    "en": "Has the Closure &amp; Lessons-Learned Report been drafted and shared beyond the immediate project team?",
+    "es": "¿Se redactó el Informe de Cierre y Lecciones Aprendidas y se compartió más allá del equipo inmediato del proyecto?"
+  },
+  "tk3.g5.kicker": {
+    "en": "Continuous",
+    "es": "Continuo"
+  },
+  "tk3.g5.title": {
+    "en": "Ongoing Monitoring Checks",
+    "es": "Controles de Monitoreo Continuo"
+  },
+  "tk3.h1": {
+    "en": "Stage-Gate Checklist",
+    "es": "Checklist por Etapas"
+  },
+  "tk3.lede": {
+    "en": "What a steering committee should verify before passing each of the five gates in INA's Project Structuring Framework&trade; (F1).",
+    "es": "Qué debe verificar un comité de dirección antes de aprobar cada uno de los cinco gates de la Metodología de Estructuración de Proyectos&trade; de INA (F1)."
+  },
+  "tk3.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "tk3.s1.p1": {
+    "en": "Run through the relevant list before every steering committee meeting where a gate decision is on the agenda. Every unchecked item is a reason to delay the gate, not a reason to note it and proceed &mdash; a gate passed with open items just moves the risk downstream, where it costs more to fix.",
+    "es": "Recorré la lista correspondiente antes de cada reunión del comité de dirección donde haya una decisión de gate en agenda. Cada ítem sin marcar es una razón para postergar el gate, no una razón para tomar nota y seguir adelante &mdash; un gate aprobado con ítems abiertos solo traslada el riesgo hacia adelante, donde cuesta más resolverlo."
+  },
+  "tk3.s1.title": {
+    "en": "How to Use This Checklist",
+    "es": "Cómo Usar Este Checklist"
+  },
+  "tk4.crumb": {
+    "en": "Template",
+    "es": "Plantilla"
+  },
+  "tk4.cta.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "tk4.cta.p": {
+    "en": "INA's advisory team can help complete and adapt this charter to your program's regulatory context. See also INA's <a href=\"ai-adoption-public-sector-infrastructure.html\" style=\"color:var(--amber);\">AI Adoption for Public Sector Infrastructure</a> white paper. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "El equipo de asesoría de INA puede ayudar a completar y adaptar esta carta al contexto regulatorio de tu programa. Ver también el white paper de INA <a href=\"ai-adoption-public-sector-infrastructure.html\" style=\"color:var(--amber);\">Adopción de IA para Infraestructura del Sector Público</a>. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "tk4.eyebrow": {
+    "en": "Template &middot; September 2026",
+    "es": "Plantilla &middot; Septiembre 2026"
+  },
+  "tk4.h1": {
+    "en": "AI Governance Charter Template",
+    "es": "Plantilla de Carta de Gobernanza de IA"
+  },
+  "tk4.lede": {
+    "en": "A fill-in-the-blank charter for organizations deploying AI inside infrastructure programs, built on INA's AI Advisory Methodology&trade; (F4) and human-in-the-loop principle.",
+    "es": "Una carta para completar, para organizaciones que despliegan IA dentro de programas de infraestructura, construida sobre la Metodología de Asesoría en IA&trade; de INA (F4) y el principio de supervisión humana."
+  },
+  "tk4.s1.f1": {
+    "en": "[Organization / Program Name] &mdash; the entity this charter governs",
+    "es": "[Nombre de la Organización / Programa] &mdash; la entidad que gobierna esta carta"
+  },
+  "tk4.s1.f2": {
+    "en": "[In-Scope Use Cases] &mdash; the specific AI applications this charter covers (list from your Use-Case Register)",
+    "es": "[Casos de Uso Incluidos] &mdash; las aplicaciones de IA específicas que cubre esta carta (tomar del Registro de Casos de Uso)"
+  },
+  "tk4.s1.f3": {
+    "en": "[Out-of-Scope Uses] &mdash; applications explicitly excluded, or requiring a separate charter",
+    "es": "[Usos Excluidos] &mdash; aplicaciones explícitamente excluidas, o que requieren una carta separada"
+  },
+  "tk4.s1.f4": {
+    "en": "[Effective Date] &amp; [Review Date] &mdash; this charter must have a scheduled review, not an open-ended one",
+    "es": "[Fecha de Vigencia] y [Fecha de Revisión] &mdash; esta carta debe tener una revisión programada, no abierta indefinidamente"
+  },
+  "tk4.s1.fields.title": {
+    "en": "Fields to Complete",
+    "es": "Campos a Completar"
+  },
+  "tk4.s1.kicker": {
+    "en": "Section 1",
+    "es": "Sección 1"
+  },
+  "tk4.s1.p1": {
+    "en": "Fill in the bracketed fields below with your organization's specifics. This charter should be signed before any AI pilot goes live, not drafted retroactively after one.",
+    "es": "Completá los campos entre corchetes con los datos específicos de tu organización. Esta carta debe firmarse antes de que cualquier piloto de IA entre en producción, no redactarse retroactivamente después."
+  },
+  "tk4.s1.title": {
+    "en": "Purpose &amp; Scope",
+    "es": "Propósito y Alcance"
+  },
+  "tk4.s2.kicker": {
+    "en": "Section 2",
+    "es": "Sección 2"
+  },
+  "tk4.s2.p1": {
+    "en": "Name the role &mdash; not a department, an accountable role &mdash; authorized to approve each of the following:",
+    "es": "Nombrá el rol &mdash; no un área, sino un rol con rendición de cuentas &mdash; autorizado para aprobar cada una de las siguientes decisiones:"
+  },
+  "tk4.s2.r1.decision": {
+    "en": "A new AI use case entering pilot",
+    "es": "Un nuevo caso de uso de IA que entra en piloto"
+  },
+  "tk4.s2.r1.role": {
+    "en": "[Role, e.g. Program Director]",
+    "es": "[Rol, ej. Director de Programa]"
+  },
+  "tk4.s2.r2.decision": {
+    "en": "A pilot moving to production",
+    "es": "Un piloto que pasa a producción"
+  },
+  "tk4.s2.r2.role": {
+    "en": "[Role, e.g. Steering Committee]",
+    "es": "[Rol, ej. Comité de Dirección]"
+  },
+  "tk4.s2.r3.decision": {
+    "en": "A material change to a production model",
+    "es": "Un cambio material a un modelo en producción"
+  },
+  "tk4.s2.r3.role": {
+    "en": "[Role, e.g. Technical Committee]",
+    "es": "[Rol, ej. Comité Técnico]"
+  },
+  "tk4.s2.r4.decision": {
+    "en": "Retiring or decommissioning a model",
+    "es": "Retirar o dar de baja un modelo"
+  },
+  "tk4.s2.r4.role": {
+    "en": "[Role, e.g. Program Director]",
+    "es": "[Rol, ej. Director de Programa]"
+  },
+  "tk4.s2.th.decision": {
+    "en": "Decision",
+    "es": "Decisión"
+  },
+  "tk4.s2.th.role": {
+    "en": "Approving Role",
+    "es": "Rol que Aprueba"
+  },
+  "tk4.s2.title": {
+    "en": "Approval Authority",
+    "es": "Autoridad de Aprobación"
+  },
+  "tk4.s3.can.li1": {
+    "en": "Draft a first-pass score, recommendation or summary",
+    "es": "Redactar un primer borrador de score, recomendación o resumen"
+  },
+  "tk4.s3.can.li2": {
+    "en": "Flag anomalies for human review",
+    "es": "Señalar anomalías para revisión humana"
+  },
+  "tk4.s3.can.li3": {
+    "en": "Accelerate document review and comparative analysis",
+    "es": "Acelerar la revisión de documentos y el análisis comparativo"
+  },
+  "tk4.s3.can.title": {
+    "en": "What AI Can Do",
+    "es": "Lo Que la IA Puede Hacer"
+  },
+  "tk4.s3.kicker": {
+    "en": "Section 3",
+    "es": "Sección 3"
+  },
+  "tk4.s3.p1": {
+    "en": "No AI agent or model holds final decision authority over a public resource, a citizen-facing determination, or committed funds. Complete the reviewer column for your program.",
+    "es": "Ningún agente o modelo de IA tiene la autoridad final de decisión sobre un recurso público, una determinación que afecte a un ciudadano, o fondos comprometidos. Completá la columna de revisor para tu programa."
+  },
+  "tk4.s3.stays.li1": {
+    "en": "Approving a permit, benefit, penalty or award: [Role]",
+    "es": "Aprobar un permiso, beneficio, sanción o adjudicación: [Rol]"
+  },
+  "tk4.s3.stays.li2": {
+    "en": "Accepting a model output as final: [Role]",
+    "es": "Aceptar el resultado de un modelo como definitivo: [Rol]"
+  },
+  "tk4.s3.stays.li3": {
+    "en": "Committing funds or signing a contract: [Role]",
+    "es": "Comprometer fondos o firmar un contrato: [Rol]"
+  },
+  "tk4.s3.stays.title": {
+    "en": "What Stays Human &mdash; Named Reviewer",
+    "es": "Lo Que Sigue Siendo Humano &mdash; Revisor Nombrado"
+  },
+  "tk4.s3.title": {
+    "en": "Human-in-the-Loop Checkpoints",
+    "es": "Puntos de Control con Supervisión Humana"
+  },
+  "tk4.s4.b1": {
+    "en": "[Review cadence] for testing outputs against demographic/geographic segments",
+    "es": "[Cadencia de revisión] para probar resultados contra segmentos demográficos/geográficos"
+  },
+  "tk4.s4.b2": {
+    "en": "[Threshold] error rate that triggers automatic suspension of a model",
+    "es": "[Umbral] de tasa de error que dispara la suspensión automática de un modelo"
+  },
+  "tk4.s4.b3": {
+    "en": "[Named owner] accountable for the monitoring log",
+    "es": "[Responsable nombrado] a cargo del registro de monitoreo"
+  },
+  "tk4.s4.col1.title": {
+    "en": "Data Handling Policy",
+    "es": "Política de Manejo de Datos"
+  },
+  "tk4.s4.col2.title": {
+    "en": "Bias &amp; Error Monitoring",
+    "es": "Monitoreo de Sesgo y Error"
+  },
+  "tk4.s4.d1": {
+    "en": "[Data classification level] permitted for use with external AI providers",
+    "es": "[Nivel de clasificación de datos] permitido para uso con proveedores externos de IA"
+  },
+  "tk4.s4.d2": {
+    "en": "[Retention period] for data shared with any AI system",
+    "es": "[Período de retención] para datos compartidos con cualquier sistema de IA"
+  },
+  "tk4.s4.d3": {
+    "en": "[Named owner] for confidentiality terms in AI vendor contracts",
+    "es": "[Responsable nombrado] para los términos de confidencialidad en contratos con proveedores de IA"
+  },
+  "tk4.s4.kicker": {
+    "en": "Section 4",
+    "es": "Sección 4"
+  },
+  "tk4.s4.title": {
+    "en": "Data Handling &amp; Bias Monitoring",
+    "es": "Manejo de Datos y Monitoreo de Sesgo"
+  },
+  "tk4.s5.i1": {
+    "en": "Is there a documented process for a frontline user to flag a suspected model error?",
+    "es": "¿Existe un proceso documentado para que un usuario de primera línea reporte un posible error del modelo?"
+  },
+  "tk4.s5.i2": {
+    "en": "Is there a named escalation point reachable within [response time]?",
+    "es": "¿Hay un punto de escalamiento nombrado, alcanzable dentro de [tiempo de respuesta]?"
+  },
+  "tk4.s5.i3": {
+    "en": "Is this charter reviewed at a fixed interval, not only after an incident?",
+    "es": "¿Esta carta se revisa en un intervalo fijo, no solo después de un incidente?"
+  },
+  "tk4.s5.i4": {
+    "en": "Is every in-scope use case re-confirmed against this charter at each review?",
+    "es": "¿Cada caso de uso incluido se reconfirma contra esta carta en cada revisión?"
+  },
+  "tk4.s5.kicker": {
+    "en": "Section 5",
+    "es": "Sección 5"
+  },
+  "tk4.s5.title": {
+    "en": "Escalation &amp; Review Cycle",
+    "es": "Escalamiento y Ciclo de Revisión"
+  },
+  "tr1.crumb": {
+    "en": "Technical Report",
+    "es": "Informe Técnico"
+  },
+  "tr1.eyebrow": {
+    "en": "Technical Report &middot; September 2026",
+    "es": "Informe Técnico &middot; Septiembre 2026"
+  },
+  "tr1.h1": {
+    "en": "Fiber route planning methodology",
+    "es": "Metodología de planificación de rutas de fibra"
+  },
+  "tr1.lede": {
+    "en": "How backbone and last-mile fiber routes actually get planned &mdash; and why the planning stage, not the trenching, is what determines a project's real cost per kilometer.",
+    "es": "Cómo se planifican realmente las rutas de fibra troncal y de última milla &mdash; y por qué la etapa de planificación, no el tendido, es lo que determina el costo real por kilómetro de un proyecto."
+  },
+  "tr1.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "tr1.s1.p1": {
+    "en": "Most fiber project overruns are traced back to decisions made before a single meter of cable was ordered. A route drawn on a map without a rights-of-way survey, a utility-conflict check, or a realistic build-method choice per segment routinely costs 20&ndash;40% more than the original estimate &mdash; not because construction went badly, but because the plan never matched the ground.",
+    "es": "La mayoría de los sobrecostos en proyectos de fibra se rastrean hasta decisiones tomadas antes de pedir un solo metro de cable. Una ruta dibujada sobre un mapa sin un relevamiento de derechos de paso, un chequeo de conflictos con otras redes de servicios, o una elección realista del método de construcción por tramo, habitualmente termina costando entre un 20% y un 40% más que la estimación original &mdash; no porque la construcción haya salido mal, sino porque el plan nunca coincidió con el terreno."
+  },
+  "tr1.s1.p2": {
+    "en": "This report sets out INA's route planning methodology for backbone, metro and last-mile fiber &mdash; the sequence of geographic, regulatory and technical analysis that should happen before a tender is drafted, not during it.",
+    "es": "Este informe presenta la metodología de planificación de rutas de INA para fibra troncal, metropolitana y de última milla &mdash; la secuencia de análisis geográfico, regulatorio y técnico que debería ocurrir antes de redactar un pliego, no durante su ejecución."
+  },
+  "tr1.s1.quote": {
+    "en": "A fiber route is a financial model with a shovel attached. Get the model wrong and the shovel just executes the mistake faster.",
+    "es": "Una ruta de fibra es un modelo financiero con una pala pegada. Si el modelo está mal, la pala solo ejecuta el error más rápido."
+  },
+  "tr1.s1.quote.cite": {
+    "en": "INA Project Structuring Framework&trade; &mdash; Field Notes, 2026",
+    "es": "Metodología de Estructuración de Proyectos de INA&trade; &mdash; Notas de Campo, 2026"
+  },
+  "tr1.s2.callout.lab": {
+    "en": "Reality Check",
+    "es": "Chequeo de Realidad"
+  },
+  "tr1.s2.callout.p": {
+    "en": "A route that is 8% longer but follows existing rights-of-way and avoids three utility conflicts is almost always cheaper &mdash; and faster to permit &mdash; than the geometrically shortest path.",
+    "es": "Una ruta un 8% más larga pero que sigue derechos de paso existentes y evita tres conflictos con otras redes de servicios casi siempre resulta más barata &mdash; y más rápida de permisar &mdash; que el camino geométricamente más corto."
+  },
+  "tr1.s2.chip1": {
+    "en": "Backbone",
+    "es": "Troncal"
+  },
+  "tr1.s2.chip2": {
+    "en": "Metro Ring",
+    "es": "Anillo Metropolitano"
+  },
+  "tr1.s2.chip3": {
+    "en": "Last-Mile",
+    "es": "Última Milla"
+  },
+  "tr1.s2.chip4": {
+    "en": "FTTH",
+    "es": "FTTH"
+  },
+  "tr1.s2.chip5": {
+    "en": "FTTC",
+    "es": "FTTC"
+  },
+  "tr1.s2.kicker": {
+    "en": "Context",
+    "es": "Contexto"
+  },
+  "tr1.s2.p1": {
+    "en": "Three variables move the cost-per-kilometer of a fiber route more than any other design choice: the mix of build methods across segments, how early rights-of-way are secured relative to detailed design, and whether the route follows demand density or just the shortest geographic path.",
+    "es": "Tres variables mueven el costo por kilómetro de una ruta de fibra más que cualquier otra decisión de diseño: la combinación de métodos de construcción por tramo, qué tan temprano se aseguran los derechos de paso respecto del diseño de detalle, y si la ruta sigue la densidad de demanda o simplemente el camino geográfico más corto."
+  },
+  "tr1.s3.b1.d": {
+    "en": "By the time land access is checked, the route is already in the tender documents &mdash; making every conflict a costly redesign instead of a planning-stage adjustment.",
+    "es": "Para cuando se verifica el acceso al terreno, la ruta ya está en los pliegos de licitación &mdash; convirtiendo cada conflicto en un rediseño costoso en vez de un ajuste en etapa de planificación."
+  },
+  "tr1.s3.b1.t": {
+    "en": "Rights-of-way surveyed after the route is already fixed",
+    "es": "Derechos de paso relevados después de fijar la ruta"
+  },
+  "tr1.s3.b2.d": {
+    "en": "Water, gas, power and drainage networks are rarely cross-referenced against the proposed route until construction crews hit them in the field.",
+    "es": "Las redes de agua, gas, energía y drenaje rara vez se cruzan contra la ruta propuesta hasta que las cuadrillas de construcción las encuentran en el campo."
+  },
+  "tr1.s3.b2.t": {
+    "en": "No utility-conflict overlay before design",
+    "es": "Sin superposición de conflictos con otras redes antes del diseño"
+  },
+  "tr1.s3.b3.d": {
+    "en": "Trenching, aerial and microtrenching have very different cost and speed profiles; a route priced with a single method almost always misprices some segments badly.",
+    "es": "El tendido subterráneo, aéreo y la microzanja tienen perfiles de costo y velocidad muy distintos; una ruta cotizada con un único método casi siempre tasa mal algunos tramos."
+  },
+  "tr1.s3.b3.t": {
+    "en": "One build method assumed for the entire route",
+    "es": "Se asume un único método de construcción para toda la ruta"
+  },
+  "tr1.s3.b4.d": {
+    "en": "Municipal, environmental and crossing permits often take longer than construction itself &mdash; starting them only after final design routinely becomes the critical path.",
+    "es": "Los permisos municipales, ambientales y de cruces suelen tardar más que la propia construcción &mdash; iniciarlos recién después del diseño final habitualmente se convierte en el camino crítico."
+  },
+  "tr1.s3.b4.t": {
+    "en": "Permitting sequenced after design instead of in parallel",
+    "es": "Los permisos se tramitan después del diseño en vez de en paralelo"
+  },
+  "tr1.s3.b5.d": {
+    "en": "The shortest path between two points is rarely the path that passes closest to the most paying customers or highest-priority public sites along the way.",
+    "es": "El camino más corto entre dos puntos rara vez es el que pasa más cerca de los clientes que más pagan o de los sitios públicos de mayor prioridad en el trayecto."
+  },
+  "tr1.s3.b5.t": {
+    "en": "Route follows geography, not demand",
+    "es": "La ruta sigue la geografía, no la demanda"
+  },
+  "tr1.s3.kicker": {
+    "en": "Diagnosis",
+    "es": "Diagnóstico"
+  },
+  "tr1.s3.p1": {
+    "en": "The recurring planning failures INA sees across backbone and last-mile projects.",
+    "es": "Las fallas de planificación que INA observa de forma recurrente en proyectos troncales y de última milla."
+  },
+  "tr1.s4.kicker": {
+    "en": "Methodology",
+    "es": "Metodología"
+  },
+  "tr1.s4.p1": {
+    "en": "INA sequences fiber route planning as five stages, feeding directly into the <b style=\"color:var(--text);\">Project Structuring Framework&trade; (F1)</b> Phase II business case &mdash; route economics are a direct input to the financial model, not a downstream engineering detail.",
+    "es": "INA secuencia la planificación de rutas de fibra en cinco etapas, que alimentan directamente el business case de la Fase II de la <b style=\"color:var(--text);\">Metodología de Estructuración de Proyectos&trade; (F1)</b> &mdash; la economía de la ruta es un insumo directo del modelo financiero, no un detalle de ingeniería posterior."
+  },
+  "tr1.s4.r1.act": {
+    "en": "Overlay population density, business clusters and anchor institutions (schools, hospitals, government sites) against candidate corridors",
+    "es": "Superponer densidad poblacional, clústeres de negocios e instituciones ancla (escuelas, hospitales, sitios de gobierno) sobre los corredores candidatos"
+  },
+  "tr1.s4.r1.out": {
+    "en": "Prioritized corridor shortlist",
+    "es": "Lista corta de corredores priorizados"
+  },
+  "tr1.s4.r1.stage": {
+    "en": "Demand & Anchor Mapping",
+    "es": "Mapeo de Demanda y Anclas"
+  },
+  "tr1.s4.r2.act": {
+    "en": "Confirm which segments run along public road/rail easements versus require new private access agreements",
+    "es": "Confirmar qué tramos corren sobre servidumbres públicas de rutas o vías férreas y cuáles requieren nuevos acuerdos de acceso privado"
+  },
+  "tr1.s4.r2.out": {
+    "en": "Access risk map",
+    "es": "Mapa de riesgo de acceso"
+  },
+  "tr1.s4.r2.stage": {
+    "en": "Rights-of-Way Survey",
+    "es": "Relevamiento de Derechos de Paso"
+  },
+  "tr1.s4.r3.act": {
+    "en": "Cross-reference water, gas, power and drainage utility records against the proposed alignment",
+    "es": "Cruzar los registros de redes de agua, gas, energía y drenaje contra la traza propuesta"
+  },
+  "tr1.s4.r3.out": {
+    "en": "Conflict points log",
+    "es": "Registro de puntos de conflicto"
+  },
+  "tr1.s4.r3.stage": {
+    "en": "Utility Conflict Overlay",
+    "es": "Superposición de Conflictos con Otras Redes"
+  },
+  "tr1.s4.r4.act": {
+    "en": "Assign trenching, aerial or microtrenching per segment based on terrain, existing infrastructure and permitting complexity",
+    "es": "Asignar tendido subterráneo, aéreo o microzanja por tramo según terreno, infraestructura existente y complejidad de permisos"
+  },
+  "tr1.s4.r4.out": {
+    "en": "Segment-level cost model",
+    "es": "Modelo de costos por tramo"
+  },
+  "tr1.s4.r4.stage": {
+    "en": "Build-Method Segmentation",
+    "es": "Segmentación por Método de Construcción"
+  },
+  "tr1.s4.r5.act": {
+    "en": "Map every required permit (municipal, environmental, crossing) against the design timeline and launch the longest-lead items first",
+    "es": "Mapear cada permiso requerido (municipal, ambiental, de cruces) contra el cronograma de diseño y lanzar primero los de mayor plazo"
+  },
+  "tr1.s4.r5.out": {
+    "en": "Permitting critical-path schedule",
+    "es": "Cronograma de camino crítico de permisos"
+  },
+  "tr1.s4.r5.stage": {
+    "en": "Permitting Sequencing",
+    "es": "Secuenciación de Permisos"
+  },
+  "tr1.s4.th1": {
+    "en": "Planning Stage",
+    "es": "Etapa de Planificación"
+  },
+  "tr1.s4.th2": {
+    "en": "Key Activity",
+    "es": "Actividad Clave"
+  },
+  "tr1.s4.th3": {
+    "en": "Typical Output",
+    "es": "Resultado Típico"
+  },
+  "tr1.s5.kicker": {
+    "en": "Technical Parameters",
+    "es": "Parámetros Técnicos"
+  },
+  "tr1.s5.p1": {
+    "en": "No single build method is right for an entire route. Most cost-competitive projects mix all three below across different segments.",
+    "es": "Ningún método de construcción es correcto para toda una ruta. La mayoría de los proyectos más competitivos en costo combinan los tres métodos siguientes en distintos tramos."
+  },
+  "tr1.s5.r1.c": {
+    "en": "High",
+    "es": "Alto"
+  },
+  "tr1.s5.r1.f": {
+    "en": "Backbone routes, rural corridors with few crossings",
+    "es": "Rutas troncales, corredores rurales con pocos cruces"
+  },
+  "tr1.s5.r1.m": {
+    "en": "Traditional Trenching",
+    "es": "Zanjeo Tradicional"
+  },
+  "tr1.s5.r1.s": {
+    "en": "Slow",
+    "es": "Lenta"
+  },
+  "tr1.s5.r2.c": {
+    "en": "Low",
+    "es": "Bajo"
+  },
+  "tr1.s5.r2.f": {
+    "en": "Existing pole infrastructure available, lower right-of-way friction",
+    "es": "Infraestructura de postes existente disponible, menor fricción de derecho de paso"
+  },
+  "tr1.s5.r2.m": {
+    "en": "Aerial (Pole-Attached)",
+    "es": "Aéreo (Tendido en Postes)"
+  },
+  "tr1.s5.r2.s": {
+    "en": "Fast",
+    "es": "Rápida"
+  },
+  "tr1.s5.r3.c": {
+    "en": "Medium",
+    "es": "Medio"
+  },
+  "tr1.s5.r3.f": {
+    "en": "Dense urban last-mile, paved surfaces, minimal traffic disruption required",
+    "es": "Última milla urbana densa, superficies pavimentadas, se requiere mínima disrupción del tránsito"
+  },
+  "tr1.s5.r3.m": {
+    "en": "Microtrenching",
+    "es": "Microzanja"
+  },
+  "tr1.s5.r3.s": {
+    "en": "Fast",
+    "es": "Rápida"
+  },
+  "tr1.s5.r4.c": {
+    "en": "High",
+    "es": "Alto"
+  },
+  "tr1.s5.r4.f": {
+    "en": "River, road or rail crossings where open trenching isn't viable",
+    "es": "Cruces de ríos, rutas o vías férreas donde el zanjeo abierto no es viable"
+  },
+  "tr1.s5.r4.m": {
+    "en": "Directional Boring",
+    "es": "Perforación Dirigida"
+  },
+  "tr1.s5.r4.s": {
+    "en": "Medium",
+    "es": "Media"
+  },
+  "tr1.s5.th1": {
+    "en": "Method",
+    "es": "Método"
+  },
+  "tr1.s5.th2": {
+    "en": "Relative Cost per Km",
+    "es": "Costo Relativo por Km"
+  },
+  "tr1.s5.th3": {
+    "en": "Deployment Speed",
+    "es": "Velocidad de Despliegue"
+  },
+  "tr1.s5.th4": {
+    "en": "Best Fit",
+    "es": "Mejor Uso"
+  },
+  "tr1.s6.kicker": {
+    "en": "Risk",
+    "es": "Riesgo"
+  },
+  "tr1.s6.r1.mitig": {
+    "en": "Rights-of-way survey completed before final route is locked, not after",
+    "es": "Relevamiento de derechos de paso completado antes de fijar la ruta final, no después"
+  },
+  "tr1.s6.r1.risk": {
+    "en": "Rights-of-way delays or denials",
+    "es": "Demoras o negativas de derechos de paso"
+  },
+  "tr1.s6.r2.mitig": {
+    "en": "Utility conflict overlay cross-checked with local operators before tender",
+    "es": "Superposición de conflictos verificada con los operadores locales antes de la licitación"
+  },
+  "tr1.s6.r2.risk": {
+    "en": "Undocumented utility conflicts during trenching",
+    "es": "Conflictos no documentados con otras redes durante el zanjeo"
+  },
+  "tr1.s6.r3.mitig": {
+    "en": "Longest-lead permits launched in parallel with detailed design, not after it",
+    "es": "Los permisos de mayor plazo se inician en paralelo con el diseño de detalle, no después"
+  },
+  "tr1.s6.r3.risk": {
+    "en": "Permitting becomes the critical path",
+    "es": "Los permisos se convierten en el camino crítico"
+  },
+  "tr1.s6.r4.mitig": {
+    "en": "Targeted geotechnical sampling on segments with uncertain subsurface conditions",
+    "es": "Muestreo geotécnico focalizado en tramos con condiciones de subsuelo inciertas"
+  },
+  "tr1.s6.r4.risk": {
+    "en": "Geotechnical surprises mid-construction",
+    "es": "Sorpresas geotécnicas durante la construcción"
+  },
+  "tr1.s6.r5.mitig": {
+    "en": "As-built documentation and splice point mapping delivered as a closeout condition, not an afterthought",
+    "es": "Documentación as-built y mapeo de puntos de empalme entregados como condición de cierre, no como algo posterior"
+  },
+  "tr1.s6.r5.risk": {
+    "en": "Post-deployment fiber cuts and slow restoration",
+    "es": "Cortes de fibra post-despliegue y restauración lenta"
+  },
+  "tr1.s7.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "tr1.s7.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "tr1.s7.next.p": {
+    "en": "INA's advisory team can run a route feasibility review against your candidate corridors before you finalize design. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "El equipo de asesoría de INA puede revisar la factibilidad de ruta sobre sus corredores candidatos antes de finalizar el diseño. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "tr1.s7.p1": {
+    "en": "Route planning is not a precursor to the fiber business case &mdash; it is the business case, expressed geographically. Treating it with the same rigor as financial structuring is what separates projects that hit their cost-per-kilometer target from those that don't.",
+    "es": "La planificación de rutas no es un paso previo al business case de fibra &mdash; es el business case, expresado geográficamente. Tratarla con el mismo rigor que la estructuración financiera es lo que separa a los proyectos que cumplen su objetivo de costo por kilómetro de los que no."
+  },
+  "tr1.s7.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "tr1.s7.rec1": {
+    "en": "Complete the rights-of-way survey before the route is locked into tender documents.",
+    "es": "Completar el relevamiento de derechos de paso antes de fijar la ruta en los pliegos de licitación."
+  },
+  "tr1.s7.rec2": {
+    "en": "Cross-check the proposed alignment against utility records before finalizing design.",
+    "es": "Cruzar la traza propuesta contra los registros de otras redes antes de finalizar el diseño."
+  },
+  "tr1.s7.rec3": {
+    "en": "Segment the route by build method instead of pricing it with a single assumed method.",
+    "es": "Segmentar la ruta por método de construcción en vez de cotizarla con un único método asumido."
+  },
+  "tr1.s7.rec4": {
+    "en": "Launch the longest-lead permits in parallel with detailed design.",
+    "es": "Iniciar los permisos de mayor plazo en paralelo con el diseño de detalle."
+  },
+  "tr1.s7.rec5": {
+    "en": "Weight the route toward demand density, not just the shortest geographic path.",
+    "es": "Orientar la ruta hacia la densidad de demanda, no solo hacia el camino geográfico más corto."
+  },
+  "tr1.s7.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Project Structuring Framework&trade; (F1).",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA, basado en la Metodología de Estructuración de Proyectos de INA&trade; (F1)."
+  },
+  "tr1.toc.barriers": {
+    "en": "Where Route Plans Go Wrong",
+    "es": "Dónde Fallan los Planes de Ruta"
+  },
+  "tr1.toc.conclusion": {
+    "en": "Conclusion & Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "tr1.toc.methods": {
+    "en": "Deployment Method Comparison",
+    "es": "Comparación de Métodos de Despliegue"
+  },
+  "tr1.toc.risk": {
+    "en": "Risk Register",
+    "es": "Registro de Riesgos"
+  },
+  "tr1.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "tr1.toc.whynow": {
+    "en": "Why Route Planning Drives Economics",
+    "es": "Por Qué la Planificación Determina la Economía"
+  },
+  "tr1.toc.workflow": {
+    "en": "The Planning Workflow",
+    "es": "El Flujo de Planificación"
+  },
+  "tr2.crumb": {
+    "en": "Technical Report",
+    "es": "Informe Técnico"
+  },
+  "tr2.eyebrow": {
+    "en": "Technical Report &middot; September 2026",
+    "es": "Informe Técnico &middot; Septiembre 2026"
+  },
+  "tr2.h1": {
+    "en": "Data center siting fundamentals",
+    "es": "Fundamentos de localización de data centers"
+  },
+  "tr2.lede": {
+    "en": "Why power availability, not land cost, has become the binding constraint on data center siting decisions &mdash; especially for AI training and inference workloads.",
+    "es": "Por qué la disponibilidad de energía, y no el costo del terreno, se convirtió en la restricción determinante para las decisiones de localización de data centers &mdash; especialmente para cargas de entrenamiento e inferencia de IA."
+  },
+  "tr2.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "tr2.s1.p1": {
+    "en": "A decade ago, data center siting was mostly a land-and-connectivity exercise. Today, for any facility built to support AI training or high-density inference, the first question is no longer where the land is cheapest &mdash; it's where enough power, at the right redundancy tier, can actually be interconnected within a financeable timeline.",
+    "es": "Hace una década, la localización de un data center era sobre todo un ejercicio de terreno y conectividad. Hoy, para cualquier instalación construida para soportar entrenamiento de IA o inferencia de alta densidad, la primera pregunta ya no es dónde el terreno es más barato &mdash; es dónde se puede interconectar suficiente energía, en el nivel de redundancia adecuado, dentro de un plazo financiable."
+  },
+  "tr2.s1.p2": {
+    "en": "This report sets out the siting criteria INA applies to datacenter projects, why power availability now dominates every other variable, and the redundancy, cooling and regulatory considerations that determine whether a candidate site is actually financeable.",
+    "es": "Este informe presenta los criterios de localización que INA aplica a proyectos de datacenter, por qué la disponibilidad de energía hoy domina sobre cualquier otra variable, y las consideraciones de redundancia, enfriamiento y regulación que determinan si un sitio candidato es realmente financiable."
+  },
+  "tr2.s1.quote": {
+    "en": "Land is a one-time decision. The power interconnection queue is the decision that actually controls your delivery date.",
+    "es": "El terreno es una decisión que se toma una sola vez. La cola de interconexión eléctrica es la decisión que realmente controla la fecha de entrega."
+  },
+  "tr2.s1.quote.cite": {
+    "en": "INA Project Structuring Framework&trade; &mdash; Field Notes, 2026",
+    "es": "Metodología de Estructuración de Proyectos de INA&trade; &mdash; Notas de Campo, 2026"
+  },
+  "tr2.s2.callout.lab": {
+    "en": "Reality Check",
+    "es": "Chequeo de Realidad"
+  },
+  "tr2.s2.callout.p": {
+    "en": "A site with cheaper land but a multi-year power interconnection queue is not a cheaper site &mdash; it's a delayed site, and delay is what actually erodes a data center business case.",
+    "es": "Un sitio con terreno más barato pero una cola de interconexión eléctrica de varios años no es un sitio más barato &mdash; es un sitio demorado, y la demora es lo que realmente erosiona el business case de un data center."
+  },
+  "tr2.s2.chip1": {
+    "en": "Hyperscale",
+    "es": "Hyperscale"
+  },
+  "tr2.s2.chip2": {
+    "en": "Colocation",
+    "es": "Colocation"
+  },
+  "tr2.s2.chip3": {
+    "en": "Edge",
+    "es": "Edge"
+  },
+  "tr2.s2.chip4": {
+    "en": "AI Training",
+    "es": "Entrenamiento de IA"
+  },
+  "tr2.s2.chip5": {
+    "en": "AI Inference",
+    "es": "Inferencia de IA"
+  },
+  "tr2.s2.kicker": {
+    "en": "Context",
+    "es": "Contexto"
+  },
+  "tr2.s2.p1": {
+    "en": "AI training clusters can require rack densities several multiples higher than a traditional enterprise data hall &mdash; which changes the siting calculus for power, cooling and even structural load in ways that a land-cost comparison alone will never capture.",
+    "es": "Los clústeres de entrenamiento de IA pueden requerir densidades de rack varias veces superiores a las de un data hall corporativo tradicional &mdash; lo que cambia el cálculo de localización para energía, enfriamiento e incluso carga estructural de maneras que una comparación de costo de terreno jamás captura."
+  },
+  "tr2.s3.b1.d": {
+    "en": "Utility interconnection queues can run years long. Sponsors that check queue position after site selection frequently discover the timeline no longer fits the financing plan.",
+    "es": "Las colas de interconexión con la red eléctrica pueden extenderse años. Los sponsors que verifican la posición en la cola después de elegir el sitio suelen descubrir que el plazo ya no encaja con el plan de financiamiento."
+  },
+  "tr2.s3.b1.t": {
+    "en": "Power queue position checked too late",
+    "es": "Se verifica tarde la posición en la cola de energía"
+  },
+  "tr2.s3.b2.d": {
+    "en": "High-density AI racks push cooling demand well beyond traditional air-cooled designs, and water-stressed regions can turn a promising site into a permitting fight.",
+    "es": "Los racks de alta densidad para IA empujan la demanda de enfriamiento mucho más allá de los diseños tradicionales por aire, y las regiones con estrés hídrico pueden convertir un sitio prometedor en una disputa de permisos."
+  },
+  "tr2.s3.b2.t": {
+    "en": "Cooling and water access treated as an afterthought",
+    "es": "El acceso a agua y enfriamiento se trata como algo secundario"
+  },
+  "tr2.s3.b3.d": {
+    "en": "Tier III versus Tier IV changes both capex and the site's power and cooling footprint substantially &mdash; it needs to be a Phase II input, not a Phase IV surprise.",
+    "es": "Tier III versus Tier IV cambia sustancialmente tanto el capex como la huella de energía y enfriamiento del sitio &mdash; necesita ser un insumo de la Fase II, no una sorpresa de la Fase IV."
+  },
+  "tr2.s3.b3.t": {
+    "en": "Redundancy tier chosen after the business case, not before",
+    "es": "El nivel de redundancia se elige después del business case, no antes"
+  },
+  "tr2.s3.b4.d": {
+    "en": "Inference workloads are far more latency-sensitive than training workloads &mdash; a site optimized purely for power can still be the wrong site for a latency-sensitive service.",
+    "es": "Las cargas de inferencia son mucho más sensibles a la latencia que las de entrenamiento &mdash; un sitio optimizado solo por energía puede seguir siendo el sitio equivocado para un servicio sensible a la latencia."
+  },
+  "tr2.s3.b4.t": {
+    "en": "Network latency to demand centers underweighted",
+    "es": "Se subestima la latencia de red hacia los centros de demanda"
+  },
+  "tr2.s3.b5.d": {
+    "en": "Water use, noise and grid-load concerns increasingly trigger community opposition &mdash; engaging regulators and communities early avoids late-stage permitting reversals.",
+    "es": "Las preocupaciones por uso de agua, ruido y carga sobre la red eléctrica cada vez generan más oposición comunitaria &mdash; involucrar temprano a reguladores y comunidades evita reversiones de permisos en etapas avanzadas."
+  },
+  "tr2.s3.b5.t": {
+    "en": "Community and regulatory engagement started after design",
+    "es": "El acercamiento comunitario y regulatorio arranca después del diseño"
+  },
+  "tr2.s3.kicker": {
+    "en": "Diagnosis",
+    "es": "Diagnóstico"
+  },
+  "tr2.s3.p1": {
+    "en": "The recurring siting mistakes INA sees across public and private datacenter projects.",
+    "es": "Los errores de localización recurrentes que INA observa en proyectos de datacenter públicos y privados."
+  },
+  "tr2.s4.kicker": {
+    "en": "Methodology",
+    "es": "Metodología"
+  },
+  "tr2.s4.p1": {
+    "en": "INA evaluates candidate sites against six criteria, weighted according to workload type, as part of the <b style=\"color:var(--text);\">Project Structuring Framework&trade; (F1)</b> Phase II business case for datacenter projects.",
+    "es": "INA evalúa los sitios candidatos contra seis criterios, ponderados según el tipo de carga, como parte del business case de la Fase II de la <b style=\"color:var(--text);\">Metodología de Estructuración de Proyectos&trade; (F1)</b> para proyectos de datacenter."
+  },
+  "tr2.s4.r1.ai": {
+    "en": "Often the single largest operating cost and the primary delivery-timeline constraint",
+    "es": "Suele ser el mayor costo operativo y la principal restricción del plazo de entrega"
+  },
+  "tr2.s4.r1.c": {
+    "en": "Power Availability & Cost",
+    "es": "Disponibilidad y Costo de Energía"
+  },
+  "tr2.s4.r1.w": {
+    "en": "Interconnection queue position, substation capacity, tariff structure",
+    "es": "Posición en la cola de interconexión, capacidad de la subestación, estructura tarifaria"
+  },
+  "tr2.s4.r2.ai": {
+    "en": "Training clusters can tolerate more scheduled downtime than production inference services",
+    "es": "Los clústeres de entrenamiento pueden tolerar más downtime programado que los servicios de inferencia en producción"
+  },
+  "tr2.s4.r2.c": {
+    "en": "Redundancy Architecture",
+    "es": "Arquitectura de Redundancia"
+  },
+  "tr2.s4.r2.w": {
+    "en": "Required uptime tier (N+1, 2N) versus site's grid and backup capacity",
+    "es": "Nivel de disponibilidad requerido (N+1, 2N) versus capacidad de red y respaldo del sitio"
+  },
+  "tr2.s4.r3.ai": {
+    "en": "High-density AI racks frequently require liquid cooling, not traditional air cooling",
+    "es": "Los racks de IA de alta densidad frecuentemente requieren enfriamiento líquido, no aire tradicional"
+  },
+  "tr2.s4.r3.c": {
+    "en": "Cooling & Water Access",
+    "es": "Enfriamiento y Acceso a Agua"
+  },
+  "tr2.s4.r3.w": {
+    "en": "Local water stress, availability of liquid cooling infrastructure, climate",
+    "es": "Estrés hídrico local, disponibilidad de infraestructura de enfriamiento líquido, clima"
+  },
+  "tr2.s4.r4.ai": {
+    "en": "Critical for inference; largely irrelevant for batch training workloads",
+    "es": "Crítico para inferencia; en gran medida irrelevante para cargas de entrenamiento por lotes"
+  },
+  "tr2.s4.r4.c": {
+    "en": "Network Latency",
+    "es": "Latencia de Red"
+  },
+  "tr2.s4.r4.w": {
+    "en": "Round-trip time to the primary demand centers the facility will serve",
+    "es": "Tiempo de ida y vuelta hacia los principales centros de demanda que la instalación servirá"
+  },
+  "tr2.s4.r5.ai": {
+    "en": "A 15&ndash;20 year asset life means today's climate risk models matter more than today's weather",
+    "es": "Una vida útil de 15 a 20 años implica que los modelos de riesgo climático actuales importan más que el clima de hoy"
+  },
+  "tr2.s4.r5.c": {
+    "en": "Land & Climate Risk",
+    "es": "Riesgo de Terreno y Clima"
+  },
+  "tr2.s4.r5.w": {
+    "en": "Flood zones, seismic exposure, long-term climate projections",
+    "es": "Zonas de inundación, exposición sísmica, proyecciones climáticas de largo plazo"
+  },
+  "tr2.s4.r6.ai": {
+    "en": "Data residency rules increasingly shape where AI infrastructure can legally be sited",
+    "es": "Las reglas de residencia de datos cada vez condicionan más dónde puede localizarse legalmente la infraestructura de IA"
+  },
+  "tr2.s4.r6.c": {
+    "en": "Regulatory & Tax Environment",
+    "es": "Entorno Regulatorio y Fiscal"
+  },
+  "tr2.s4.r6.w": {
+    "en": "Permitting timeline, incentive programs, data residency requirements",
+    "es": "Plazo de permisos, programas de incentivos, requisitos de residencia de datos"
+  },
+  "tr2.s4.th1": {
+    "en": "Criterion",
+    "es": "Criterio"
+  },
+  "tr2.s4.th2": {
+    "en": "What It Measures",
+    "es": "Qué Mide"
+  },
+  "tr2.s4.th3": {
+    "en": "Why It Matters for AI Workloads",
+    "es": "Por Qué Importa para Cargas de IA"
+  },
+  "tr2.s5.kicker": {
+    "en": "Technical Parameters",
+    "es": "Parámetros Técnicos"
+  },
+  "tr2.s5.p1": {
+    "en": "Redundancy tier is a Phase II decision, not a construction detail &mdash; it drives power, cooling and capex simultaneously.",
+    "es": "El nivel de redundancia es una decisión de Fase II, no un detalle de construcción &mdash; determina simultáneamente energía, enfriamiento y capex."
+  },
+  "tr2.s5.r1.c": {
+    "en": "Non-critical batch training, development environments",
+    "es": "Entrenamiento por lotes no crítico, entornos de desarrollo"
+  },
+  "tr2.s5.r1.d": {
+    "en": "Single path for power and cooling, no redundancy",
+    "es": "Camino único de energía y enfriamiento, sin redundancia"
+  },
+  "tr2.s5.r1.t": {
+    "en": "Tier I",
+    "es": "Tier I"
+  },
+  "tr2.s5.r1.u": {
+    "en": "~99.67%",
+    "es": "~99.67%"
+  },
+  "tr2.s5.r2.c": {
+    "en": "Small colocation, edge sites",
+    "es": "Colocation pequeño, sitios edge"
+  },
+  "tr2.s5.r2.d": {
+    "en": "Redundant capacity components, single distribution path",
+    "es": "Componentes de capacidad redundantes, camino de distribución único"
+  },
+  "tr2.s5.r2.t": {
+    "en": "Tier II",
+    "es": "Tier II"
+  },
+  "tr2.s5.r2.u": {
+    "en": "~99.75%",
+    "es": "~99.75%"
+  },
+  "tr2.s5.r3.c": {
+    "en": "Most hyperscale and AI training facilities",
+    "es": "La mayoría de instalaciones hyperscale y de entrenamiento de IA"
+  },
+  "tr2.s5.r3.d": {
+    "en": "Concurrently maintainable, multiple distribution paths, one active",
+    "es": "Mantenible de forma concurrente, múltiples caminos de distribución, uno activo"
+  },
+  "tr2.s5.r3.t": {
+    "en": "Tier III",
+    "es": "Tier III"
+  },
+  "tr2.s5.r3.u": {
+    "en": "~99.98%",
+    "es": "~99.98%"
+  },
+  "tr2.s5.r4.c": {
+    "en": "Latency-sensitive production inference, mission-critical services",
+    "es": "Inferencia en producción sensible a la latencia, servicios de misión crítica"
+  },
+  "tr2.s5.r4.d": {
+    "en": "Fault tolerant, multiple active distribution paths",
+    "es": "Tolerante a fallas, múltiples caminos de distribución activos"
+  },
+  "tr2.s5.r4.t": {
+    "en": "Tier IV",
+    "es": "Tier IV"
+  },
+  "tr2.s5.r4.u": {
+    "en": "~99.995%",
+    "es": "~99.995%"
+  },
+  "tr2.s5.th1": {
+    "en": "Tier",
+    "es": "Tier"
+  },
+  "tr2.s5.th2": {
+    "en": "Description",
+    "es": "Descripción"
+  },
+  "tr2.s5.th3": {
+    "en": "Target Uptime",
+    "es": "Disponibilidad Objetivo"
+  },
+  "tr2.s5.th4": {
+    "en": "Typical Use Case",
+    "es": "Caso de Uso Típico"
+  },
+  "tr2.s6.kicker": {
+    "en": "Risk",
+    "es": "Riesgo"
+  },
+  "tr2.s6.r1.mitig": {
+    "en": "Queue position confirmed with the utility before site selection is finalized",
+    "es": "Posición en la cola confirmada con la distribuidora antes de finalizar la selección del sitio"
+  },
+  "tr2.s6.r1.risk": {
+    "en": "Power interconnection queue delay",
+    "es": "Demora en la cola de interconexión eléctrica"
+  },
+  "tr2.s6.r2.mitig": {
+    "en": "Water availability studies and liquid-cooling alternatives assessed at siting stage",
+    "es": "Estudios de disponibilidad de agua y alternativas de enfriamiento líquido evaluados en la etapa de localización"
+  },
+  "tr2.s6.r2.risk": {
+    "en": "Water stress limiting cooling capacity",
+    "es": "Estrés hídrico que limita la capacidad de enfriamiento"
+  },
+  "tr2.s6.r3.mitig": {
+    "en": "Long-horizon climate risk modeling included in site due diligence, not just current flood maps",
+    "es": "Modelado de riesgo climático de largo plazo incluido en la debida diligencia del sitio, no solo mapas de inundación actuales"
+  },
+  "tr2.s6.r3.risk": {
+    "en": "Climate exposure over asset lifetime",
+    "es": "Exposición climática durante la vida útil del activo"
+  },
+  "tr2.s6.r4.mitig": {
+    "en": "Community and regulator engagement started during site evaluation, not after permitting begins",
+    "es": "Acercamiento a la comunidad y a reguladores iniciado durante la evaluación del sitio, no después de comenzar los permisos"
+  },
+  "tr2.s6.r4.risk": {
+    "en": "Community or regulatory opposition",
+    "es": "Oposición comunitaria o regulatoria"
+  },
+  "tr2.s6.r5.mitig": {
+    "en": "Utility interconnection cost estimate independently validated before financial close",
+    "es": "Estimación de costo de interconexión validada de forma independiente antes del cierre financiero"
+  },
+  "tr2.s6.r5.risk": {
+    "en": "Grid interconnection cost overrun",
+    "es": "Sobrecosto de interconexión con la red eléctrica"
+  },
+  "tr2.s7.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "tr2.s7.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "tr2.s7.next.p": {
+    "en": "INA's advisory team can run a site feasibility review against your candidate locations before you commit capital. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "El equipo de asesoría de INA puede revisar la factibilidad de sus sitios candidatos antes de comprometer capital. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "tr2.s7.p1": {
+    "en": "Siting is where a datacenter project's real economics get decided, long before ground is broken. Power queue position, redundancy tier and cooling strategy need to be evaluated together, at the same stage as the financial model &mdash; not sequenced after a site is already chosen for its land price.",
+    "es": "La localización es donde se define la economía real de un proyecto de datacenter, mucho antes de romper el terreno. La posición en la cola de energía, el nivel de redundancia y la estrategia de enfriamiento deben evaluarse juntos, en la misma etapa que el modelo financiero &mdash; no después de haber elegido un sitio solo por el precio del terreno."
+  },
+  "tr2.s7.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "tr2.s7.rec1": {
+    "en": "Confirm power interconnection queue position before finalizing site selection.",
+    "es": "Confirmar la posición en la cola de interconexión eléctrica antes de finalizar la selección del sitio."
+  },
+  "tr2.s7.rec2": {
+    "en": "Decide the redundancy tier as a Phase II business-case input, not a construction-stage detail.",
+    "es": "Definir el nivel de redundancia como un insumo del business case de Fase II, no como un detalle de la etapa de construcción."
+  },
+  "tr2.s7.rec3": {
+    "en": "Assess water availability and cooling strategy jointly, especially for high-density AI racks.",
+    "es": "Evaluar en conjunto la disponibilidad de agua y la estrategia de enfriamiento, especialmente para racks de IA de alta densidad."
+  },
+  "tr2.s7.rec4": {
+    "en": "Weight latency requirements against power availability separately for training versus inference workloads.",
+    "es": "Ponderar los requisitos de latencia frente a la disponibilidad de energía por separado para cargas de entrenamiento versus inferencia."
+  },
+  "tr2.s7.rec5": {
+    "en": "Start community and regulatory engagement during site evaluation, not after permitting begins.",
+    "es": "Iniciar el acercamiento a la comunidad y a reguladores durante la evaluación del sitio, no después de comenzar los permisos."
+  },
+  "tr2.s7.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Project Structuring Framework&trade; (F1).",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA, basado en la Metodología de Estructuración de Proyectos de INA&trade; (F1)."
+  },
+  "tr2.toc.barriers": {
+    "en": "Where Siting Decisions Go Wrong",
+    "es": "Dónde Fallan las Decisiones de Localización"
+  },
+  "tr2.toc.conclusion": {
+    "en": "Conclusion & Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "tr2.toc.criteria": {
+    "en": "The Siting Evaluation Framework",
+    "es": "El Framework de Evaluación de Localización"
+  },
+  "tr2.toc.risk": {
+    "en": "Risk Register",
+    "es": "Registro de Riesgos"
+  },
+  "tr2.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "tr2.toc.tiers": {
+    "en": "Redundancy Tier Comparison",
+    "es": "Comparación de Niveles de Redundancia"
+  },
+  "tr2.toc.whynow": {
+    "en": "Why Power Is the Binding Constraint",
+    "es": "Por Qué la Energía Es la Restricción Determinante"
+  },
+  "tr3.crumb": {
+    "en": "Technical Report",
+    "es": "Informe Técnico"
+  },
+  "tr3.eyebrow": {
+    "en": "Technical Report &middot; September 2026",
+    "es": "Informe Técnico &middot; Septiembre 2026"
+  },
+  "tr3.h1": {
+    "en": "Spectrum strategy for LEO satellite integration",
+    "es": "Estrategia de espectro para integración satelital LEO"
+  },
+  "tr3.lede": {
+    "en": "How low-earth-orbit satellite capacity complements terrestrial fiber and FWA networks &mdash; and where it genuinely beats a terrestrial build versus where it doesn't.",
+    "es": "Cómo la capacidad satelital de órbita baja complementa las redes terrestres de fibra y FWA &mdash; y en qué casos realmente supera a una construcción terrestre y en cuáles no."
+  },
+  "tr3.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "tr3.s1.p1": {
+    "en": "Low-earth-orbit satellite constellations have shifted from a niche rural-connectivity option to a genuine layer in national connectivity strategy &mdash; but sponsors that treat LEO as a universal substitute for terrestrial buildout, rather than one layer in a hybrid design, consistently overpay for coverage they didn't need to buy from orbit.",
+    "es": "Las constelaciones satelitales de órbita baja pasaron de ser una opción de nicho para conectividad rural a una capa genuina dentro de la estrategia nacional de conectividad &mdash; pero los sponsors que tratan a LEO como un sustituto universal de la construcción terrestre, en vez de una capa dentro de un diseño híbrido, terminan pagando de más por cobertura que no necesitaban comprar desde el espacio."
+  },
+  "tr3.s1.p2": {
+    "en": "This report sets out how INA evaluates LEO integration alongside fiber and Fixed Wireless Access &mdash; spectrum and regulatory considerations, hybrid network design, and the specific scenarios where LEO's economics genuinely beat a terrestrial build.",
+    "es": "Este informe presenta cómo INA evalúa la integración de LEO junto con la fibra y el Fixed Wireless Access &mdash; las consideraciones de espectro y regulación, el diseño de red híbrida, y los escenarios específicos donde la economía de LEO realmente supera a una construcción terrestre."
+  },
+  "tr3.s1.quote": {
+    "en": "LEO doesn't replace the last mile. It replaces the last mile you were never going to be able to justify building.",
+    "es": "LEO no reemplaza la última milla. Reemplaza la última milla que de todos modos nunca ibas a poder justificar construir."
+  },
+  "tr3.s1.quote.cite": {
+    "en": "INA Project Structuring Framework&trade; &mdash; Field Notes, 2026",
+    "es": "Metodología de Estructuración de Proyectos de INA&trade; &mdash; Notas de Campo, 2026"
+  },
+  "tr3.s2.callout.lab": {
+    "en": "Reality Check",
+    "es": "Chequeo de Realidad"
+  },
+  "tr3.s2.callout.p": {
+    "en": "The regulatory licensing timeline for a new satellite service in-country is frequently the longest item on the critical path &mdash; longer than manufacturing or shipping the ground terminals themselves.",
+    "es": "El plazo de licenciamiento regulatorio para un nuevo servicio satelital en un país suele ser el ítem más largo del camino crítico &mdash; más largo que fabricar o enviar los propios terminales terrestres."
+  },
+  "tr3.s2.chip1": {
+    "en": "Ku-band",
+    "es": "Banda Ku"
+  },
+  "tr3.s2.chip2": {
+    "en": "Ka-band",
+    "es": "Banda Ka"
+  },
+  "tr3.s2.chip3": {
+    "en": "V-band",
+    "es": "Banda V"
+  },
+  "tr3.s2.chip4": {
+    "en": "Non-Geostationary (NGSO)",
+    "es": "No Geoestacionaria (NGSO)"
+  },
+  "tr3.s2.kicker": {
+    "en": "Context",
+    "es": "Contexto"
+  },
+  "tr3.s2.p1": {
+    "en": "Falling terminal costs, growing constellation capacity and improving latency have made LEO viable for far more than emergency backup &mdash; but spectrum coordination and regulatory licensing remain the two variables that most often determine how fast it can actually be deployed.",
+    "es": "La caída en el costo de los terminales, la creciente capacidad de las constelaciones y la mejora en la latencia hicieron que LEO sea viable para mucho más que un respaldo de emergencia &mdash; pero la coordinación de espectro y el licenciamiento regulatorio siguen siendo las dos variables que más determinan qué tan rápido puede desplegarse realmente."
+  },
+  "tr3.s3.b1.d": {
+    "en": "Coordinating frequency use with incumbent operators and neighboring administrations can take longer than the commercial rollout plan assumes.",
+    "es": "Coordinar el uso de frecuencias con operadores incumbentes y administraciones vecinas puede tardar más de lo que asume el plan de despliegue comercial."
+  },
+  "tr3.s3.b1.t": {
+    "en": "Spectrum coordination started after commercial commitments",
+    "es": "La coordinación de espectro arranca después de los compromisos comerciales"
+  },
+  "tr3.s3.b2.d": {
+    "en": "Landing rights, market-access authorization and local presence requirements vary widely by country and are rarely as fast as vendors initially suggest.",
+    "es": "Los derechos de aterrizaje, la autorización de acceso al mercado y los requisitos de presencia local varían mucho por país y rara vez son tan rápidos como sugieren inicialmente los proveedores."
+  },
+  "tr3.s3.b2.t": {
+    "en": "Regulatory licensing treated as a formality",
+    "es": "El licenciamiento regulatorio se trata como un trámite formal"
+  },
+  "tr3.s3.b3.d": {
+    "en": "Per-site terminal and installation cost needs to be compared against terrestrial CPE cost on the same total-cost-of-ownership basis, not just monthly service fees.",
+    "es": "El costo de terminal e instalación por sitio debe compararse contra el costo del CPE terrestre en la misma base de costo total de propiedad, no solo contra la tarifa mensual de servicio."
+  },
+  "tr3.s3.b3.t": {
+    "en": "Terminal cost excluded from the total-cost comparison",
+    "es": "El costo del terminal queda fuera de la comparación de costo total"
+  },
+  "tr3.s3.b4.d": {
+    "en": "Weather, satellite handoffs and congestion during peak demand can meaningfully affect delivered throughput &mdash; SLAs should reflect this, not assume best-case conditions.",
+    "es": "El clima, los traspasos entre satélites y la congestión en horas pico pueden afectar de forma significativa el throughput entregado &mdash; los SLA deberían reflejar esto, no asumir condiciones ideales."
+  },
+  "tr3.s3.b4.t": {
+    "en": "Capacity and latency variability underestimated",
+    "es": "Se subestima la variabilidad de capacidad y latencia"
+  },
+  "tr3.s3.b5.d": {
+    "en": "National operators with existing rural obligations sometimes contest new satellite licenses as unfair competition &mdash; early regulatory engagement reduces this friction.",
+    "es": "Los operadores nacionales con obligaciones rurales existentes a veces disputan las nuevas licencias satelitales como competencia desleal &mdash; el acercamiento regulatorio temprano reduce esta fricción."
+  },
+  "tr3.s3.b5.t": {
+    "en": "Incumbent operator friction not anticipated",
+    "es": "No se anticipa la fricción con el operador incumbente"
+  },
+  "tr3.s3.kicker": {
+    "en": "Diagnosis",
+    "es": "Diagnóstico"
+  },
+  "tr3.s3.p1": {
+    "en": "The recurring mistakes INA sees when LEO capacity is added to a national connectivity strategy.",
+    "es": "Los errores recurrentes que INA observa cuando se incorpora capacidad LEO a una estrategia nacional de conectividad."
+  },
+  "tr3.s4.kicker": {
+    "en": "Methodology",
+    "es": "Metodología"
+  },
+  "tr3.s4.p1": {
+    "en": "INA designs hybrid networks as layered architecture, with LEO satellite capacity assigned a specific role rather than treated as a blanket substitute &mdash; consistent with the typology guidance in the <b style=\"color:var(--text);\">Project Structuring Framework&trade; (F1)</b>.",
+    "es": "INA diseña las redes híbridas como una arquitectura por capas, asignando a la capacidad satelital LEO un rol específico en vez de tratarla como un sustituto general &mdash; en línea con la guía de tipología de la <b style=\"color:var(--text);\">Metodología de Estructuración de Proyectos&trade; (F1)</b>."
+  },
+  "tr3.s4.r1.l": {
+    "en": "Backbone",
+    "es": "Troncal"
+  },
+  "tr3.s4.r1.r": {
+    "en": "High-capacity trunk connectivity between major population centers",
+    "es": "Conectividad troncal de alta capacidad entre los principales centros poblacionales"
+  },
+  "tr3.s4.r1.t": {
+    "en": "Fiber",
+    "es": "Fibra"
+  },
+  "tr3.s4.r2.l": {
+    "en": "Metro Aggregation",
+    "es": "Agregación Metropolitana"
+  },
+  "tr3.s4.r2.r": {
+    "en": "Aggregating traffic from last-mile sites into the backbone",
+    "es": "Agregación del tráfico de sitios de última milla hacia la troncal"
+  },
+  "tr3.s4.r2.t": {
+    "en": "Fiber / FWA",
+    "es": "Fibra / FWA"
+  },
+  "tr3.s4.r3.l": {
+    "en": "Underserved Last-Mile",
+    "es": "Última Milla Desatendida"
+  },
+  "tr3.s4.r3.r": {
+    "en": "Connecting low-density sites where terrestrial buildout cost per subscriber is prohibitive",
+    "es": "Conectar sitios de baja densidad donde el costo de construcción terrestre por suscriptor es prohibitivo"
+  },
+  "tr3.s4.r3.t": {
+    "en": "LEO Satellite",
+    "es": "Satélite LEO"
+  },
+  "tr3.s4.r4.l": {
+    "en": "Redundancy / Emergency",
+    "es": "Redundancia / Emergencia"
+  },
+  "tr3.s4.r4.r": {
+    "en": "Rapid-deploy backup connectivity during disasters or terrestrial outages",
+    "es": "Conectividad de respaldo de despliegue rápido durante desastres o cortes terrestres"
+  },
+  "tr3.s4.r4.t": {
+    "en": "LEO Satellite (backup)",
+    "es": "Satélite LEO (respaldo)"
+  },
+  "tr3.s4.th1": {
+    "en": "Layer",
+    "es": "Capa"
+  },
+  "tr3.s4.th2": {
+    "en": "Technology",
+    "es": "Tecnología"
+  },
+  "tr3.s4.th3": {
+    "en": "Role",
+    "es": "Rol"
+  },
+  "tr3.s5.kicker": {
+    "en": "Fit Analysis",
+    "es": "Análisis de Uso"
+  },
+  "tr3.s5.p1": {
+    "en": "LEO's economics beat a terrestrial build in specific, identifiable scenarios &mdash; not universally.",
+    "es": "La economía de LEO supera a una construcción terrestre en escenarios específicos e identificables &mdash; no de forma universal."
+  },
+  "tr3.s5.r1.l": {
+    "en": "Strong fit &mdash; fixed per-site cost independent of distance",
+    "es": "Buen uso &mdash; costo fijo por sitio independiente de la distancia"
+  },
+  "tr3.s5.r1.s": {
+    "en": "Sites 40+ km from the nearest backbone node",
+    "es": "Sitios a más de 40 km del nodo troncal más cercano"
+  },
+  "tr3.s5.r1.t": {
+    "en": "Extension cost per subscriber often prohibitive",
+    "es": "Costo de extensión por suscriptor frecuentemente prohibitivo"
+  },
+  "tr3.s5.r2.l": {
+    "en": "Strong fit",
+    "es": "Buen uso"
+  },
+  "tr3.s5.r2.s": {
+    "en": "Population density under ~5 households/km&sup2;",
+    "es": "Densidad poblacional menor a ~5 hogares/km&sup2;"
+  },
+  "tr3.s5.r2.t": {
+    "en": "Rarely recovers buildout cost within a financeable horizon",
+    "es": "Rara vez recupera el costo de construcción dentro de un horizonte financiable"
+  },
+  "tr3.s5.r3.l": {
+    "en": "Strong fit &mdash; deployable in hours",
+    "es": "Buen uso &mdash; desplegable en horas"
+  },
+  "tr3.s5.r3.s": {
+    "en": "Disaster response / temporary deployments",
+    "es": "Respuesta a desastres / despliegues temporales"
+  },
+  "tr3.s5.r3.t": {
+    "en": "Not applicable &mdash; no time to build",
+    "es": "No aplica &mdash; no hay tiempo para construir"
+  },
+  "tr3.s5.r4.l": {
+    "en": "Weak fit &mdash; fiber/FWA remain more cost-effective at scale",
+    "es": "Uso débil &mdash; la fibra/FWA siguen siendo más eficientes en costo a escala"
+  },
+  "tr3.s5.r4.s": {
+    "en": "Dense urban or peri-urban demand clusters",
+    "es": "Clústeres de demanda urbanos o periurbanos densos"
+  },
+  "tr3.s5.r4.t": {
+    "en": "Cost per subscriber is low once density is high enough",
+    "es": "El costo por suscriptor es bajo una vez que la densidad es suficiente"
+  },
+  "tr3.s5.th1": {
+    "en": "Scenario",
+    "es": "Escenario"
+  },
+  "tr3.s5.th2": {
+    "en": "Terrestrial Economics",
+    "es": "Economía Terrestre"
+  },
+  "tr3.s5.th3": {
+    "en": "LEO Fit",
+    "es": "Uso de LEO"
+  },
+  "tr3.s6.kicker": {
+    "en": "Risk",
+    "es": "Riesgo"
+  },
+  "tr3.s6.r1.mitig": {
+    "en": "Coordination process initiated with regulators and neighboring administrations before commercial launch",
+    "es": "Proceso de coordinación iniciado con reguladores y administraciones vecinas antes del lanzamiento comercial"
+  },
+  "tr3.s6.r1.risk": {
+    "en": "Spectrum interference or coordination dispute",
+    "es": "Interferencia o disputa de coordinación de espectro"
+  },
+  "tr3.s6.r2.mitig": {
+    "en": "Licensing timeline built into the rollout plan as the critical path, not treated as a formality",
+    "es": "Plazo de licenciamiento incorporado al plan de despliegue como camino crítico, no tratado como un trámite"
+  },
+  "tr3.s6.r2.risk": {
+    "en": "Regulatory licensing delay",
+    "es": "Demora en el licenciamiento regulatorio"
+  },
+  "tr3.s6.r3.mitig": {
+    "en": "SLAs set against realistic, not best-case, throughput and latency figures",
+    "es": "SLA definidos contra cifras realistas de throughput y latencia, no contra el mejor caso"
+  },
+  "tr3.s6.r3.risk": {
+    "en": "Weather and capacity-driven latency variability",
+    "es": "Variabilidad de latencia por clima y capacidad"
+  },
+  "tr3.s6.r4.mitig": {
+    "en": "Regulator and incumbent engagement started during planning, not after license issuance",
+    "es": "Acercamiento a regulador e incumbente iniciado durante la planificación, no después de emitida la licencia"
+  },
+  "tr3.s6.r4.risk": {
+    "en": "Incumbent operator dispute",
+    "es": "Disputa con el operador incumbente"
+  },
+  "tr3.s6.r5.mitig": {
+    "en": "Terminal and contract terms structured to allow migration as constellation capacity improves",
+    "es": "Términos de terminal y contrato estructurados para permitir migración a medida que mejora la capacidad de la constelación"
+  },
+  "tr3.s6.r5.risk": {
+    "en": "Technology and constellation-generation obsolescence",
+    "es": "Obsolescencia tecnológica y de generación de constelación"
+  },
+  "tr3.s7.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "tr3.s7.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "tr3.s7.next.p": {
+    "en": "INA's advisory team can assess where LEO fits your connectivity strategy before you commit to a constellation partner. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "El equipo de asesoría de INA puede evaluar dónde encaja LEO en su estrategia de conectividad antes de comprometerse con un socio de constelación. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "tr3.s7.p1": {
+    "en": "LEO satellite capacity is a genuine layer in a modern connectivity strategy, not a universal substitute for terrestrial infrastructure. Assigning it a specific, deliberate role &mdash; underserved last-mile, redundancy, emergency response &mdash; produces a far better return than defaulting to it wherever a terrestrial business case looks difficult.",
+    "es": "La capacidad satelital LEO es una capa genuina dentro de una estrategia de conectividad moderna, no un sustituto universal de la infraestructura terrestre. Asignarle un rol específico y deliberado &mdash; última milla desatendida, redundancia, respuesta a emergencias &mdash; produce un retorno mucho mejor que recurrir a ella por defecto cada vez que un business case terrestre se ve difícil."
+  },
+  "tr3.s7.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "tr3.s7.rec1": {
+    "en": "Start spectrum coordination and regulatory licensing before commercial commitments are made.",
+    "es": "Iniciar la coordinación de espectro y el licenciamiento regulatorio antes de asumir compromisos comerciales."
+  },
+  "tr3.s7.rec2": {
+    "en": "Compare terminal cost against terrestrial CPE on a total-cost-of-ownership basis, not monthly fees alone.",
+    "es": "Comparar el costo del terminal contra el CPE terrestre en base a costo total de propiedad, no solo contra la tarifa mensual."
+  },
+  "tr3.s7.rec3": {
+    "en": "Assign LEO a specific role in the network design instead of treating it as a blanket substitute.",
+    "es": "Asignar a LEO un rol específico en el diseño de red en vez de tratarlo como un sustituto general."
+  },
+  "tr3.s7.rec4": {
+    "en": "Set SLAs against realistic throughput and latency figures, not best-case conditions.",
+    "es": "Definir los SLA contra cifras realistas de throughput y latencia, no contra las condiciones ideales."
+  },
+  "tr3.s7.rec5": {
+    "en": "Engage incumbent operators and regulators early to reduce licensing friction.",
+    "es": "Involucrar temprano a operadores incumbentes y reguladores para reducir la fricción de licenciamiento."
+  },
+  "tr3.s7.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Project Structuring Framework&trade; (F1).",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA, basado en la Metodología de Estructuración de Proyectos de INA&trade; (F1)."
+  },
+  "tr3.toc.barriers": {
+    "en": "Where LEO Integration Goes Wrong",
+    "es": "Dónde Falla la Integración de LEO"
+  },
+  "tr3.toc.conclusion": {
+    "en": "Conclusion & Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "tr3.toc.design": {
+    "en": "Hybrid Network Design",
+    "es": "Diseño de Red Híbrida"
+  },
+  "tr3.toc.fit": {
+    "en": "Where LEO Wins vs. Terrestrial",
+    "es": "Dónde Gana LEO frente a lo Terrestre"
+  },
+  "tr3.toc.risk": {
+    "en": "Risk Register",
+    "es": "Registro de Riesgos"
+  },
+  "tr3.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "tr3.toc.whynow": {
+    "en": "Why LEO Changes the Last-Mile Calculus",
+    "es": "Por Qué LEO Cambia el Cálculo de Última Milla"
+  },
+  "tr4.cat1.def": {
+    "en": "Misalignment between the project and the sponsor's actual strategic priorities or mandate",
+    "es": "Desalineación entre el proyecto y las prioridades estratégicas o el mandato real del sponsor"
+  },
+  "tr4.cat1.imp": {
+    "en": "Can stall financing conversations entirely if sponsorship commitment looks uncertain",
+    "es": "Puede frenar por completo las conversaciones de financiamiento si el compromiso del sponsor luce incierto"
+  },
+  "tr4.cat1.name": {
+    "en": "Strategic",
+    "es": "Estratégico"
+  },
+  "tr4.cat1.trig": {
+    "en": "Change in government administration, shifting national digital agenda",
+    "es": "Cambio de gobierno, giro en la agenda digital nacional"
+  },
+  "tr4.cat10.def": {
+    "en": "Physical climate exposure over the asset's multi-decade operating life",
+    "es": "Exposición climática física durante la vida operativa de varias décadas del activo"
+  },
+  "tr4.cat10.imp": {
+    "en": "Increasingly required in climate-risk disclosure for DFI-backed financing",
+    "es": "Cada vez más exigido en la divulgación de riesgo climático para financiamiento respaldado por IFD"
+  },
+  "tr4.cat10.name": {
+    "en": "Climate",
+    "es": "Climático"
+  },
+  "tr4.cat10.trig": {
+    "en": "Flood-prone route or site, increasing extreme-weather frequency in the region",
+    "es": "Ruta o sitio propenso a inundaciones, frecuencia creciente de eventos climáticos extremos en la región"
+  },
+  "tr4.cat2.def": {
+    "en": "Exposure to changes in telecom, spectrum, data or environmental regulation during the project life",
+    "es": "Exposición a cambios en la regulación de telecomunicaciones, espectro, datos o ambiente durante la vida del proyecto"
+  },
+  "tr4.cat2.imp": {
+    "en": "Directly affects covenant structure and step-in rights lenders require",
+    "es": "Afecta directamente la estructura de covenants y los derechos de step-in que exigen los prestamistas"
+  },
+  "tr4.cat2.name": {
+    "en": "Regulatory",
+    "es": "Regulatorio"
+  },
+  "tr4.cat2.trig": {
+    "en": "Pending regulatory reform, ambiguous licensing framework",
+    "es": "Reforma regulatoria pendiente, marco de licenciamiento ambiguo"
+  },
+  "tr4.cat3.def": {
+    "en": "Uncertainty in technology choice, architecture or vendor delivery capability",
+    "es": "Incertidumbre en la elección de tecnología, arquitectura o capacidad de entrega del proveedor"
+  },
+  "tr4.cat3.imp": {
+    "en": "Drives technical due diligence scope and independent engineer requirements",
+    "es": "Determina el alcance de la debida diligencia técnica y los requisitos de ingeniero independiente"
+  },
+  "tr4.cat3.name": {
+    "en": "Technical",
+    "es": "Técnico"
+  },
+  "tr4.cat3.trig": {
+    "en": "Unproven technology at required scale, single-vendor dependency",
+    "es": "Tecnología no probada a la escala requerida, dependencia de un único proveedor"
+  },
+  "tr4.cat4.def": {
+    "en": "Cost overrun, revenue shortfall or currency exposure relative to the financial model",
+    "es": "Sobrecosto, caída de ingresos o exposición cambiaria respecto del modelo financiero"
+  },
+  "tr4.cat4.imp": {
+    "en": "Directly sets debt sizing, tenor and pricing",
+    "es": "Determina directamente el tamaño de la deuda, el plazo y la tasa"
+  },
+  "tr4.cat4.name": {
+    "en": "Financial",
+    "es": "Financiero"
+  },
+  "tr4.cat4.trig": {
+    "en": "FX volatility, unvalidated demand assumptions, thin contingency reserves",
+    "es": "Volatilidad cambiaria, supuestos de demanda no validados, reservas de contingencia insuficientes"
+  },
+  "tr4.cat5.def": {
+    "en": "Uncertainty in actual customer demand or competitive response",
+    "es": "Incertidumbre sobre la demanda real de clientes o la respuesta competitiva"
+  },
+  "tr4.cat5.imp": {
+    "en": "Lenders often require minimum revenue contracts (IRUs, colocation) before close",
+    "es": "Los prestamistas suelen exigir contratos de ingresos mínimos (IRU, colocation) antes del cierre"
+  },
+  "tr4.cat5.name": {
+    "en": "Market",
+    "es": "Mercado"
+  },
+  "tr4.cat5.trig": {
+    "en": "No anchor tenant secured, optimistic take-up curve, new competitive entrant",
+    "es": "Sin cliente ancla asegurado, curva de adopción optimista, nuevo competidor entrante"
+  },
+  "tr4.cat6.def": {
+    "en": "Financial or operational failure of a vendor, contractor or offtake counterparty",
+    "es": "Falla financiera u operativa de un proveedor, contratista o contraparte de offtake"
+  },
+  "tr4.cat6.imp": {
+    "en": "Shapes performance bond, parent guarantee and step-in clause requirements",
+    "es": "Determina los requisitos de garantía de cumplimiento, aval de casa matriz y cláusulas de step-in"
+  },
+  "tr4.cat6.name": {
+    "en": "Counterparty",
+    "es": "Contraparte"
+  },
+  "tr4.cat6.trig": {
+    "en": "Vendor credit deterioration, contractor over-leverage on other projects",
+    "es": "Deterioro crediticio del proveedor, sobreapalancamiento del contratista en otros proyectos"
+  },
+  "tr4.cat7.def": {
+    "en": "Risk that the asset underperforms operationally once live &mdash; SLA breaches, maintenance gaps",
+    "es": "Riesgo de que el activo tenga bajo desempeño operativo una vez en marcha &mdash; incumplimiento de SLA, falta de mantenimiento"
+  },
+  "tr4.cat7.imp": {
+    "en": "Feeds into debt service reserve account sizing",
+    "es": "Alimenta el dimensionamiento de la cuenta de reserva de servicio de deuda"
+  },
+  "tr4.cat7.name": {
+    "en": "Operational",
+    "es": "Operacional"
+  },
+  "tr4.cat7.trig": {
+    "en": "Understaffed operations team, no independent monitoring in place",
+    "es": "Equipo de operaciones subdimensionado, sin monitoreo independiente"
+  },
+  "tr4.cat8.def": {
+    "en": "Environmental impact, land use and community/social license exposure",
+    "es": "Impacto ambiental, uso de suelo y exposición de licencia social o comunitaria"
+  },
+  "tr4.cat8.imp": {
+    "en": "Triggers safeguard requirements from multilateral lenders specifically",
+    "es": "Dispara requisitos de salvaguardas específicamente de los prestamistas multilaterales"
+  },
+  "tr4.cat8.name": {
+    "en": "Environmental & Social",
+    "es": "Ambiental y Social"
+  },
+  "tr4.cat8.trig": {
+    "en": "Protected land in route corridor, unresolved community consultation",
+    "es": "Terreno protegido en el corredor de la ruta, consulta comunitaria sin resolver"
+  },
+  "tr4.cat9.def": {
+    "en": "Weakness in the sponsor's own decision-making, reporting or internal controls",
+    "es": "Debilidad en la toma de decisiones, el reporte o los controles internos del propio sponsor"
+  },
+  "tr4.cat9.imp": {
+    "en": "Directly affects lender confidence in disbursement conditions being met",
+    "es": "Afecta directamente la confianza del prestamista en que se cumplan las condiciones de desembolso"
+  },
+  "tr4.cat9.name": {
+    "en": "Governance",
+    "es": "Gobernanza"
+  },
+  "tr4.cat9.trig": {
+    "en": "No independent PMO, unclear gate-approval authority",
+    "es": "Sin PMO independiente, autoridad de aprobación de gates poco clara"
+  },
+  "tr4.crumb": {
+    "en": "Technical Report",
+    "es": "Informe Técnico"
+  },
+  "tr4.eyebrow": {
+    "en": "Technical Report &middot; September 2026",
+    "es": "Informe Técnico &middot; Septiembre 2026"
+  },
+  "tr4.h1": {
+    "en": "Risk categories in infrastructure project finance",
+    "es": "Categorías de riesgo en el financiamiento de proyectos de infraestructura"
+  },
+  "tr4.lede": {
+    "en": "A working deep-dive into the ten risk categories INA's Project Risk Assessment Framework&trade; tracks across a digital infrastructure project's life &mdash; and how each one actually shapes financing terms.",
+    "es": "Una guía práctica y detallada de las diez categorías de riesgo que sigue la Metodología de Evaluación de Riesgos de Proyectos&trade; de INA a lo largo de la vida de un proyecto de infraestructura digital &mdash; y cómo cada una condiciona realmente los términos de financiamiento."
+  },
+  "tr4.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "tr4.s1.p1": {
+    "en": "Lenders and equity investors don't reject digital infrastructure projects because they're risky &mdash; every infrastructure project is risky. They reject, or reprice, projects where risk hasn't been categorized, quantified and assigned an owner. A generic \"risk register\" with a handful of bullet points signals to a financing committee that the sponsor hasn't done the work.",
+    "es": "Los prestamistas e inversores de capital no rechazan proyectos de infraestructura digital porque sean riesgosos &mdash; todo proyecto de infraestructura lo es. Rechazan, o recotizan, los proyectos donde el riesgo no fue categorizado, cuantificado y asignado a un responsable. Un \"registro de riesgos\" genérico con un puñado de viñetas le indica a un comité de financiamiento que el sponsor no hizo el trabajo."
+  },
+  "tr4.s1.p2": {
+    "en": "This report is the technical companion to INA's <b style=\"color:var(--text);\">Project Risk Assessment Framework&trade; (F5)</b> &mdash; a working deep-dive into each of its ten risk categories as they apply specifically to digital infrastructure project finance, with the trigger conditions and financing-stage impact that make each category concrete rather than theoretical.",
+    "es": "Este informe es el companion técnico de la <b style=\"color:var(--text);\">Metodología de Evaluación de Riesgos de Proyectos&trade; (F5)</b> de INA &mdash; una guía práctica y detallada de cada una de sus diez categorías de riesgo tal como se aplican específicamente al financiamiento de proyectos de infraestructura digital, con las condiciones que las disparan y el impacto en cada etapa de financiamiento que hacen concreta cada categoría, en vez de teórica."
+  },
+  "tr4.s1.quote": {
+    "en": "A risk you can't name, you can't price. A risk you can't price, someone else prices for you &mdash; usually at a worse rate than you would have set yourself.",
+    "es": "Un riesgo que no podés nombrar, no podés cotizarlo. Un riesgo que no podés cotizar, alguien más lo cotiza por vos &mdash; generalmente a una tasa peor de la que vos mismo habrías fijado."
+  },
+  "tr4.s1.quote.cite": {
+    "en": "INA Project Risk Assessment Framework&trade; &mdash; Field Notes, 2026",
+    "es": "Metodología de Evaluación de Riesgos de Proyectos de INA&trade; &mdash; Notas de Campo, 2026"
+  },
+  "tr4.s2.callout.lab": {
+    "en": "Reality Check",
+    "es": "Chequeo de Realidad"
+  },
+  "tr4.s2.callout.p": {
+    "en": "The categories below aren't academic. Each one maps to a specific clause type, covenant or pricing adjustment that shows up in an actual term sheet.",
+    "es": "Las categorías siguientes no son académicas. Cada una se corresponde con un tipo específico de cláusula, covenant o ajuste de precio que aparece en un term sheet real."
+  },
+  "tr4.s2.kicker": {
+    "en": "Context",
+    "es": "Contexto"
+  },
+  "tr4.s2.p1": {
+    "en": "Categorization discipline matters because different categories are owned, priced and mitigated by different parties &mdash; a sponsor that lumps technical risk and market risk into one bucket makes it impossible for a lender to underwrite either one properly.",
+    "es": "La disciplina de categorización importa porque distintas categorías son gestionadas, cotizadas y mitigadas por distintas partes &mdash; un sponsor que mezcla riesgo técnico y riesgo de mercado en una sola bolsa le hace imposible a un prestamista suscribir correctamente cualquiera de los dos."
+  },
+  "tr4.s3.kicker": {
+    "en": "Methodology",
+    "es": "Metodología"
+  },
+  "tr4.s3.p1": {
+    "en": "The full ten-category taxonomy from F5, applied specifically to digital infrastructure project finance.",
+    "es": "La taxonomía completa de diez categorías de F5, aplicada específicamente al financiamiento de proyectos de infraestructura digital."
+  },
+  "tr4.s3.th1": {
+    "en": "Category",
+    "es": "Categoría"
+  },
+  "tr4.s3.th2": {
+    "en": "Definition",
+    "es": "Definición"
+  },
+  "tr4.s3.th3": {
+    "en": "Typical Trigger",
+    "es": "Disparador Típico"
+  },
+  "tr4.s3.th4": {
+    "en": "Financing-Stage Impact",
+    "es": "Impacto en la Etapa de Financiamiento"
+  },
+  "tr4.s4.kicker": {
+    "en": "Execution",
+    "es": "Ejecución"
+  },
+  "tr4.s4.p1": {
+    "en": "Risk ownership shifts across the project life &mdash; the monitoring cadence should shift with it.",
+    "es": "La titularidad del riesgo cambia a lo largo de la vida del proyecto &mdash; la cadencia de monitoreo debería cambiar con ella."
+  },
+  "tr4.s4.p1d": {
+    "en": "Full risk register built and quantified across all ten categories; strategic, regulatory and market risk dominate the diligence process.",
+    "es": "Registro de riesgos completo y cuantificado en las diez categorías; predominan el riesgo estratégico, regulatorio y de mercado durante la debida diligencia."
+  },
+  "tr4.s4.p1t": {
+    "en": "Pre-Financial Close",
+    "es": "Pre-Cierre Financiero"
+  },
+  "tr4.s4.p2d": {
+    "en": "Technical, counterparty and financial risk require active monthly monitoring; disbursement conditions tied directly to risk-register status.",
+    "es": "El riesgo técnico, de contraparte y financiero requiere monitoreo activo mensual; las condiciones de desembolso quedan atadas directamente al estado del registro de riesgos."
+  },
+  "tr4.s4.p2t": {
+    "en": "Construction / Deployment",
+    "es": "Construcción / Despliegue"
+  },
+  "tr4.s4.p3d": {
+    "en": "Operational, governance and climate risk become the dominant ongoing categories, monitored against KPIs tied to the debt service reserve.",
+    "es": "El riesgo operacional, de gobernanza y climático se vuelven las categorías dominantes en curso, monitoreadas contra KPI atados a la reserva de servicio de deuda."
+  },
+  "tr4.s4.p3t": {
+    "en": "Operations",
+    "es": "Operaciones"
+  },
+  "tr4.s5.eq.li1": {
+    "en": "Strategic and governance risk affect confidence in the sponsor's ability to execute, independent of the asset's technical merit",
+    "es": "El riesgo estratégico y de gobernanza afecta la confianza en la capacidad de ejecución del sponsor, independientemente del mérito técnico del activo"
+  },
+  "tr4.s5.eq.li2": {
+    "en": "Operational risk shapes the return timeline &mdash; a delayed ramp-up compresses IRR even when the asset eventually performs",
+    "es": "El riesgo operacional determina el cronograma de retorno &mdash; una rampa de adopción demorada comprime la TIR aun cuando el activo finalmente rinda"
+  },
+  "tr4.s5.eq.li3": {
+    "en": "Counterparty risk on the technology vendor side directly affects exit valuation for a future buyer",
+    "es": "El riesgo de contraparte del lado del proveedor tecnológico afecta directamente la valuación de salida para un futuro comprador"
+  },
+  "tr4.s5.eq.title": {
+    "en": "Equity Investors' Perspective",
+    "es": "Perspectiva del Inversor de Capital"
+  },
+  "tr4.s5.kicker": {
+    "en": "Enablement",
+    "es": "Habilitación"
+  },
+  "tr4.s5.lend.li1": {
+    "en": "High technical or counterparty risk narrows the lender pool to those with sector-specific underwriting expertise",
+    "es": "El riesgo técnico o de contraparte alto reduce el universo de prestamistas a los que tienen experiencia de suscripción específica del sector"
+  },
+  "tr4.s5.lend.li2": {
+    "en": "Unmitigated market risk typically triggers a requirement for minimum-revenue contracts before close",
+    "es": "El riesgo de mercado no mitigado suele disparar la exigencia de contratos de ingresos mínimos antes del cierre"
+  },
+  "tr4.s5.lend.li3": {
+    "en": "Climate and ESG risk increasingly drive covenant and disclosure requirements, especially with DFI participation",
+    "es": "El riesgo climático y ASG cada vez más determina los covenants y requisitos de divulgación, especialmente con participación de IFD"
+  },
+  "tr4.s5.lend.title": {
+    "en": "Lenders' Perspective",
+    "es": "Perspectiva del Prestamista"
+  },
+  "tr4.s5.p1": {
+    "en": "Risk categorization is not a compliance exercise &mdash; it directly shapes the term sheet.",
+    "es": "La categorización de riesgos no es un ejercicio de cumplimiento &mdash; determina directamente el term sheet."
+  },
+  "tr4.s6.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "tr4.s6.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "tr4.s6.next.p": {
+    "en": "INA's advisory team can build a full F5 risk register for your project before you enter financing conversations. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "El equipo de asesoría de INA puede construir un registro de riesgos F5 completo para su proyecto antes de entrar en conversaciones de financiamiento. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "tr4.s6.p1": {
+    "en": "A well-categorized risk register is not paperwork &mdash; it's a negotiating asset. Sponsors that can show which category each risk belongs to, who owns it, and what specifically mitigates it consistently negotiate better financing terms than sponsors presenting an undifferentiated list.",
+    "es": "Un registro de riesgos bien categorizado no es papeleo &mdash; es un activo de negociación. Los sponsors que pueden mostrar a qué categoría pertenece cada riesgo, quién lo gestiona y qué lo mitiga específicamente, consistentemente negocian mejores términos de financiamiento que quienes presentan una lista sin diferenciar."
+  },
+  "tr4.s6.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "tr4.s6.rec1": {
+    "en": "Categorize every risk against all ten F5 categories before entering financing conversations.",
+    "es": "Categorizar cada riesgo contra las diez categorías de F5 antes de entrar en conversaciones de financiamiento."
+  },
+  "tr4.s6.rec2": {
+    "en": "Assign a named owner and mitigation for every risk in the register, not just a probability and impact score.",
+    "es": "Asignar un responsable nombrado y una mitigación para cada riesgo del registro, no solo un puntaje de probabilidad e impacto."
+  },
+  "tr4.s6.rec3": {
+    "en": "Shift monitoring cadence and category emphasis as the project moves from pre-close to operations.",
+    "es": "Ajustar la cadencia de monitoreo y el énfasis de categoría a medida que el proyecto pasa de pre-cierre a operaciones."
+  },
+  "tr4.s6.rec4": {
+    "en": "Treat climate and ESG risk as term-sheet-relevant, not as a separate compliance checkbox.",
+    "es": "Tratar el riesgo climático y ASG como relevante para el term sheet, no como una casilla de cumplimiento separada."
+  },
+  "tr4.s6.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Project Risk Assessment Framework&trade; (F5).",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA, basado en la Metodología de Evaluación de Riesgos de Proyectos de INA&trade; (F5)."
+  },
+  "tr4.toc.cadence": {
+    "en": "Monitoring Cadence by Phase",
+    "es": "Cadencia de Monitoreo por Fase"
+  },
+  "tr4.toc.categories": {
+    "en": "The Ten Risk Categories",
+    "es": "Las Diez Categorías de Riesgo"
+  },
+  "tr4.toc.conclusion": {
+    "en": "Conclusion & Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "tr4.toc.financing": {
+    "en": "How Risk Shapes Financing Terms",
+    "es": "Cómo el Riesgo Condiciona los Términos de Financiamiento"
+  },
+  "tr4.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "tr4.toc.whynow": {
+    "en": "Why Categorization Discipline Matters",
+    "es": "Por Qué Importa la Disciplina de Categorización"
+  },
+  "ig.crumb": {
+    "en": "Investment Guide",
+    "es": "Guía de Inversión"
+  },
+  "ig1.eyebrow": {
+    "en": "Investment Guide &middot; September 2026",
+    "es": "Guía de Inversión &middot; Septiembre 2026"
+  },
+  "ig1.lede": {
+    "en": "A single 0&ndash;100 number is only useful if you know what it's built from. This guide walks funders and DFIs through the eight dimensions behind the score, what each band actually means, and what to ask for next.",
+    "es": "Un único número de 0 a 100 solo es útil si se sabe de qué está hecho. Esta guía recorre las ocho dimensiones detrás del score, qué significa realmente cada banda, y qué pedir a continuación."
+  },
+  "ig1.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "ig1.toc.why": {
+    "en": "Why a Single Number",
+    "es": "Por Qué un Único Número"
+  },
+  "ig1.toc.dimensions": {
+    "en": "The Eight Dimensions",
+    "es": "Las Ocho Dimensiones"
+  },
+  "ig1.toc.bands": {
+    "en": "Reading the Score Bands",
+    "es": "Cómo Leer las Bandas de Score"
+  },
+  "ig1.toc.ask": {
+    "en": "What to Ask For at Each Stage",
+    "es": "Qué Pedir en Cada Etapa"
+  },
+  "ig1.toc.misreadings": {
+    "en": "Common Misreadings",
+    "es": "Errores Comunes de Interpretación"
+  },
+  "ig1.toc.conclusion": {
+    "en": "Conclusion &amp; Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "ig1.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "ig1.s1.p1": {
+    "en": "The INA Investment Readiness Index&trade; (F2) compresses a digital infrastructure project's readiness into one comparable number, 0 to 100, built from eight weighted dimensions. Funders use it to triage a pipeline fast &mdash; but the number by itself tells you almost nothing about what to do next. That's in the dimension breakdown underneath it.",
+    "es": "El Índice de Preparación para la Inversión de INA&trade; (F2) comprime la preparación de un proyecto de infraestructura digital en un único número comparable, de 0 a 100, construido a partir de ocho dimensiones ponderadas. Los financiadores lo usan para hacer un triage rápido de su pipeline &mdash; pero el número por sí solo dice muy poco sobre qué hacer a continuación. Eso está en el detalle por dimensión que hay debajo."
+  },
+  "ig1.s1.p2": {
+    "en": "This guide is written for the person on the other side of the score: an investment officer, DFI analyst or fund manager who needs to know what a 42 means versus a 68, which dimension to interrogate first, and what evidence to request before the next committee meeting.",
+    "es": "Esta guía está escrita para la persona del otro lado del score: un oficial de inversión, analista de una institución de financiamiento para el desarrollo o gestor de fondo que necesita saber qué significa un 42 frente a un 68, qué dimensión indagar primero, y qué evidencia pedir antes de la próxima reunión de comité."
+  },
+  "ig1.s1.quote": {
+    "en": "A composite score is a conversation starter, not a verdict. The dimension breakdown is where the actual due diligence begins.",
+    "es": "Un score compuesto es el punto de partida de una conversación, no un veredicto. El detalle por dimensión es donde realmente empieza la debida diligencia."
+  },
+  "ig1.s1.quote.cite": {
+    "en": "INA Investment Readiness Index&trade; &mdash; User Notes, 2026",
+    "es": "Índice de Preparación para la Inversión de INA&trade; &mdash; Notas de Uso, 2026"
+  },
+  "ig1.s2.kicker": {
+    "en": "Context",
+    "es": "Contexto"
+  },
+  "ig1.s2.p1": {
+    "en": "A typical DFI pipeline holds dozens of digital infrastructure proposals across different countries and sectors, each with its own memo format and its own author's optimism baked in. Comparing them on narrative alone is slow and inconsistent. A composite, weighted score gives a pipeline manager a first-pass filter that's comparable across a fiber project in one country and a datacenter proposal in another.",
+    "es": "Un pipeline típico de una institución de financiamiento para el desarrollo contiene decenas de propuestas de infraestructura digital de distintos países y sectores, cada una con su propio formato de memo y el optimismo propio de quien la redactó. Compararlas solo por su narrativa es lento e inconsistente. Un score compuesto y ponderado le da a quien gestiona el pipeline un primer filtro comparable entre un proyecto de fibra en un país y una propuesta de datacenter en otro."
+  },
+  "ig1.s2.p2": {
+    "en": "Composite, weighted scoring &mdash; not a checkbox exercise",
+    "es": "Puntaje compuesto y ponderado &mdash; no un ejercicio de casilleros"
+  },
+  "ig1.s2.p3": {
+    "en": "Comparable across sectors and geographies",
+    "es": "Comparable entre sectores y geografías"
+  },
+  "ig1.s2.p4": {
+    "en": "Designed to be re-run as a project matures, not scored once and filed away",
+    "es": "Diseñado para volver a calcularse a medida que el proyecto madura, no para calificarse una vez y archivarse"
+  },
+  "ig1.s2.callout.lab": {
+    "en": "Reality Check",
+    "es": "Chequeo de Realidad"
+  },
+  "ig1.s2.callout.p": {
+    "en": "The score is a triage tool, not a substitute for due diligence. Two projects with the same 58 can have entirely different risk profiles once you open the dimension breakdown.",
+    "es": "El score es una herramienta de triage, no un sustituto de la debida diligencia. Dos proyectos con el mismo 58 pueden tener perfiles de riesgo completamente distintos al abrir el detalle por dimensión."
+  },
+  "ig1.s3.kicker": {
+    "en": "Methodology",
+    "es": "Metodología"
+  },
+  "ig1.s3.p1": {
+    "en": "Each dimension is scored independently, then weighted into the composite. Reading the breakdown &mdash; not just the total &mdash; is how you find out what's actually wrong with a proposal.",
+    "es": "Cada dimensión se puntúa de forma independiente y luego se pondera en el compuesto. Leer el detalle &mdash; no solo el total &mdash; es cómo se descubre qué es lo que realmente falla en una propuesta."
+  },
+  "ig1.s3.th1": {
+    "en": "Dimension",
+    "es": "Dimensión"
+  },
+  "ig1.s3.th2": {
+    "en": "What It Measures",
+    "es": "Qué Mide"
+  },
+  "ig1.s3.th3": {
+    "en": "A Low Score Usually Means",
+    "es": "Un Score Bajo Suele Significar"
+  },
+  "ig1.s3.r1.m": {
+    "en": "Whether permits, spectrum rights or land access are confirmed or still assumed",
+    "es": "Si los permisos, derechos de espectro o acceso a la tierra están confirmados o todavía se asumen"
+  },
+  "ig1.s3.r1.l": {
+    "en": "Regulatory approval is still pending &mdash; timeline risk, not just paperwork",
+    "es": "La aprobación regulatoria sigue pendiente &mdash; riesgo de cronograma, no solo trámite"
+  },
+  "ig1.s3.r2.m": {
+    "en": "Whether the technical design is detailed enough to procure against, or still conceptual",
+    "es": "Si el diseño técnico está lo bastante detallado para licitar contra él, o sigue siendo conceptual"
+  },
+  "ig1.s3.r2.l": {
+    "en": "Cost and schedule estimates are unreliable until design firms up",
+    "es": "Las estimaciones de costo y cronograma no son confiables hasta que el diseño se consolide"
+  },
+  "ig1.s3.r3.m": {
+    "en": "Whether the financial model has been stress-tested against realistic downside scenarios",
+    "es": "Si el modelo financiero fue estresado contra escenarios adversos realistas"
+  },
+  "ig1.s3.r3.l": {
+    "en": "The base case may only work under optimistic assumptions",
+    "es": "El caso base podría funcionar solo bajo supuestos optimistas"
+  },
+  "ig1.s3.r4.m": {
+    "en": "Whether the sponsor has the institutional capacity to execute and operate, not just to propose",
+    "es": "Si el sponsor tiene la capacidad institucional para ejecutar y operar, no solo para proponer"
+  },
+  "ig1.s3.r4.l": {
+    "en": "Execution risk, even if the project itself is sound on paper",
+    "es": "Riesgo de ejecución, incluso si el proyecto en sí es sólido en el papel"
+  },
+  "ig1.s3.r5.m": {
+    "en": "Whether demand is backed by data (traffic studies, pre-commitments) or asserted",
+    "es": "Si la demanda está respaldada por datos (estudios de tráfico, precompromisos) o solo se afirma"
+  },
+  "ig1.s3.r5.l": {
+    "en": "Revenue projections may not materialize as modeled",
+    "es": "Las proyecciones de ingresos podrían no materializarse como fueron modeladas"
+  },
+  "ig1.s3.r6.m": {
+    "en": "Whether environmental and social safeguards are scoped and budgeted",
+    "es": "Si las salvaguardas ambientales y sociales están definidas y presupuestadas"
+  },
+  "ig1.s3.r6.l": {
+    "en": "Safeguard delays are one of the most common causes of disbursement slippage",
+    "es": "Los retrasos en salvaguardas son una de las causas más comunes de demora en el desembolso"
+  },
+  "ig1.s3.r7.m": {
+    "en": "Whether identified risks have named owners and mitigation actions, not just a list",
+    "es": "Si los riesgos identificados tienen responsables nombrados y acciones de mitigación, no solo una lista"
+  },
+  "ig1.s3.r7.l": {
+    "en": "Risks are acknowledged but not actually being managed",
+    "es": "Los riesgos están reconocidos pero no se están gestionando realmente"
+  },
+  "ig1.s3.r8.m": {
+    "en": "Whether decision authority and reporting cadence are defined before disbursement",
+    "es": "Si la autoridad de decisión y la cadencia de reportes están definidas antes del desembolso"
+  },
+  "ig1.s3.r8.l": {
+    "en": "Post-disbursement oversight will likely be reactive, not structured",
+    "es": "La supervisión posterior al desembolso probablemente será reactiva, no estructurada"
+  },
+  "ig1.s4.kicker": {
+    "en": "Interpretation",
+    "es": "Interpretación"
+  },
+  "ig1.s4.p1": {
+    "en": "The composite maps to four bands. Each one implies a different conversation with the sponsor &mdash; not just a different level of enthusiasm.",
+    "es": "El compuesto se traduce en cuatro bandas. Cada una implica una conversación distinta con el sponsor &mdash; no solo un nivel distinto de entusiasmo."
+  },
+  "ig1.s4.callout.lab": {
+    "en": "Re-Scoring",
+    "es": "Recalificación"
+  },
+  "ig1.s4.callout.p": {
+    "en": "The index is designed to be re-run as a project matures, not scored once. A jump from 38 to 61 between two committee cycles is a more informative signal than either score in isolation.",
+    "es": "El índice está diseñado para recalcularse a medida que el proyecto madura, no para calificarse una sola vez. Un salto de 38 a 61 entre dos ciclos de comité es una señal más informativa que cualquiera de los dos números por separado."
+  },
+  "ig1.s5.kicker": {
+    "en": "Action",
+    "es": "Acción"
+  },
+  "ig1.s5.b1.d": {
+    "en": "Ask for a scoping-level technical alternative and a named executive sponsor before committing further review time. Don't request a full financial model yet &mdash; it isn't ready to be built.",
+    "es": "Pedir una alternativa técnica a nivel de alcance y un sponsor ejecutivo nombrado antes de comprometer más tiempo de revisión. No pedir todavía un modelo financiero completo &mdash; todavía no está listo para construirse."
+  },
+  "ig1.s5.b2.d": {
+    "en": "Ask for the preliminary risk matrix and which financing sources the sponsor is targeting. This is the stage to flag missing regulatory approvals early, while there's still time to fix them.",
+    "es": "Pedir la matriz de riesgos preliminar y qué fuentes de financiamiento está apuntando el sponsor. Esta es la etapa para señalar temprano las aprobaciones regulatorias faltantes, mientras todavía hay tiempo de resolverlas."
+  },
+  "ig1.s5.b3.d": {
+    "en": "Ask for stress-tested financial model scenarios and confirmed safeguard budgets. This is the stage where a term sheet conversation can reasonably start.",
+    "es": "Pedir escenarios de modelo financiero estresado y presupuestos de salvaguarda confirmados. Esta es la etapa en la que razonablemente puede empezar una conversación de term sheet."
+  },
+  "ig1.s5.b4.d": {
+    "en": "Ask for the governance and reporting cadence that will apply post-disbursement, and confirm it's actually staffed, not just documented.",
+    "es": "Pedir la cadencia de gobernanza y reportes que aplicará después del desembolso, y confirmar que realmente tiene personal asignado, no solo que está documentada."
+  },
+  "ig1.s6.kicker": {
+    "en": "Pitfalls",
+    "es": "Riesgos de Interpretación"
+  },
+  "ig1.s6.th1": {
+    "en": "Misreading",
+    "es": "Error de Interpretación"
+  },
+  "ig1.s6.th2": {
+    "en": "Why It's Wrong",
+    "es": "Por Qué Es Incorrecto"
+  },
+  "ig1.s6.r1.m": {
+    "en": "Treating two equal totals as equally investable",
+    "es": "Tratar dos totales iguales como igualmente invertibles"
+  },
+  "ig1.s6.r1.w": {
+    "en": "A 60 driven by strong financials and weak governance carries a different risk than a 60 driven by strong governance and a thin financial model",
+    "es": "Un 60 impulsado por finanzas sólidas y gobernanza débil implica un riesgo distinto a un 60 impulsado por gobernanza sólida y un modelo financiero débil"
+  },
+  "ig1.s6.r2.m": {
+    "en": "Comparing scores across sponsor types without context",
+    "es": "Comparar scores entre distintos tipos de sponsor sin contexto"
+  },
+  "ig1.s6.r2.w": {
+    "en": "A national utility and a first-time private sponsor face structurally different Sponsor Capacity baselines",
+    "es": "Una empresa de servicios públicos nacional y un sponsor privado primerizo parten de líneas base estructuralmente distintas en Capacidad del Sponsor"
+  },
+  "ig1.s6.r3.m": {
+    "en": "Treating the score as fixed once assigned",
+    "es": "Tratar el score como fijo una vez asignado"
+  },
+  "ig1.s6.r3.w": {
+    "en": "The index is meant to be re-run as documentation improves &mdash; a stale score understates real progress",
+    "es": "El índice está pensado para recalcularse a medida que mejora la documentación &mdash; un score desactualizado subestima el progreso real"
+  },
+  "ig1.s6.r4.m": {
+    "en": "Skipping the dimension breakdown under time pressure",
+    "es": "Saltarse el detalle por dimensión por falta de tiempo"
+  },
+  "ig1.s6.r4.w": {
+    "en": "The composite is deliberately a summary &mdash; the dimensions are where the actual decision-relevant information lives",
+    "es": "El compuesto es deliberadamente un resumen &mdash; las dimensiones son donde realmente vive la información relevante para la decisión"
+  },
+  "ig1.s7.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "ig1.s7.p1": {
+    "en": "The Investment Readiness Index&trade; is built to compress a slow, narrative-heavy review into a number you can triage a pipeline with. Used well, it speeds up the conversation instead of replacing it &mdash; the dimension breakdown tells you exactly where to focus next, and the score bands tell you what to ask for.",
+    "es": "El Índice de Preparación para la Inversión&trade; está construido para comprimir una revisión lenta y narrativa en un número con el que se puede hacer triage de un pipeline. Bien usado, acelera la conversación en lugar de reemplazarla &mdash; el detalle por dimensión indica exactamente dónde enfocarse, y las bandas de score indican qué pedir."
+  },
+  "ig1.s7.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "ig1.s7.rec1": {
+    "en": "Always request the dimension breakdown, not just the composite score.",
+    "es": "Pedir siempre el detalle por dimensión, no solo el score compuesto."
+  },
+  "ig1.s7.rec2": {
+    "en": "Ask what changed between scoring cycles, not just the current total.",
+    "es": "Preguntar qué cambió entre ciclos de calificación, no solo el total actual."
+  },
+  "ig1.s7.rec3": {
+    "en": "Match your request to the sponsor's band &mdash; don't ask a Concept Stage sponsor for Investment Ready documentation.",
+    "es": "Ajustar el pedido a la banda del sponsor &mdash; no pedirle a un sponsor en Etapa Concepto la documentación de un proyecto Listo para Invertir."
+  },
+  "ig1.s7.rec4": {
+    "en": "Weight Sponsor Capacity and Governance &amp; Reporting as seriously as the financial dimensions.",
+    "es": "Ponderar Capacidad del Sponsor y Gobernanza y Reportes con la misma seriedad que las dimensiones financieras."
+  },
+  "ig1.s7.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Investment Readiness Index&trade; (F2).",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA, basado en el Índice de Preparación para la Inversión de INA&trade; (F2)."
+  },
+  "ig1.s7.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "ig1.s7.next.p": {
+    "en": "INA can score a project in your pipeline against the full Investment Readiness Index&trade; and walk your team through the dimension breakdown. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "INA puede calificar un proyecto de su pipeline con el Índice de Preparación para la Inversión&trade; completo y recorrer con su equipo el detalle por dimensión. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "ig2.eyebrow": {
+    "en": "Investment Guide &middot; September 2026",
+    "es": "Guía de Inversión &middot; Septiembre 2026"
+  },
+  "ig2.lede": {
+    "en": "Ten domains, five stages, one heat map. This guide shows funders and DFIs how to turn a country or regional maturity assessment into an investment sequencing decision.",
+    "es": "Diez dominios, cinco etapas, un mapa de calor. Esta guía muestra a financiadores e instituciones de desarrollo cómo convertir una evaluación de madurez de un país o región en una decisión de secuenciación de inversión."
+  },
+  "ig2.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "ig2.toc.stages": {
+    "en": "The Five Stages",
+    "es": "Las Cinco Etapas"
+  },
+  "ig2.toc.domains": {
+    "en": "The Ten Domains",
+    "es": "Los Diez Dominios"
+  },
+  "ig2.toc.heatmap": {
+    "en": "Reading the Heat Map",
+    "es": "Cómo Leer el Mapa de Calor"
+  },
+  "ig2.toc.sequencing": {
+    "en": "Sequencing Investment",
+    "es": "Secuenciando la Inversión"
+  },
+  "ig2.toc.pitfalls": {
+    "en": "Benchmarking Pitfalls",
+    "es": "Riesgos del Benchmarking"
+  },
+  "ig2.toc.conclusion": {
+    "en": "Conclusion &amp; Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "ig2.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "ig2.s1.p1": {
+    "en": "The INA Digital Infrastructure Maturity Model&trade; (F3) scores a country, region or organization across ten domains of digital infrastructure, from Initial to Leading. Unlike the Investment Readiness Index, which scores a single project, F3 assesses an ecosystem &mdash; it's the tool for deciding where in a country's portfolio to put the next dollar, not whether a specific project is bankable.",
+    "es": "El Modelo de Madurez de Infraestructura Digital de INA&trade; (F3) califica a un país, región u organización en diez dominios de infraestructura digital, de Inicial a Líder. A diferencia del Índice de Preparación para la Inversión, que califica un único proyecto, F3 evalúa un ecosistema &mdash; es la herramienta para decidir dónde poner el próximo dólar dentro del portafolio de un país, no si un proyecto específico es bancable."
+  },
+  "ig2.s1.p2": {
+    "en": "This guide is written for a funder or DFI program officer building a country strategy: how to read the ten-domain heat map, what the five stages actually imply for sequencing, and the benchmarking mistakes that most commonly distort investment decisions.",
+    "es": "Esta guía está escrita para un financiador u oficial de programa de una institución de desarrollo que construye una estrategia de país: cómo leer el mapa de calor de diez dominios, qué implican realmente las cinco etapas para la secuenciación, y los errores de benchmarking que con más frecuencia distorsionan las decisiones de inversión."
+  },
+  "ig2.s1.quote": {
+    "en": "A country that is Leading in connectivity and Initial in cybersecurity does not need another connectivity loan. It needs a cybersecurity program.",
+    "es": "Un país que es Líder en conectividad e Inicial en ciberseguridad no necesita otro préstamo de conectividad. Necesita un programa de ciberseguridad."
+  },
+  "ig2.s1.quote.cite": {
+    "en": "INA Digital Infrastructure Maturity Model&trade; &mdash; User Notes, 2026",
+    "es": "Modelo de Madurez de Infraestructura Digital de INA&trade; &mdash; Notas de Uso, 2026"
+  },
+  "ig2.s2.kicker": {
+    "en": "Scale",
+    "es": "Escala"
+  },
+  "ig2.s2.p1": {
+    "en": "Each of the ten domains is scored independently against the same five-stage scale, from Initial to Leading. A country's overall maturity is a profile across all ten &mdash; almost never a single flat stage.",
+    "es": "Cada uno de los diez dominios se califica de forma independiente contra la misma escala de cinco etapas, de Inicial a Líder. La madurez general de un país es un perfil a lo largo de los diez &mdash; casi nunca una única etapa plana."
+  },
+  "ig2.s2.stage1.range": {
+    "en": "1",
+    "es": "1"
+  },
+  "ig2.s2.stage1.label": {
+    "en": "Initial &mdash; ad hoc, largely undocumented",
+    "es": "Inicial &mdash; ad hoc, en gran medida sin documentar"
+  },
+  "ig2.s2.stage2.range": {
+    "en": "2",
+    "es": "2"
+  },
+  "ig2.s2.stage2.label": {
+    "en": "Emerging &mdash; isolated initiatives, no coordination",
+    "es": "Emergente &mdash; iniciativas aisladas, sin coordinación"
+  },
+  "ig2.s2.stage3.range": {
+    "en": "3",
+    "es": "3"
+  },
+  "ig2.s2.stage3.label": {
+    "en": "Developing &mdash; coordinated programs, uneven coverage",
+    "es": "En Desarrollo &mdash; programas coordinados, cobertura despareja"
+  },
+  "ig2.s2.stage4.range": {
+    "en": "4",
+    "es": "4"
+  },
+  "ig2.s2.stage4.label": {
+    "en": "Advanced &mdash; broad coverage, consistent standards",
+    "es": "Avanzada &mdash; cobertura amplia, estándares consistentes"
+  },
+  "ig2.s2.stage5.range": {
+    "en": "5",
+    "es": "5"
+  },
+  "ig2.s2.stage5.label": {
+    "en": "Leading &mdash; near-universal, exported as best practice",
+    "es": "Líder &mdash; casi universal, exportada como mejor práctica"
+  },
+  "ig2.s3.kicker": {
+    "en": "Methodology",
+    "es": "Metodología"
+  },
+  "ig2.s3.p1": {
+    "en": "Domain-based, not project-based &mdash; F3 assesses the ecosystem a project would sit inside, which is what makes it useful for portfolio-level sequencing decisions rather than single-project approval.",
+    "es": "Basado en dominios, no en proyectos &mdash; F3 evalúa el ecosistema dentro del cual se ubicaría un proyecto, lo que lo hace útil para decisiones de secuenciación a nivel de portafolio más que para la aprobación de un único proyecto."
+  },
+  "ig2.s3.moredom": {
+    "en": "More Dimensions",
+    "es": "Más Dimensiones"
+  },
+  "ig2.s4.kicker": {
+    "en": "Interpretation",
+    "es": "Interpretación"
+  },
+  "ig2.s4.p1": {
+    "en": "The Maturity Heat Map plots all ten domains side by side on the same five-stage scale. The pattern across domains matters more than any single domain's score.",
+    "es": "El Mapa de Calor de Madurez ubica los diez dominios lado a lado en la misma escala de cinco etapas. El patrón entre dominios importa más que el score de cualquier dominio individual."
+  },
+  "ig2.s4.callout.lab": {
+    "en": "Reading the Pattern",
+    "es": "Cómo Leer el Patrón"
+  },
+  "ig2.s4.callout.p": {
+    "en": "An uneven profile &mdash; strong in one or two domains, weak in the rest &mdash; is the most common pattern and usually the most actionable one: it points directly at the next domain worth funding.",
+    "es": "Un perfil desparejo &mdash; fuerte en uno o dos dominios, débil en el resto &mdash; es el patrón más común y generalmente el más accionable: apunta directamente al próximo dominio que vale la pena financiar."
+  },
+  "ig2.s5.kicker": {
+    "en": "Action",
+    "es": "Acción"
+  },
+  "ig2.s5.b1.t": {
+    "en": "Fund the lowest-stage domain that blocks the others",
+    "es": "Financiar el dominio de etapa más baja que bloquea a los demás"
+  },
+  "ig2.s5.b1.d": {
+    "en": "Cybersecurity or Regulatory Environment weaknesses often cap what connectivity or datacenter investment can safely achieve &mdash; fix the blocking domain first.",
+    "es": "Las debilidades en Ciberseguridad o Entorno Regulatorio suelen limitar lo que la inversión en conectividad o datacenters puede lograr de forma segura &mdash; resolver primero el dominio que bloquea."
+  },
+  "ig2.s5.b2.t": {
+    "en": "Don't over-invest in an already-Advanced domain",
+    "es": "No sobreinvertir en un dominio ya Avanzado"
+  },
+  "ig2.s5.b2.d": {
+    "en": "Marginal returns fall fast once a domain is Advanced &mdash; redirect that budget to a Developing or Emerging domain instead.",
+    "es": "Los retornos marginales caen rápido una vez que un dominio está Avanzado &mdash; redirigir ese presupuesto a un dominio En Desarrollo o Emergente en su lugar."
+  },
+  "ig2.s5.b3.t": {
+    "en": "Re-run the assessment on the same cadence as the strategy cycle",
+    "es": "Repetir la evaluación con la misma cadencia que el ciclo de estrategia"
+  },
+  "ig2.s5.b3.d": {
+    "en": "F3 is designed as a living dashboard, not a one-time snapshot &mdash; stale data understates real progress and misdirects the next round of funding.",
+    "es": "F3 está diseñado como un dashboard vivo, no como una foto única &mdash; los datos desactualizados subestiman el progreso real y desvían la próxima ronda de financiamiento."
+  },
+  "ig2.s6.kicker": {
+    "en": "Caution",
+    "es": "Precaución"
+  },
+  "ig2.s6.th1": {
+    "en": "Pitfall",
+    "es": "Riesgo"
+  },
+  "ig2.s6.th2": {
+    "en": "Why It Distorts Sequencing",
+    "es": "Por Qué Distorsiona la Secuenciación"
+  },
+  "ig2.s6.r1.p": {
+    "en": "Comparing countries of very different scale as if maturity were size-normalized",
+    "es": "Comparar países de escala muy distinta como si la madurez estuviera normalizada por tamaño"
+  },
+  "ig2.s6.r1.w": {
+    "en": "A small country can reach Advanced connectivity faster than a large federal one with the same investment &mdash; scale changes the baseline",
+    "es": "Un país pequeño puede alcanzar conectividad Avanzada más rápido que uno federal grande con la misma inversión &mdash; la escala cambia la línea base"
+  },
+  "ig2.s6.r2.p": {
+    "en": "Averaging the ten domains into one number",
+    "es": "Promediar los diez dominios en un único número"
+  },
+  "ig2.s6.r2.w": {
+    "en": "Averaging erases exactly the uneven pattern that makes the heat map useful for sequencing",
+    "es": "Promediar borra justamente el patrón desparejo que hace útil al mapa de calor para la secuenciación"
+  },
+  "ig2.s6.r3.p": {
+    "en": "Treating a high score as permanent",
+    "es": "Tratar un score alto como permanente"
+  },
+  "ig2.s6.r3.w": {
+    "en": "Cybersecurity Posture in particular can regress quickly without sustained investment",
+    "es": "La Postura de Ciberseguridad en particular puede retroceder rápido sin inversión sostenida"
+  },
+  "ig2.s7.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "ig2.s7.p1": {
+    "en": "The Maturity Model&trade; is a sequencing tool, not a scoreboard. Its value is in the shape of the ten-domain profile, not the headline stage &mdash; used well, it tells a funder exactly where the next dollar in a country portfolio does the most good.",
+    "es": "El Modelo de Madurez&trade; es una herramienta de secuenciación, no un marcador. Su valor está en la forma del perfil de diez dominios, no en la etapa titular &mdash; bien usado, le dice a un financiador exactamente dónde el próximo dólar de un portafolio de país hace más bien."
+  },
+  "ig2.s7.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "ig2.s7.rec1": {
+    "en": "Always request the full ten-domain heat map, not a single averaged score.",
+    "es": "Pedir siempre el mapa de calor completo de diez dominios, no un único score promediado."
+  },
+  "ig2.s7.rec2": {
+    "en": "Fund the domain that blocks the others before funding the domain that's already visible.",
+    "es": "Financiar el dominio que bloquea a los demás antes que el dominio que ya es visible."
+  },
+  "ig2.s7.rec3": {
+    "en": "Re-run the assessment on a fixed cadence tied to the strategy cycle, not ad hoc.",
+    "es": "Repetir la evaluación con una cadencia fija ligada al ciclo de estrategia, no de forma ad hoc."
+  },
+  "ig2.s7.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Digital Infrastructure Maturity Model&trade; (F3).",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA, basado en el Modelo de Madurez de Infraestructura Digital de INA&trade; (F3)."
+  },
+  "ig2.s7.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "ig2.s7.next.p": {
+    "en": "INA can run a full ten-domain Maturity Model&trade; assessment for a country or region and translate the heat map into a funding sequencing brief. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "INA puede realizar una evaluación completa de diez dominios del Modelo de Madurez&trade; para un país o región y traducir el mapa de calor en un brief de secuenciación de financiamiento. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "ig3.eyebrow": {
+    "en": "Investment Guide &middot; September 2026",
+    "es": "Guía de Inversión &middot; Septiembre 2026"
+  },
+  "ig3.lede": {
+    "en": "Nine financing pathways, each with a different fit, timeline and evidence bar. This guide helps a sponsor pick the realistic one first instead of pitching every door at once.",
+    "es": "Nueve vías de financiamiento, cada una con un ajuste, un cronograma y un nivel de evidencia distintos. Esta guía ayuda a un sponsor a elegir primero la vía realista en lugar de golpear todas las puertas a la vez."
+  },
+  "ig3.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "ig3.toc.pathways": {
+    "en": "The Nine Pathways",
+    "es": "Las Nueve Vías"
+  },
+  "ig3.toc.fit": {
+    "en": "Matching Pathway to Project",
+    "es": "Cómo Encontrar la Vía Correcta"
+  },
+  "ig3.toc.timelines": {
+    "en": "Origination Timelines",
+    "es": "Tiempos de Originación"
+  },
+  "ig3.toc.readiness": {
+    "en": "What to Have Ready",
+    "es": "Qué Tener Listo"
+  },
+  "ig3.toc.blending": {
+    "en": "When to Blend Sources",
+    "es": "Cuándo Combinar Fuentes"
+  },
+  "ig3.toc.conclusion": {
+    "en": "Conclusion &amp; Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "ig3.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "ig3.s1.p1": {
+    "en": "Sponsors of digital infrastructure projects in Latin America and other emerging markets typically approach every financing door at once &mdash; a multilateral bank, a universal service fund, a private equity fund &mdash; without first checking whether the project's profile actually fits. That wastes the sponsor's time and the funder's review capacity equally.",
+    "es": "Los sponsors de proyectos de infraestructura digital en América Latina y otros mercados emergentes suelen golpear todas las puertas de financiamiento a la vez &mdash; un banco multilateral, un fondo de servicio universal, un fondo de private equity &mdash; sin antes verificar si el perfil del proyecto realmente encaja. Eso desperdicia por igual el tiempo del sponsor y la capacidad de revisión del financiador."
+  },
+  "ig3.s1.p2": {
+    "en": "This guide, built on INA's Multilateral Finance Navigator&trade; (F6), walks through nine realistic financing pathways for digital infrastructure, what each one actually fits, and what a sponsor needs ready before approaching it.",
+    "es": "Esta guía, construida sobre el Multilateral Finance Navigator&trade; de INA (F6), recorre nueve vías de financiamiento realistas para infraestructura digital, qué encaja realmente en cada una, y qué necesita tener listo un sponsor antes de abordarla."
+  },
+  "ig3.s1.quote": {
+    "en": "The right financing conversation starts with matching the project to the source, not pitching the source on the project.",
+    "es": "La conversación de financiamiento correcta empieza haciendo encajar el proyecto con la fuente, no vendiéndole el proyecto a la fuente."
+  },
+  "ig3.s1.quote.cite": {
+    "en": "INA Multilateral Finance Navigator&trade; &mdash; User Notes, 2026",
+    "es": "Multilateral Finance Navigator&trade; de INA &mdash; Notas de Uso, 2026"
+  },
+  "ig3.s2.kicker": {
+    "en": "Landscape",
+    "es": "Panorama"
+  },
+  "ig3.s2.th1": {
+    "en": "Source",
+    "es": "Fuente"
+  },
+  "ig3.s2.th2": {
+    "en": "Instrument",
+    "es": "Instrumento"
+  },
+  "ig3.s2.th3": {
+    "en": "Typical Use Case",
+    "es": "Caso de Uso Típico"
+  },
+  "ig3.s2.r5.src": {
+    "en": "Bank debt / project finance",
+    "es": "Deuda bancaria / project finance"
+  },
+  "ig3.s2.r5.inst": {
+    "en": "Senior debt structured against project cash flows",
+    "es": "Deuda senior estructurada contra los flujos de caja del proyecto"
+  },
+  "ig3.s2.r5.use": {
+    "en": "Large-scale datacenters, submarine cable consortia",
+    "es": "Datacenters de gran escala, consorcios de cables submarinos"
+  },
+  "ig3.s2.r6.src": {
+    "en": "Vendor financing / export credit agencies (ECAs)",
+    "es": "Financiamiento de proveedor / agencias de crédito a la exportación (ECA)"
+  },
+  "ig3.s2.r6.inst": {
+    "en": "Supplier credit tied to specific technology acquisition",
+    "es": "Crédito de proveedor ligado a la adquisición de tecnología específica"
+  },
+  "ig3.s2.r6.use": {
+    "en": "Cable-laying, network equipment, datacenter components",
+    "es": "Tendido de cable, equipamiento de red, componentes de datacenter"
+  },
+  "ig3.s2.r7.src": {
+    "en": "Blended finance / Public-Private Partnership",
+    "es": "Financiamiento combinado / Asociación Público-Privada"
+  },
+  "ig3.s2.r7.inst": {
+    "en": "Public risk mitigation combined with private capital",
+    "es": "Mitigación de riesgo pública combinada con capital privado"
+  },
+  "ig3.s2.r7.use": {
+    "en": "Rural fiber or FWA where standalone commercial returns are insufficient",
+    "es": "Fibra rural o FWA donde el retorno comercial por sí solo es insuficiente"
+  },
+  "ig3.s2.r8.src": {
+    "en": "Bilateral development finance agencies (USTDA, DFC)",
+    "es": "Agencias bilaterales de financiamiento para el desarrollo (USTDA, DFC)"
+  },
+  "ig3.s2.r8.inst": {
+    "en": "Feasibility study grants; direct loans, equity and political risk insurance",
+    "es": "Subvenciones para estudios de factibilidad; préstamos directos, equity y seguro de riesgo político"
+  },
+  "ig3.s2.r8.use": {
+    "en": "Early-stage project preparation and long-term financing for U.S.-linked infrastructure",
+    "es": "Preparación de proyectos en etapa temprana y financiamiento de largo plazo para infraestructura vinculada a EE.UU."
+  },
+  "ig3.s2.r9.src": {
+    "en": "Guarantees &amp; credit enhancement",
+    "es": "Garantías y mejora crediticia"
+  },
+  "ig3.s2.r9.inst": {
+    "en": "Partial risk or credit guarantees layered onto other financing",
+    "es": "Garantías parciales de riesgo o crédito superpuestas a otro financiamiento"
+  },
+  "ig3.s2.r9.use": {
+    "en": "Unlocking commercial debt for projects with real but hard-to-price risk",
+    "es": "Desbloquear deuda comercial para proyectos con riesgo real pero difícil de tasar"
+  },
+  "ig3.s3.kicker": {
+    "en": "Matching",
+    "es": "Ajuste"
+  },
+  "ig3.s3.p1": {
+    "en": "F6 reads a project's country, sector, size, maturity and risk profile, then recommends which mechanisms are a realistic fit &mdash; matching projects to financing, rather than financing to projects.",
+    "es": "F6 analiza el país, sector, tamaño, madurez y perfil de riesgo de un proyecto, y luego recomienda qué mecanismos son un ajuste realista &mdash; haciendo encajar proyectos con financiamiento, en lugar de financiamiento con proyectos."
+  },
+  "ig3.s3.title": {
+    "en": "Three Questions That Narrow the Field Fast",
+    "es": "Tres Preguntas Que Acotan el Campo Rápido"
+  },
+  "ig3.s3.q1": {
+    "en": "Does the project generate predictable commercial cash flow, or does it require a subsidy to be viable at all?",
+    "es": "¿El proyecto genera flujo de caja comercial predecible, o necesita un subsidio para ser viable?"
+  },
+  "ig3.s3.q2": {
+    "en": "Does it need sovereign backing, or can it stand on project-level cash flows alone?",
+    "es": "¿Necesita respaldo soberano, o puede sostenerse solo con los flujos de caja del proyecto?"
+  },
+  "ig3.s3.q3": {
+    "en": "Is there a technology or equipment component tied to a specific country of origin?",
+    "es": "¿Hay un componente de tecnología o equipamiento ligado a un país de origen específico?"
+  },
+  "ig3.s4.kicker": {
+    "en": "Planning",
+    "es": "Planificación"
+  },
+  "ig3.s4.p1": {
+    "en": "Timelines vary by an order of magnitude across pathways &mdash; plan the financing track in parallel with technical structuring, not after it.",
+    "es": "Los plazos varían en un orden de magnitud entre vías &mdash; planificar el eje de financiamiento en paralelo con la estructuración técnica, no después de ella."
+  },
+  "ig3.s4.th1": {
+    "en": "Pathway",
+    "es": "Vía"
+  },
+  "ig3.s4.th2": {
+    "en": "Typical Origination Time",
+    "es": "Tiempo Típico de Originación"
+  },
+  "ig3.s4.r1.src": {
+    "en": "Multilateral development bank loan",
+    "es": "Préstamo de banco multilateral de desarrollo"
+  },
+  "ig3.s4.r1.time": {
+    "en": "12&ndash;24 months",
+    "es": "12&ndash;24 meses"
+  },
+  "ig3.s4.r2.src": {
+    "en": "Universal service fund grant",
+    "es": "Subvención de fondo de servicio universal"
+  },
+  "ig3.s4.r2.time": {
+    "en": "6&ndash;12 months, tied to call-for-proposals cycles",
+    "es": "6&ndash;12 meses, ligado a ciclos de convocatorias"
+  },
+  "ig3.s4.r3.src": {
+    "en": "Private equity / project finance",
+    "es": "Private equity / project finance"
+  },
+  "ig3.s4.r3.time": {
+    "en": "6&ndash;18 months once the business case is bankable",
+    "es": "6&ndash;18 meses una vez que el business case es bancable"
+  },
+  "ig3.s4.r4.src": {
+    "en": "Bilateral agency feasibility grant (USTDA)",
+    "es": "Subvención de factibilidad de agencia bilateral (USTDA)"
+  },
+  "ig3.s4.r4.time": {
+    "en": "3&ndash;9 months for early-stage preparation funding",
+    "es": "3&ndash;9 meses para financiamiento de preparación en etapa temprana"
+  },
+  "ig3.s5.kicker": {
+    "en": "Preparation",
+    "es": "Preparación"
+  },
+  "ig3.s5.c1": {
+    "en": "A technical alternative detailed enough to estimate cost against",
+    "es": "Una alternativa técnica lo bastante detallada para estimar costos"
+  },
+  "ig3.s5.c2": {
+    "en": "A financial model showing whether the project is commercially viable, subsidy-dependent, or somewhere in between",
+    "es": "Un modelo financiero que muestre si el proyecto es comercialmente viable, depende de subsidio, o algo intermedio"
+  },
+  "ig3.s5.c3": {
+    "en": "Confirmation of sovereign backing status, if applicable",
+    "es": "Confirmación del estado de respaldo soberano, si aplica"
+  },
+  "ig3.s5.c4": {
+    "en": "Environmental and social safeguard scoping, sized to the funder's own requirements",
+    "es": "Definición de salvaguardas ambientales y sociales, dimensionada a los requisitos propios del financiador"
+  },
+  "ig3.s5.c5": {
+    "en": "A named executive sponsor able to sign off on the financing track, not just the technical one",
+    "es": "Un sponsor ejecutivo nombrado capaz de aprobar el eje de financiamiento, no solo el técnico"
+  },
+  "ig3.s6.kicker": {
+    "en": "Structuring",
+    "es": "Estructuración"
+  },
+  "ig3.s6.p1": {
+    "en": "A single project can combine more than one source &mdash; most commonly a public guarantee or viability-gap grant layered under private commercial debt, to close the gap between what the project can commercially support and what it costs to build.",
+    "es": "Un mismo proyecto puede combinar más de una fuente &mdash; lo más común es una garantía pública o una subvención de brecha de viabilidad debajo de deuda comercial privada, para cerrar la brecha entre lo que el proyecto puede sostener comercialmente y lo que cuesta construirlo."
+  },
+  "ig3.s6.callout.lab": {
+    "en": "Blended Finance",
+    "es": "Financiamiento Combinado"
+  },
+  "ig3.s6.callout.p": {
+    "en": "Blending only works when the \"viability gap\" is sized precisely &mdash; oversizing the public component crowds out private capital that would have participated anyway; undersizing it kills the deal at financial close.",
+    "es": "Combinar fuentes solo funciona cuando la &ldquo;brecha de viabilidad&rdquo; está dimensionada con precisión &mdash; sobredimensionar el componente público desplaza capital privado que de todos modos habría participado; subdimensionarlo mata la operación en el cierre financiero."
+  },
+  "ig3.s7.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "ig3.s7.p1": {
+    "en": "Multilateral development finance is not one door &mdash; it's nine, each with a different fit. A sponsor who matches the project's real profile to the right pathway before approaching a funder moves faster than one who pitches every door at once.",
+    "es": "El financiamiento multilateral para el desarrollo no es una puerta &mdash; son nueve, cada una con un ajuste distinto. Un sponsor que hace coincidir el perfil real del proyecto con la vía correcta antes de acercarse a un financiador avanza más rápido que uno que golpea todas las puertas a la vez."
+  },
+  "ig3.s7.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "ig3.s7.rec1": {
+    "en": "Classify the project as commercial, subsidy-dependent, or blended before approaching any funder.",
+    "es": "Clasificar el proyecto como comercial, dependiente de subsidio, o combinado antes de acercarse a cualquier financiador."
+  },
+  "ig3.s7.rec2": {
+    "en": "Start the financing track in parallel with technical structuring, not after it.",
+    "es": "Iniciar el eje de financiamiento en paralelo con la estructuración técnica, no después de ella."
+  },
+  "ig3.s7.rec3": {
+    "en": "Size any blended viability gap precisely &mdash; don't round up \"to be safe.\"",
+    "es": "Dimensionar con precisión cualquier brecha de viabilidad combinada &mdash; no redondear hacia arriba &ldquo;por las dudas&rdquo;."
+  },
+  "ig3.s7.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Multilateral Finance Navigator&trade; (F6).",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA, basado en el Multilateral Finance Navigator&trade; de INA (F6)."
+  },
+  "ig3.s7.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "ig3.s7.next.p": {
+    "en": "INA can run a project through the Multilateral Finance Navigator&trade; and return a ranked shortlist of realistic financing mechanisms. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "INA puede evaluar un proyecto con el Multilateral Finance Navigator&trade; y devolver una lista priorizada de mecanismos de financiamiento realistas. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "ig4.eyebrow": {
+    "en": "Investment Guide &middot; September 2026",
+    "es": "Guía de Inversión &middot; Septiembre 2026"
+  },
+  "ig4.lede": {
+    "en": "Energy sourcing, land rights, e-waste and governance reporting aren't a compliance afterthought for fiber, datacenter and cable projects &mdash; they're underwriting variables. This guide shows where each one actually bites.",
+    "es": "El abastecimiento energético, los derechos de tierra, el e-waste y los reportes de gobernanza no son un detalle de cumplimiento tardío en proyectos de fibra, datacenter y cable &mdash; son variables de suscripción. Esta guía muestra dónde realmente pesa cada una."
+  },
+  "ig4.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "ig4.toc.environmental": {
+    "en": "Environmental",
+    "es": "Ambiental"
+  },
+  "ig4.toc.social": {
+    "en": "Social",
+    "es": "Social"
+  },
+  "ig4.toc.governance": {
+    "en": "Governance",
+    "es": "Gobernanza"
+  },
+  "ig4.toc.bytypology": {
+    "en": "ESG by Project Typology",
+    "es": "ASG por Tipología de Proyecto"
+  },
+  "ig4.toc.reporting": {
+    "en": "What DFIs Expect to See",
+    "es": "Qué Esperan Ver las Instituciones de Desarrollo"
+  },
+  "ig4.toc.conclusion": {
+    "en": "Conclusion &amp; Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "ig4.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "ig4.s1.p1": {
+    "en": "ESG criteria show up twice in a digital infrastructure project: once as a safeguard requirement a DFI checks before disbursing, and again as an operating cost or delay risk that shows up years later if it was scoped superficially the first time. Treating ESG as a checkbox at appraisal, rather than a design variable from the start, is one of the most common causes of both.",
+    "es": "Los criterios ASG aparecen dos veces en un proyecto de infraestructura digital: primero como un requisito de salvaguarda que una institución de desarrollo verifica antes de desembolsar, y luego como un costo operativo o riesgo de demora que aparece años después si se definió de forma superficial la primera vez. Tratar ASG como un casillero en la evaluación, en lugar de una variable de diseño desde el inicio, es una de las causas más comunes de ambos problemas."
+  },
+  "ig4.s1.p2": {
+    "en": "This guide breaks ESG down by what actually matters for fiber, FWA, submarine cable and datacenter projects specifically &mdash; not a generic corporate ESG checklist repurposed for infrastructure.",
+    "es": "Esta guía desglosa ASG según lo que realmente importa específicamente para proyectos de fibra, FWA, cable submarino y datacenter &mdash; no una checklist corporativa genérica de ASG reutilizada para infraestructura."
+  },
+  "ig4.s1.quote": {
+    "en": "Environmental &amp; Social Readiness is scored as one of the eight Investment Readiness Index dimensions for a reason &mdash; it isn't a side conversation from the financial model, it's an input to it.",
+    "es": "La Preparación Ambiental y Social se califica como una de las ocho dimensiones del Índice de Preparación para la Inversión por una razón &mdash; no es una conversación paralela al modelo financiero, es un insumo de ese modelo."
+  },
+  "ig4.s1.quote.cite": {
+    "en": "INA ESG Integration Guide &mdash; Field Notes, 2026",
+    "es": "Guía de Integración ASG de INA &mdash; Notas de Campo, 2026"
+  },
+  "ig4.s2.kicker": {
+    "en": "E",
+    "es": "A"
+  },
+  "ig4.s2.b1.t": {
+    "en": "Energy Sourcing &amp; PUE",
+    "es": "Abastecimiento Energético y PUE"
+  },
+  "ig4.s2.b1.d": {
+    "en": "Datacenter power source and Power Usage Effectiveness (PUE) directly affect both the environmental case and the operating cost model &mdash; increasingly a DFI condition, not just a marketing claim.",
+    "es": "La fuente de energía del datacenter y el PUE (Power Usage Effectiveness) afectan directamente tanto el caso ambiental como el modelo de costo operativo &mdash; cada vez más una condición de las instituciones de desarrollo, no solo un argumento de marketing."
+  },
+  "ig4.s2.b2.t": {
+    "en": "Equipment Lifecycle &amp; E-Waste",
+    "es": "Ciclo de Vida del Equipamiento y E-Waste"
+  },
+  "ig4.s2.b2.d": {
+    "en": "Network equipment and server refresh cycles generate e-waste streams that need a disposal plan scoped before deployment, not after the first hardware refresh.",
+    "es": "Los ciclos de renovación de equipamiento de red y servidores generan flujos de e-waste que necesitan un plan de disposición definido antes del despliegue, no después de la primera renovación de hardware."
+  },
+  "ig4.s2.b3.t": {
+    "en": "Physical &amp; Climate Exposure",
+    "es": "Exposición Física y Climática"
+  },
+  "ig4.s2.b3.d": {
+    "en": "Submarine cable landing stations and coastal datacenters carry direct climate exposure &mdash; sea-level rise and extreme weather routing risk belong in the technical design, not just the risk register.",
+    "es": "Las estaciones de aterrizaje de cables submarinos y los datacenters costeros tienen exposición climática directa &mdash; el aumento del nivel del mar y el riesgo de clima extremo en el trazado pertenecen al diseño técnico, no solo al registro de riesgos."
+  },
+  "ig4.s2.b4.t": {
+    "en": "Right-of-Way Land Disturbance",
+    "es": "Alteración de Suelo en Derechos de Paso"
+  },
+  "ig4.s2.b4.d": {
+    "en": "Fiber trenching and cable landings disturb land and marine habitats along the route &mdash; environmental scoping needs to happen at route-planning stage, not after permitting begins.",
+    "es": "El zanjeo de fibra y los aterrizajes de cable alteran hábitats terrestres y marinos a lo largo de la traza &mdash; la definición ambiental debe ocurrir en la etapa de planificación de ruta, no después de que comienza el trámite de permisos."
+  },
+  "ig4.s3.kicker": {
+    "en": "S",
+    "es": "S"
+  },
+  "ig4.s3.b1.t": {
+    "en": "Rights-of-Way &amp; Community Consent",
+    "es": "Derechos de Paso y Consentimiento Comunitario"
+  },
+  "ig4.s3.b1.d": {
+    "en": "Fiber routes crossing private or communal land need documented consent, not just a municipal permit &mdash; undocumented consent is a common cause of construction-phase disputes.",
+    "es": "Las trazas de fibra que cruzan tierra privada o comunal necesitan consentimiento documentado, no solo un permiso municipal &mdash; el consentimiento no documentado es una causa común de disputas durante la construcción."
+  },
+  "ig4.s3.b2.t": {
+    "en": "Cable Landing Community Impact",
+    "es": "Impacto Comunitario del Aterrizaje de Cable"
+  },
+  "ig4.s3.b2.d": {
+    "en": "Landing stations affect local fishing and coastal livelihoods during construction &mdash; community engagement plans are a standard DFI safeguard requirement for cable projects.",
+    "es": "Las estaciones de aterrizaje afectan la pesca local y los medios de vida costeros durante la construcción &mdash; los planes de participación comunitaria son un requisito estándar de salvaguarda de las instituciones de desarrollo para proyectos de cable."
+  },
+  "ig4.s3.b3.t": {
+    "en": "Digital Inclusion &amp; Affordability",
+    "es": "Inclusión Digital y Asequibilidad"
+  },
+  "ig4.s3.b3.d": {
+    "en": "Where a project is subsidized to close a connectivity gap, affordability outcomes &mdash; not just coverage &mdash; are increasingly what funders measure at closeout.",
+    "es": "Cuando un proyecto es subsidiado para cerrar una brecha de conectividad, los resultados de asequibilidad &mdash; no solo la cobertura &mdash; son cada vez más lo que los financiadores miden al cierre."
+  },
+  "ig4.s3.b4.t": {
+    "en": "Labor &amp; Contractor Standards",
+    "es": "Estándares Laborales y de Contratistas"
+  },
+  "ig4.s3.b4.d": {
+    "en": "Construction-phase labor standards for cable-laying and civil works crews are a standard part of DFI procurement conditions, not an optional add-on.",
+    "es": "Los estándares laborales en la fase de construcción para cuadrillas de tendido de cable y obra civil son parte estándar de las condiciones de adquisición de las instituciones de desarrollo, no un agregado opcional."
+  },
+  "ig4.s4.kicker": {
+    "en": "G",
+    "es": "G"
+  },
+  "ig4.s4.b1.t": {
+    "en": "Transparency &amp; Reporting Cadence",
+    "es": "Transparencia y Cadencia de Reportes"
+  },
+  "ig4.s4.b1.d": {
+    "en": "DFIs expect a defined post-disbursement reporting cadence, not ad hoc updates &mdash; this overlaps directly with F2's Governance &amp; Reporting dimension.",
+    "es": "Las instituciones de desarrollo esperan una cadencia de reportes definida después del desembolso, no actualizaciones ad hoc &mdash; esto se superpone directamente con la dimensión de Gobernanza y Reportes de F2."
+  },
+  "ig4.s4.b2.t": {
+    "en": "Anti-Corruption &amp; Procurement Integrity",
+    "es": "Anticorrupción e Integridad en las Adquisiciones"
+  },
+  "ig4.s4.b2.d": {
+    "en": "Competitive, auditable procurement is both an ESG governance requirement and good project structuring practice &mdash; the two overlap almost entirely.",
+    "es": "Una adquisición competitiva y auditable es a la vez un requisito de gobernanza ASG y una buena práctica de estructuración de proyectos &mdash; ambas se superponen casi por completo."
+  },
+  "ig4.s4.b3.t": {
+    "en": "Data Governance &amp; Privacy",
+    "es": "Gobernanza de Datos y Privacidad"
+  },
+  "ig4.s4.b3.d": {
+    "en": "For digital public services and datacenter projects, data governance and citizen privacy protections are increasingly assessed as part of the governance pillar, not a separate legal review.",
+    "es": "En proyectos de servicios públicos digitales y datacenters, la gobernanza de datos y la protección de la privacidad ciudadana se evalúan cada vez más como parte del pilar de gobernanza, no como una revisión legal separada."
+  },
+  "ig4.s4.b4.t": {
+    "en": "Board &amp; Oversight Structure",
+    "es": "Estructura de Directorio y Supervisión"
+  },
+  "ig4.s4.b4.d": {
+    "en": "A sponsor's own governance capacity &mdash; independent oversight, conflict-of-interest controls &mdash; is assessed alongside the project's own governance plan.",
+    "es": "La capacidad de gobernanza propia del sponsor &mdash; supervisión independiente, controles de conflicto de interés &mdash; se evalúa junto con el plan de gobernanza propio del proyecto."
+  },
+  "ig4.s5.kicker": {
+    "en": "Application",
+    "es": "Aplicación"
+  },
+  "ig4.s5.t1.d": {
+    "en": "Marine environmental permits, coastal community engagement, and climate exposure at landing stations dominate the ESG scope.",
+    "es": "Los permisos ambientales marinos, la participación de comunidades costeras y la exposición climática en las estaciones de aterrizaje dominan el alcance ASG."
+  },
+  "ig4.s5.t2.d": {
+    "en": "Land rights-of-way, community consent documentation, and affordability outcomes in subsidized last-mile segments dominate.",
+    "es": "Los derechos de paso, la documentación de consentimiento comunitario y los resultados de asequibilidad en tramos de última milla subsidiados dominan."
+  },
+  "ig4.s5.t3.d": {
+    "en": "Lower physical footprint than fiber or cable, but CPE e-waste and tower-site community engagement still apply.",
+    "es": "Huella física menor que la fibra o el cable, pero el e-waste de CPE y la participación comunitaria en sitios de torre igualmente aplican."
+  },
+  "ig4.s5.t4.d": {
+    "en": "Energy sourcing and PUE dominate the environmental case; data governance and privacy dominate the governance case.",
+    "es": "El abastecimiento energético y el PUE dominan el caso ambiental; la gobernanza de datos y la privacidad dominan el caso de gobernanza."
+  },
+  "ig4.s6.kicker": {
+    "en": "Evidence",
+    "es": "Evidencia"
+  },
+  "ig4.s6.c1": {
+    "en": "An environmental and social safeguard plan scoped and budgeted before appraisal, not drafted to satisfy it",
+    "es": "Un plan de salvaguarda ambiental y social definido y presupuestado antes de la evaluación, no redactado para satisfacerla"
+  },
+  "ig4.s6.c2": {
+    "en": "Documented community consent for any right-of-way or landing-station impact",
+    "es": "Consentimiento comunitario documentado para cualquier impacto de derecho de paso o estación de aterrizaje"
+  },
+  "ig4.s6.c3": {
+    "en": "A named governance owner for post-disbursement ESG reporting, not a generic compliance function",
+    "es": "Un responsable de gobernanza nombrado para los reportes ASG posteriores al desembolso, no una función de cumplimiento genérica"
+  },
+  "ig4.s6.c4": {
+    "en": "Energy sourcing and efficiency commitments with measurable, auditable targets",
+    "es": "Compromisos de abastecimiento energético y eficiencia con metas medibles y auditables"
+  },
+  "ig4.s7.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "ig4.s7.p1": {
+    "en": "ESG integration for digital infrastructure works best when it's treated as a design input at the structuring phase, not a safeguard review bolted on before disbursement. The projects that move fastest through DFI appraisal are the ones where environmental, social and governance scoping happened alongside the technical design, not after it.",
+    "es": "La integración ASG en infraestructura digital funciona mejor cuando se trata como un insumo de diseño en la etapa de estructuración, no como una revisión de salvaguarda agregada antes del desembolso. Los proyectos que avanzan más rápido en la evaluación de las instituciones de desarrollo son aquellos donde la definición ambiental, social y de gobernanza ocurrió junto con el diseño técnico, no después de él."
+  },
+  "ig4.s7.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "ig4.s7.rec1": {
+    "en": "Scope environmental and social safeguards at route-planning or site-selection stage, not at appraisal.",
+    "es": "Definir las salvaguardas ambientales y sociales en la etapa de planificación de ruta o selección de sitio, no en la evaluación."
+  },
+  "ig4.s7.rec2": {
+    "en": "Document community consent, not just municipal permits, for any physical right-of-way.",
+    "es": "Documentar el consentimiento comunitario, no solo los permisos municipales, para cualquier derecho de paso físico."
+  },
+  "ig4.s7.rec3": {
+    "en": "Name a governance owner for post-disbursement ESG reporting before financial close.",
+    "es": "Nombrar un responsable de gobernanza para los reportes ASG posteriores al desembolso antes del cierre financiero."
+  },
+  "ig4.s7.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library.",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA."
+  },
+  "ig4.s7.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "ig4.s7.next.p": {
+    "en": "INA can scope an ESG plan for a digital infrastructure project alongside its technical and financial structuring. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "INA puede definir un plan ASG para un proyecto de infraestructura digital junto con su estructuración técnica y financiera. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "wp1.crumb": {
+    "en": "White Paper",
+    "es": "Documento Técnico"
+  },
+  "wp1.eyebrow": {
+    "en": "White Paper &middot; September 2026",
+    "es": "Documento Técnico &middot; Septiembre 2026"
+  },
+  "wp1.h1": {
+    "en": "Structuring Digital Infrastructure for Bankability",
+    "es": "Estructurando infraestructura digital para la bancabilidad"
+  },
+  "wp1.lede": {
+    "en": "Why technically sound projects still get turned down by financiers &mdash; and the structuring discipline that turns a good idea into an investable one.",
+    "es": "Por qué proyectos técnicamente sólidos igual son rechazados por los financiadores — y la disciplina de estructuración que convierte una buena idea en una idea invertible."
+  },
+  "wp1.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "wp1.toc.whynow": {
+    "en": "Why Bankability Fails to Materialize",
+    "es": "Por Qué la Bancabilidad No Se Concreta"
+  },
+  "wp1.toc.barriers": {
+    "en": "Five Structural Barriers",
+    "es": "Cinco Barreras Estructurales"
+  },
+  "wp1.toc.framework": {
+    "en": "The Bankability Framework",
+    "es": "El Framework de Bancabilidad"
+  },
+  "wp1.toc.governance": {
+    "en": "What Investors Actually Read",
+    "es": "Lo Que los Inversores Realmente Leen"
+  },
+  "wp1.toc.financing": {
+    "en": "Financing Readiness by Typology",
+    "es": "Preparación para el Financiamiento por Tipología"
+  },
+  "wp1.toc.risk": {
+    "en": "Risk Register",
+    "es": "Registro de Riesgos"
+  },
+  "wp1.toc.roadmap": {
+    "en": "A Roadmap to Investment-Ready",
+    "es": "Una Hoja de Ruta hacia Investment Ready"
+  },
+  "wp1.toc.conclusion": {
+    "en": "Conclusion &amp; Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "wp1.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "wp1.s1.p1": {
+    "en": "Most digital infrastructure projects that fail to reach financial close are not rejected because the technology is wrong or the market need isn't real. They are rejected because the sponsor cannot answer, in terms a credit committee accepts, exactly what will be built, who is accountable for each decision, and what happens if a key assumption breaks. Bankability is not a technical property of a project &mdash; it is a documentation and governance property, built in from the first phase, not retrofitted before a financing round.",
+    "es": "La mayoría de los proyectos de infraestructura digital que no llegan al cierre financiero no son rechazados porque la tecnología esté mal o porque la necesidad de mercado no sea real. Son rechazados porque el sponsor no puede responder, en términos que un comité de crédito acepte, exactamente qué se va a construir, quién es responsable de cada decisión, y qué pasa si un supuesto clave falla. La bancabilidad no es una propiedad técnica del proyecto — es una propiedad de documentación y gobernanza, incorporada desde la primera fase, no agregada recién antes de una ronda de financiamiento."
+  },
+  "wp1.s1.p2": {
+    "en": "This paper sets out the structuring discipline INA applies to fiber, Fixed Wireless Access, datacenter and submarine cable sponsors &mdash; public agencies, private operators and mixed-capital vehicles alike &mdash; to move a project from a credible idea to a package a financier can actually underwrite, using the INA Project Structuring Framework&trade; (F1) and Investment Readiness Index&trade; (F2).",
+    "es": "Este documento plantea la disciplina de estructuración que INA aplica a sponsors de fibra, Fixed Wireless Access, datacenters y cable submarino — organismos públicos, operadores privados y vehículos de capital mixto por igual — para llevar un proyecto de una idea creíble a un paquete que un financiador realmente pueda suscribir, usando el Project Structuring Framework&trade; (F1) y el Investment Readiness Index&trade; (F2) de INA."
+  },
+  "wp1.s1.quote": {
+    "en": "Financiers don't fund infrastructure. They fund the certainty that a specific team will deliver a specific outcome, on a specific budget, with specific recourse if it doesn't. Bankability is that certainty, written down.",
+    "es": "Los financiadores no financian infraestructura. Financian la certeza de que un equipo específico va a entregar un resultado específico, con un presupuesto específico, con un recurso específico si no lo hace. La bancabilidad es esa certeza, puesta por escrito."
+  },
+  "wp1.s1.quote.cite": {
+    "en": "INA Project Structuring Framework&trade; &mdash; Field Notes, 2026",
+    "es": "Metodología de Estructuración de Proyectos de INA&trade; — Notas de Campo, 2026"
+  },
+  "wp1.s2.kicker": {
+    "en": "Diagnosis",
+    "es": "Diagnóstico"
+  },
+  "wp1.s2.p1": {
+    "en": "INA reviews dozens of infrastructure business cases a year across fiber, FWA, datacenter and submarine cable programs. The pattern repeats regardless of sector: the technical design is usually sound well before the financial and governance package is. Three gaps show up over and over.",
+    "es": "INA revisa decenas de business cases de infraestructura por año en programas de fibra, FWA, datacenters y cable submarino. El patrón se repite sin importar el sector: el diseño técnico suele estar sólido mucho antes que el paquete financiero y de gobernanza. Tres brechas aparecen una y otra vez."
+  },
+  "wp1.s2.block.title": {
+    "en": "Where the Gap Opens",
+    "es": "Dónde Se Abre la Brecha"
+  },
+  "wp1.s2.item1.b": {
+    "en": "The business case is built once, then defended, not updated.",
+    "es": "El business case se arma una vez, después se defiende, no se actualiza."
+  },
+  "wp1.s2.item1.d": {
+    "en": "A financial model produced at concept stage is presented to investors eighteen months later, unrevised, while every underlying assumption &mdash; construction costs, demand, competitive entrants &mdash; has moved.",
+    "es": "Un modelo financiero elaborado en etapa de concepto se presenta a los inversores dieciocho meses después, sin revisar, mientras cada supuesto subyacente — costos de construcción, demanda, nuevos competidores — cambió."
+  },
+  "wp1.s2.item2.b": {
+    "en": "Risk is described narratively, not quantified.",
+    "es": "El riesgo se describe de forma narrativa, no se cuantifica."
+  },
+  "wp1.s2.item2.d": {
+    "en": "Business cases that list risks in prose, without probability, impact or an owner attached to each one, read to a credit committee as risks the sponsor hasn't actually thought through.",
+    "es": "Los business cases que enumeran riesgos en prosa, sin probabilidad, impacto ni un responsable asignado a cada uno, le transmiten a un comité de crédito que el sponsor en realidad no pensó esos riesgos a fondo."
+  },
+  "wp1.s2.item3.b": {
+    "en": "Governance exists on paper but has never been tested.",
+    "es": "La gobernanza existe en el papel pero nunca fue puesta a prueba."
+  },
+  "wp1.s2.item3.d": {
+    "en": "A steering committee and RACI matrix that were drafted for the tender but never actually convened signal, to an experienced financier, that decision-making under stress is unproven.",
+    "es": "Un comité directivo y una matriz RACI redactados para la licitación pero que nunca se convocaron realmente le indican a un financiador experimentado que la toma de decisiones bajo presión no está probada."
+  },
+  "wp1.s2.callout.lab": {
+    "en": "Reality Check",
+    "es": "Chequeo de Realidad"
+  },
+  "wp1.s2.callout.p": {
+    "en": "A project can be 100% technically correct and still be unbankable. Bankability is a separate deliverable from engineering design, and it needs its own budget, timeline and owner.",
+    "es": "Un proyecto puede ser 100% correcto técnicamente y aun así no ser bancable. La bancabilidad es un entregable separado del diseño de ingeniería, y necesita su propio presupuesto, cronograma y responsable."
+  },
+  "wp1.s3.kicker": {
+    "en": "Diagnosis",
+    "es": "Diagnóstico"
+  },
+  "wp1.s3.p1": {
+    "en": "These are the barriers that most consistently separate a fundable project from one that stalls in diligence, across the sponsors INA has structured.",
+    "es": "Estas son las barreras que más consistentemente separan a un proyecto financiable de uno que se estanca en la due diligence, en los sponsors que INA ha estructurado."
+  },
+  "wp1.s3.b1.t": {
+    "en": "No single financial model that survives scrutiny",
+    "es": "No existe un único modelo financiero que resista el escrutinio"
+  },
+  "wp1.s3.b1.d": {
+    "en": "Different documents show different capex figures for the same project, because the model was copied and edited rather than maintained as one governed source of truth.",
+    "es": "Distintos documentos muestran distintas cifras de capex para el mismo proyecto, porque el modelo se copió y editó en lugar de mantenerse como una única fuente de verdad gobernada."
+  },
+  "wp1.s3.b2.t": {
+    "en": "Revenue assumptions with no independent validation",
+    "es": "Supuestos de ingresos sin validación independiente"
+  },
+  "wp1.s3.b2.d": {
+    "en": "Demand and tariff projections drafted internally, with no market study, benchmark or anchor-tenant letter of intent a financier can check against.",
+    "es": "Proyecciones de demanda y tarifas elaboradas internamente, sin un estudio de mercado, benchmark o carta de intención de un cliente ancla contra la cual un financiador pueda verificar."
+  },
+  "wp1.s3.b3.t": {
+    "en": "Unclear allocation of construction and completion risk",
+    "es": "Asignación poco clara del riesgo de construcción y finalización"
+  },
+  "wp1.s3.b3.d": {
+    "en": "Contracts that don't specify who absorbs cost overruns or schedule slippage push that risk, by default, onto whoever is financing the project.",
+    "es": "Los contratos que no especifican quién absorbe los sobrecostos o los atrasos de cronograma trasladan ese riesgo, por defecto, a quien esté financiando el proyecto."
+  },
+  "wp1.s3.b4.t": {
+    "en": "No credible operating entity post-construction",
+    "es": "Sin una entidad operadora creíble después de la construcción"
+  },
+  "wp1.s3.b4.d": {
+    "en": "A strong construction plan paired with a vague answer to \"who operates this and with what team, once it's built.\"",
+    "es": "Un plan de construcción sólido combinado con una respuesta vaga a \"quién opera esto y con qué equipo, una vez construido\"."
+  },
+  "wp1.s3.b5.t": {
+    "en": "Permits and rights-of-way treated as a formality",
+    "es": "Permisos y derechos de paso tratados como un trámite formal"
+  },
+  "wp1.s3.b5.d": {
+    "en": "Land access, spectrum, landing permits or municipal rights-of-way assumed rather than confirmed &mdash; one of the most common causes of late-stage financing delay.",
+    "es": "Acceso a terrenos, espectro, permisos de aterrizaje o derechos de paso municipales que se asumen en lugar de confirmarse — una de las causas más comunes de demoras de financiamiento en etapas avanzadas."
+  },
+  "wp1.s4.kicker": {
+    "en": "Methodology",
+    "es": "Metodología"
+  },
+  "wp1.s4.p1": {
+    "en": "INA structures bankability using two of its seven INA Frameworks&trade; together: the <b style=\"color:var(--text);\">Project Structuring Framework&trade; (F1)</b> to build the underlying discipline phase by phase, and the <b style=\"color:var(--text);\">Investment Readiness Index&trade; (F2)</b> to translate that discipline into a single, comparable score a financier can act on quickly.",
+    "es": "INA estructura la bancabilidad usando dos de sus siete INA Frameworks&trade; en conjunto: la <b style=\"color:var(--text);\">Metodología de Estructuración de Proyectos&trade; (F1)</b> para construir la disciplina de base fase por fase, y el <b style=\"color:var(--text);\">Investment Readiness Index&trade; (F2)</b> para traducir esa disciplina en un único puntaje comparable sobre el cual un financiador puede actuar rápido."
+  },
+  "wp1.s4.th1": {
+    "en": "F1 Phase",
+    "es": "Fase de F1"
+  },
+  "wp1.s4.th2": {
+    "en": "What It Establishes",
+    "es": "Qué Establece"
+  },
+  "wp1.s4.th3": {
+    "en": "F2 Dimensions It Feeds",
+    "es": "Dimensiones de F2 que Alimenta"
+  },
+  "wp1.s4.r1.phase": {
+    "en": "I &middot; Strategic Diagnosis",
+    "es": "I &middot; Diagnóstico Estratégico"
+  },
+  "wp1.s4.r1.what": {
+    "en": "Executive sponsorship and a verifiable problem statement",
+    "es": "Patrocinio ejecutivo y un planteamiento del problema verificable"
+  },
+  "wp1.s4.r1.dims": {
+    "en": "Sponsor Capacity",
+    "es": "Capacidad del Sponsor"
+  },
+  "wp1.s4.r2.phase": {
+    "en": "II &middot; Feasibility &amp; Business Case",
+    "es": "II &middot; Factibilidad y Business Case"
+  },
+  "wp1.s4.r2.what": {
+    "en": "A single governed financial model and validated demand assumptions",
+    "es": "Un único modelo financiero gobernado y supuestos de demanda validados"
+  },
+  "wp1.s4.r2.dims": {
+    "en": "Financial Model Robustness, Market Demand Evidence",
+    "es": "Robustez del Modelo Financiero, Evidencia de Demanda de Mercado"
+  },
+  "wp1.s4.r3.phase": {
+    "en": "III &middot; Governance &amp; Contractual Model",
+    "es": "III &middot; Gobernanza y Modelo Contractual"
+  },
+  "wp1.s4.r3.what": {
+    "en": "Risk allocation in the contract, not left implicit",
+    "es": "Asignación de riesgo en el contrato, no dejada implícita"
+  },
+  "wp1.s4.r3.dims": {
+    "en": "Legal &amp; Regulatory Clarity, Governance &amp; Reporting",
+    "es": "Claridad Legal y Regulatoria, Gobernanza y Reporte"
+  },
+  "wp1.s4.r4.phase": {
+    "en": "IV &middot; Procurement &amp; Implementation",
+    "es": "IV &middot; Adquisiciones e Implementación"
+  },
+  "wp1.s4.r4.what": {
+    "en": "Evidence the delivery model actually functions under real conditions",
+    "es": "Evidencia de que el modelo de entrega efectivamente funciona en condiciones reales"
+  },
+  "wp1.s4.r4.dims": {
+    "en": "Technical Design Maturity, Risk Mitigation Coverage",
+    "es": "Madurez del Diseño Técnico, Cobertura de Mitigación de Riesgos"
+  },
+  "wp1.s4.r5.phase": {
+    "en": "V &middot; Monitoring &amp; Improvement",
+    "es": "V &middot; Monitoreo y Mejora"
+  },
+  "wp1.s4.r5.what": {
+    "en": "A credible post-construction operating and reporting capability",
+    "es": "Una capacidad creíble de operación y reporte posterior a la construcción"
+  },
+  "wp1.s4.r5.dims": {
+    "en": "Environmental &amp; Social Readiness, Governance &amp; Reporting",
+    "es": "Preparación Ambiental y Social, Gobernanza y Reporte"
+  },
+  "wp1.s4.stages.subhead": {
+    "en": "Where a Project Typically Scores",
+    "es": "Dónde Suele Puntuar un Proyecto"
+  },
+  "wp1.s4.stages.p": {
+    "en": "INA scores projects 0&ndash;100 across F2's eight dimensions. Most sponsors are surprised to learn they enter structuring in the low 30s &mdash; adequate for a feasibility conversation, not for a term sheet.",
+    "es": "INA puntúa proyectos de 0 a 100 en las ocho dimensiones de F2. A la mayoría de los sponsors les sorprende saber que entran a la estructuración con un puntaje de poco más de 30 — adecuado para una conversación de factibilidad, no para un term sheet."
+  },
+  "wp1.s4.stage1.label": {
+    "en": "Concept Stage",
+    "es": "Etapa de Concepto"
+  },
+  "wp1.s4.stage2.label": {
+    "en": "Early Structuring",
+    "es": "Estructuración Temprana"
+  },
+  "wp1.s4.stage3.label": {
+    "en": "Advanced Structuring",
+    "es": "Estructuración Avanzada"
+  },
+  "wp1.s4.stage4.label": {
+    "en": "Investment Ready",
+    "es": "Investment Ready"
+  },
+  "wp1.s5.kicker": {
+    "en": "Diligence",
+    "es": "Due Diligence"
+  },
+  "wp1.s5.p1": {
+    "en": "There is a consistent gap between the documents sponsors are proud of and the ones a credit committee actually opens first.",
+    "es": "Hay una brecha consistente entre los documentos de los que los sponsors están orgullosos y los que un comité de crédito realmente abre primero."
+  },
+  "wp1.s5.want.title": {
+    "en": "What Investors Open First",
+    "es": "Lo Que los Inversores Abren Primero"
+  },
+  "wp1.s5.want.li1": {
+    "en": "A single financial model with visible, traceable assumptions",
+    "es": "Un único modelo financiero con supuestos visibles y trazables"
+  },
+  "wp1.s5.want.li2": {
+    "en": "A risk register with owners and mitigation status, not a risk paragraph",
+    "es": "Un registro de riesgos con responsables y estado de mitigación, no un párrafo sobre riesgos"
+  },
+  "wp1.s5.want.li3": {
+    "en": "Evidence of executive sponsorship that survives a change in leadership",
+    "es": "Evidencia de patrocinio ejecutivo que sobrevive a un cambio de liderazgo"
+  },
+  "wp1.s5.get.title": {
+    "en": "What Sponsors Usually Lead With",
+    "es": "Con Qué Suelen Empezar los Sponsors"
+  },
+  "wp1.s5.get.li1": {
+    "en": "A technical design deck",
+    "es": "Una presentación de diseño técnico"
+  },
+  "wp1.s5.get.li2": {
+    "en": "A market opportunity narrative",
+    "es": "Una narrativa de oportunidad de mercado"
+  },
+  "wp1.s5.get.li3": {
+    "en": "A single-page cost estimate",
+    "es": "Una estimación de costos de una sola página"
+  },
+  "wp1.s5.callout.lab": {
+    "en": "Structuring Principle",
+    "es": "Principio de Estructuración"
+  },
+  "wp1.s5.callout.p": {
+    "en": "Lead diligence with the documents a financier reads first, not the ones the sponsor is proudest of. The technical design deck still matters &mdash; it just isn't what gets a project past the first screening call.",
+    "es": "Encabecen la due diligence con los documentos que un financiador lee primero, no con los que más orgullo le dan al sponsor. La presentación de diseño técnico sigue siendo importante — simplemente no es lo que hace pasar a un proyecto la primera instancia de evaluación."
+  },
+  "wp1.s6.kicker": {
+    "en": "Fit",
+    "es": "Encaje"
+  },
+  "wp1.s6.p1": {
+    "en": "The bar for bankability isn't identical across infrastructure types &mdash; each typology has a financing pool with different expectations.",
+    "es": "La vara de la bancabilidad no es igual entre tipos de infraestructura — cada tipología tiene un pool de financiamiento con expectativas distintas."
+  },
+  "wp1.s6.th1": {
+    "en": "Typology",
+    "es": "Tipología"
+  },
+  "wp1.s6.th2": {
+    "en": "Typical Financing Pool",
+    "es": "Pool de Financiamiento Típico"
+  },
+  "wp1.s6.th3": {
+    "en": "Bankability Bar",
+    "es": "Vara de Bancabilidad"
+  },
+  "wp1.s6.r1.typo": {
+    "en": "Submarine Cable Systems",
+    "es": "Sistemas de Cable Submarino"
+  },
+  "wp1.s6.r1.pool": {
+    "en": "MDB sovereign loans, consortium equity, ECA-backed vendor finance",
+    "es": "Préstamos soberanos de bancos multilaterales, capital del consorcio, financiamiento de proveedores respaldado por ECA"
+  },
+  "wp1.s6.r1.bar": {
+    "en": "IRU offtake commitments and landing-party governance in place before financial close",
+    "es": "Compromisos de offtake vía IRU y gobernanza de las landing parties definidos antes del cierre financiero"
+  },
+  "wp1.s6.r2.typo": {
+    "en": "Fiber Backbone &amp; Last Mile",
+    "es": "Backbone de Fibra y Última Milla"
+  },
+  "wp1.s6.r2.pool": {
+    "en": "Universal service funds, national budget, project finance debt",
+    "es": "Fondos de servicio universal, presupuesto nacional, deuda de project finance"
+  },
+  "wp1.s6.r2.bar": {
+    "en": "Rights-of-way and municipal permits confirmed segment by segment",
+    "es": "Derechos de paso y permisos municipales confirmados tramo por tramo"
+  },
+  "wp1.s6.r3.typo": {
+    "en": "Fixed Wireless Access",
+    "es": "Fixed Wireless Access"
+  },
+  "wp1.s6.r3.pool": {
+    "en": "Private equity, vendor financing, blended finance",
+    "es": "Capital privado, financiamiento de proveedores, financiamiento combinado"
+  },
+  "wp1.s6.r3.bar": {
+    "en": "Confirmed spectrum access and CPE supply agreements",
+    "es": "Acceso a espectro confirmado y acuerdos de suministro de CPE"
+  },
+  "wp1.s6.r4.typo": {
+    "en": "AI Datacenters",
+    "es": "Datacenters para IA"
+  },
+  "wp1.s6.r4.pool": {
+    "en": "Infrastructure funds, project finance debt, hyperscaler pre-commitments",
+    "es": "Fondos de infraestructura, deuda de project finance, precompromisos de hyperscalers"
+  },
+  "wp1.s6.r4.bar": {
+    "en": "Power availability and offtake/colocation contracts, not just a site",
+    "es": "Disponibilidad de energía y contratos de offtake/colocation, no solo un terreno"
+  },
+  "wp1.s6.footnote": {
+    "en": "See INA's <a href=\"finance.html\" style=\"color:var(--amber-deep);\">Multilateral Finance</a> page and the <b style=\"color:var(--text);\">Multilateral Finance Navigator&trade; (F6)</b> for the full financing-mechanism landscape once a project clears the bankability bar.",
+    "es": "Ver la página de <a href=\"finance.html\" style=\"color:var(--amber-deep);\">Financiamiento Multilateral</a> de INA y el <b style=\"color:var(--text);\">Multilateral Finance Navigator&trade; (F6)</b> para el panorama completo de mecanismos de financiamiento una vez que un proyecto supera la vara de bancabilidad."
+  },
+  "wp1.s7.kicker": {
+    "en": "Risk",
+    "es": "Riesgo"
+  },
+  "wp1.s7.r1.risk": {
+    "en": "Financial model with unreconciled versions across documents",
+    "es": "Modelo financiero con versiones no conciliadas entre documentos"
+  },
+  "wp1.s7.r1.mitig": {
+    "en": "One governed model, version-controlled, owned by a named financial lead",
+    "es": "Un único modelo gobernado, con control de versiones, a cargo de un responsable financiero identificado"
+  },
+  "wp1.s7.r2.risk": {
+    "en": "Demand projections without independent validation",
+    "es": "Proyecciones de demanda sin validación independiente"
+  },
+  "wp1.s7.r2.mitig": {
+    "en": "Third-party market study or anchor-tenant letters of intent before diligence",
+    "es": "Estudio de mercado de un tercero o cartas de intención de clientes ancla antes de la due diligence"
+  },
+  "wp1.s7.r3.risk": {
+    "en": "Construction risk not explicitly allocated in contract",
+    "es": "Riesgo de construcción no asignado explícitamente en el contrato"
+  },
+  "wp1.s7.r3.mitig": {
+    "en": "Fixed-price or capped-overrun clauses negotiated before tender award",
+    "es": "Cláusulas de precio fijo o de sobrecosto limitado negociadas antes de adjudicar la licitación"
+  },
+  "wp1.s7.r4.risk": {
+    "en": "Permits or rights-of-way unconfirmed at financial close",
+    "es": "Permisos o derechos de paso sin confirmar al momento del cierre financiero"
+  },
+  "wp1.s7.r4.mitig": {
+    "en": "Permit tracker maintained from Phase I, not assembled at diligence",
+    "es": "Seguimiento de permisos mantenido desde la Fase I, no armado recién en la due diligence"
+  },
+  "wp1.s7.r5.risk": {
+    "en": "No credible post-construction operating entity",
+    "es": "Sin una entidad operadora creíble posterior a la construcción"
+  },
+  "wp1.s7.r5.mitig": {
+    "en": "Operating model and staffing plan finalized during Phase III, not after go-live",
+    "es": "Modelo operativo y plan de dotación de personal finalizados durante la Fase III, no después de la puesta en marcha"
+  },
+  "wp1.s8.kicker": {
+    "en": "Execution",
+    "es": "Ejecución"
+  },
+  "wp1.s8.p1": {
+    "en": "A sponsor scoring in the 30s on the Investment Readiness Index&trade; can reach the 70s in roughly two quarters by sequencing these four moves.",
+    "es": "Un sponsor que puntúa en el rango de 30 en el Investment Readiness Index&trade; puede alcanzar el rango de 70 en aproximadamente dos trimestres siguiendo estos cuatro movimientos en secuencia."
+  },
+  "wp1.s8.p1t": {
+    "en": "Weeks 1&ndash;4 &middot; Run the Investment Readiness Index&trade;",
+    "es": "Semanas 1&ndash;4 &middot; Correr el Investment Readiness Index&trade;"
+  },
+  "wp1.s8.p1d": {
+    "en": "Score the project across all eight F2 dimensions to identify which two or three are dragging the composite score down.",
+    "es": "Puntuar el proyecto en las ocho dimensiones de F2 para identificar cuáles dos o tres están arrastrando hacia abajo el puntaje compuesto."
+  },
+  "wp1.s8.p1g": {
+    "en": "Gate &mdash; Baseline score confirmed",
+    "es": "Gate — Puntaje base confirmado"
+  },
+  "wp1.s8.p2t": {
+    "en": "Weeks 5&ndash;10 &middot; Consolidate the financial model and risk register",
+    "es": "Semanas 5&ndash;10 &middot; Consolidar el modelo financiero y el registro de riesgos"
+  },
+  "wp1.s8.p2d": {
+    "en": "Retire every duplicate spreadsheet into one governed model; convert the risk narrative into a scored, owned register.",
+    "es": "Eliminar cada planilla duplicada en favor de un único modelo gobernado; convertir la narrativa de riesgos en un registro puntuado y con responsables asignados."
+  },
+  "wp1.s8.p2g": {
+    "en": "Gate &mdash; Single source of truth confirmed",
+    "es": "Gate — Fuente única de verdad confirmada"
+  },
+  "wp1.s8.p3t": {
+    "en": "Weeks 11&ndash;16 &middot; Close the permit and rights-of-way gap",
+    "es": "Semanas 11&ndash;16 &middot; Cerrar la brecha de permisos y derechos de paso"
+  },
+  "wp1.s8.p3d": {
+    "en": "Confirm every outstanding permit, spectrum grant or land right, with dates and owners, rather than assuming they will resolve before construction.",
+    "es": "Confirmar cada permiso pendiente, concesión de espectro o derecho de suelo, con fechas y responsables, en lugar de asumir que se resolverán antes de la construcción."
+  },
+  "wp1.s8.p3g": {
+    "en": "Gate &mdash; Permit tracker complete",
+    "es": "Gate — Seguimiento de permisos completo"
+  },
+  "wp1.s8.p4t": {
+    "en": "Weeks 17&ndash;24 &middot; Re-score and package for financiers",
+    "es": "Semanas 17&ndash;24 &middot; Repuntuar y armar el paquete para financiadores"
+  },
+  "wp1.s8.p4d": {
+    "en": "Re-run the Index, confirm the score has moved into the Investment Ready band, and assemble the package around the documents financiers open first.",
+    "es": "Volver a correr el Índice, confirmar que el puntaje se movió a la banda Investment Ready, y armar el paquete alrededor de los documentos que los financiadores abren primero."
+  },
+  "wp1.s8.p4g": {
+    "en": "Gate &mdash; Financing package issued",
+    "es": "Gate — Paquete de financiamiento emitido"
+  },
+  "wp1.s9.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "wp1.s9.p1": {
+    "en": "Bankability is a structuring outcome, not a technical one. A sponsor that treats the financial model, risk register and governance charter with the same rigor as the engineering design will consistently outperform a technically superior project that treats those as paperwork to assemble at the end.",
+    "es": "La bancabilidad es un resultado de estructuración, no técnico. Un sponsor que trata el modelo financiero, el registro de riesgos y la carta de gobernanza con el mismo rigor que el diseño de ingeniería va a superar consistentemente a un proyecto técnicamente superior que trata esos elementos como papeleo para armar al final."
+  },
+  "wp1.s9.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "wp1.s9.rec1": {
+    "en": "Run the Investment Readiness Index&trade; before, not after, approaching financiers.",
+    "es": "Correr el Investment Readiness Index&trade; antes, no después, de acercarse a los financiadores."
+  },
+  "wp1.s9.rec2": {
+    "en": "Consolidate every financial model into one governed, version-controlled source.",
+    "es": "Consolidar todos los modelos financieros en una única fuente gobernada y con control de versiones."
+  },
+  "wp1.s9.rec3": {
+    "en": "Convert narrative risk sections into a scored register with named owners.",
+    "es": "Convertir las secciones narrativas de riesgo en un registro puntuado con responsables identificados."
+  },
+  "wp1.s9.rec4": {
+    "en": "Confirm permits and rights-of-way before, not during, diligence.",
+    "es": "Confirmar permisos y derechos de paso antes, no durante, la due diligence."
+  },
+  "wp1.s9.rec5": {
+    "en": "Name a post-construction operating entity before financial close, not after.",
+    "es": "Designar una entidad operadora posterior a la construcción antes del cierre financiero, no después."
+  },
+  "wp1.s9.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Project Structuring Framework&trade; (F1) and Investment Readiness Index&trade; (F2).",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA, basado en el Project Structuring Framework&trade; (F1) y el Investment Readiness Index&trade; (F2) de INA."
+  },
+  "wp1.s9.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "wp1.s9.next.p": {
+    "en": "INA's advisory team can run the Investment Readiness Index&trade; against your project and return a prioritized gap roadmap. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "El equipo de asesoría de INA puede correr el Investment Readiness Index&trade; sobre su proyecto y devolver una hoja de ruta de brechas priorizada. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "wp2.crumb": {
+    "en": "White Paper",
+    "es": "Documento Técnico"
+  },
+  "wp2.eyebrow": {
+    "en": "White Paper &middot; September 2026",
+    "es": "Documento Técnico &middot; Septiembre 2026"
+  },
+  "wp2.h1": {
+    "en": "Financing the Connectivity Gap in Latin America",
+    "es": "Financiando la brecha de conectividad en América Latina"
+  },
+  "wp2.lede": {
+    "en": "The rural and last-mile connectivity gap won't close on commercial capital alone &mdash; a practical map of the mechanisms that actually reach these projects.",
+    "es": "La brecha de conectividad rural y de última milla no se va a cerrar solo con capital comercial — un mapa práctico de los mecanismos que realmente llegan a estos proyectos."
+  },
+  "wp2.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "wp2.toc.whynow": {
+    "en": "The Shape of the Gap",
+    "es": "La Forma de la Brecha"
+  },
+  "wp2.toc.barriers": {
+    "en": "Five Structural Barriers",
+    "es": "Cinco Barreras Estructurales"
+  },
+  "wp2.toc.framework": {
+    "en": "Matching Mechanism to Project",
+    "es": "Haciendo Coincidir el Mecanismo con el Proyecto"
+  },
+  "wp2.toc.governance": {
+    "en": "What Funders Actually Evaluate",
+    "es": "Lo Que los Financiadores Realmente Evalúan"
+  },
+  "wp2.toc.financing": {
+    "en": "Financing Sources for Connectivity",
+    "es": "Fuentes de Financiamiento para Conectividad"
+  },
+  "wp2.toc.risk": {
+    "en": "Risk Register",
+    "es": "Registro de Riesgos"
+  },
+  "wp2.toc.roadmap": {
+    "en": "A Roadmap to Origination",
+    "es": "Una Hoja de Ruta hacia la Originación"
+  },
+  "wp2.toc.conclusion": {
+    "en": "Conclusion &amp; Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "wp2.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "wp2.s1.p1": {
+    "en": "Latin America's urban connectivity is largely a commercial problem, solved by commercial operators. Its rural and last-mile gap is not &mdash; the households and towns still unconnected are, almost by definition, the ones a purely commercial business case cannot justify serving. Closing that gap requires blending public, multilateral and private capital deliberately, not hoping a single instrument does the whole job.",
+    "es": "La conectividad urbana de América Latina es en gran medida un problema comercial, resuelto por operadores comerciales. Su brecha rural y de última milla no lo es — los hogares y pueblos todavía desconectados son, casi por definición, aquellos que un business case puramente comercial no puede justificar atender. Cerrar esa brecha requiere combinar capital público, multilateral y privado de forma deliberada, no esperar que un único instrumento resuelva todo."
+  },
+  "wp2.s1.p2": {
+    "en": "This paper maps the financing mechanisms actually reaching connectivity projects across the region today &mdash; multilateral development banks, universal service funds, blended finance and private infrastructure capital &mdash; and sets out how INA's Multilateral Finance Navigator&trade; (F6) matches a project's profile to the realistic subset of that landscape, rather than the theoretical whole of it.",
+    "es": "Este documento mapea los mecanismos de financiamiento que hoy realmente llegan a proyectos de conectividad en la región — bancos multilaterales de desarrollo, fondos de servicio universal, financiamiento combinado y capital privado de infraestructura — y plantea cómo el Multilateral Finance Navigator&trade; (F6) de INA hace coincidir el perfil de un proyecto con el subconjunto realista de ese panorama, en lugar del panorama teórico completo."
+  },
+  "wp2.s1.quote": {
+    "en": "The connectivity gap in Latin America isn't a shortage of capital. It's a shortage of projects structured well enough for the capital that already exists to reach them.",
+    "es": "La brecha de conectividad en América Latina no es una escasez de capital. Es una escasez de proyectos suficientemente bien estructurados para que el capital que ya existe pueda llegar a ellos."
+  },
+  "wp2.s1.quote.cite": {
+    "en": "INA Multilateral Finance Navigator&trade; &mdash; Field Notes, 2026",
+    "es": "Multilateral Finance Navigator&trade; de INA — Notas de Campo, 2026"
+  },
+  "wp2.s2.kicker": {
+    "en": "Context",
+    "es": "Contexto"
+  },
+  "wp2.s2.p1": {
+    "en": "The remaining unconnected population across Latin America is concentrated where three conditions overlap, and each one changes which financing mechanism actually fits.",
+    "es": "La población aún desconectada en América Latina se concentra donde se superponen tres condiciones, y cada una cambia qué mecanismo de financiamiento realmente encaja."
+  },
+  "wp2.s2.block.title": {
+    "en": "What Defines the Remaining Gap",
+    "es": "Qué Define la Brecha Remanente"
+  },
+  "wp2.s2.item1.b": {
+    "en": "Low population density relative to build cost.",
+    "es": "Baja densidad poblacional en relación con el costo de construcción."
+  },
+  "wp2.s2.item1.d": {
+    "en": "Fiber and even FWA capex per household rises fast once density drops below the level a commercial operator can recover through subscription revenue alone.",
+    "es": "El capex de fibra, e incluso de FWA, por hogar sube rápido una vez que la densidad cae por debajo del nivel que un operador comercial puede recuperar solo con ingresos por suscripción."
+  },
+  "wp2.s2.item2.b": {
+    "en": "Difficult or contested terrain.",
+    "es": "Terreno difícil o en disputa."
+  },
+  "wp2.s2.item2.d": {
+    "en": "Amazon basin, Andean highland and dispersed island geographies raise construction cost and timeline in ways a standard business case understates.",
+    "es": "Las geografías de la cuenca amazónica, el altiplano andino e islas dispersas elevan el costo y el cronograma de construcción de formas que un business case estándar subestima."
+  },
+  "wp2.s2.item3.b": {
+    "en": "Limited local institutional capacity to originate projects.",
+    "es": "Capacidad institucional local limitada para originar proyectos."
+  },
+  "wp2.s2.item3.d": {
+    "en": "Many of the municipalities and provincial utilities closest to the gap have never run a financeable infrastructure tender before &mdash; the barrier is as much origination capacity as capital.",
+    "es": "Muchos de los municipios y empresas provinciales de servicios más cercanos a la brecha nunca antes gestionaron una licitación de infraestructura financiable — la barrera es tanto de capacidad de originación como de capital."
+  },
+  "wp2.s2.callout.lab": {
+    "en": "Reality Check",
+    "es": "Chequeo de Realidad"
+  },
+  "wp2.s2.callout.p": {
+    "en": "Universal service funds across the region are frequently under-executed relative to their available balance &mdash; not because the need isn't there, but because too few bankable projects reach the call for proposals.",
+    "es": "Los fondos de servicio universal en la región suelen estar subejecutados en relación con su saldo disponible — no porque falte necesidad, sino porque muy pocos proyectos bancables llegan a la convocatoria."
+  },
+  "wp2.s3.kicker": {
+    "en": "Diagnosis",
+    "es": "Diagnóstico"
+  },
+  "wp2.s3.p1": {
+    "en": "These barriers recur across the connectivity projects INA has reviewed for financing readiness in the region.",
+    "es": "Estas barreras se repiten en los proyectos de conectividad que INA ha revisado para evaluar preparación para el financiamiento en la región."
+  },
+  "wp2.s3.b1.t": {
+    "en": "Projects sized for the whole gap, not a financeable phase",
+    "es": "Proyectos dimensionados para toda la brecha, no para una fase financiable"
+  },
+  "wp2.s3.b1.d": {
+    "en": "A national rural connectivity ambition proposed as a single project is too large for most single instruments and too unfocused for any of them.",
+    "es": "Una ambición nacional de conectividad rural propuesta como un único proyecto es demasiado grande para la mayoría de los instrumentos individuales y demasiado difusa para cualquiera de ellos."
+  },
+  "wp2.s3.b2.t": {
+    "en": "Subsidy design that doesn't match the actual viability gap",
+    "es": "Diseño de subsidio que no coincide con la brecha de viabilidad real"
+  },
+  "wp2.s3.b2.d": {
+    "en": "Universal service fund subsidies calculated on outdated cost benchmarks under- or over-fund the true gap between commercial return and required return.",
+    "es": "Los subsidios de fondos de servicio universal calculados sobre benchmarks de costos desactualizados sub- o sobre-financian la brecha real entre el retorno comercial y el retorno requerido."
+  },
+  "wp2.s3.b3.t": {
+    "en": "No local counterpart institution ready to co-execute",
+    "es": "Sin una institución contraparte local lista para coejecutar"
+  },
+  "wp2.s3.b3.d": {
+    "en": "Multilateral facilities generally require a capable local executing agency &mdash; a gap in institutional readiness stalls disbursement even after approval.",
+    "es": "Los mecanismos multilaterales generalmente requieren un organismo ejecutor local capaz — una brecha en la preparación institucional frena el desembolso incluso después de la aprobación."
+  },
+  "wp2.s3.b4.t": {
+    "en": "Safeguards and procurement rules underestimated at origination",
+    "es": "Salvaguardas y reglas de adquisición subestimadas en la originación"
+  },
+  "wp2.s3.b4.d": {
+    "en": "MDB environmental, social and procurement safeguards are frequently scoped after a project is already designed, forcing costly redesign.",
+    "es": "Las salvaguardas ambientales, sociales y de adquisición de los bancos multilaterales frecuentemente se definen recién cuando el proyecto ya está diseñado, forzando un rediseño costoso."
+  },
+  "wp2.s3.b5.t": {
+    "en": "Currency and tariff risk left unaddressed",
+    "es": "Riesgo cambiario y tarifario sin abordar"
+  },
+  "wp2.s3.b5.d": {
+    "en": "Hard-currency debt against local-currency revenue, with no hedge or guarantee structure, is a common and avoidable reason blended deals fall apart late.",
+    "es": "Deuda en moneda dura contra ingresos en moneda local, sin cobertura ni estructura de garantía, es una razón común y evitable por la que operaciones de financiamiento combinado se caen en etapas avanzadas."
+  },
+  "wp2.s4.kicker": {
+    "en": "Methodology",
+    "es": "Metodología"
+  },
+  "wp2.s4.p1": {
+    "en": "INA applies its <b style=\"color:var(--text);\">Multilateral Finance Navigator&trade; (F6)</b> to read a connectivity project's country, size, density profile and maturity, then narrow the full financing landscape to the mechanisms realistically available to it.",
+    "es": "INA aplica su <b style=\"color:var(--text);\">Multilateral Finance Navigator&trade; (F6)</b> para leer el país, el tamaño, el perfil de densidad y la madurez de un proyecto de conectividad, y así acotar el panorama de financiamiento completo a los mecanismos realmente disponibles para él."
+  },
+  "wp2.s4.th1": {
+    "en": "Project Profile",
+    "es": "Perfil del Proyecto"
+  },
+  "wp2.s4.th2": {
+    "en": "Realistic Mechanism",
+    "es": "Mecanismo Realista"
+  },
+  "wp2.s4.th3": {
+    "en": "Why",
+    "es": "Por Qué"
+  },
+  "wp2.s4.r1.profile": {
+    "en": "Single-province rural fiber, moderate density",
+    "es": "Fibra rural en una sola provincia, densidad moderada"
+  },
+  "wp2.s4.r1.mech": {
+    "en": "Universal service fund subsidy plus commercial debt",
+    "es": "Subsidio de fondo de servicio universal más deuda comercial"
+  },
+  "wp2.s4.r1.why": {
+    "en": "Viability gap is partial, not total &mdash; a subsidy can close it without full grant funding",
+    "es": "La brecha de viabilidad es parcial, no total — un subsidio puede cerrarla sin financiamiento no reembolsable total"
+  },
+  "wp2.s4.r2.profile": {
+    "en": "Multi-country backbone or cross-border segment",
+    "es": "Backbone multipaís o segmento transfronterizo"
+  },
+  "wp2.s4.r2.mech": {
+    "en": "MDB sovereign or sub-sovereign loan",
+    "es": "Préstamo soberano o subsoberano de un banco multilateral"
+  },
+  "wp2.s4.r2.why": {
+    "en": "Scale and cross-border coordination match MDB mandate and risk appetite",
+    "es": "La escala y la coordinación transfronteriza coinciden con el mandato y el apetito de riesgo de los bancos multilaterales"
+  },
+  "wp2.s4.r3.profile": {
+    "en": "Very low-density, high-cost remote area",
+    "es": "Área remota de muy baja densidad y alto costo"
+  },
+  "wp2.s4.r3.mech": {
+    "en": "Blended finance / viability-gap grant funding",
+    "es": "Financiamiento combinado / fondos no reembolsables de brecha de viabilidad"
+  },
+  "wp2.s4.r3.why": {
+    "en": "Commercial return alone can't clear the gap even with a partial subsidy",
+    "es": "El retorno comercial solo no puede cerrar la brecha ni siquiera con un subsidio parcial"
+  },
+  "wp2.s4.r4.profile": {
+    "en": "Private operator expanding into secondary cities",
+    "es": "Operador privado expandiéndose a ciudades secundarias"
+  },
+  "wp2.s4.r4.mech": {
+    "en": "Private infrastructure fund equity or project finance debt",
+    "es": "Capital de fondo privado de infraestructura o deuda de project finance"
+  },
+  "wp2.s4.r4.why": {
+    "en": "Commercial returns are achievable without concessional support",
+    "es": "Los retornos comerciales son alcanzables sin apoyo concesional"
+  },
+  "wp2.s4.aievo.lab": {
+    "en": "AI Evolution",
+    "es": "Evolución con IA"
+  },
+  "wp2.s4.aievo.p": {
+    "en": "F6 is designed to evolve into a structured intake tool: a sponsor answers a short questionnaire and receives a ranked shortlist of financing mechanisms and matching institutions for their specific project.",
+    "es": "F6 está diseñado para evolucionar hacia una herramienta de intake estructurada: un sponsor responde un cuestionario breve y recibe una lista corta y priorizada de mecanismos de financiamiento e instituciones que encajan con su proyecto específico."
+  },
+  "wp2.s5.kicker": {
+    "en": "Diligence",
+    "es": "Due Diligence"
+  },
+  "wp2.s5.p1": {
+    "en": "Multilateral and blended-finance funders weigh a connectivity project differently than a purely commercial lender does.",
+    "es": "Los financiadores multilaterales y de financiamiento combinado ponderan un proyecto de conectividad de forma distinta a como lo hace un prestamista puramente comercial."
+  },
+  "wp2.s5.mdb.title": {
+    "en": "Multilateral &amp; Development Funders",
+    "es": "Financiadores Multilaterales y de Desarrollo"
+  },
+  "wp2.s5.mdb.li1": {
+    "en": "Demonstrated social and economic impact, not just IRR",
+    "es": "Impacto social y económico demostrado, no solo la TIR"
+  },
+  "wp2.s5.mdb.li2": {
+    "en": "Environmental and social safeguard compliance from the outset",
+    "es": "Cumplimiento de salvaguardas ambientales y sociales desde el inicio"
+  },
+  "wp2.s5.mdb.li3": {
+    "en": "A capable local executing agency named and confirmed",
+    "es": "Un organismo ejecutor local capaz, identificado y confirmado"
+  },
+  "wp2.s5.priv.title": {
+    "en": "Private &amp; Commercial Co-Investors",
+    "es": "Coinversores Privados y Comerciales"
+  },
+  "wp2.s5.priv.li1": {
+    "en": "A defined, capped subsidy that closes the viability gap",
+    "es": "Un subsidio definido y acotado que cierra la brecha de viabilidad"
+  },
+  "wp2.s5.priv.li2": {
+    "en": "Currency and tariff risk explicitly allocated or hedged",
+    "es": "Riesgo cambiario y tarifario asignado o cubierto explícitamente"
+  },
+  "wp2.s5.priv.li3": {
+    "en": "A clear exit or refinancing path once the network stabilizes",
+    "es": "Un camino claro de salida o refinanciamiento una vez que la red se estabiliza"
+  },
+  "wp2.s5.callout.lab": {
+    "en": "Structuring Principle",
+    "es": "Principio de Estructuración"
+  },
+  "wp2.s5.callout.p": {
+    "en": "Design the subsidy and the commercial layer together, from the same financial model &mdash; not as two documents negotiated separately with two different counterparties.",
+    "es": "Diseñar el subsidio y la capa comercial juntos, a partir del mismo modelo financiero — no como dos documentos negociados por separado con dos contrapartes distintas."
+  },
+  "wp2.s6.kicker": {
+    "en": "Landscape",
+    "es": "Panorama"
+  },
+  "wp2.s6.th1": {
+    "en": "Source",
+    "es": "Fuente"
+  },
+  "wp2.s6.th2": {
+    "en": "Instrument Type",
+    "es": "Tipo de Instrumento"
+  },
+  "wp2.s6.th3": {
+    "en": "Key Consideration",
+    "es": "Consideración Clave"
+  },
+  "wp2.s6.r1.src": {
+    "en": "Multilateral development banks (IDB, CAF, World Bank, FONPLATA)",
+    "es": "Bancos multilaterales de desarrollo (BID, CAF, Banco Mundial, FONPLATA)"
+  },
+  "wp2.s6.r1.inst": {
+    "en": "Sovereign or sub-sovereign loans, concessional facilities",
+    "es": "Préstamos soberanos o subsoberanos, facilidades concesionales"
+  },
+  "wp2.s6.r1.con": {
+    "en": "12&ndash;24 month origination; requires sovereign backing and safeguard compliance",
+    "es": "Originación de 12 a 24 meses; requiere respaldo soberano y cumplimiento de salvaguardas"
+  },
+  "wp2.s6.r2.src": {
+    "en": "Universal service funds (e.g. Argentina's FSU/ENACOM, Brazil's FUST, Colombia's national fund)",
+    "es": "Fondos de servicio universal (ej. FSU/ENACOM de Argentina, FUST de Brasil, el fondo nacional de Colombia)"
+  },
+  "wp2.s6.r2.inst": {
+    "en": "Non-reimbursable grants, supply- or demand-side subsidies",
+    "es": "Fondos no reembolsables, subsidios a la oferta o a la demanda"
+  },
+  "wp2.s6.r2.con": {
+    "en": "Subject to calls for proposals; requires demonstrating the connectivity gap quantitatively",
+    "es": "Sujeto a convocatorias; requiere demostrar la brecha de conectividad de forma cuantitativa"
+  },
+  "wp2.s6.r3.src": {
+    "en": "Bilateral development finance &amp; trade agencies (USTDA, DFC)",
+    "es": "Agencias bilaterales de financiamiento para el desarrollo y comercio (USTDA, DFC)"
+  },
+  "wp2.s6.r3.inst": {
+    "en": "Feasibility study grants, direct loans, political risk insurance",
+    "es": "Subvenciones para estudios de factibilidad, préstamos directos, seguro de riesgo político"
+  },
+  "wp2.s6.r3.con": {
+    "en": "USTDA funds preparation only; DFC financing typically requires a U.S. nexus",
+    "es": "USTDA financia solo la preparación; el financiamiento de DFC generalmente requiere un nexo con EE.UU."
+  },
+  "wp2.s6.r4.src": {
+    "en": "Blended finance / viability-gap funding",
+    "es": "Financiamiento combinado / fondos de brecha de viabilidad"
+  },
+  "wp2.s6.r4.inst": {
+    "en": "Public risk mitigation combined with private capital",
+    "es": "Mitigación de riesgo pública combinada con capital privado"
+  },
+  "wp2.s6.r4.con": {
+    "en": "Requires a legal PPP or blended-finance framework already in place in-country",
+    "es": "Requiere un marco legal de PPP o financiamiento combinado ya vigente en el país"
+  },
+  "wp2.s6.r5.src": {
+    "en": "Private infrastructure funds",
+    "es": "Fondos privados de infraestructura"
+  },
+  "wp2.s6.r5.inst": {
+    "en": "Equity and quasi-equity",
+    "es": "Capital y cuasi-capital"
+  },
+  "wp2.s6.r5.con": {
+    "en": "Requires a bankable business case with predictable cash flows even in secondary markets",
+    "es": "Requiere un business case bancable con flujos de caja predecibles incluso en mercados secundarios"
+  },
+  "wp2.s7.kicker": {
+    "en": "Risk",
+    "es": "Riesgo"
+  },
+  "wp2.s7.r1.risk": {
+    "en": "Subsidy amount miscalibrated against the true viability gap",
+    "es": "Monto de subsidio mal calibrado respecto de la brecha de viabilidad real"
+  },
+  "wp2.s7.r1.mitig": {
+    "en": "Independent viability-gap calculation before the call for proposals is issued",
+    "es": "Cálculo independiente de la brecha de viabilidad antes de emitir la convocatoria"
+  },
+  "wp2.s7.r2.risk": {
+    "en": "Local executing agency lacks capacity to disburse",
+    "es": "El organismo ejecutor local carece de capacidad para desembolsar"
+  },
+  "wp2.s7.r2.mitig": {
+    "en": "Capacity assessment and technical assistance built into the origination phase",
+    "es": "Evaluación de capacidad y asistencia técnica incorporadas en la fase de originación"
+  },
+  "wp2.s7.r3.risk": {
+    "en": "Currency mismatch between debt and local-currency revenue",
+    "es": "Descalce de moneda entre la deuda y los ingresos en moneda local"
+  },
+  "wp2.s7.r3.mitig": {
+    "en": "Local-currency financing tranche or a formal hedge structured at close",
+    "es": "Tramo de financiamiento en moneda local o una cobertura formal estructurada al cierre"
+  },
+  "wp2.s7.r4.risk": {
+    "en": "Environmental or social safeguard non-compliance discovered late",
+    "es": "Incumplimiento de salvaguardas ambientales o sociales descubierto tarde"
+  },
+  "wp2.s7.r4.mitig": {
+    "en": "Safeguard screening run during project design, not during MDB appraisal",
+    "es": "Tamizaje de salvaguardas realizado durante el diseño del proyecto, no durante la evaluación del banco multilateral"
+  },
+  "wp2.s7.r5.risk": {
+    "en": "Project scoped too large for any single instrument",
+    "es": "Proyecto dimensionado demasiado grande para cualquier instrumento individual"
+  },
+  "wp2.s7.r5.mitig": {
+    "en": "Phased financeable segments defined from the outset, not a single monolithic ask",
+    "es": "Segmentos financiables por fases definidos desde el inicio, no un único pedido monolítico"
+  },
+  "wp2.s8.kicker": {
+    "en": "Execution",
+    "es": "Ejecución"
+  },
+  "wp2.s8.p1": {
+    "en": "A connectivity project can move from concept to a financeable, submitted proposal in roughly six months by sequencing these steps.",
+    "es": "Un proyecto de conectividad puede pasar de concepto a una propuesta financiable y presentada en aproximadamente seis meses siguiendo estos pasos en secuencia."
+  },
+  "wp2.s8.p1t": {
+    "en": "Month 1 &middot; Quantify the gap and phase the project",
+    "es": "Mes 1 &middot; Cuantificar la brecha y dividir el proyecto en fases"
+  },
+  "wp2.s8.p1d": {
+    "en": "Define a financeable phase or corridor, sized to a realistic instrument, instead of proposing the full regional ambition at once.",
+    "es": "Definir una fase o corredor financiable, dimensionado para un instrumento realista, en lugar de proponer toda la ambición regional de una vez."
+  },
+  "wp2.s8.p1g": {
+    "en": "Gate &mdash; Phase scope confirmed",
+    "es": "Gate — Alcance de la fase confirmado"
+  },
+  "wp2.s8.p2t": {
+    "en": "Months 2&ndash;3 &middot; Calculate the viability gap and match a mechanism",
+    "es": "Meses 2&ndash;3 &middot; Calcular la brecha de viabilidad y encontrar un mecanismo"
+  },
+  "wp2.s8.p2d": {
+    "en": "Run the Multilateral Finance Navigator&trade; against the project's profile to shortlist the realistic financing mix.",
+    "es": "Correr el Multilateral Finance Navigator&trade; sobre el perfil del proyecto para armar una lista corta de la mezcla de financiamiento realista."
+  },
+  "wp2.s8.p2g": {
+    "en": "Gate &mdash; Financing shortlist confirmed",
+    "es": "Gate — Lista corta de financiamiento confirmada"
+  },
+  "wp2.s8.p3t": {
+    "en": "Months 4&ndash;5 &middot; Confirm the local executing agency and safeguards",
+    "es": "Meses 4&ndash;5 &middot; Confirmar el organismo ejecutor local y las salvaguardas"
+  },
+  "wp2.s8.p3d": {
+    "en": "Assess local institutional capacity and run environmental and social safeguard screening before submission, not during appraisal.",
+    "es": "Evaluar la capacidad institucional local y realizar el tamizaje de salvaguardas ambientales y sociales antes de la presentación, no durante la evaluación."
+  },
+  "wp2.s8.p3g": {
+    "en": "Gate &mdash; Executing capacity confirmed",
+    "es": "Gate — Capacidad ejecutora confirmada"
+  },
+  "wp2.s8.p4t": {
+    "en": "Month 6 &middot; Submit the financing proposal",
+    "es": "Mes 6 &middot; Presentar la propuesta de financiamiento"
+  },
+  "wp2.s8.p4d": {
+    "en": "Package the phased project, viability-gap calculation and safeguard screening into the specific mechanism's proposal format.",
+    "es": "Empaquetar el proyecto por fases, el cálculo de brecha de viabilidad y el tamizaje de salvaguardas en el formato de propuesta del mecanismo específico."
+  },
+  "wp2.s8.p4g": {
+    "en": "Gate &mdash; Proposal submitted",
+    "es": "Gate — Propuesta presentada"
+  },
+  "wp2.s9.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "wp2.s9.p1": {
+    "en": "Closing Latin America's connectivity gap is less a capital-availability problem than a project-origination problem. The mechanisms exist across the full spectrum from grant to commercial debt &mdash; what's scarce is projects phased, quantified and de-risked well enough to actually reach them.",
+    "es": "Cerrar la brecha de conectividad de América Latina es menos un problema de disponibilidad de capital que un problema de originación de proyectos. Los mecanismos existen a lo largo de todo el espectro, de fondos no reembolsables a deuda comercial — lo que escasea son proyectos suficientemente bien planteados por fases, cuantificados y con el riesgo reducido para realmente alcanzarlos."
+  },
+  "wp2.s9.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "wp2.s9.rec1": {
+    "en": "Phase large connectivity ambitions into financeable segments before seeking funding.",
+    "es": "Dividir en fases las grandes ambiciones de conectividad en segmentos financiables antes de buscar financiamiento."
+  },
+  "wp2.s9.rec2": {
+    "en": "Calculate the viability gap independently before designing the subsidy.",
+    "es": "Calcular la brecha de viabilidad de forma independiente antes de diseñar el subsidio."
+  },
+  "wp2.s9.rec3": {
+    "en": "Confirm local executing capacity before submitting to a multilateral facility.",
+    "es": "Confirmar la capacidad ejecutora local antes de presentar ante un mecanismo multilateral."
+  },
+  "wp2.s9.rec4": {
+    "en": "Screen environmental and social safeguards during design, not during appraisal.",
+    "es": "Tamizar las salvaguardas ambientales y sociales durante el diseño, no durante la evaluación."
+  },
+  "wp2.s9.rec5": {
+    "en": "Structure currency and tariff risk explicitly rather than leaving it implicit.",
+    "es": "Estructurar el riesgo cambiario y tarifario de forma explícita en lugar de dejarlo implícito."
+  },
+  "wp2.s9.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Multilateral Finance Navigator&trade; (F6).",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA, basado en el Multilateral Finance Navigator&trade; (F6) de INA."
+  },
+  "wp2.s9.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "wp2.s9.next.p": {
+    "en": "INA's advisory team can run the Multilateral Finance Navigator&trade; against your connectivity project and return a ranked financing shortlist. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "El equipo de asesoría de INA puede correr el Multilateral Finance Navigator&trade; sobre su proyecto de conectividad y devolver una lista corta de financiamiento priorizada. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
+  },
+  "wp4.crumb": {
+    "en": "White Paper",
+    "es": "Documento Técnico"
+  },
+  "wp4.eyebrow": {
+    "en": "White Paper &middot; September 2026",
+    "es": "Documento Técnico &middot; Septiembre 2026"
+  },
+  "wp4.h1": {
+    "en": "Submarine Cable Economics for Emerging Markets",
+    "es": "Economía de cables submarinos para mercados emergentes"
+  },
+  "wp4.lede": {
+    "en": "A 20-year asset structured on a project-finance timeline &mdash; why submarine cable economics reward sponsors who get the consortium and offtake structure right from day one.",
+    "es": "Un activo de 20 años estructurado sobre un cronograma de project finance — por qué la economía del cable submarino premia a los sponsors que definen bien el consorcio y la estructura de offtake desde el primer día."
+  },
+  "wp4.toc.summary": {
+    "en": "Executive Summary",
+    "es": "Resumen Ejecutivo"
+  },
+  "wp4.toc.whynow": {
+    "en": "Why Cable Economics Are Different",
+    "es": "Por Qué la Economía del Cable Es Distinta"
+  },
+  "wp4.toc.barriers": {
+    "en": "Five Structural Barriers",
+    "es": "Cinco Barreras Estructurales"
+  },
+  "wp4.toc.framework": {
+    "en": "Structuring the Consortium",
+    "es": "Estructurando el Consorcio"
+  },
+  "wp4.toc.governance": {
+    "en": "IRUs, Capacity and Revenue Models",
+    "es": "IRUs, Capacidad y Modelos de Ingresos"
+  },
+  "wp4.toc.financing": {
+    "en": "Financing Pathways",
+    "es": "Vías de Financiamiento"
+  },
+  "wp4.toc.risk": {
+    "en": "Risk Register",
+    "es": "Registro de Riesgos"
+  },
+  "wp4.toc.roadmap": {
+    "en": "A Roadmap to Financial Close",
+    "es": "Una Hoja de Ruta hacia el Cierre Financiero"
+  },
+  "wp4.toc.conclusion": {
+    "en": "Conclusion &amp; Recommendations",
+    "es": "Conclusión y Recomendaciones"
+  },
+  "wp4.s1.kicker": {
+    "en": "Overview",
+    "es": "Resumen"
+  },
+  "wp4.s1.p1": {
+    "en": "A submarine cable system is a 20&ndash;25 year infrastructure asset built on a construction timeline measured in months. That mismatch is the source of almost every economic decision that matters: how capacity is sold before the cable lands, how landing-party consortia share cost and control, and how the system's revenue model survives two or three telecom technology cycles it wasn't originally designed around.",
+    "es": "Un sistema de cable submarino es un activo de infraestructura de 20 a 25 años construido sobre un cronograma medido en meses. Ese desajuste es el origen de casi todas las decisiones económicas que importan: cómo se vende la capacidad antes de que el cable llegue a tierra, cómo comparten costo y control los consorcios de landing parties, y cómo el modelo de ingresos del sistema sobrevive dos o tres ciclos tecnológicos de telecomunicaciones para los que no fue diseñado originalmente."
+  },
+  "wp4.s1.p2": {
+    "en": "For emerging-market sponsors &mdash; a national operator, a government seeking a cable landing, or a regional consortium &mdash; the economics reward getting three decisions right early: the IRU and capacity-sale structure, the consortium governance model, and the financing mix. This paper sets out INA's approach to all three, applying the INA Project Structuring Framework&trade; (F1) and Multilateral Finance Navigator&trade; (F6).",
+    "es": "Para sponsors de mercados emergentes — un operador nacional, un gobierno que busca un landing de cable, o un consorcio regional — la economía premia acertar temprano en tres decisiones: la estructura de IRU y venta de capacidad, el modelo de gobernanza del consorcio, y la mezcla de financiamiento. Este documento plantea el enfoque de INA para las tres, aplicando el Project Structuring Framework&trade; (F1) y el Multilateral Finance Navigator&trade; (F6) de INA."
+  },
+  "wp4.s1.quote": {
+    "en": "A submarine cable doesn't fail economically because the seabed survey was wrong. It fails because the capacity-sale model assumed a market that changed twice before the cable was even finished landing.",
+    "es": "Un cable submarino no fracasa económicamente porque el relevamiento del lecho marino estuvo mal. Fracasa porque el modelo de venta de capacidad asumió un mercado que cambió dos veces antes de que el cable siquiera terminara de aterrizar."
+  },
+  "wp4.s1.quote.cite": {
+    "en": "INA Project Structuring Framework&trade; &mdash; Field Notes, 2026",
+    "es": "Metodología de Estructuración de Proyectos de INA&trade; — Notas de Campo, 2026"
+  },
+  "wp4.s2.kicker": {
+    "en": "Context",
+    "es": "Contexto"
+  },
+  "wp4.s2.p1": {
+    "en": "Three features separate submarine cable economics from terrestrial fiber or FWA, and each shapes how a project needs to be structured.",
+    "es": "Tres características separan la economía del cable submarino de la fibra terrestre o el FWA, y cada una define cómo debe estructurarse un proyecto."
+  },
+  "wp4.s2.block.title": {
+    "en": "What Makes Cable Economics Different",
+    "es": "Qué Hace Distinta a la Economía del Cable"
+  },
+  "wp4.s2.item1.b": {
+    "en": "Capacity is sold years before the asset exists.",
+    "es": "La capacidad se vende años antes de que el activo exista."
+  },
+  "wp4.s2.item1.d": {
+    "en": "Anchor IRU commitments from hyperscalers or carriers are frequently what makes the project bankable in the first place &mdash; the revenue model has to be substantially locked in before construction starts.",
+    "es": "Los compromisos de IRU de clientes ancla de hyperscalers u operadores son frecuentemente lo que hace bancable al proyecto en primer lugar — el modelo de ingresos tiene que estar sustancialmente cerrado antes de que empiece la construcción."
+  },
+  "wp4.s2.item2.b": {
+    "en": "No single owner &mdash; a consortium, almost always.",
+    "es": "Sin un único dueño — casi siempre un consorcio."
+  },
+  "wp4.s2.item2.d": {
+    "en": "Landing parties in each country typically co-own segments of the system, which means governance decisions require consensus among parties with different national regulatory constraints.",
+    "es": "Las landing parties en cada país suelen coposeer segmentos del sistema, lo que significa que las decisiones de gobernanza requieren consenso entre partes con restricciones regulatorias nacionales distintas."
+  },
+  "wp4.s2.item3.b": {
+    "en": "The asset outlives several demand cycles.",
+    "es": "El activo sobrevive a varios ciclos de demanda."
+  },
+  "wp4.s2.item3.d": {
+    "en": "A cable designed around 2026 traffic assumptions needs upgrade paths (additional wavelengths, new landing stations) built into both the technical design and the consortium agreement from the start.",
+    "es": "Un cable diseñado sobre supuestos de tráfico de 2026 necesita caminos de actualización (longitudes de onda adicionales, nuevas estaciones de aterrizaje) incorporados tanto en el diseño técnico como en el acuerdo de consorcio desde el inicio."
+  },
+  "wp4.s2.callout.lab": {
+    "en": "Reality Check",
+    "es": "Chequeo de Realidad"
+  },
+  "wp4.s2.callout.p": {
+    "en": "A cable system with excellent seabed engineering and a weak capacity-sale model is a worse investment than a merely adequate route with strong anchor IRU commitments.",
+    "es": "Un sistema de cable con excelente ingeniería de lecho marino y un modelo de venta de capacidad débil es una peor inversión que una ruta apenas adecuada con compromisos sólidos de IRU con clientes ancla."
+  },
+  "wp4.s3.kicker": {
+    "en": "Diagnosis",
+    "es": "Diagnóstico"
+  },
+  "wp4.s3.p1": {
+    "en": "These are the barriers that most often derail submarine cable economics for emerging-market sponsors, independent of route or geography.",
+    "es": "Estas son las barreras que más frecuentemente descarrilan la economía del cable submarino para sponsors de mercados emergentes, independientemente de la ruta o la geografía."
+  },
+  "wp4.s3.b1.t": {
+    "en": "Insufficient anchor capacity commitments before financial close",
+    "es": "Compromisos insuficientes de capacidad ancla antes del cierre financiero"
+  },
+  "wp4.s3.b1.d": {
+    "en": "Proceeding to construction on optimistic capacity-sale projections rather than signed IRU letters of intent from anchor tenants.",
+    "es": "Avanzar a la construcción sobre proyecciones optimistas de venta de capacidad en lugar de cartas de intención de IRU firmadas por clientes ancla."
+  },
+  "wp4.s3.b2.t": {
+    "en": "Consortium governance that can't reach a timely decision",
+    "es": "Gobernanza de consorcio que no logra decidir a tiempo"
+  },
+  "wp4.s3.b2.d": {
+    "en": "Unanimous-consent structures across landing parties that stall route changes, repair authorizations or upgrade decisions when speed matters.",
+    "es": "Estructuras de consenso unánime entre landing parties que frenan cambios de ruta, autorizaciones de reparación o decisiones de actualización cuando la velocidad importa."
+  },
+  "wp4.s3.b3.t": {
+    "en": "Landing permits treated as a single national approval",
+    "es": "Permisos de aterrizaje tratados como una única aprobación nacional"
+  },
+  "wp4.s3.b3.d": {
+    "en": "Each landing jurisdiction typically has its own environmental, telecom regulatory and maritime approvals &mdash; sponsors who model one permit process per country underestimate the timeline.",
+    "es": "Cada jurisdicción de aterrizaje suele tener sus propias aprobaciones ambientales, regulatorias de telecomunicaciones y marítimas — los sponsors que modelan un único proceso de permisos por país subestiman el cronograma."
+  },
+  "wp4.s3.b4.t": {
+    "en": "No repair and maintenance economics built into the model",
+    "es": "Sin la economía de reparación y mantenimiento incorporada al modelo"
+  },
+  "wp4.s3.b4.d": {
+    "en": "Cable repair ship membership and maintenance costs are a recurring economic obligation, not a contingency line &mdash; omitting them understates lifetime cost materially.",
+    "es": "La membresía en buques de reparación de cable y los costos de mantenimiento son una obligación económica recurrente, no una línea de contingencia — omitirlos subestima materialmente el costo de vida útil."
+  },
+  "wp4.s3.b5.t": {
+    "en": "Upgrade path not reserved in the original system design",
+    "es": "Camino de actualización no reservado en el diseño original del sistema"
+  },
+  "wp4.s3.b5.d": {
+    "en": "Failing to reserve spare fiber pairs or landing-station capacity for future wavelength upgrades forces a costly second system rather than an incremental one.",
+    "es": "No reservar pares de fibra de repuesto o capacidad de estación de aterrizaje para futuras actualizaciones de longitud de onda fuerza un segundo sistema costoso en lugar de uno incremental."
+  },
+  "wp4.s4.kicker": {
+    "en": "Methodology",
+    "es": "Metodología"
+  },
+  "wp4.s4.p1": {
+    "en": "INA applies the <b style=\"color:var(--text);\">Project Structuring Framework&trade; (F1)</b> to submarine cable systems with particular emphasis on Phase II and Phase III, where consortium structure and capacity-sale commitments are locked in.",
+    "es": "INA aplica la <b style=\"color:var(--text);\">Metodología de Estructuración de Proyectos&trade; (F1)</b> a sistemas de cable submarino con especial énfasis en la Fase II y la Fase III, donde se cierran la estructura del consorcio y los compromisos de venta de capacidad."
+  },
+  "wp4.s4.th1": {
+    "en": "F1 Phase",
+    "es": "Fase de F1"
+  },
+  "wp4.s4.th2": {
+    "en": "Cable-Specific Focus",
+    "es": "Foco Específico de Cable"
+  },
+  "wp4.s4.th3": {
+    "en": "Key Deliverable",
+    "es": "Entregable Clave"
+  },
+  "wp4.s4.r1.phase": {
+    "en": "II &middot; Feasibility &amp; Business Case",
+    "es": "II &middot; Factibilidad y Business Case"
+  },
+  "wp4.s4.r1.focus": {
+    "en": "Route survey, capacity demand study, anchor tenant outreach",
+    "es": "Relevamiento de ruta, estudio de demanda de capacidad, acercamiento a clientes ancla"
+  },
+  "wp4.s4.r1.deliv": {
+    "en": "Capacity Demand &amp; Revenue Model",
+    "es": "Modelo de Demanda de Capacidad e Ingresos"
+  },
+  "wp4.s4.r2.phase": {
+    "en": "III &middot; Governance &amp; Contractual Model",
+    "es": "III &middot; Gobernanza y Modelo Contractual"
+  },
+  "wp4.s4.r2.focus": {
+    "en": "Consortium agreement, landing-party governance, IRU term sheet",
+    "es": "Acuerdo de consorcio, gobernanza de landing parties, term sheet de IRU"
+  },
+  "wp4.s4.r2.deliv": {
+    "en": "Consortium Agreement &amp; Landing Party Governance Charter",
+    "es": "Acuerdo de Consorcio y Carta de Gobernanza de Landing Parties"
+  },
+  "wp4.s4.r3.phase": {
+    "en": "IV &middot; Procurement &amp; Implementation",
+    "es": "IV &middot; Adquisiciones e Implementación"
+  },
+  "wp4.s4.r3.focus": {
+    "en": "Marine survey, cable-lay contract, landing station build-out",
+    "es": "Relevamiento marino, contrato de tendido de cable, construcción de estación de aterrizaje"
+  },
+  "wp4.s4.r3.deliv": {
+    "en": "Marine Installation Agreement",
+    "es": "Acuerdo de Instalación Marina"
+  },
+  "wp4.s4.r4.phase": {
+    "en": "V &middot; Monitoring &amp; Improvement",
+    "es": "V &middot; Monitoreo y Mejora"
+  },
+  "wp4.s4.r4.focus": {
+    "en": "Repair ship membership, spare capacity activation, upgrade planning",
+    "es": "Membresía en buque de reparación, activación de capacidad de repuesto, planificación de actualizaciones"
+  },
+  "wp4.s4.r4.deliv": {
+    "en": "Maintenance &amp; Repair Agreement",
+    "es": "Acuerdo de Mantenimiento y Reparación"
+  },
+  "wp4.s4.typo.subhead": {
+    "en": "A Note on Typology Fit",
+    "es": "Una Nota sobre el Encaje de Tipología"
+  },
+  "wp4.s4.typo.p": {
+    "en": "Submarine cable is the most capital-intensive of the four typologies INA's Framework covers, and the only one where Phase II success is measured primarily in signed capacity commitments rather than a completed technical design.",
+    "es": "El cable submarino es la más intensiva en capital de las cuatro tipologías que cubre el Framework de INA, y la única donde el éxito de la Fase II se mide principalmente en compromisos de capacidad firmados en lugar de un diseño técnico completo."
+  },
+  "wp4.s5.kicker": {
+    "en": "Revenue Model",
+    "es": "Modelo de Ingresos"
+  },
+  "wp4.s5.p1": {
+    "en": "Two revenue models dominate submarine cable economics, and most systems combine both.",
+    "es": "Dos modelos de ingresos dominan la economía del cable submarino, y la mayoría de los sistemas combinan ambos."
+  },
+  "wp4.s5.iru.title": {
+    "en": "IRU (Indefeasible Right of Use) Sales",
+    "es": "Ventas de IRU (Indefeasible Right of Use)"
+  },
+  "wp4.s5.iru.li1": {
+    "en": "Upfront or structured payment for long-term capacity rights",
+    "es": "Pago inicial o estructurado por derechos de capacidad de largo plazo"
+  },
+  "wp4.s5.iru.li2": {
+    "en": "Anchors the financing case if secured before construction",
+    "es": "Ancla el caso de financiamiento si se asegura antes de la construcción"
+  },
+  "wp4.s5.iru.li3": {
+    "en": "Typical buyers: hyperscalers, Tier 1 carriers, national operators",
+    "es": "Compradores típicos: hyperscalers, operadores Tier 1, operadores nacionales"
+  },
+  "wp4.s5.lease.title": {
+    "en": "Wavelength Leasing &amp; Managed Capacity",
+    "es": "Alquiler de Longitud de Onda y Capacidad Gestionada"
+  },
+  "wp4.s5.lease.li1": {
+    "en": "Recurring revenue, more flexible for smaller buyers",
+    "es": "Ingresos recurrentes, más flexible para compradores pequeños"
+  },
+  "wp4.s5.lease.li2": {
+    "en": "Better suited to serve regional and secondary-market demand",
+    "es": "Mejor adaptado para atender la demanda de mercados regionales y secundarios"
+  },
+  "wp4.s5.lease.li3": {
+    "en": "Requires active commercial and network operations capability",
+    "es": "Requiere capacidad activa de operaciones comerciales y de red"
+  },
+  "wp4.s5.callout.lab": {
+    "en": "Structuring Principle",
+    "es": "Principio de Estructuración"
+  },
+  "wp4.s5.callout.p": {
+    "en": "Target IRU commitments covering the debt-service base case, and rely on wavelength leasing for the upside &mdash; not the reverse.",
+    "es": "Apuntar a compromisos de IRU que cubran el caso base de servicio de deuda, y depender del alquiler de longitud de onda para el upside — no al revés."
+  },
+  "wp4.s6.kicker": {
+    "en": "Enablement",
+    "es": "Habilitación"
+  },
+  "wp4.s6.th1": {
+    "en": "Pathway",
+    "es": "Vía"
+  },
+  "wp4.s6.th2": {
+    "en": "Typical Fit",
+    "es": "Uso Típico"
+  },
+  "wp4.s6.th3": {
+    "en": "Key Consideration",
+    "es": "Consideración Clave"
+  },
+  "wp4.s6.r1.pathway": {
+    "en": "MDB sovereign or sub-sovereign loans",
+    "es": "Préstamos soberanos o subsoberanos de bancos multilaterales"
+  },
+  "wp4.s6.r1.fit": {
+    "en": "National or regional cable landings, especially where private capital is scarce",
+    "es": "Landings de cable nacionales o regionales, especialmente donde el capital privado escasea"
+  },
+  "wp4.s6.r1.consider": {
+    "en": "Requires sovereign backing and MDB procurement compliance",
+    "es": "Requiere respaldo soberano y cumplimiento de las reglas de adquisición del banco multilateral"
+  },
+  "wp4.s6.r2.pathway": {
+    "en": "Consortium equity contributions",
+    "es": "Aportes de capital del consorcio"
+  },
+  "wp4.s6.r2.fit": {
+    "en": "Multi-country systems with several landing-party operators",
+    "es": "Sistemas multipaís con varios operadores landing party"
+  },
+  "wp4.s6.r2.consider": {
+    "en": "Requires the consortium agreement finalized before capital calls",
+    "es": "Requiere el acuerdo de consorcio finalizado antes de los llamados de capital"
+  },
+  "wp4.s6.r3.pathway": {
+    "en": "Project finance debt secured against IRU contracts",
+    "es": "Deuda de project finance garantizada con contratos de IRU"
+  },
+  "wp4.s6.r3.fit": {
+    "en": "Systems with strong anchor tenant commitments pre-construction",
+    "es": "Sistemas con compromisos sólidos de clientes ancla previos a la construcción"
+  },
+  "wp4.s6.r3.consider": {
+    "en": "Lenders will size debt to contracted, not projected, capacity revenue",
+    "es": "Los prestamistas dimensionan la deuda según los ingresos de capacidad contratados, no proyectados"
+  },
+  "wp4.s6.r4.pathway": {
+    "en": "Export credit agency-backed vendor financing",
+    "es": "Financiamiento de proveedores respaldado por una agencia de crédito a la exportación"
+  },
+  "wp4.s6.r4.fit": {
+    "en": "Cable-lay and marine installation contracts with a single dominant vendor",
+    "es": "Contratos de tendido de cable e instalación marina con un único proveedor dominante"
+  },
+  "wp4.s6.r4.consider": {
+    "en": "Tied to the vendor's country-of-origin rules",
+    "es": "Sujeto a las reglas de país de origen del proveedor"
+  },
+  "wp4.s6.footnote": {
+    "en": "See INA's <a href=\"finance.html\" style=\"color:var(--amber-deep);\">Multilateral Finance</a> page and the <b style=\"color:var(--text);\">Multilateral Finance Navigator&trade; (F6)</b> for how these pathways combine across a project's full capital stack.",
+    "es": "Ver la página de <a href=\"finance.html\" style=\"color:var(--amber-deep);\">Financiamiento Multilateral</a> de INA y el <b style=\"color:var(--text);\">Multilateral Finance Navigator&trade; (F6)</b> para ver cómo estas vías se combinan a lo largo de toda la estructura de capital del proyecto."
+  },
+  "wp4.s7.kicker": {
+    "en": "Risk",
+    "es": "Riesgo"
+  },
+  "wp4.s7.r1.risk": {
+    "en": "Anchor capacity commitments fall short of the debt-service base case",
+    "es": "Los compromisos de capacidad ancla quedan por debajo del caso base de servicio de deuda"
+  },
+  "wp4.s7.r1.mitig": {
+    "en": "Signed IRU letters of intent required before financial close, not projections",
+    "es": "Cartas de intención de IRU firmadas requeridas antes del cierre financiero, no proyecciones"
+  },
+  "wp4.s7.r2.risk": {
+    "en": "Consortium deadlock on a time-sensitive decision",
+    "es": "Bloqueo del consorcio en una decisión urgente"
+  },
+  "wp4.s7.r2.mitig": {
+    "en": "Qualified-majority (not unanimous) voting defined in the consortium agreement for operational matters",
+    "es": "Votación por mayoría calificada (no unánime) definida en el acuerdo de consorcio para asuntos operativos"
+  },
+  "wp4.s7.r3.risk": {
+    "en": "Landing permit delay in one jurisdiction stalls the whole system",
+    "es": "Demora en el permiso de aterrizaje en una jurisdicción frena todo el sistema"
+  },
+  "wp4.s7.r3.mitig": {
+    "en": "Per-jurisdiction permit tracker maintained from Phase II, run in parallel not in sequence",
+    "es": "Seguimiento de permisos por jurisdicción mantenido desde la Fase II, gestionado en paralelo y no en secuencia"
+  },
+  "wp4.s7.r4.risk": {
+    "en": "Repair and maintenance costs omitted from the lifetime model",
+    "es": "Costos de reparación y mantenimiento omitidos del modelo de vida útil"
+  },
+  "wp4.s7.r4.mitig": {
+    "en": "Repair ship membership and maintenance reserve costed into the model from Phase II",
+    "es": "Membresía en buque de reparación y reserva de mantenimiento incorporadas al modelo desde la Fase II"
+  },
+  "wp4.s7.r5.risk": {
+    "en": "No upgrade path reserved for future capacity demand",
+    "es": "Sin camino de actualización reservado para la demanda de capacidad futura"
+  },
+  "wp4.s7.r5.mitig": {
+    "en": "Spare fiber pairs and landing-station capacity reserved in the original technical design",
+    "es": "Pares de fibra de repuesto y capacidad de estación de aterrizaje reservados en el diseño técnico original"
+  },
+  "wp4.s8.kicker": {
+    "en": "Execution",
+    "es": "Ejecución"
+  },
+  "wp4.s8.p1": {
+    "en": "These four moves define the path from route concept to financial close for a submarine cable system.",
+    "es": "Estos cuatro movimientos definen el camino desde el concepto de ruta hasta el cierre financiero de un sistema de cable submarino."
+  },
+  "wp4.s8.p1t": {
+    "en": "Months 1&ndash;4 &middot; Route survey and anchor tenant outreach",
+    "es": "Meses 1&ndash;4 &middot; Relevamiento de ruta y acercamiento a clientes ancla"
+  },
+  "wp4.s8.p1d": {
+    "en": "Commission the marine route survey in parallel with early conversations with prospective anchor IRU buyers.",
+    "es": "Encargar el relevamiento de ruta marina en paralelo con conversaciones tempranas con potenciales compradores de IRU ancla."
+  },
+  "wp4.s8.p1g": {
+    "en": "Gate &mdash; Route confirmed",
+    "es": "Gate — Ruta confirmada"
+  },
+  "wp4.s8.p2t": {
+    "en": "Months 5&ndash;9 &middot; Finalize the consortium and capacity commitments",
+    "es": "Meses 5&ndash;9 &middot; Finalizar el consorcio y los compromisos de capacidad"
+  },
+  "wp4.s8.p2d": {
+    "en": "Lock the consortium agreement and secure signed IRU letters of intent covering the debt-service base case.",
+    "es": "Cerrar el acuerdo de consorcio y asegurar cartas de intención de IRU firmadas que cubran el caso base de servicio de deuda."
+  },
+  "wp4.s8.p2g": {
+    "en": "Gate &mdash; Anchor commitments secured",
+    "es": "Gate — Compromisos ancla asegurados"
+  },
+  "wp4.s8.p3t": {
+    "en": "Months 10&ndash;14 &middot; Clear per-jurisdiction landing permits",
+    "es": "Meses 10&ndash;14 &middot; Despejar los permisos de aterrizaje por jurisdicción"
+  },
+  "wp4.s8.p3d": {
+    "en": "Run every landing jurisdiction's environmental, regulatory and maritime approvals in parallel against a shared tracker.",
+    "es": "Gestionar en paralelo las aprobaciones ambientales, regulatorias y marítimas de cada jurisdicción de aterrizaje contra un seguimiento compartido."
+  },
+  "wp4.s8.p3g": {
+    "en": "Gate &mdash; Landing permits cleared",
+    "es": "Gate — Permisos de aterrizaje despejados"
+  },
+  "wp4.s8.p4t": {
+    "en": "Months 15&ndash;18 &middot; Close financing and award the marine contract",
+    "es": "Meses 15&ndash;18 &middot; Cerrar el financiamiento y adjudicar el contrato marino"
+  },
+  "wp4.s8.p4d": {
+    "en": "Finalize the capital stack against contracted capacity revenue and award the cable-lay and installation contract.",
+    "es": "Finalizar la estructura de capital contra los ingresos de capacidad contratados y adjudicar el contrato de tendido e instalación de cable."
+  },
+  "wp4.s8.p4g": {
+    "en": "Gate &mdash; Financial close",
+    "es": "Gate — Cierre financiero"
+  },
+  "wp4.s9.kicker": {
+    "en": "Closing",
+    "es": "Cierre"
+  },
+  "wp4.s9.p1": {
+    "en": "Submarine cable economics reward sponsors who treat capacity pre-sales, consortium governance and multi-jurisdiction permitting as the core structuring work &mdash; not as commercial and legal details to finalize once the marine engineering is settled.",
+    "es": "La economía del cable submarino premia a los sponsors que tratan la preventa de capacidad, la gobernanza del consorcio y los permisos multijurisdiccionales como el trabajo central de estructuración — no como detalles comerciales y legales para finalizar una vez resuelta la ingeniería marina."
+  },
+  "wp4.s9.rec.title": {
+    "en": "Recommendations",
+    "es": "Recomendaciones"
+  },
+  "wp4.s9.rec1": {
+    "en": "Secure signed anchor IRU letters of intent before financial close, not projections.",
+    "es": "Asegurar cartas de intención de IRU ancla firmadas antes del cierre financiero, no proyecciones."
+  },
+  "wp4.s9.rec2": {
+    "en": "Define qualified-majority voting in the consortium agreement for operational decisions.",
+    "es": "Definir votación por mayoría calificada en el acuerdo de consorcio para decisiones operativas."
+  },
+  "wp4.s9.rec3": {
+    "en": "Track landing permits per jurisdiction in parallel, from Phase II onward.",
+    "es": "Hacer seguimiento de los permisos de aterrizaje por jurisdicción en paralelo, desde la Fase II en adelante."
+  },
+  "wp4.s9.rec4": {
+    "en": "Cost repair ship membership and maintenance into the lifetime financial model.",
+    "es": "Incorporar el costo de la membresía en buque de reparación y el mantenimiento al modelo financiero de vida útil."
+  },
+  "wp4.s9.rec5": {
+    "en": "Reserve spare capacity and landing-station space for future upgrades in the original design.",
+    "es": "Reservar capacidad de repuesto y espacio en la estación de aterrizaje para futuras actualizaciones en el diseño original."
+  },
+  "wp4.s9.source": {
+    "en": "Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Project Structuring Framework&trade; (F1) and Multilateral Finance Navigator&trade; (F6).",
+    "es": "Publicado por International Network Advisors (INA), septiembre de 2026. Parte de la biblioteca de Conocimiento de INA, basado en el Project Structuring Framework&trade; (F1) y el Multilateral Finance Navigator&trade; (F6) de INA."
+  },
+  "wp4.s9.next.lab": {
+    "en": "Next Step",
+    "es": "Próximo Paso"
+  },
+  "wp4.s9.next.p": {
+    "en": "INA's advisory team can structure your submarine cable project's consortium, capacity-sale model and financing pathway from Phase II onward. <a href=\"contact.html\" style=\"color:var(--amber);\">Request Advisory &rarr;</a>",
+    "es": "El equipo de asesoría de INA puede estructurar el consorcio, el modelo de venta de capacidad y la vía de financiamiento de su proyecto de cable submarino desde la Fase II en adelante. <a href=\"contact.html\" style=\"color:var(--amber);\">Solicitar Asesoría &rarr;</a>"
   }
 };
 const SELECT_OPTIONS = {"type": {"en": ["Government / Regulator", "Development Finance Institution", "Investor / Infrastructure Fund", "Technology Company", "Other"], "es": ["Gobierno / Regulador", "Institución de Financiamiento para el Desarrollo", "Inversor / Fondo de Infraestructura", "Empresa Tecnológica", "Otro"]}};

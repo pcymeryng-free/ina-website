@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fiber Route Planning Methodology — INA Knowledge</title>
+<meta name="description" content="A technical report on how backbone and last-mile fiber routes are planned — rights-of-way, utility conflicts, build-method selection and permitting sequencing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=7">
+</head>
+<body>
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="word"><b>INA</b><span><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+    </a>
+    <nav class="links">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html" class="current"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a>
+    </nav>
+    <div class="lang-switch" aria-label="Language">
+      <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+    </div>
+    <a href="contact.html" class="btn amber"><span data-i18n="nav.cta">Request Advisory</span></a>
+    <button class="navToggle" aria-label="Toggle menu" id="navToggle">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" style="display:none; border-top:1px solid var(--paper-line); background:var(--paper);">
+    <div class="wrap" style="display:flex; flex-direction:column; padding:18px 32px; gap:16px;">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a><a href="contact.html"><span data-i18n="nav.contact">Contact</span></a>
+      <div class="lang-switch" style="margin-top:6px;"><button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button></div>
+    </div>
+  </div>
+</header>
+<section class="page-hero">
+  <div class="wrap">
+    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><span>/</span><span><span data-i18n="tr1.crumb">Technical Report</span></span></div>
+    <span class="eyebrow on-dark"><span data-i18n="tr1.eyebrow">Technical Report &middot; September 2026</span></span>
+    <h1 class="h-page"><span data-i18n="tr1.h1">Fiber route planning methodology</span></h1>
+    <p class="lede"><span data-i18n="tr1.lede">How backbone and last-mile fiber routes actually get planned &mdash; and why the planning stage, not the trenching, is what determines a project's real cost per kilometer.</span></p>
+  </div>
+</section>
+
+<section class="tight"><div class="wrap"><div class="fw-layout"><div class="fw-toc">
+  <span class="toc-label">On This Page</span>
+  <a href="#summary"><span data-i18n="tr1.toc.summary">Executive Summary</span></a>
+  <a href="#why-now"><span data-i18n="tr1.toc.whynow">Why Route Planning Drives Economics</span></a>
+  <a href="#barriers"><span data-i18n="tr1.toc.barriers">Where Route Plans Go Wrong</span></a>
+  <a href="#workflow"><span data-i18n="tr1.toc.workflow">The Planning Workflow</span></a>
+  <a href="#methods"><span data-i18n="tr1.toc.methods">Deployment Method Comparison</span></a>
+  <a href="#risk"><span data-i18n="tr1.toc.risk">Risk Register</span></a>
+  <a href="#conclusion"><span data-i18n="tr1.toc.conclusion">Conclusion & Recommendations</span></a>
+</div>
+<div>
+
+<div class="fw-section" id="summary">
+  <div class="fw-kicker">
+    <span class="fnum-big">01</span>
+    <div class="fw-title"><small><span data-i18n="tr1.s1.kicker">Overview</span></small><h2><span data-i18n="tr1.toc.summary">Executive Summary</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr1.s1.p1">Most fiber project overruns are traced back to decisions made before a single meter of cable was ordered. A route drawn on a map without a rights-of-way survey, a utility-conflict check, or a realistic build-method choice per segment routinely costs 20&ndash;40% more than the original estimate &mdash; not because construction went badly, but because the plan never matched the ground.</span></p>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px; margin-top:14px;"><span data-i18n="tr1.s1.p2">This report sets out INA's route planning methodology for backbone, metro and last-mile fiber &mdash; the sequence of geographic, regulatory and technical analysis that should happen before a tender is drafted, not during it.</span></p>
+  <blockquote class="fw-quote">&ldquo;<span data-i18n="tr1.s1.quote">A fiber route is a financial model with a shovel attached. Get the model wrong and the shovel just executes the mistake faster.</span>&rdquo;<cite><span data-i18n="tr1.s1.quote.cite">INA Project Structuring Framework&trade; &mdash; Field Notes, 2026</span></cite></blockquote>
+
+</div>
+
+<div class="fw-section" id="why-now">
+  <div class="fw-kicker">
+    <span class="fnum-big">02</span>
+    <div class="fw-title"><small><span data-i18n="tr1.s2.kicker">Context</span></small><h2><span data-i18n="tr1.toc.whynow">Why Route Planning Drives Economics</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr1.s2.p1">Three variables move the cost-per-kilometer of a fiber route more than any other design choice: the mix of build methods across segments, how early rights-of-way are secured relative to detailed design, and whether the route follows demand density or just the shortest geographic path.</span></p>
+  <div class="chip-row">
+    <span><span data-i18n="tr1.s2.chip1">Backbone</span></span>
+    <span><span data-i18n="tr1.s2.chip2">Metro Ring</span></span>
+    <span><span data-i18n="tr1.s2.chip3">Last-Mile</span></span>
+    <span><span data-i18n="tr1.s2.chip4">FTTH</span></span>
+    <span><span data-i18n="tr1.s2.chip5">FTTC</span></span>
+  </div>
+  <div class="ai-callout"><span class="lab"><span data-i18n="tr1.s2.callout.lab">Reality Check</span></span><p><span data-i18n="tr1.s2.callout.p">A route that is 8% longer but follows existing rights-of-way and avoids three utility conflicts is almost always cheaper &mdash; and faster to permit &mdash; than the geometrically shortest path.</span></p></div>
+
+</div>
+
+<div class="fw-section" id="barriers">
+  <div class="fw-kicker">
+    <span class="fnum-big">03</span>
+    <div class="fw-title"><small><span data-i18n="tr1.s3.kicker">Diagnosis</span></small><h2><span data-i18n="tr1.toc.barriers">Where Route Plans Go Wrong</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr1.s3.p1">The recurring planning failures INA sees across backbone and last-mile projects.</span></p>
+  <div class="phase-list">
+    <div class="phase-item"><div class="pn">1</div><div>
+      <h4><span data-i18n="tr1.s3.b1.t">Rights-of-way surveyed after the route is already fixed</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="tr1.s3.b1.d">By the time land access is checked, the route is already in the tender documents &mdash; making every conflict a costly redesign instead of a planning-stage adjustment.</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">2</div><div>
+      <h4><span data-i18n="tr1.s3.b2.t">No utility-conflict overlay before design</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="tr1.s3.b2.d">Water, gas, power and drainage networks are rarely cross-referenced against the proposed route until construction crews hit them in the field.</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">3</div><div>
+      <h4><span data-i18n="tr1.s3.b3.t">One build method assumed for the entire route</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="tr1.s3.b3.d">Trenching, aerial and microtrenching have very different cost and speed profiles; a route priced with a single method almost always misprices some segments badly.</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">4</div><div>
+      <h4><span data-i18n="tr1.s3.b4.t">Permitting sequenced after design instead of in parallel</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="tr1.s3.b4.d">Municipal, environmental and crossing permits often take longer than construction itself &mdash; starting them only after final design routinely becomes the critical path.</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">5</div><div>
+      <h4><span data-i18n="tr1.s3.b5.t">Route follows geography, not demand</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="tr1.s3.b5.d">The shortest path between two points is rarely the path that passes closest to the most paying customers or highest-priority public sites along the way.</span></p>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="fw-section" id="workflow">
+  <div class="fw-kicker">
+    <span class="fnum-big">04</span>
+    <div class="fw-title"><small><span data-i18n="tr1.s4.kicker">Methodology</span></small><h2><span data-i18n="tr1.toc.workflow">The Planning Workflow</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr1.s4.p1">INA sequences fiber route planning as five stages, feeding directly into the <b style="color:var(--text);">Project Structuring Framework&trade; (F1)</b> Phase II business case &mdash; route economics are a direct input to the financial model, not a downstream engineering detail.</span></p>
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th><span data-i18n="tr1.s4.th1">Planning Stage</span></th><th><span data-i18n="tr1.s4.th2">Key Activity</span></th><th><span data-i18n="tr1.s4.th3">Typical Output</span></th></tr>
+    <tr><td><b><span data-i18n="tr1.s4.r1.stage">Demand & Anchor Mapping</span></b></td><td><span data-i18n="tr1.s4.r1.act">Overlay population density, business clusters and anchor institutions (schools, hospitals, government sites) against candidate corridors</span></td><td><span data-i18n="tr1.s4.r1.out">Prioritized corridor shortlist</span></td></tr>
+    <tr><td><b><span data-i18n="tr1.s4.r2.stage">Rights-of-Way Survey</span></b></td><td><span data-i18n="tr1.s4.r2.act">Confirm which segments run along public road/rail easements versus require new private access agreements</span></td><td><span data-i18n="tr1.s4.r2.out">Access risk map</span></td></tr>
+    <tr><td><b><span data-i18n="tr1.s4.r3.stage">Utility Conflict Overlay</span></b></td><td><span data-i18n="tr1.s4.r3.act">Cross-reference water, gas, power and drainage utility records against the proposed alignment</span></td><td><span data-i18n="tr1.s4.r3.out">Conflict points log</span></td></tr>
+    <tr><td><b><span data-i18n="tr1.s4.r4.stage">Build-Method Segmentation</span></b></td><td><span data-i18n="tr1.s4.r4.act">Assign trenching, aerial or microtrenching per segment based on terrain, existing infrastructure and permitting complexity</span></td><td><span data-i18n="tr1.s4.r4.out">Segment-level cost model</span></td></tr>
+    <tr><td><b><span data-i18n="tr1.s4.r5.stage">Permitting Sequencing</span></b></td><td><span data-i18n="tr1.s4.r5.act">Map every required permit (municipal, environmental, crossing) against the design timeline and launch the longest-lead items first</span></td><td><span data-i18n="tr1.s4.r5.out">Permitting critical-path schedule</span></td></tr>
+  </table></div>
+
+</div>
+
+<div class="fw-section" id="methods">
+  <div class="fw-kicker">
+    <span class="fnum-big">05</span>
+    <div class="fw-title"><small><span data-i18n="tr1.s5.kicker">Technical Parameters</span></small><h2><span data-i18n="tr1.toc.methods">Deployment Method Comparison</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr1.s5.p1">No single build method is right for an entire route. Most cost-competitive projects mix all three below across different segments.</span></p>
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th><span data-i18n="tr1.s5.th1">Method</span></th><th><span data-i18n="tr1.s5.th2">Relative Cost per Km</span></th><th><span data-i18n="tr1.s5.th3">Deployment Speed</span></th><th><span data-i18n="tr1.s5.th4">Best Fit</span></th></tr>
+    <tr><td><b><span data-i18n="tr1.s5.r1.m">Traditional Trenching</span></b></td><td><span data-i18n="tr1.s5.r1.c">High</span></td><td><span data-i18n="tr1.s5.r1.s">Slow</span></td><td><small><span data-i18n="tr1.s5.r1.f">Backbone routes, rural corridors with few crossings</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr1.s5.r2.m">Aerial (Pole-Attached)</span></b></td><td><span data-i18n="tr1.s5.r2.c">Low</span></td><td><span data-i18n="tr1.s5.r2.s">Fast</span></td><td><small><span data-i18n="tr1.s5.r2.f">Existing pole infrastructure available, lower right-of-way friction</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr1.s5.r3.m">Microtrenching</span></b></td><td><span data-i18n="tr1.s5.r3.c">Medium</span></td><td><span data-i18n="tr1.s5.r3.s">Fast</span></td><td><small><span data-i18n="tr1.s5.r3.f">Dense urban last-mile, paved surfaces, minimal traffic disruption required</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr1.s5.r4.m">Directional Boring</span></b></td><td><span data-i18n="tr1.s5.r4.c">High</span></td><td><span data-i18n="tr1.s5.r4.s">Medium</span></td><td><small><span data-i18n="tr1.s5.r4.f">River, road or rail crossings where open trenching isn't viable</span></small></td></tr>
+  </table></div>
+
+</div>
+
+<div class="fw-section" id="risk">
+  <div class="fw-kicker">
+    <span class="fnum-big">06</span>
+    <div class="fw-title"><small><span data-i18n="tr1.s6.kicker">Risk</span></small><h2><span data-i18n="tr1.toc.risk">Risk Register</span></h2></div>
+  </div>
+
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th><span data-i18n="th.risk">Risk</span></th><th><span data-i18n="th.prob">Probability</span></th><th><span data-i18n="th.impact">Impact</span></th><th><span data-i18n="th.mitig">Primary Mitigation</span></th></tr>
+    <tr><td><b><span data-i18n="tr1.s6.r1.risk">Rights-of-way delays or denials</span></b></td><td><span data-i18n="prob.high">High</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tr1.s6.r1.mitig">Rights-of-way survey completed before final route is locked, not after</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr1.s6.r2.risk">Undocumented utility conflicts during trenching</span></b></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tr1.s6.r2.mitig">Utility conflict overlay cross-checked with local operators before tender</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr1.s6.r3.risk">Permitting becomes the critical path</span></b></td><td><span data-i18n="prob.high">High</span></td><td><span data-i18n="impact.med">Medium</span></td><td><small><span data-i18n="tr1.s6.r3.mitig">Longest-lead permits launched in parallel with detailed design, not after it</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr1.s6.r4.risk">Geotechnical surprises mid-construction</span></b></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.med">Medium</span></td><td><small><span data-i18n="tr1.s6.r4.mitig">Targeted geotechnical sampling on segments with uncertain subsurface conditions</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr1.s6.r5.risk">Post-deployment fiber cuts and slow restoration</span></b></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.med">Medium</span></td><td><small><span data-i18n="tr1.s6.r5.mitig">As-built documentation and splice point mapping delivered as a closeout condition, not an afterthought</span></small></td></tr>
+  </table></div>
+
+</div>
+
+<div class="fw-section" id="conclusion">
+  <div class="fw-kicker">
+    <span class="fnum-big">07</span>
+    <div class="fw-title"><small><span data-i18n="tr1.s7.kicker">Closing</span></small><h2><span data-i18n="tr1.toc.conclusion">Conclusion & Recommendations</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr1.s7.p1">Route planning is not a precursor to the fiber business case &mdash; it is the business case, expressed geographically. Treating it with the same rigor as financial structuring is what separates projects that hit their cost-per-kilometer target from those that don't.</span></p>
+  <div class="info-block" style="margin-top:26px;"><h4><span data-i18n="tr1.s7.rec.title">Recommendations</span></h4><ol>
+    <li><span data-i18n="tr1.s7.rec1">Complete the rights-of-way survey before the route is locked into tender documents.</span></li>
+    <li><span data-i18n="tr1.s7.rec2">Cross-check the proposed alignment against utility records before finalizing design.</span></li>
+    <li><span data-i18n="tr1.s7.rec3">Segment the route by build method instead of pricing it with a single assumed method.</span></li>
+    <li><span data-i18n="tr1.s7.rec4">Launch the longest-lead permits in parallel with detailed design.</span></li>
+    <li><span data-i18n="tr1.s7.rec5">Weight the route toward demand density, not just the shortest geographic path.</span></li>
+  </ol></div>
+  <p style="margin-top:40px; font-size:11.5px; color:var(--muted); font-family:var(--mono);"><span data-i18n="tr1.s7.source">Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Project Structuring Framework&trade; (F1).</span></p>
+  <div class="ai-callout" style="margin-top:34px;"><span class="lab"><span data-i18n="tr1.s7.next.lab">Next Step</span></span><p><span data-i18n="tr1.s7.next.p">INA's advisory team can run a route feasibility review against your candidate corridors before you finalize design. <a href="contact.html" style="color:var(--amber);">Request Advisory &rarr;</a></span></p></div>
+
+</div>
+
+</div></div></div></section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="brand" style="color:var(--text-on-dark);">
+          <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+          <span class="word" style="color:var(--text-on-dark);"><b>INA</b><span style="color:var(--muted-on-dark);"><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+        </span>
+        <p style="margin-top:18px; font-size:13.5px; max-width:280px;"><span data-i18n="footer.tagline">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</span></p>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.platform">Platform</span></h5>
+        <ul><li><a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a></li><li><a href="framework.html"><span data-i18n="footer.frameworks">Frameworks&trade;</span></a></li><li><a href="services.html"><span data-i18n="nav.services">Services</span></a></li><li><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a></li><li><a href="advisory-board.html"><span data-i18n="footer.board">Advisory Board</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.resources">Resources</span></h5>
+        <ul><li><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a></li><li><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a></li><li><a href="finance.html"><span data-i18n="footer.finance">Multilateral Finance</span></a></li><li><a href="platform.html"><span data-i18n="footer.roadmap">Platform Roadmap</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.connect">Connect</span></h5>
+        <ul><li><a href="contact.html"><span data-i18n="footer.contact">Contact</span></a></li><li><a href="contact.html"><span data-i18n="footer.request">Request Advisory</span></a></li><li><a href="contact.html"><span data-i18n="footer.profile">Company Profile</span></a></li></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span><span data-i18n="footer.rights">&copy; 2026 International Network Advisors (INA). All rights reserved.</span></span>
+      <span><span data-i18n="footer.tag2">Digital Infrastructure Intelligence</span></span>
+    </div>
+  </div>
+</footer>
+<script src="assets/i18n.js?v=12"></script>
+<script src="assets/script.js?v=15"></script>
+</body>
+</html>

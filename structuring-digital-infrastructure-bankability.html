@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Structuring Digital Infrastructure for Bankability — INA Knowledge</title>
+<meta name="description" content="A practical white paper on structuring fiber, FWA, datacenter and submarine cable projects so they can actually attract financing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=7">
+</head>
+<body>
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="word"><b>INA</b><span><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+    </a>
+    <nav class="links">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html" class="current"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a>
+    </nav>
+    <div class="lang-switch" aria-label="Language">
+      <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+    </div>
+    <a href="contact.html" class="btn amber"><span data-i18n="nav.cta">Request Advisory</span></a>
+    <button class="navToggle" aria-label="Toggle menu" id="navToggle">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" style="display:none; border-top:1px solid var(--paper-line); background:var(--paper);">
+    <div class="wrap" style="display:flex; flex-direction:column; padding:18px 32px; gap:16px;">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a><a href="contact.html"><span data-i18n="nav.contact">Contact</span></a>
+      <div class="lang-switch" style="margin-top:6px;"><button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button></div>
+    </div>
+  </div>
+</header>
+<section class="page-hero">
+  <div class="wrap">
+    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><span>/</span><span><span data-i18n="wp1.crumb">White Paper</span></span></div>
+    <span class="eyebrow on-dark"><span data-i18n="wp1.eyebrow">White Paper &middot; September 2026</span></span>
+    <h1 class="h-page"><span data-i18n="wp1.h1">Structuring Digital Infrastructure for Bankability</span></h1>
+    <p class="lede"><span data-i18n="wp1.lede">Why technically sound projects still get turned down by financiers &mdash; and the structuring discipline that turns a good idea into an investable one.</span></p>
+  </div>
+</section>
+
+<section class="tight"><div class="wrap"><div class="fw-layout"><div class="fw-toc">
+  <span class="toc-label">On This Page</span>
+  <a href="#summary"><span data-i18n="wp1.toc.summary">Executive Summary</span></a>
+  <a href="#why-now"><span data-i18n="wp1.toc.whynow">Why Bankability Fails to Materialize</span></a>
+  <a href="#barriers"><span data-i18n="wp1.toc.barriers">Five Structural Barriers</span></a>
+  <a href="#framework"><span data-i18n="wp1.toc.framework">The Bankability Framework</span></a>
+  <a href="#governance"><span data-i18n="wp1.toc.governance">What Investors Actually Read</span></a>
+  <a href="#financing"><span data-i18n="wp1.toc.financing">Financing Readiness by Typology</span></a>
+  <a href="#risk"><span data-i18n="wp1.toc.risk">Risk Register</span></a>
+  <a href="#roadmap"><span data-i18n="wp1.toc.roadmap">A Roadmap to Investment-Ready</span></a>
+  <a href="#conclusion"><span data-i18n="wp1.toc.conclusion">Conclusion &amp; Recommendations</span></a>
+</div>
+<div>
+
+<div class="fw-section" id="summary">
+  <div class="fw-kicker">
+    <span class="fnum-big">01</span>
+    <div class="fw-title"><small><span data-i18n="wp1.s1.kicker">Overview</span></small><h2><span data-i18n="wp1.toc.summary">Executive Summary</span></h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="wp1.s1.p1">Most digital infrastructure projects that fail to reach financial close are not rejected because the technology is wrong or the market need isn't real. They are rejected because the sponsor cannot answer, in terms a credit committee accepts, exactly what will be built, who is accountable for each decision, and what happens if a key assumption breaks. Bankability is not a technical property of a project &mdash; it is a documentation and governance property, built in from the first phase, not retrofitted before a financing round.</span></p>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px; margin-top:14px;"><span data-i18n="wp1.s1.p2">This paper sets out the structuring discipline INA applies to fiber, Fixed Wireless Access, datacenter and submarine cable sponsors &mdash; public agencies, private operators and mixed-capital vehicles alike &mdash; to move a project from a credible idea to a package a financier can actually underwrite, using the INA Project Structuring Framework&trade; (F1) and Investment Readiness Index&trade; (F2).</span></p>
+  <blockquote class="fw-quote">&ldquo;<span data-i18n="wp1.s1.quote">Financiers don't fund infrastructure. They fund the certainty that a specific team will deliver a specific outcome, on a specific budget, with specific recourse if it doesn't. Bankability is that certainty, written down.</span>&rdquo;<cite><span data-i18n="wp1.s1.quote.cite">INA Project Structuring Framework&trade; &mdash; Field Notes, 2026</span></cite></blockquote>
+</div>
+
+<div class="fw-section" id="why-now">
+  <div class="fw-kicker">
+    <span class="fnum-big">02</span>
+    <div class="fw-title"><small><span data-i18n="wp1.s2.kicker">Diagnosis</span></small><h2><span data-i18n="wp1.toc.whynow">Why Bankability Fails to Materialize</span></h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="wp1.s2.p1">INA reviews dozens of infrastructure business cases a year across fiber, FWA, datacenter and submarine cable programs. The pattern repeats regardless of sector: the technical design is usually sound well before the financial and governance package is. Three gaps show up over and over.</span></p>
+  <div class="info-block" style="margin-top:34px;"><h4><span data-i18n="wp1.s2.block.title">Where the Gap Opens</span></h4><ul style="gap:16px;">
+    <li><b style="color:var(--text);"><span data-i18n="wp1.s2.item1.b">The business case is built once, then defended, not updated.</span></b><br><span style="color:var(--muted);"><span data-i18n="wp1.s2.item1.d">A financial model produced at concept stage is presented to investors eighteen months later, unrevised, while every underlying assumption &mdash; construction costs, demand, competitive entrants &mdash; has moved.</span></span></li>
+    <li><b style="color:var(--text);"><span data-i18n="wp1.s2.item2.b">Risk is described narratively, not quantified.</span></b><br><span style="color:var(--muted);"><span data-i18n="wp1.s2.item2.d">Business cases that list risks in prose, without probability, impact or an owner attached to each one, read to a credit committee as risks the sponsor hasn't actually thought through.</span></span></li>
+    <li><b style="color:var(--text);"><span data-i18n="wp1.s2.item3.b">Governance exists on paper but has never been tested.</span></b><br><span style="color:var(--muted);"><span data-i18n="wp1.s2.item3.d">A steering committee and RACI matrix that were drafted for the tender but never actually convened signal, to an experienced financier, that decision-making under stress is unproven.</span></span></li>
+  </ul></div>
+  <div class="ai-callout"><span class="lab"><span data-i18n="wp1.s2.callout.lab">Reality Check</span></span><p><span data-i18n="wp1.s2.callout.p">A project can be 100% technically correct and still be unbankable. Bankability is a separate deliverable from engineering design, and it needs its own budget, timeline and owner.</span></p></div>
+</div>
+
+<div class="fw-section" id="barriers">
+  <div class="fw-kicker">
+    <span class="fnum-big">03</span>
+    <div class="fw-title"><small><span data-i18n="wp1.s3.kicker">Diagnosis</span></small><h2><span data-i18n="wp1.toc.barriers">Five Structural Barriers</span></h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="wp1.s3.p1">These are the barriers that most consistently separate a fundable project from one that stalls in diligence, across the sponsors INA has structured.</span></p>
+  <div class="phase-list">
+    <div class="phase-item"><div class="pn">1</div><div>
+      <h4><span data-i18n="wp1.s3.b1.t">No single financial model that survives scrutiny</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="wp1.s3.b1.d">Different documents show different capex figures for the same project, because the model was copied and edited rather than maintained as one governed source of truth.</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">2</div><div>
+      <h4><span data-i18n="wp1.s3.b2.t">Revenue assumptions with no independent validation</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="wp1.s3.b2.d">Demand and tariff projections drafted internally, with no market study, benchmark or anchor-tenant letter of intent a financier can check against.</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">3</div><div>
+      <h4><span data-i18n="wp1.s3.b3.t">Unclear allocation of construction and completion risk</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="wp1.s3.b3.d">Contracts that don't specify who absorbs cost overruns or schedule slippage push that risk, by default, onto whoever is financing the project.</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">4</div><div>
+      <h4><span data-i18n="wp1.s3.b4.t">No credible operating entity post-construction</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="wp1.s3.b4.d">A strong construction plan paired with a vague answer to "who operates this and with what team, once it's built."</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">5</div><div>
+      <h4><span data-i18n="wp1.s3.b5.t">Permits and rights-of-way treated as a formality</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="wp1.s3.b5.d">Land access, spectrum, landing permits or municipal rights-of-way assumed rather than confirmed &mdash; one of the most common causes of late-stage financing delay.</span></p>
+    </div></div>
+  </div>
+</div>
+
+<div class="fw-section" id="framework">
+  <div class="fw-kicker">
+    <span class="fnum-big">04</span>
+    <div class="fw-title"><small><span data-i18n="wp1.s4.kicker">Methodology</span></small><h2><span data-i18n="wp1.toc.framework">The Bankability Framework</span></h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="wp1.s4.p1">INA structures bankability using two of its seven INA Frameworks&trade; together: the <b style="color:var(--text);">Project Structuring Framework&trade; (F1)</b> to build the underlying discipline phase by phase, and the <b style="color:var(--text);">Investment Readiness Index&trade; (F2)</b> to translate that discipline into a single, comparable score a financier can act on quickly.</span></p>
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th><span data-i18n="wp1.s4.th1">F1 Phase</span></th><th><span data-i18n="wp1.s4.th2">What It Establishes</span></th><th><span data-i18n="wp1.s4.th3">F2 Dimensions It Feeds</span></th></tr>
+    <tr><td><b><span data-i18n="wp1.s4.r1.phase">I &middot; Strategic Diagnosis</span></b></td><td><span data-i18n="wp1.s4.r1.what">Executive sponsorship and a verifiable problem statement</span></td><td><small><span data-i18n="wp1.s4.r1.dims">Sponsor Capacity</span></small></td></tr>
+    <tr><td><b><span data-i18n="wp1.s4.r2.phase">II &middot; Feasibility &amp; Business Case</span></b></td><td><span data-i18n="wp1.s4.r2.what">A single governed financial model and validated demand assumptions</span></td><td><small><span data-i18n="wp1.s4.r2.dims">Financial Model Robustness, Market Demand Evidence</span></small></td></tr>
+    <tr><td><b><span data-i18n="wp1.s4.r3.phase">III &middot; Governance &amp; Contractual Model</span></b></td><td><span data-i18n="wp1.s4.r3.what">Risk allocation in the contract, not left implicit</span></td><td><small><span data-i18n="wp1.s4.r3.dims">Legal &amp; Regulatory Clarity, Governance &amp; Reporting</span></small></td></tr>
+    <tr><td><b><span data-i18n="wp1.s4.r4.phase">IV &middot; Procurement &amp; Implementation</span></b></td><td><span data-i18n="wp1.s4.r4.what">Evidence the delivery model actually functions under real conditions</span></td><td><small><span data-i18n="wp1.s4.r4.dims">Technical Design Maturity, Risk Mitigation Coverage</span></small></td></tr>
+    <tr><td><b><span data-i18n="wp1.s4.r5.phase">V &middot; Monitoring &amp; Improvement</span></b></td><td><span data-i18n="wp1.s4.r5.what">A credible post-construction operating and reporting capability</span></td><td><small><span data-i18n="wp1.s4.r5.dims">Environmental &amp; Social Readiness, Governance &amp; Reporting</span></small></td></tr>
+  </table></div>
+  <div class="subhead"><span data-i18n="wp1.s4.stages.subhead">Where a Project Typically Scores</span></div>
+  <p style="max-width:720px; color:var(--muted); font-size:14.5px; margin-top:6px;"><span data-i18n="wp1.s4.stages.p">INA scores projects 0&ndash;100 across F2's eight dimensions. Most sponsors are surprised to learn they enter structuring in the low 30s &mdash; adequate for a feasibility conversation, not for a term sheet.</span></p>
+  <div class="score-scale">
+    <div><div class="range">0&ndash;25</div><div class="label"><span data-i18n="wp1.s4.stage1.label">Concept Stage</span></div></div>
+    <div><div class="range">26&ndash;50</div><div class="label"><span data-i18n="wp1.s4.stage2.label">Early Structuring</span></div></div>
+    <div><div class="range">51&ndash;75</div><div class="label"><span data-i18n="wp1.s4.stage3.label">Advanced Structuring</span></div></div>
+    <div><div class="range">76&ndash;100</div><div class="label"><span data-i18n="wp1.s4.stage4.label">Investment Ready</span></div></div>
+  </div>
+</div>
+
+<div class="fw-section" id="governance">
+  <div class="fw-kicker">
+    <span class="fnum-big">05</span>
+    <div class="fw-title"><small><span data-i18n="wp1.s5.kicker">Diligence</span></small><h2><span data-i18n="wp1.toc.governance">What Investors Actually Read</span></h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="wp1.s5.p1">There is a consistent gap between the documents sponsors are proud of and the ones a credit committee actually opens first.</span></p>
+  <div class="two-col">
+    <div class="info-block"><h4><span data-i18n="wp1.s5.want.title">What Investors Open First</span></h4><ul>
+      <li><span data-i18n="wp1.s5.want.li1">A single financial model with visible, traceable assumptions</span></li>
+      <li><span data-i18n="wp1.s5.want.li2">A risk register with owners and mitigation status, not a risk paragraph</span></li>
+      <li><span data-i18n="wp1.s5.want.li3">Evidence of executive sponsorship that survives a change in leadership</span></li>
+    </ul></div>
+    <div class="info-block"><h4><span data-i18n="wp1.s5.get.title">What Sponsors Usually Lead With</span></h4><ul>
+      <li><span data-i18n="wp1.s5.get.li1">A technical design deck</span></li>
+      <li><span data-i18n="wp1.s5.get.li2">A market opportunity narrative</span></li>
+      <li><span data-i18n="wp1.s5.get.li3">A single-page cost estimate</span></li>
+    </ul></div>
+  </div>
+  <div class="ai-callout"><span class="lab"><span data-i18n="wp1.s5.callout.lab">Structuring Principle</span></span><p><span data-i18n="wp1.s5.callout.p">Lead diligence with the documents a financier reads first, not the ones the sponsor is proudest of. The technical design deck still matters &mdash; it just isn't what gets a project past the first screening call.</span></p></div>
+</div>
+
+<div class="fw-section" id="financing">
+  <div class="fw-kicker">
+    <span class="fnum-big">06</span>
+    <div class="fw-title"><small><span data-i18n="wp1.s6.kicker">Fit</span></small><h2><span data-i18n="wp1.toc.financing">Financing Readiness by Typology</span></h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="wp1.s6.p1">The bar for bankability isn't identical across infrastructure types &mdash; each typology has a financing pool with different expectations.</span></p>
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th><span data-i18n="wp1.s6.th1">Typology</span></th><th><span data-i18n="wp1.s6.th2">Typical Financing Pool</span></th><th><span data-i18n="wp1.s6.th3">Bankability Bar</span></th></tr>
+    <tr><td><b><span data-i18n="wp1.s6.r1.typo">Submarine Cable Systems</span></b></td><td><span data-i18n="wp1.s6.r1.pool">MDB sovereign loans, consortium equity, ECA-backed vendor finance</span></td><td><small><span data-i18n="wp1.s6.r1.bar">IRU offtake commitments and landing-party governance in place before financial close</span></small></td></tr>
+    <tr><td><b><span data-i18n="wp1.s6.r2.typo">Fiber Backbone &amp; Last Mile</span></b></td><td><span data-i18n="wp1.s6.r2.pool">Universal service funds, national budget, project finance debt</span></td><td><small><span data-i18n="wp1.s6.r2.bar">Rights-of-way and municipal permits confirmed segment by segment</span></small></td></tr>
+    <tr><td><b><span data-i18n="wp1.s6.r3.typo">Fixed Wireless Access</span></b></td><td><span data-i18n="wp1.s6.r3.pool">Private equity, vendor financing, blended finance</span></td><td><small><span data-i18n="wp1.s6.r3.bar">Confirmed spectrum access and CPE supply agreements</span></small></td></tr>
+    <tr><td><b><span data-i18n="wp1.s6.r4.typo">AI Datacenters</span></b></td><td><span data-i18n="wp1.s6.r4.pool">Infrastructure funds, project finance debt, hyperscaler pre-commitments</span></td><td><small><span data-i18n="wp1.s6.r4.bar">Power availability and offtake/colocation contracts, not just a site</span></small></td></tr>
+  </table></div>
+  <p style="margin-top:22px; font-size:13.5px; color:var(--muted);"><span data-i18n="wp1.s6.footnote">See INA's <a href="finance.html" style="color:var(--amber-deep);">Multilateral Finance</a> page and the <b style="color:var(--text);">Multilateral Finance Navigator&trade; (F6)</b> for the full financing-mechanism landscape once a project clears the bankability bar.</span></p>
+</div>
+
+<div class="fw-section" id="risk">
+  <div class="fw-kicker">
+    <span class="fnum-big">07</span>
+    <div class="fw-title"><small><span data-i18n="wp1.s7.kicker">Risk</span></small><h2><span data-i18n="wp1.toc.risk">Risk Register</span></h2></div>
+  </div>
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th><span data-i18n="th.risk">Risk</span></th><th><span data-i18n="th.prob">Probability</span></th><th><span data-i18n="th.impact">Impact</span></th><th><span data-i18n="th.mitig">Primary Mitigation</span></th></tr>
+    <tr><td><b><span data-i18n="wp1.s7.r1.risk">Financial model with unreconciled versions across documents</span></b></td><td><span data-i18n="prob.high">High</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="wp1.s7.r1.mitig">One governed model, version-controlled, owned by a named financial lead</span></small></td></tr>
+    <tr><td><b><span data-i18n="wp1.s7.r2.risk">Demand projections without independent validation</span></b></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="wp1.s7.r2.mitig">Third-party market study or anchor-tenant letters of intent before diligence</span></small></td></tr>
+    <tr><td><b><span data-i18n="wp1.s7.r3.risk">Construction risk not explicitly allocated in contract</span></b></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="wp1.s7.r3.mitig">Fixed-price or capped-overrun clauses negotiated before tender award</span></small></td></tr>
+    <tr><td><b><span data-i18n="wp1.s7.r4.risk">Permits or rights-of-way unconfirmed at financial close</span></b></td><td><span data-i18n="prob.high">High</span></td><td><span data-i18n="impact.med">Medium</span></td><td><small><span data-i18n="wp1.s7.r4.mitig">Permit tracker maintained from Phase I, not assembled at diligence</span></small></td></tr>
+    <tr><td><b><span data-i18n="wp1.s7.r5.risk">No credible post-construction operating entity</span></b></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="wp1.s7.r5.mitig">Operating model and staffing plan finalized during Phase III, not after go-live</span></small></td></tr>
+  </table></div>
+</div>
+
+<div class="fw-section" id="roadmap">
+  <div class="fw-kicker">
+    <span class="fnum-big">08</span>
+    <div class="fw-title"><small><span data-i18n="wp1.s8.kicker">Execution</span></small><h2><span data-i18n="wp1.toc.roadmap">A Roadmap to Investment-Ready</span></h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="wp1.s8.p1">A sponsor scoring in the 30s on the Investment Readiness Index&trade; can reach the 70s in roughly two quarters by sequencing these four moves.</span></p>
+  <div class="phase-list">
+    <div class="phase-item"><div class="pn">I</div><div>
+      <h4><span data-i18n="wp1.s8.p1t">Weeks 1&ndash;4 &middot; Run the Investment Readiness Index&trade;</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="wp1.s8.p1d">Score the project across all eight F2 dimensions to identify which two or three are dragging the composite score down.</span></p>
+      <span class="pgate"><span data-i18n="wp1.s8.p1g">Gate &mdash; Baseline score confirmed</span></span>
+    </div></div>
+    <div class="phase-item"><div class="pn">II</div><div>
+      <h4><span data-i18n="wp1.s8.p2t">Weeks 5&ndash;10 &middot; Consolidate the financial model and risk register</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="wp1.s8.p2d">Retire every duplicate spreadsheet into one governed model; convert the risk narrative into a scored, owned register.</span></p>
+      <span class="pgate"><span data-i18n="wp1.s8.p2g">Gate &mdash; Single source of truth confirmed</span></span>
+    </div></div>
+    <div class="phase-item"><div class="pn">III</div><div>
+      <h4><span data-i18n="wp1.s8.p3t">Weeks 11&ndash;16 &middot; Close the permit and rights-of-way gap</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="wp1.s8.p3d">Confirm every outstanding permit, spectrum grant or land right, with dates and owners, rather than assuming they will resolve before construction.</span></p>
+      <span class="pgate"><span data-i18n="wp1.s8.p3g">Gate &mdash; Permit tracker complete</span></span>
+    </div></div>
+    <div class="phase-item"><div class="pn">IV</div><div>
+      <h4><span data-i18n="wp1.s8.p4t">Weeks 17&ndash;24 &middot; Re-score and package for financiers</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="wp1.s8.p4d">Re-run the Index, confirm the score has moved into the Investment Ready band, and assemble the package around the documents financiers open first.</span></p>
+      <span class="pgate"><span data-i18n="wp1.s8.p4g">Gate &mdash; Financing package issued</span></span>
+    </div></div>
+  </div>
+</div>
+
+<div class="fw-section" id="conclusion">
+  <div class="fw-kicker">
+    <span class="fnum-big">09</span>
+    <div class="fw-title"><small><span data-i18n="wp1.s9.kicker">Closing</span></small><h2><span data-i18n="wp1.toc.conclusion">Conclusion &amp; Recommendations</span></h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="wp1.s9.p1">Bankability is a structuring outcome, not a technical one. A sponsor that treats the financial model, risk register and governance charter with the same rigor as the engineering design will consistently outperform a technically superior project that treats those as paperwork to assemble at the end.</span></p>
+  <div class="info-block" style="margin-top:26px;"><h4><span data-i18n="wp1.s9.rec.title">Recommendations</span></h4><ol>
+    <li><span data-i18n="wp1.s9.rec1">Run the Investment Readiness Index&trade; before, not after, approaching financiers.</span></li>
+    <li><span data-i18n="wp1.s9.rec2">Consolidate every financial model into one governed, version-controlled source.</span></li>
+    <li><span data-i18n="wp1.s9.rec3">Convert narrative risk sections into a scored register with named owners.</span></li>
+    <li><span data-i18n="wp1.s9.rec4">Confirm permits and rights-of-way before, not during, diligence.</span></li>
+    <li><span data-i18n="wp1.s9.rec5">Name a post-construction operating entity before financial close, not after.</span></li>
+  </ol></div>
+  <p style="margin-top:40px; font-size:11.5px; color:var(--muted); font-family:var(--mono);"><span data-i18n="wp1.s9.source">Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Project Structuring Framework&trade; (F1) and Investment Readiness Index&trade; (F2).</span></p>
+  <div class="ai-callout" style="margin-top:34px;"><span class="lab"><span data-i18n="wp1.s9.next.lab">Next Step</span></span><p><span data-i18n="wp1.s9.next.p">INA's advisory team can run the Investment Readiness Index&trade; against your project and return a prioritized gap roadmap. <a href="contact.html" style="color:var(--amber);">Request Advisory &rarr;</a></span></p></div>
+</div>
+
+</div></div></div></section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="brand" style="color:var(--text-on-dark);">
+          <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+          <span class="word" style="color:var(--text-on-dark);"><b>INA</b><span style="color:var(--muted-on-dark);"><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+        </span>
+        <p style="margin-top:18px; font-size:13.5px; max-width:280px;"><span data-i18n="footer.tagline">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</span></p>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.platform">Platform</span></h5>
+        <ul><li><a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a></li><li><a href="framework.html"><span data-i18n="footer.frameworks">Frameworks&trade;</span></a></li><li><a href="services.html"><span data-i18n="nav.services">Services</span></a></li><li><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a></li><li><a href="advisory-board.html"><span data-i18n="footer.board">Advisory Board</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.resources">Resources</span></h5>
+        <ul><li><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a></li><li><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a></li><li><a href="finance.html"><span data-i18n="footer.finance">Multilateral Finance</span></a></li><li><a href="platform.html"><span data-i18n="footer.roadmap">Platform Roadmap</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.connect">Connect</span></h5>
+        <ul><li><a href="contact.html"><span data-i18n="footer.contact">Contact</span></a></li><li><a href="contact.html"><span data-i18n="footer.request">Request Advisory</span></a></li><li><a href="contact.html"><span data-i18n="footer.profile">Company Profile</span></a></li></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span><span data-i18n="footer.rights">&copy; 2026 International Network Advisors (INA). All rights reserved.</span></span>
+      <span><span data-i18n="footer.tag2">Digital Infrastructure Intelligence</span></span>
+    </div>
+  </div>
+</footer>
+<script src="assets/i18n.js?v=12"></script>
+<script src="assets/script.js?v=15"></script>
+</body>
+</html>

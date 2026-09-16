@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risk Register Template — INA Knowledge</title>
+<meta name="description" content="A ready-to-use risk register template structured around INA's ten-category Project Risk Assessment Framework™, with worked examples.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=7">
+</head>
+<body>
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="word"><b>INA</b><span><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+    </a>
+    <nav class="links">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html" class="current"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a>
+    </nav>
+    <div class="lang-switch" aria-label="Language">
+      <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+    </div>
+    <a href="contact.html" class="btn amber"><span data-i18n="nav.cta">Request Advisory</span></a>
+    <button class="navToggle" aria-label="Toggle menu" id="navToggle">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" style="display:none; border-top:1px solid var(--paper-line); background:var(--paper);">
+    <div class="wrap" style="display:flex; flex-direction:column; padding:18px 32px; gap:16px;">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a><a href="contact.html"><span data-i18n="nav.contact">Contact</span></a>
+      <div class="lang-switch" style="margin-top:6px;"><button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button></div>
+    </div>
+  </div>
+</header>
+<section class="page-hero">
+  <div class="wrap">
+    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><span>/</span><span><span data-i18n="tk2.crumb">Template</span></span></div>
+    <span class="eyebrow on-dark"><span data-i18n="tk2.eyebrow">Template &middot; September 2026</span></span>
+    <h1 class="h-page"><span data-i18n="tk2.h1">Risk Register Template</span></h1>
+    <p class="lede"><span data-i18n="tk2.lede">A ready-to-use risk register structured around the ten categories of INA's Project Risk Assessment Framework&trade; (F5), with worked examples for each.</span></p>
+  </div>
+</section>
+
+<section class="tight"><div class="wrap">
+
+<div class="fw-section" id="overview" style="border-top:none; padding-top:0;">
+  <div class="fw-kicker">
+    <span class="fnum-big">01</span>
+    <div class="fw-title"><small><span data-i18n="tk2.s1.kicker">Overview</span></small><h2><span data-i18n="tk2.s1.title">How to Use This Register</span></h2></div>
+  </div>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tk2.s1.p1">Copy the table below into your own project tracker at Phase II and keep it live through Phase V &mdash; a risk register that stops updating after the Business Case is signed isn't a risk register, it's an archive. Score Probability and Impact independently as Low/Medium/High, assign a single named owner per risk, and review the full register at every gate.</span></p>
+  <div class="info-block" style="margin-top:24px;"><h4><span data-i18n="tk2.s1.legend.title">Status Legend</span></h4><ul>
+    <li><span data-i18n="tk2.s1.legend.open">Open &mdash; identified, mitigation not yet in place</span></li>
+    <li><span data-i18n="tk2.s1.legend.mitig">Mitigating &mdash; mitigation actions in progress</span></li>
+    <li><span data-i18n="tk2.s1.legend.closed">Closed &mdash; risk no longer applies or is fully mitigated</span></li>
+  </ul></div>
+</div>
+
+<div class="fw-section" id="register">
+  <div class="fw-kicker">
+    <span class="fnum-big">02</span>
+    <div class="fw-title"><small><span data-i18n="tk2.s2.kicker">Template</span></small><h2><span data-i18n="tk2.s2.title">Register by Category</span></h2></div>
+  </div>
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th><span data-i18n="tk2.s2.th.cat">Category</span></th><th><span data-i18n="th.risk">Risk</span></th><th><span data-i18n="th.prob">Probability</span></th><th><span data-i18n="th.impact">Impact</span></th><th><span data-i18n="tk2.s2.th.owner">Owner</span></th><th><span data-i18n="th.mitig">Primary Mitigation</span></th><th><span data-i18n="tk2.s2.th.status">Status</span></th></tr>
+    <tr><td><b><span data-i18n="tk2.s2.r1.cat">Strategic</span></b></td><td><span data-i18n="tk2.s2.r1.risk">Project no longer aligned with sponsor's current priorities</span></td><td><span data-i18n="prob.low">Low</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tk2.s2.r1.owner">Executive Sponsor</span></small></td><td><small><span data-i18n="tk2.s2.r1.mitig">Alignment re-confirmed at every gate, not only at kickoff</span></small></td><td><span data-i18n="tk2.s2.r1.status">Open</span></td></tr>
+    <tr><td><b><span data-i18n="tk2.s2.r2.cat">Regulatory</span></b></td><td><span data-i18n="tk2.s2.r2.risk">Permitting or spectrum approval delayed beyond schedule</span></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tk2.s2.r2.owner">Legal Counsel</span></small></td><td><small><span data-i18n="tk2.s2.r2.mitig">Regulatory filings started in Phase II, ahead of technical design close</span></small></td><td><span data-i18n="tk2.s2.r2.status">Mitigating</span></td></tr>
+    <tr><td><b><span data-i18n="tk2.s2.r3.cat">Technical</span></b></td><td><span data-i18n="tk2.s2.r3.risk">Chosen technical architecture doesn't scale to projected demand</span></td><td><span data-i18n="prob.low">Low</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tk2.s2.r3.owner">Technical Committee</span></small></td><td><small><span data-i18n="tk2.s2.r3.mitig">Independent technical peer review before Gate 2</span></small></td><td><span data-i18n="tk2.s2.r3.status">Open</span></td></tr>
+    <tr><td><b><span data-i18n="tk2.s2.r4.cat">Financial</span></b></td><td><span data-i18n="tk2.s2.r4.risk">Actual cost exceeds the Business Case estimate</span></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tk2.s2.r4.owner">PMO &amp; Finance Lead</span></small></td><td><small><span data-i18n="tk2.s2.r4.mitig">Cost model benchmarked externally before financial close</span></small></td><td><span data-i18n="tk2.s2.r4.status">Mitigating</span></td></tr>
+    <tr><td><b><span data-i18n="tk2.s2.r5.cat">Market</span></b></td><td><span data-i18n="tk2.s2.r5.risk">Demand assumptions don't hold once the service launches</span></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.med">Medium</span></td><td><small><span data-i18n="tk2.s2.r5.owner">Commercial Lead</span></small></td><td><small><span data-i18n="tk2.s2.r5.mitig">Demand study refreshed at Gate 2 with independent data</span></small></td><td><span data-i18n="tk2.s2.r5.status">Open</span></td></tr>
+    <tr><td><b><span data-i18n="tk2.s2.r6.cat">Counterparty</span></b></td><td><span data-i18n="tk2.s2.r6.risk">Key vendor's financial or delivery capacity in doubt</span></td><td><span data-i18n="prob.low">Low</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tk2.s2.r6.owner">PMO</span></small></td><td><small><span data-i18n="tk2.s2.r6.mitig">Financial due diligence on shortlisted vendors before award</span></small></td><td><span data-i18n="tk2.s2.r6.status">Closed</span></td></tr>
+    <tr><td><b><span data-i18n="tk2.s2.r7.cat">Operational</span></b></td><td><span data-i18n="tk2.s2.r7.risk">Operating team not ready to run the delivered system</span></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.med">Medium</span></td><td><small><span data-i18n="tk2.s2.r7.owner">PMO</span></small></td><td><small><span data-i18n="tk2.s2.r7.mitig">Change management plan started in Phase III, not after delivery</span></small></td><td><span data-i18n="tk2.s2.r7.status">Mitigating</span></td></tr>
+    <tr><td><b><span data-i18n="tk2.s2.r8.cat">Environmental &amp; Social</span></b></td><td><span data-i18n="tk2.s2.r8.risk">Construction impacts unaddressed community or environmental concerns</span></td><td><span data-i18n="prob.low">Low</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tk2.s2.r8.owner">Technical Committee</span></small></td><td><small><span data-i18n="tk2.s2.r8.mitig">Environmental and social screening completed before Gate 3</span></small></td><td><span data-i18n="tk2.s2.r8.status">Open</span></td></tr>
+    <tr><td><b><span data-i18n="tk2.s2.r9.cat">Governance</span></b></td><td><span data-i18n="tk2.s2.r9.risk">Decision authority unclear once implementation starts</span></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.med">Medium</span></td><td><small><span data-i18n="tk2.s2.r9.owner">Steering Committee</span></small></td><td><small><span data-i18n="tk2.s2.r9.mitig">RACI Matrix signed off before Gate 3, reviewed at each gate</span></small></td><td><span data-i18n="tk2.s2.r9.status">Closed</span></td></tr>
+    <tr><td><b><span data-i18n="tk2.s2.r10.cat">Climate</span></b></td><td><span data-i18n="tk2.s2.r10.risk">Physical assets exposed to flooding, heat or storm intensification</span></td><td><span data-i18n="prob.low">Low</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tk2.s2.r10.owner">Technical Committee</span></small></td><td><small><span data-i18n="tk2.s2.r10.mitig">Climate exposure screening included in site/route selection</span></small></td><td><span data-i18n="tk2.s2.r10.status">Open</span></td></tr>
+  </table></div>
+</div>
+
+<div class="fw-section" id="lifecycle">
+  <div class="fw-kicker">
+    <span class="fnum-big">03</span>
+    <div class="fw-title"><small><span data-i18n="tk2.s3.kicker">Discipline</span></small><h2><span data-i18n="tk2.s3.title">Keeping It Alive Through the Lifecycle</span></h2></div>
+  </div>
+  <div class="two-col">
+    <div class="info-block"><h4><span data-i18n="tk2.s3.col1.title">At Every Gate</span></h4><ol>
+      <li><span data-i18n="tk2.s3.col1.li1">Re-score every open risk &mdash; don't just add new ones</span></li>
+      <li><span data-i18n="tk2.s3.col1.li2">Close risks that no longer apply, with a one-line reason</span></li>
+      <li><span data-i18n="tk2.s3.col1.li3">Escalate any High/High risk without a named owner to the Steering Committee</span></li>
+    </ol></div>
+    <div class="info-block"><h4><span data-i18n="tk2.s3.col2.title">Common Mistakes</span></h4><ul>
+      <li><span data-i18n="tk2.s3.col2.li1">Treating the register as a Phase II artifact instead of a living document</span></li>
+      <li><span data-i18n="tk2.s3.col2.li2">Scoring risk without a named, accountable owner</span></li>
+      <li><span data-i18n="tk2.s3.col2.li3">Leaving AI-agent-flagged anomalies out of the register entirely</span></li>
+    </ul></div>
+  </div>
+  <div class="ai-callout" style="margin-top:34px;"><span class="lab"><span data-i18n="tk2.cta.lab">Next Step</span></span><p><span data-i18n="tk2.cta.p">Pair this register with INA's <a href="project-structuring-framework-toolkit.html" style="color:var(--amber);">Project Structuring Framework&trade; Toolkit</a>, or request a facilitated risk workshop. <a href="contact.html" style="color:var(--amber);">Request Advisory &rarr;</a></span></p></div>
+</div>
+
+</div></section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="brand" style="color:var(--text-on-dark);">
+          <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+          <span class="word" style="color:var(--text-on-dark);"><b>INA</b><span style="color:var(--muted-on-dark);"><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+        </span>
+        <p style="margin-top:18px; font-size:13.5px; max-width:280px;"><span data-i18n="footer.tagline">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</span></p>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.platform">Platform</span></h5>
+        <ul><li><a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a></li><li><a href="framework.html"><span data-i18n="footer.frameworks">Frameworks&trade;</span></a></li><li><a href="services.html"><span data-i18n="nav.services">Services</span></a></li><li><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a></li><li><a href="advisory-board.html"><span data-i18n="footer.board">Advisory Board</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.resources">Resources</span></h5>
+        <ul><li><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a></li><li><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a></li><li><a href="finance.html"><span data-i18n="footer.finance">Multilateral Finance</span></a></li><li><a href="platform.html"><span data-i18n="footer.roadmap">Platform Roadmap</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.connect">Connect</span></h5>
+        <ul><li><a href="contact.html"><span data-i18n="footer.contact">Contact</span></a></li><li><a href="contact.html"><span data-i18n="footer.request">Request Advisory</span></a></li><li><a href="contact.html"><span data-i18n="footer.profile">Company Profile</span></a></li></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span><span data-i18n="footer.rights">&copy; 2026 International Network Advisors (INA). All rights reserved.</span></span>
+      <span><span data-i18n="footer.tag2">Digital Infrastructure Intelligence</span></span>
+    </div>
+  </div>
+</footer>
+<script src="assets/i18n.js?v=12"></script>
+<script src="assets/script.js?v=15"></script>
+</body>
+</html>

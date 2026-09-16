@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Center Siting Fundamentals — INA Knowledge</title>
+<meta name="description" content="A technical report on data center site selection — power interconnection, redundancy tiers, cooling and climate risk, with a focus on AI workloads.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=7">
+</head>
+<body>
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="word"><b>INA</b><span><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+    </a>
+    <nav class="links">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html" class="current"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a>
+    </nav>
+    <div class="lang-switch" aria-label="Language">
+      <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+    </div>
+    <a href="contact.html" class="btn amber"><span data-i18n="nav.cta">Request Advisory</span></a>
+    <button class="navToggle" aria-label="Toggle menu" id="navToggle">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" style="display:none; border-top:1px solid var(--paper-line); background:var(--paper);">
+    <div class="wrap" style="display:flex; flex-direction:column; padding:18px 32px; gap:16px;">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a><a href="contact.html"><span data-i18n="nav.contact">Contact</span></a>
+      <div class="lang-switch" style="margin-top:6px;"><button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button></div>
+    </div>
+  </div>
+</header>
+<section class="page-hero">
+  <div class="wrap">
+    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><span>/</span><span><span data-i18n="tr2.crumb">Technical Report</span></span></div>
+    <span class="eyebrow on-dark"><span data-i18n="tr2.eyebrow">Technical Report &middot; September 2026</span></span>
+    <h1 class="h-page"><span data-i18n="tr2.h1">Data center siting fundamentals</span></h1>
+    <p class="lede"><span data-i18n="tr2.lede">Why power availability, not land cost, has become the binding constraint on data center siting decisions &mdash; especially for AI training and inference workloads.</span></p>
+  </div>
+</section>
+
+<section class="tight"><div class="wrap"><div class="fw-layout"><div class="fw-toc">
+  <span class="toc-label">On This Page</span>
+  <a href="#summary"><span data-i18n="tr2.toc.summary">Executive Summary</span></a>
+  <a href="#why-now"><span data-i18n="tr2.toc.whynow">Why Power Is the Binding Constraint</span></a>
+  <a href="#barriers"><span data-i18n="tr2.toc.barriers">Where Siting Decisions Go Wrong</span></a>
+  <a href="#criteria"><span data-i18n="tr2.toc.criteria">The Siting Evaluation Framework</span></a>
+  <a href="#tiers"><span data-i18n="tr2.toc.tiers">Redundancy Tier Comparison</span></a>
+  <a href="#risk"><span data-i18n="tr2.toc.risk">Risk Register</span></a>
+  <a href="#conclusion"><span data-i18n="tr2.toc.conclusion">Conclusion & Recommendations</span></a>
+</div>
+<div>
+
+<div class="fw-section" id="summary">
+  <div class="fw-kicker">
+    <span class="fnum-big">01</span>
+    <div class="fw-title"><small><span data-i18n="tr2.s1.kicker">Overview</span></small><h2><span data-i18n="tr2.toc.summary">Executive Summary</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr2.s1.p1">A decade ago, data center siting was mostly a land-and-connectivity exercise. Today, for any facility built to support AI training or high-density inference, the first question is no longer where the land is cheapest &mdash; it's where enough power, at the right redundancy tier, can actually be interconnected within a financeable timeline.</span></p>
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px; margin-top:14px;"><span data-i18n="tr2.s1.p2">This report sets out the siting criteria INA applies to datacenter projects, why power availability now dominates every other variable, and the redundancy, cooling and regulatory considerations that determine whether a candidate site is actually financeable.</span></p>
+  <blockquote class="fw-quote">&ldquo;<span data-i18n="tr2.s1.quote">Land is a one-time decision. The power interconnection queue is the decision that actually controls your delivery date.</span>&rdquo;<cite><span data-i18n="tr2.s1.quote.cite">INA Project Structuring Framework&trade; &mdash; Field Notes, 2026</span></cite></blockquote>
+
+</div>
+
+<div class="fw-section" id="why-now">
+  <div class="fw-kicker">
+    <span class="fnum-big">02</span>
+    <div class="fw-title"><small><span data-i18n="tr2.s2.kicker">Context</span></small><h2><span data-i18n="tr2.toc.whynow">Why Power Is the Binding Constraint</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr2.s2.p1">AI training clusters can require rack densities several multiples higher than a traditional enterprise data hall &mdash; which changes the siting calculus for power, cooling and even structural load in ways that a land-cost comparison alone will never capture.</span></p>
+  <div class="chip-row">
+    <span><span data-i18n="tr2.s2.chip1">Hyperscale</span></span>
+    <span><span data-i18n="tr2.s2.chip2">Colocation</span></span>
+    <span><span data-i18n="tr2.s2.chip3">Edge</span></span>
+    <span><span data-i18n="tr2.s2.chip4">AI Training</span></span>
+    <span><span data-i18n="tr2.s2.chip5">AI Inference</span></span>
+  </div>
+  <div class="ai-callout"><span class="lab"><span data-i18n="tr2.s2.callout.lab">Reality Check</span></span><p><span data-i18n="tr2.s2.callout.p">A site with cheaper land but a multi-year power interconnection queue is not a cheaper site &mdash; it's a delayed site, and delay is what actually erodes a data center business case.</span></p></div>
+
+</div>
+
+<div class="fw-section" id="barriers">
+  <div class="fw-kicker">
+    <span class="fnum-big">03</span>
+    <div class="fw-title"><small><span data-i18n="tr2.s3.kicker">Diagnosis</span></small><h2><span data-i18n="tr2.toc.barriers">Where Siting Decisions Go Wrong</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr2.s3.p1">The recurring siting mistakes INA sees across public and private datacenter projects.</span></p>
+  <div class="phase-list">
+    <div class="phase-item"><div class="pn">1</div><div>
+      <h4><span data-i18n="tr2.s3.b1.t">Power queue position checked too late</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="tr2.s3.b1.d">Utility interconnection queues can run years long. Sponsors that check queue position after site selection frequently discover the timeline no longer fits the financing plan.</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">2</div><div>
+      <h4><span data-i18n="tr2.s3.b2.t">Cooling and water access treated as an afterthought</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="tr2.s3.b2.d">High-density AI racks push cooling demand well beyond traditional air-cooled designs, and water-stressed regions can turn a promising site into a permitting fight.</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">3</div><div>
+      <h4><span data-i18n="tr2.s3.b3.t">Redundancy tier chosen after the business case, not before</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="tr2.s3.b3.d">Tier III versus Tier IV changes both capex and the site's power and cooling footprint substantially &mdash; it needs to be a Phase II input, not a Phase IV surprise.</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">4</div><div>
+      <h4><span data-i18n="tr2.s3.b4.t">Network latency to demand centers underweighted</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="tr2.s3.b4.d">Inference workloads are far more latency-sensitive than training workloads &mdash; a site optimized purely for power can still be the wrong site for a latency-sensitive service.</span></p>
+    </div></div>
+    <div class="phase-item"><div class="pn">5</div><div>
+      <h4><span data-i18n="tr2.s3.b5.t">Community and regulatory engagement started after design</span></h4>
+      <p style="font-size:14px; color:var(--muted); margin:0;"><span data-i18n="tr2.s3.b5.d">Water use, noise and grid-load concerns increasingly trigger community opposition &mdash; engaging regulators and communities early avoids late-stage permitting reversals.</span></p>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="fw-section" id="criteria">
+  <div class="fw-kicker">
+    <span class="fnum-big">04</span>
+    <div class="fw-title"><small><span data-i18n="tr2.s4.kicker">Methodology</span></small><h2><span data-i18n="tr2.toc.criteria">The Siting Evaluation Framework</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr2.s4.p1">INA evaluates candidate sites against six criteria, weighted according to workload type, as part of the <b style="color:var(--text);">Project Structuring Framework&trade; (F1)</b> Phase II business case for datacenter projects.</span></p>
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th><span data-i18n="tr2.s4.th1">Criterion</span></th><th><span data-i18n="tr2.s4.th2">What It Measures</span></th><th><span data-i18n="tr2.s4.th3">Why It Matters for AI Workloads</span></th></tr>
+    <tr><td><b><span data-i18n="tr2.s4.r1.c">Power Availability & Cost</span></b></td><td><span data-i18n="tr2.s4.r1.w">Interconnection queue position, substation capacity, tariff structure</span></td><td><span data-i18n="tr2.s4.r1.ai">Often the single largest operating cost and the primary delivery-timeline constraint</span></td></tr>
+    <tr><td><b><span data-i18n="tr2.s4.r2.c">Redundancy Architecture</span></b></td><td><span data-i18n="tr2.s4.r2.w">Required uptime tier (N+1, 2N) versus site's grid and backup capacity</span></td><td><span data-i18n="tr2.s4.r2.ai">Training clusters can tolerate more scheduled downtime than production inference services</span></td></tr>
+    <tr><td><b><span data-i18n="tr2.s4.r3.c">Cooling & Water Access</span></b></td><td><span data-i18n="tr2.s4.r3.w">Local water stress, availability of liquid cooling infrastructure, climate</span></td><td><span data-i18n="tr2.s4.r3.ai">High-density AI racks frequently require liquid cooling, not traditional air cooling</span></td></tr>
+    <tr><td><b><span data-i18n="tr2.s4.r4.c">Network Latency</span></b></td><td><span data-i18n="tr2.s4.r4.w">Round-trip time to the primary demand centers the facility will serve</span></td><td><span data-i18n="tr2.s4.r4.ai">Critical for inference; largely irrelevant for batch training workloads</span></td></tr>
+    <tr><td><b><span data-i18n="tr2.s4.r5.c">Land & Climate Risk</span></b></td><td><span data-i18n="tr2.s4.r5.w">Flood zones, seismic exposure, long-term climate projections</span></td><td><span data-i18n="tr2.s4.r5.ai">A 15&ndash;20 year asset life means today's climate risk models matter more than today's weather</span></td></tr>
+    <tr><td><b><span data-i18n="tr2.s4.r6.c">Regulatory & Tax Environment</span></b></td><td><span data-i18n="tr2.s4.r6.w">Permitting timeline, incentive programs, data residency requirements</span></td><td><span data-i18n="tr2.s4.r6.ai">Data residency rules increasingly shape where AI infrastructure can legally be sited</span></td></tr>
+  </table></div>
+
+</div>
+
+<div class="fw-section" id="tiers">
+  <div class="fw-kicker">
+    <span class="fnum-big">05</span>
+    <div class="fw-title"><small><span data-i18n="tr2.s5.kicker">Technical Parameters</span></small><h2><span data-i18n="tr2.toc.tiers">Redundancy Tier Comparison</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr2.s5.p1">Redundancy tier is a Phase II decision, not a construction detail &mdash; it drives power, cooling and capex simultaneously.</span></p>
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th><span data-i18n="tr2.s5.th1">Tier</span></th><th><span data-i18n="tr2.s5.th2">Description</span></th><th><span data-i18n="tr2.s5.th3">Target Uptime</span></th><th><span data-i18n="tr2.s5.th4">Typical Use Case</span></th></tr>
+    <tr><td><b><span data-i18n="tr2.s5.r1.t">Tier I</span></b></td><td><span data-i18n="tr2.s5.r1.d">Single path for power and cooling, no redundancy</span></td><td><span data-i18n="tr2.s5.r1.u">~99.67%</span></td><td><small><span data-i18n="tr2.s5.r1.c">Non-critical batch training, development environments</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr2.s5.r2.t">Tier II</span></b></td><td><span data-i18n="tr2.s5.r2.d">Redundant capacity components, single distribution path</span></td><td><span data-i18n="tr2.s5.r2.u">~99.75%</span></td><td><small><span data-i18n="tr2.s5.r2.c">Small colocation, edge sites</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr2.s5.r3.t">Tier III</span></b></td><td><span data-i18n="tr2.s5.r3.d">Concurrently maintainable, multiple distribution paths, one active</span></td><td><span data-i18n="tr2.s5.r3.u">~99.98%</span></td><td><small><span data-i18n="tr2.s5.r3.c">Most hyperscale and AI training facilities</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr2.s5.r4.t">Tier IV</span></b></td><td><span data-i18n="tr2.s5.r4.d">Fault tolerant, multiple active distribution paths</span></td><td><span data-i18n="tr2.s5.r4.u">~99.995%</span></td><td><small><span data-i18n="tr2.s5.r4.c">Latency-sensitive production inference, mission-critical services</span></small></td></tr>
+  </table></div>
+
+</div>
+
+<div class="fw-section" id="risk">
+  <div class="fw-kicker">
+    <span class="fnum-big">06</span>
+    <div class="fw-title"><small><span data-i18n="tr2.s6.kicker">Risk</span></small><h2><span data-i18n="tr2.toc.risk">Risk Register</span></h2></div>
+  </div>
+
+  <div class="table-wrap"><table class="fw-table">
+    <tr><th><span data-i18n="th.risk">Risk</span></th><th><span data-i18n="th.prob">Probability</span></th><th><span data-i18n="th.impact">Impact</span></th><th><span data-i18n="th.mitig">Primary Mitigation</span></th></tr>
+    <tr><td><b><span data-i18n="tr2.s6.r1.risk">Power interconnection queue delay</span></b></td><td><span data-i18n="prob.high">High</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tr2.s6.r1.mitig">Queue position confirmed with the utility before site selection is finalized</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr2.s6.r2.risk">Water stress limiting cooling capacity</span></b></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tr2.s6.r2.mitig">Water availability studies and liquid-cooling alternatives assessed at siting stage</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr2.s6.r3.risk">Climate exposure over asset lifetime</span></b></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.high">High</span></td><td><small><span data-i18n="tr2.s6.r3.mitig">Long-horizon climate risk modeling included in site due diligence, not just current flood maps</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr2.s6.r4.risk">Community or regulatory opposition</span></b></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.med">Medium</span></td><td><small><span data-i18n="tr2.s6.r4.mitig">Community and regulator engagement started during site evaluation, not after permitting begins</span></small></td></tr>
+    <tr><td><b><span data-i18n="tr2.s6.r5.risk">Grid interconnection cost overrun</span></b></td><td><span data-i18n="prob.med">Medium</span></td><td><span data-i18n="impact.med">Medium</span></td><td><small><span data-i18n="tr2.s6.r5.mitig">Utility interconnection cost estimate independently validated before financial close</span></small></td></tr>
+  </table></div>
+
+</div>
+
+<div class="fw-section" id="conclusion">
+  <div class="fw-kicker">
+    <span class="fnum-big">07</span>
+    <div class="fw-title"><small><span data-i18n="tr2.s7.kicker">Closing</span></small><h2><span data-i18n="tr2.toc.conclusion">Conclusion & Recommendations</span></h2></div>
+  </div>
+
+  <p style="max-width:720px; color:var(--muted); font-size:15.5px;"><span data-i18n="tr2.s7.p1">Siting is where a datacenter project's real economics get decided, long before ground is broken. Power queue position, redundancy tier and cooling strategy need to be evaluated together, at the same stage as the financial model &mdash; not sequenced after a site is already chosen for its land price.</span></p>
+  <div class="info-block" style="margin-top:26px;"><h4><span data-i18n="tr2.s7.rec.title">Recommendations</span></h4><ol>
+    <li><span data-i18n="tr2.s7.rec1">Confirm power interconnection queue position before finalizing site selection.</span></li>
+    <li><span data-i18n="tr2.s7.rec2">Decide the redundancy tier as a Phase II business-case input, not a construction-stage detail.</span></li>
+    <li><span data-i18n="tr2.s7.rec3">Assess water availability and cooling strategy jointly, especially for high-density AI racks.</span></li>
+    <li><span data-i18n="tr2.s7.rec4">Weight latency requirements against power availability separately for training versus inference workloads.</span></li>
+    <li><span data-i18n="tr2.s7.rec5">Start community and regulatory engagement during site evaluation, not after permitting begins.</span></li>
+  </ol></div>
+  <p style="margin-top:40px; font-size:11.5px; color:var(--muted); font-family:var(--mono);"><span data-i18n="tr2.s7.source">Published by International Network Advisors (INA), September 2026. Part of the INA Knowledge library, drawing on the INA Project Structuring Framework&trade; (F1).</span></p>
+  <div class="ai-callout" style="margin-top:34px;"><span class="lab"><span data-i18n="tr2.s7.next.lab">Next Step</span></span><p><span data-i18n="tr2.s7.next.p">INA's advisory team can run a site feasibility review against your candidate locations before you commit capital. <a href="contact.html" style="color:var(--amber);">Request Advisory &rarr;</a></span></p></div>
+
+</div>
+
+</div></div></div></section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="brand" style="color:var(--text-on-dark);">
+          <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+          <span class="word" style="color:var(--text-on-dark);"><b>INA</b><span style="color:var(--muted-on-dark);"><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+        </span>
+        <p style="margin-top:18px; font-size:13.5px; max-width:280px;"><span data-i18n="footer.tagline">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</span></p>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.platform">Platform</span></h5>
+        <ul><li><a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a></li><li><a href="framework.html"><span data-i18n="footer.frameworks">Frameworks&trade;</span></a></li><li><a href="services.html"><span data-i18n="nav.services">Services</span></a></li><li><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a></li><li><a href="advisory-board.html"><span data-i18n="footer.board">Advisory Board</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.resources">Resources</span></h5>
+        <ul><li><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a></li><li><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a></li><li><a href="finance.html"><span data-i18n="footer.finance">Multilateral Finance</span></a></li><li><a href="platform.html"><span data-i18n="footer.roadmap">Platform Roadmap</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.connect">Connect</span></h5>
+        <ul><li><a href="contact.html"><span data-i18n="footer.contact">Contact</span></a></li><li><a href="contact.html"><span data-i18n="footer.request">Request Advisory</span></a></li><li><a href="contact.html"><span data-i18n="footer.profile">Company Profile</span></a></li></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span><span data-i18n="footer.rights">&copy; 2026 International Network Advisors (INA). All rights reserved.</span></span>
+      <span><span data-i18n="footer.tag2">Digital Infrastructure Intelligence</span></span>
+    </div>
+  </div>
+</footer>
+<script src="assets/i18n.js?v=12"></script>
+<script src="assets/script.js?v=15"></script>
+</body>
+</html>
