@@ -7121,7 +7121,7 @@ const INAPlatform = {
   async listCompanies() {
     const { data, error } = await supabaseClient
       .from('companies')
-      .select('*')
+      .select('*, created_by_profile:profiles!companies_created_by_fkey(full_name)')
       .order('name', { ascending: true });
     if (error) throw error;
     return data;
