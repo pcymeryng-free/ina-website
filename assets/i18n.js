@@ -9672,6 +9672,10 @@ function applyLang(lang) {
       el.innerHTML = entry[lang];
     }
   });
+  document.querySelectorAll('[data-href-en]').forEach((el) => {
+    const href = el.getAttribute(lang === 'es' ? 'data-href-es' : 'data-href-en');
+    if (href) el.setAttribute('href', href);
+  });
   const typeSelect = document.getElementById('type');
   if (typeSelect) {
     const opts = SELECT_OPTIONS.type[lang] || SELECT_OPTIONS.type.en;
