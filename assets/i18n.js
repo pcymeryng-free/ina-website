@@ -3894,6 +3894,7 @@ const I18N = {
   "md.contacts.filter.company": { "en": "Company", "es": "Empresa" },
   "md.contacts.filter.agency": { "en": "Public Agency", "es": "Organismo Público" },
   "md.contacts.filter.country": { "en": "Country", "es": "País" },
+  "md.contacts.filter.user": { "en": "Added by", "es": "Cargado por" },
   "md.companies.listTitle": { "en": "Companies", "es": "Empresas" },
   "md.companies.new": { "en": "+ New Company", "es": "+ Nueva Empresa" },
   "md.companies.edit": { "en": "Edit Company", "es": "Editar Empresa" },
