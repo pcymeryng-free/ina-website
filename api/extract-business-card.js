@@ -218,17 +218,21 @@ async function handler(req, res) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
         body: JSON.stringify({
           model: GROQ_VISION_MODEL || GROQ_VISION_MODEL_DEFAULT,
-          // Bumped from 500: with reasoning enabled, hidden reasoning
-          // tokens still count against max_tokens even though
-          // reasoning_format:'hidden' means they're never returned in the
-          // response — at 500 the model burned the entire budget thinking
-          // and never got to write the actual answer, so `content` came
-          // back as an empty string (a *second* failure mode after the
-          // <think>-tag one below, hit immediately after fixing that one).
-          // reasoning_effort:'none' below should make this moot (no
-          // reasoning tokens spent at all for this model), but the higher
-          // ceiling stays as headroom regardless.
-          max_tokens: 1024,
+          // History: was 500, then bumped to 1024 (see PLATFORM_SETUP.md) —
+          // with reasoning enabled, hidden reasoning tokens still counted
+          // against max_tokens even though reasoning_format:'hidden' means
+          // they're never returned in the response, so 500 wasn't enough
+          // headroom and `content` came back empty. reasoning_effort:'none'
+          // below fixed that by disabling reasoning tokens entirely, but
+          // 1024 broke a DIFFERENT limit once Groq rotated the default
+          // model to qwen/qwen3.8-27b (09/26): this org's free/on_demand
+          // tier caps qwen3.8-27b at 1000 *output* tokens per minute, and a
+          // single request asking for max_tokens:1024 already exceeds that
+          // by itself (Groq error: "rate_limit_exceeded", "Requested
+          // 1024" > "Limit 1000"). 700 is comfortably under that per-minute
+          // ceiling while still well above what six short JSON fields with
+          // no reasoning tokens actually need.
+          max_tokens: 700,
           temperature: 0,
           // The default vision model (qwen/qwen3.8-27b) is a reasoning
           // model that defaults to reasoning_format='raw' — its

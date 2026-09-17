@@ -1955,6 +1955,24 @@ months, always with the same `model_not_found` symptom, always fixed the
 same way (check console.groq.com/docs/models for the current lineup, swap
 `GROQ_VISION_MODEL_DEFAULT`).
 
+**Fifth failure, immediately after the fourth fix deployed:** new error,
+same endpoint — `"rate_limit_exceeded"`, `"Request too large for model
+qwen/qwen3.8-27b ... on output tokens per minute (OTPM): Limit 1000,
+Requested 1024."` Cause: this org's free/`on_demand` tier caps
+`qwen/qwen3.8-27b` at 1000 *output* tokens per minute, and the request's
+own `max_tokens: 1024` already exceeded that ceiling by itself — every
+single request was guaranteed to fail regardless of how light Groq's
+traffic was at that moment, since 1024 > 1000 is a per-request violation,
+not a rolling-usage one. Fixed by lowering `max_tokens` to `700`,
+comfortably under the 1000 OTPM cap and still far more than six short
+JSON fields need once `reasoning_effort: 'none'` has already zeroed out
+reasoning-token spend. **Takeaway:** a Groq model swap can silently change
+more than the model ID — per-model rate limits (OTPM in this case) differ
+too, so `max_tokens` needs rechecking against
+[console.groq.com/docs/rate-limits](https://console.groq.com/docs/rate-limits)
+every time `GROQ_VISION_MODEL_DEFAULT` changes, not just copied forward
+from the previous model.
+
 ## Using AWS Bedrock (open-source model, confidential-data-friendly)
 
 For **production**, `api/analyze-project.js` also supports running an
