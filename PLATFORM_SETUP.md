@@ -1935,6 +1935,26 @@ path>` (following the same `PRODUCTION_HOSTNAMES` pattern in
 this exact failure mode on the real domain while appearing to work fine
 everywhere else.
 
+**Fourth failure (09/26), months later: `qwen/qwen3.6-27b` itself
+disappeared from Groq's lineup.** Pablo hit `Card reading request failed`
+again — this time the Groq response body was `{"error":{"message":"The
+model \`qwen/qwen3.6-27b\` does not exist or you do not have access to
+it.","type":"invalid_request_error","code":"model_not_found"}}`. Checking
+[console.groq.com/docs/models](https://console.groq.com/docs/models)
+confirmed `qwen/qwen3.6-27b` is no longer listed at all — Groq rotates its
+vision model lineup roughly quarterly (as it already had once before, from
+Llama 4 Scout), and this time the replacement is `qwen/qwen3.8-27b` (also
+listed as a Preview model, same reasoning-model behavior, so the existing
+`reasoning_format: 'hidden'` / `reasoning_effort: 'none'` handling from the
+two fixes above still applies unchanged). Fixed by updating
+`GROQ_VISION_MODEL_DEFAULT` in `api/extract-business-card.js`. **Takeaway:**
+this is now the *second* time Groq has rotated out the vision model this
+endpoint defaults to — if `GROQ_VISION_MODEL` isn't explicitly pinned in
+Vercel's environment variables, expect this to recur roughly every few
+months, always with the same `model_not_found` symptom, always fixed the
+same way (check console.groq.com/docs/models for the current lineup, swap
+`GROQ_VISION_MODEL_DEFAULT`).
+
 ## Using AWS Bedrock (open-source model, confidential-data-friendly)
 
 For **production**, `api/analyze-project.js` also supports running an

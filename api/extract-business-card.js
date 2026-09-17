@@ -18,15 +18,18 @@
  * api/analyze-project.js and api/extract-template-data.js):
  *
  *   - LLM_PROVIDER='groq' (or unset GROQ_API_KEY-only setups) — uses Groq's
- *     free-tier cloud API with Qwen 3.6 27B (`qwen/qwen3.6-27b`), an
- *     open-weight multimodal model (text + up to 5 images per request).
+ *     free-tier cloud API with Qwen 3.8 27B (`qwen/qwen3.8-27b`), an
+ *     open-weight multimodal model (text + up to 3 images per request).
  *     Groq's free tier needs no credit card — see console.groq.com. This
  *     is the option to use if you want to test the whole platform's AI
  *     features, business cards included, without paying for API credits.
- *     (Was Llama 4 Scout, `meta-llama/llama-4-scout-17b-16e-instruct`,
- *     until Groq deprecated/shut it down on 07/17/26 — see
- *     console.groq.com/docs/deprecations for the current recommended
- *     vision model if this ever needs updating again.) Requires
+ *     (Was Qwen 3.6 27B, `qwen/qwen3.6-27b`, until Groq rotated it out of
+ *     its model list entirely — calls started failing with a Groq
+ *     "model_not_found" error (09/26). Before that, was Llama 4 Scout,
+ *     `meta-llama/llama-4-scout-17b-16e-instruct`, until Groq
+ *     deprecated/shut it down on 07/17/26. Groq rotates its vision model
+ *     lineup roughly quarterly — see console.groq.com/docs/models for the
+ *     current lineup if this ever needs updating again.) Requires
  *     GROQ_API_KEY (same key already used for AI Analysis/Autocomplete on
  *     the groq path — nothing new to create if that's already set up).
  *     Uses a SEPARATE env var for the model, GROQ_VISION_MODEL, rather
@@ -57,7 +60,7 @@
  *     write anything.
  */
 
-const GROQ_VISION_MODEL_DEFAULT = 'qwen/qwen3.6-27b'; // was 'meta-llama/llama-4-scout-17b-16e-instruct' — Groq deprecated/shut it down 07/17/26, see the file header comment above
+const GROQ_VISION_MODEL_DEFAULT = 'qwen/qwen3.8-27b'; // was 'qwen/qwen3.6-27b' until Groq rotated it out of its model list entirely (09/26 — calls started failing with a Groq "model_not_found" error, {"error":{"message":"The model `qwen/qwen3.6-27b` does not exist or you do not have access to it.","code":"model_not_found"}}); before that, was 'meta-llama/llama-4-scout-17b-16e-instruct' until Groq deprecated/shut it down 07/17/26 — see the file header comment above. Groq rotates its vision model lineup roughly quarterly (console.groq.com/docs/models is the source of truth), so this default will likely need updating again — same fix each time: swap this constant, or set GROQ_VISION_MODEL in Vercel to override without a code change.
 
 function json(res, status, body) {
   res.status(status).setHeader('Content-Type', 'application/json');
@@ -125,7 +128,7 @@ function cleanField(v) {
 
 function parseModelJson(rawText) {
   // Strip a leading <think>...</think> block first — reasoning models on
-  // Groq (e.g. qwen/qwen3.6-27b, the current GROQ_VISION_MODEL_DEFAULT)
+  // Groq (e.g. qwen/qwen3.8-27b, the current GROQ_VISION_MODEL_DEFAULT)
   // default to reasoning_format='raw', which puts the chain-of-thought
   // inline in the content ahead of the actual answer. We pass
   // reasoning_format: 'hidden' below to avoid this at the source, but
@@ -227,7 +230,7 @@ async function handler(req, res) {
           // ceiling stays as headroom regardless.
           max_tokens: 1024,
           temperature: 0,
-          // The default vision model (qwen/qwen3.6-27b) is a reasoning
+          // The default vision model (qwen/qwen3.8-27b) is a reasoning
           // model that defaults to reasoning_format='raw' — its
           // chain-of-thought gets prepended inline to the answer inside
           // <think>...</think> tags, which broke JSON.parse() below the
@@ -235,7 +238,7 @@ async function handler(req, res) {
           // 'hidden' returns only the final answer, no reasoning at all —
           // exactly what's needed here since nothing downstream uses it.
           reasoning_format: 'hidden',
-          // Disables reasoning entirely for qwen3.6-27b (its only two
+          // Disables reasoning entirely for qwen3.8-27b (its only two
           // reasoning_effort options are 'none'/'default' — see
           // console.groq.com/docs/reasoning). This is a simple structured
           // extraction task with no need for chain-of-thought, so this
