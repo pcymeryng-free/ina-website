@@ -35,6 +35,23 @@ const supabaseClient = (SUPABASE_URL_CLEAN !== 'YOUR_SUPABASE_URL' && SUPABASE_U
     })
   : null;
 
+/* ---------- Network info for the activity log (see whoami.php) ----------
+   Fetched at most once per page load (cached in this module-level
+   variable) and reused by every INAPlatform.logActivity() call on that
+   page — no point re-hitting whoami.php per action. Same-origin only:
+   whoami.php lives at the site root on Bluehost, so this silently
+   resolves to {ip:null,country:null} on Vercel/localhost, where the file
+   doesn't exist — logActivity() still works there, just without IP/country. */
+let _networkInfoPromise = null;
+function getCachedNetworkInfo() {
+  if (!_networkInfoPromise) {
+    _networkInfoPromise = fetch('/whoami.php', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : { ip: null, country: null }))
+      .catch(() => ({ ip: null, country: null }));
+  }
+  return _networkInfoPromise;
+}
+
 /* ---------- AI analysis endpoint (Bluehost migration) ----------
    /api/analyze-project.js is a Vercel serverless function; Bluehost has
    no Node.js support, so it stays on Vercel permanently even once the
@@ -4617,12 +4634,56 @@ const INAPlatform = {
     if (!supabaseClient) throw new Error('Platform not configured yet.');
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    if (data && data.user) this.logActivity({ eventType: 'login' });
     return data;
   },
 
   async signOut() {
     if (!supabaseClient) return;
+    // Logged BEFORE signOut() clears the session — logActivity() needs an
+    // active session to satisfy activity_log's "insert own row" RLS
+    // policy (auth.uid() = user_id).
+    this.logActivity({ eventType: 'logout' });
     await supabaseClient.auth.signOut();
+  },
+
+  /* ---------- Activity log (see supabase/migration_v63_activity_log.sql) ----------
+     Fire-and-forget: never awaited by callers, never throws — a failed
+     log write should never block or break the actual user-facing action
+     it's recording. Anonymous public-site page views do NOT go through
+     here at all (see log-visit.php); this is only for signed-in activity:
+     page views (called once per page from requireAuth()) and
+     create/update/delete on the platform's main entities (called by
+     each createX()/updateX()/deleteX() right after its Supabase write
+     succeeds). */
+  async logActivity({ eventType, entityType, entityId, entityLabel, path, details } = {}) {
+    try {
+      if (!supabaseClient) return;
+      const session = await this.getSession();
+      if (!session) return;
+      const net = await getCachedNetworkInfo();
+      await supabaseClient.from('activity_log').insert({
+        user_id: session.user.id,
+        event_type: eventType,
+        entity_type: entityType || null,
+        entity_id: entityId || null,
+        entity_label: entityLabel || null,
+        path: path || location.pathname,
+        ip_address: net.ip,
+        country: net.country,
+        user_agent: navigator.userAgent || null,
+        details: details || null,
+      });
+    } catch (e) {
+      // Swallow — see comment above.
+    }
+  },
+
+  /* Called once from requireAuth(), which already runs at the top of
+     every authenticated app/*.html page — so every real page view by a
+     signed-in user gets logged without each page needing its own call. */
+  logPageView() {
+    this.logActivity({ eventType: 'page_view' });
   },
 
   async getSession() {
@@ -4648,6 +4709,7 @@ const INAPlatform = {
       location.href = `mfa-challenge.html?next=${next}`;
       return null;
     }
+    this.logPageView();
     return session;
   },
 
@@ -4852,6 +4914,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'profile', entityId: session.user.id, entityLabel: fullName });
     return data;
   },
 
@@ -4997,6 +5060,49 @@ const INAPlatform = {
     return data;
   },
 
+  /* ---------- Activity log (app/activity-log.html, Admin-only) ----------
+     See supabase/migration_v63_activity_log.sql. RLS already restricts
+     SELECT to Admin (activity_log_select_admin) — the requireAdmin() gate
+     on the page itself is just so a non-admin doesn't see an empty shell
+     first. Paginated (range()) rather than fetched in full like most
+     lists in this file: unlike Master Data, this table accumulates a
+     page_view row on every single page load, public-site visits
+     included, and can grow into the tens of thousands of rows. */
+  async listActivityLog({ eventType, entityType, userId, dateFrom, dateTo, limit = 100, offset = 0 } = {}) {
+    let query = supabaseClient
+      .from('activity_log')
+      .select('*, profiles(full_name, email)', { count: 'exact' })
+      .order('occurred_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (eventType) query = query.eq('event_type', eventType);
+    if (entityType) query = query.eq('entity_type', entityType);
+    // userId === null (as opposed to undefined) means "anonymous
+    // public-site rows" — app/activity-log.html's "Anonymous" filter
+    // option passes that in explicitly to mean IS NULL, since .eq()
+    // itself can't express that.
+    if (userId === null) query = query.is('user_id', null);
+    else if (userId) query = query.eq('user_id', userId);
+    if (dateFrom) query = query.gte('occurred_at', dateFrom);
+    if (dateTo) query = query.lte('occurred_at', dateTo);
+    const { data, error, count } = await query;
+    if (error) throw error;
+    return { rows: data, total: count };
+  },
+
+  /* Distinct entity_type values actually present in the log, for the
+     filter dropdown — queried separately (rather than derived from
+     whatever page of listActivityLog() happens to be loaded) so the
+     dropdown always lists every type ever logged, not just the ones on
+     the current page/filter. */
+  async listActivityLogEntityTypes() {
+    const { data, error } = await supabaseClient
+      .from('activity_log')
+      .select('entity_type')
+      .not('entity_type', 'is', null);
+    if (error) throw error;
+    return Array.from(new Set(data.map((r) => r.entity_type))).sort();
+  },
+
   /* Changes another user's platform role. Deliberately does nothing to
      stop an admin from calling this on their OWN id from devtools — the
      prevent_role_self_change_trigger rejects that at the database level
@@ -5009,6 +5115,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'user_role', entityId: userId, entityLabel: role });
     return data;
   },
 
@@ -5086,6 +5193,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'role', entityId: data.id, entityLabel: data.name });
     return data;
   },
 
@@ -5097,6 +5205,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'role', entityId: roleId, entityLabel: name || data.name });
     return data;
   },
 
@@ -5109,6 +5218,7 @@ const INAPlatform = {
   async deleteRole(roleId) {
     const { error } = await supabaseClient.from('roles').delete().eq('id', roleId);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'role', entityId: roleId });
   },
 
   /* Marks `roleId` as the sole default signup role — mirrors the partial
@@ -5280,6 +5390,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'project', entityId: data.id, entityLabel: data.name });
     return data;
   },
 
@@ -5324,6 +5435,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'project', entityId: id, entityLabel: data.name });
     return data;
   },
 
@@ -5357,6 +5469,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'project', entityId: id, entityLabel: 'Financing update' });
     return data;
   },
 
@@ -5372,6 +5485,7 @@ const INAPlatform = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'project', entityId: id });
   },
 
   /* ---------- Programs ----------
@@ -5457,6 +5571,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'program', entityId: data.id, entityLabel: data.name });
     return data;
   },
 
@@ -5490,6 +5605,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'program', entityId: id, entityLabel: data.name });
     return data;
   },
 
@@ -5505,6 +5621,7 @@ const INAPlatform = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'program', entityId: id });
   },
 
   /* ---------- Program applications (multi-program) ----------
@@ -5619,6 +5736,7 @@ const INAPlatform = {
       .select('*, programs(name, name_en, template_key, funding_stage, financing_entity)')
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'program', entityId: programId, entityLabel: 'Project-program financing update' });
     return data;
   },
 
@@ -5791,6 +5909,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'success_case', entityId: data.id, entityLabel: data.title });
     return data;
   },
 
@@ -5820,6 +5939,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'success_case', entityId: id, entityLabel: data.title });
     return data;
   },
 
@@ -5829,6 +5949,7 @@ const INAPlatform = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'success_case', entityId: id });
   },
 
   /* Every success case a project cites as reference/precedent, with the
@@ -6120,6 +6241,7 @@ const INAPlatform = {
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', projectId);
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'project', entityId: projectId, entityLabel: status });
   },
 
   /* ---------- Project workflow (advisor-driven stage advancement) ----------
@@ -6310,6 +6432,7 @@ const INAPlatform = {
       .delete()
       .eq('id', doc.id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'document', entityId: doc.id, entityLabel: doc.file_name });
   },
 
   /* Same idea as uploadDocument()/listDocuments() above, scoped to a
@@ -6368,6 +6491,7 @@ const INAPlatform = {
       .delete()
       .eq('id', doc.id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'program_document', entityId: doc.id, entityLabel: doc.file_name });
   },
 
   /* Signed URL (1 hour) to view/download an uploaded project or program
@@ -6573,6 +6697,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'roadmap_template', entityId: data.id, entityLabel: data.name });
     return data;
   },
 
@@ -6590,6 +6715,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'roadmap_template', entityId: id, entityLabel: data.name });
     return data;
   },
 
@@ -6603,6 +6729,7 @@ const INAPlatform = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'roadmap_template', entityId: id });
   },
 
   /* Wholesale replace, same simplicity level as how a Program's `types`
@@ -6768,6 +6895,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'project_roadmap', entityId: data.id, entityLabel: data.title });
     return data;
   },
 
@@ -6795,6 +6923,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'project_roadmap', entityId: id, entityLabel: data.title });
     return data;
   },
 
@@ -6804,6 +6933,7 @@ const INAPlatform = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'project_roadmap', entityId: id });
   },
 
   /* ---------- Roadmap instances (sequential workflow tracker) ----------
@@ -6939,6 +7069,7 @@ const INAPlatform = {
         }
       }
     }
+    this.logActivity({ eventType: 'create', entityType: 'roadmap_instance', entityId: instance.id, entityLabel: instance.name });
     return instance;
   },
 
@@ -6997,6 +7128,7 @@ const INAPlatform = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'roadmap_instance', entityId: id });
   },
 
   /* Direct instance-level status override — used for "abandon"/"reopen"
@@ -7009,6 +7141,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'roadmap_instance', entityId: id, entityLabel: status });
     return data;
   },
 
@@ -7063,6 +7196,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'project_risk', entityId: data.id, entityLabel: data.title });
     return data;
   },
 
@@ -7089,6 +7223,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'project_risk', entityId: id, entityLabel: data.title });
     return data;
   },
 
@@ -7098,6 +7233,7 @@ const INAPlatform = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'project_risk', entityId: id });
   },
 
   /* Small summary used by project.html's read-only Risk Matrix card:
@@ -7146,6 +7282,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'company', entityId: data.id, entityLabel: data.name });
     return data;
   },
 
@@ -7163,12 +7300,14 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'company', entityId: id, entityLabel: data.name });
     return data;
   },
 
   async deleteCompany(id) {
     const { error } = await supabaseClient.from('companies').delete().eq('id', id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'company', entityId: id });
   },
 
   async listPublicAgencies() {
@@ -7195,6 +7334,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'public_agency', entityId: data.id, entityLabel: data.name });
     return data;
   },
 
@@ -7211,12 +7351,14 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'public_agency', entityId: id, entityLabel: data.name });
     return data;
   },
 
   async deletePublicAgency(id) {
     const { error } = await supabaseClient.from('public_agencies').delete().eq('id', id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'public_agency', entityId: id });
   },
 
   /* Embeds company/public_agency name+country for display — a contact has
@@ -7251,6 +7393,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'contact', entityId: data.id, entityLabel: data.full_name });
     return data;
   },
 
@@ -7271,12 +7414,14 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'contact', entityId: id, entityLabel: data.full_name });
     return data;
   },
 
   async deleteContact(id) {
     const { error } = await supabaseClient.from('contacts').delete().eq('id', id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'contact', entityId: id });
   },
 
   /* ---------- Business card upload (Contacts) — see migration_v45 ----------
@@ -7364,6 +7509,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'product', entityId: data.id, entityLabel: data.name });
     return data;
   },
 
@@ -7380,12 +7526,14 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'product', entityId: id, entityLabel: data.name });
     return data;
   },
 
   async deleteProduct(id) {
     const { error } = await supabaseClient.from('products').delete().eq('id', id);
     if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'product', entityId: id });
   },
 
   /* ---------- Framework analysis ---------- */
@@ -7623,6 +7771,7 @@ const INAPlatform = {
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'project', entityId: projectId, entityLabel: 'Proposal update' });
     return data;
   },
 

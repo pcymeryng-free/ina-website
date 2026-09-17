@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Activity Log — INA Platform" data-i18n-es="Registro de Actividad — Plataforma INA">Activity Log — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Site visits and in-platform activity, for administrators." data-i18n-es="Visitas al sitio y actividad dentro de la plataforma, para administradores." content="Site visits and in-platform activity, for administrators.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=25">
+<link rel="stylesheet" href="/assets/app.css?v=10">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
+      <a href="success-cases.html"><span data-i18n="sc.nav">Success Cases</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <div class="menu nav-menu" id="masterDataNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="masterDataNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="md.nav">Master Data</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="masterDataNavMenuPanel">
+          <a href="master-data.html?tab=contacts" class="menu-item"><span data-i18n="md.tab.contacts">Contacts</span></a>
+          <a href="master-data.html?tab=companies" class="menu-item"><span data-i18n="md.tab.companies">Companies</span></a>
+          <a href="master-data.html?tab=products" class="menu-item"><span data-i18n="md.tab.products">Products</span></a>
+          <a href="master-data.html?tab=agencies" class="menu-item"><span data-i18n="md.tab.agencies">Public Agencies</span></a>
+        </div>
+      </div>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger active" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+          <a href="roles.html" id="rolesMenuItem" class="menu-item" style="display:none;"><span data-i18n="roles.nav">Roles</span></a>
+          <a href="activity-log.html" id="activityLogMenuItem" class="menu-item active" style="display:none;"><span data-i18n="activitylog.nav">Activity Log</span></a>
+        </div>
+      </div>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span><span data-i18n="activitylog.nav">Activity Log</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="activitylog.title">Activity Log</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:680px;"><span data-i18n="activitylog.lede">Public-site visits and in-platform activity — page views, sign-ins and every create/update/delete on the platform's main entities. Visible to administrators only.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="logBody" style="display:none; margin-top:32px;">
+      <div class="filter-bar">
+        <div class="ffield">
+          <label for="alfEvent"><span data-i18n="activitylog.filter.event">Event</span></label>
+          <select id="alfEvent"></select>
+        </div>
+        <div class="ffield">
+          <label for="alfEntity"><span data-i18n="activitylog.filter.entity">Entity</span></label>
+          <select id="alfEntity"></select>
+        </div>
+        <div class="ffield">
+          <label for="alfUser"><span data-i18n="activitylog.filter.user">User</span></label>
+          <select id="alfUser"></select>
+        </div>
+        <div class="ffield">
+          <label for="alfFrom"><span data-i18n="activitylog.filter.from">From</span></label>
+          <input type="date" id="alfFrom">
+        </div>
+        <div class="ffield">
+          <label for="alfTo"><span data-i18n="activitylog.filter.to">To</span></label>
+          <input type="date" id="alfTo">
+        </div>
+        <button type="button" class="fclear" id="alfClear"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+      </div>
+      <p class="filter-count" id="logFilterCount"></p>
+
+      <div style="overflow-x:auto;">
+        <table class="risk-table" id="logTable">
+          <thead>
+            <tr>
+              <th><span data-i18n="activitylog.col.when">When</span></th>
+              <th><span data-i18n="activitylog.col.who">Who</span></th>
+              <th><span data-i18n="activitylog.col.event">Event</span></th>
+              <th><span data-i18n="activitylog.col.entity">Entity</span></th>
+              <th><span data-i18n="activitylog.col.path">Page</span></th>
+              <th><span data-i18n="activitylog.col.location">IP / Country</span></th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody"></tbody>
+        </table>
+        <p id="logEmpty" style="display:none; color:var(--muted); font-size:13.5px; padding:20px 0;"><span data-i18n="activitylog.empty">No activity matches these filters.</span></p>
+      </div>
+
+      <div style="text-align:center; margin-top:24px;">
+        <button type="button" class="btn ghost small" id="loadMoreBtn" style="display:none;"><span data-i18n="activitylog.loadmore">Load more</span></button>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=75"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=89"></script>
+<script src="/assets/script.js?v=15"></script>
+<script>
+(function () {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+  function fmtDateTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleString(INAPlatform.currentLang() === 'es' ? 'es-AR' : 'en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+  }
+
+  const EVENT_LABELS = {
+    page_view: { en: 'Page view', es: 'Vista de página' },
+    login: { en: 'Login', es: 'Inicio de sesión' },
+    logout: { en: 'Logout', es: 'Cierre de sesión' },
+    create: { en: 'Create', es: 'Alta' },
+    update: { en: 'Update', es: 'Cambio' },
+    delete: { en: 'Delete', es: 'Baja' },
+  };
+  function eventLabel(eventType) {
+    const l = INAPlatform.currentLang();
+    const entry = EVENT_LABELS[eventType];
+    return entry ? entry[l] : eventType;
+  }
+  // Reuses the existing .status-pill color variants (style.css) instead of
+  // introducing new ones — 'completed' (dark/amber) for create, 'analyzing'
+  // (amber-soft) for update, 'error' (red) for delete, 'submitted' (muted)
+  // for everything else.
+  const EVENT_BADGE_CLASS = {
+    create: 'completed', update: 'analyzing', delete: 'error',
+    login: 'submitted', logout: 'submitted', page_view: 'submitted',
+  };
+
+  let allUsers = [];
+  let entityTypes = [];
+  let offset = 0;
+  const PAGE_SIZE = 100;
+  let lastTotal = 0;
+  let rowsSoFar = [];
+
+  const alfEvent = document.getElementById('alfEvent');
+  const alfEntity = document.getElementById('alfEntity');
+  const alfUser = document.getElementById('alfUser');
+  const alfFrom = document.getElementById('alfFrom');
+  const alfTo = document.getElementById('alfTo');
+
+  function populateFilters() {
+    const l = INAPlatform.currentLang();
+    const allLabel = l === 'es' ? 'Todos' : 'All';
+
+    alfEvent.innerHTML = `<option value="">${allLabel}</option>` +
+      Object.keys(EVENT_LABELS).map((k) => `<option value="${k}">${EVENT_LABELS[k][l]}</option>`).join('');
+
+    const prevEntity = alfEntity.value;
+    alfEntity.innerHTML = `<option value="">${allLabel}</option>` +
+      entityTypes.map((t) => `<option value="${t}">${t}</option>`).join('');
+    if (entityTypes.includes(prevEntity)) alfEntity.value = prevEntity;
+
+    const prevUser = alfUser.value;
+    const anonLabel = l === 'es' ? 'Anónimo (sitio público)' : 'Anonymous (public site)';
+    alfUser.innerHTML = `<option value="">${allLabel}</option><option value="__anon__">${anonLabel}</option>` +
+      allUsers.map((u) => `<option value="${u.id}">${u.full_name || u.email}</option>`).join('');
+    if (prevUser) alfUser.value = prevUser;
+  }
+
+  function currentFilters() {
+    const userVal = alfUser.value;
+    return {
+      eventType: alfEvent.value || undefined,
+      // '__anon__' → null (INAPlatform.listActivityLog() treats a literal
+      // null as "IS NULL", i.e. anonymous public-site rows — vs.
+      // undefined, which means "don't filter by user at all").
+      entityType: alfEntity.value || undefined,
+      userId: userVal === '__anon__' ? null : (userVal || undefined),
+      dateFrom: alfFrom.value ? new Date(alfFrom.value + 'T00:00:00').toISOString() : undefined,
+      dateTo: alfTo.value ? new Date(alfTo.value + 'T23:59:59').toISOString() : undefined,
+    };
+  }
+
+  function badgeHtml(eventType) {
+    const cls = EVENT_BADGE_CLASS[eventType] || 'submitted';
+    return `<span class="status-pill ${cls}">${eventLabel(eventType)}</span>`;
+  }
+
+  function renderRows(newRows) {
+    const tbody = document.getElementById('logTableBody');
+    const empty = document.getElementById('logEmpty');
+    const wrap = document.getElementById('logTable');
+    const countEl = document.getElementById('logFilterCount');
+    const l = INAPlatform.currentLang();
+
+    if (!rowsSoFar.length) {
+      tbody.innerHTML = '';
+      wrap.style.display = 'none';
+      empty.style.display = 'block';
+      countEl.textContent = '';
+      document.getElementById('loadMoreBtn').style.display = 'none';
+      return;
+    }
+    wrap.style.display = 'table';
+    empty.style.display = 'none';
+    countEl.textContent = l === 'es'
+      ? `${rowsSoFar.length} de ${lastTotal} evento${lastTotal === 1 ? '' : 's'}`
+      : `${rowsSoFar.length} of ${lastTotal} event${lastTotal === 1 ? '' : 's'}`;
+
+    tbody.innerHTML += newRows.map((r) => {
+      const who = r.profiles
+        ? `<span class="mini-avatar" style="margin-right:6px;">${initials(r.profiles.full_name)}</span>${r.profiles.full_name || r.profiles.email || '—'}`
+        : `<span style="color:var(--muted);">${l === 'es' ? 'Anónimo' : 'Anonymous'}</span>`;
+      const entity = r.entity_type
+        ? `${r.entity_type}${r.entity_label ? ': ' + r.entity_label : ''}`
+        : '—';
+      const loc = [r.ip_address, r.country].filter(Boolean).join(' · ') || '—';
+      return `<tr>
+        <td style="white-space:nowrap;">${fmtDateTime(r.occurred_at)}</td>
+        <td>${who}</td>
+        <td>${badgeHtml(r.event_type)}</td>
+        <td>${entity}</td>
+        <td style="font-family:var(--mono); font-size:11.5px; color:var(--muted);">${r.path || '—'}</td>
+        <td style="font-family:var(--mono); font-size:11.5px; color:var(--muted);">${loc}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('loadMoreBtn').style.display = rowsSoFar.length < lastTotal ? 'inline-block' : 'none';
+  }
+
+  async function loadPage(reset) {
+    if (reset) { offset = 0; rowsSoFar = []; document.getElementById('logTableBody').innerHTML = ''; }
+    const f = currentFilters();
+    const result = await INAPlatform.listActivityLog({ ...f, limit: PAGE_SIZE, offset });
+    lastTotal = result.total || 0;
+    rowsSoFar = rowsSoFar.concat(result.rows);
+    offset += result.rows.length;
+    renderRows(result.rows);
+  }
+
+  [alfEvent, alfEntity, alfUser, alfFrom, alfTo].forEach((el) => {
+    el.addEventListener('change', () => loadPage(true));
+  });
+  document.getElementById('alfClear').addEventListener('click', () => {
+    alfEvent.value = ''; alfEntity.value = ''; alfUser.value = ''; alfFrom.value = ''; alfTo.value = '';
+    loadPage(true);
+  });
+  document.getElementById('loadMoreBtn').addEventListener('click', () => loadPage(false));
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      populateFilters();
+      document.getElementById('logTableBody').innerHTML = '';
+      renderRows(rowsSoFar);
+    });
+  });
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAdmin();
+    if (!session) return;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      document.getElementById('adminNavMenu').style.display = 'flex';
+      document.getElementById('adminUsersMenuItem').style.display = 'flex';
+      document.getElementById('rolesMenuItem').style.display = 'flex';
+      document.getElementById('activityLogMenuItem').style.display = 'flex';
+      if (INAPlatform.canManageMasterData(profile)) document.getElementById('masterDataNavMenu').style.display = 'flex';
+      INAPlatform.initDropdownMenus(document.querySelector('.app-nav'));
+      if (INAPlatform.canViewRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    [allUsers, entityTypes] = await Promise.all([
+      INAPlatform.listAllProfiles(),
+      INAPlatform.listActivityLogEntityTypes(),
+    ]);
+    populateFilters();
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('logBody').style.display = 'block';
+    await loadPage(true);
+  }
+  init();
+})();
+</script>
+</body>
+</html>

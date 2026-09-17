@@ -10,6 +10,22 @@ if (navToggle && mobileMenu) {
   );
 }
 
+// ============ Anonymous page-view logging (public site only) ============
+// Fires a fire-and-forget beacon to log-visit.php on every public
+// (institutional) page load — see supabase/migration_v63_activity_log.sql
+// and the long comment at the top of log-visit.php for why this is a GET
+// <img> beacon and not fetch()/POST (Bluehost's WAF blocks the latter).
+// Skipped on app/*.html: those pages log page views through
+// INAPlatform.logActivity() instead, tied to the signed-in user via
+// requireAuth() — this path is only for anonymous public-site visits.
+if (!location.pathname.includes('/app/')) {
+  try {
+    const params = new URLSearchParams({ path: location.pathname });
+    if (document.referrer) params.set('ref', document.referrer);
+    new Image().src = '/log-visit.php?' + params.toString();
+  } catch (e) {}
+}
+
 // ============ Admin nav dropdown menu (app/*.html header) ============
 // REMOVED (sep 2026): this used to be the only wiring for #adminNavMenu's
 // open/close behavior, scoped narrowly to that one id specifically so it

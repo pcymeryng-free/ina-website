@@ -2344,3 +2344,41 @@ begin
   where id = p_template_id and edit_locked_by = auth.uid();
 end;
 $$;
+
+-- ---------- activity_log ---------- see migration_v63_activity_log.sql
+create table if not exists public.activity_log (
+  id uuid primary key default gen_random_uuid(),
+  occurred_at timestamptz not null default now(),
+  user_id uuid references public.profiles(id) on delete set null,
+  event_type text not null check (event_type in (
+    'page_view', 'login', 'logout', 'create', 'update', 'delete'
+  )),
+  entity_type text,
+  entity_id uuid,
+  entity_label text,
+  path text,
+  ip_address text,
+  country text,
+  user_agent text,
+  details jsonb,
+  created_at timestamptz not null default now()
+);
+
+comment on table public.activity_log is 'Log de conexiones/páginas vistas (sitio público y plataforma) y de altas/bajas/cambios dentro de la plataforma. Solo Admin puede leerlo.';
+
+alter table public.activity_log enable row level security;
+
+create policy "activity_log_insert_own" on public.activity_log
+  for insert with check (auth.uid() = user_id);
+
+create policy "activity_log_insert_anon_pageview" on public.activity_log
+  for insert to anon
+  with check (user_id is null and event_type = 'page_view');
+
+create policy "activity_log_select_admin" on public.activity_log
+  for select using (public.is_admin());
+
+create index if not exists activity_log_occurred_at_idx on public.activity_log(occurred_at desc);
+create index if not exists activity_log_user_id_idx on public.activity_log(user_id);
+create index if not exists activity_log_event_type_idx on public.activity_log(event_type);
+create index if not exists activity_log_entity_type_idx on public.activity_log(entity_type);

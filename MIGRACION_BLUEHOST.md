@@ -105,6 +105,23 @@ Si `mail()` fallara por algún motivo del lado del servidor, el formulario no se
 
 ⚠️ **Nota sobre caché en Bluehost:** en esta migración nos encontramos con que Bluehost cachea archivos estáticos (`.js`) del lado del servidor — subir un archivo nuevo con el mismo nombre no siempre alcanza para que los visitantes vean la versión nueva. Por eso `contact.html` pide `assets/script.js?v=3` en vez de la ruta pelada — cada vez que edite `script.js` o `i18n.js` de forma significativa, voy a subir el número de versión (`?v=4`, `?v=5`, etc.) en todas las páginas para forzar que se traigan la versión nueva, sin depender de que canches el caché vos mismo.
 
+## Parte 8 — Log de actividad (visitas al sitio + acciones en la plataforma)
+
+Igual que Parte 7 (contacto), esto necesita PHP corriendo directamente en Bluehost — no hay Node ahí. Dos archivos nuevos, **en la raíz del sitio** (al lado de `contact.php`, `index.html`, etc.):
+
+- **`log-visit.php`** — registra cada visita anónima al sitio institucional (IP, país vía el header que agrega Cloudflare, user-agent, página vista) en la tabla `activity_log` de Supabase. Lo llama `assets/script.js` con un beacon `<img>` (no `fetch()`/POST — el "Human Presence Check" de Bluehost bloquea justo ese patrón, el mismo problema que tuvimos con el formulario de contacto). No tiene secretos adentro: usa la Anon Key de Supabase (pública) más una política RLS que solo deja insertar filas anónimas de tipo "vista de página".
+- **`whoami.php`** — devuelve IP/país en JSON, usado por `assets/platform.js` (páginas de `app/`) para agregarle esos mismos datos a las filas que ya inserta directo con el usuario logueado. Tampoco tiene secretos.
+
+**Antes de subir el código**, corré `supabase/migration_v63_activity_log.sql` en el SQL Editor de Supabase (crea la tabla `activity_log` y sus políticas RLS) — si el código llega a Bluehost antes que la tabla exista en Supabase, el log simplemente no escribe nada (falla silenciosamente), no rompe el sitio.
+
+**Qué subir a Bluehost:**
+- `log-visit.php`, `whoami.php` (nuevos)
+- `assets/script.js`, `assets/platform.js`, `assets/i18n.js` (actualizados)
+- `app/activity-log.html` (nuevo — la pantalla donde se ve el log, solo para Admin)
+- El resto de `app/*.html` (bump de versión de `i18n.js`/`platform.js` en el `<script>`, y el ítem de menú "Activity Log" en el dropdown de Admin)
+
+⚠️ **Privacidad:** esto registra IP y país de cada visitante del sitio público, aunque no esté logueado — no hay forma de saber quién es una persona anónima más allá de eso. Si el sitio recibe visitas de organismos como Cancillería o del exterior, convendría tener una política de privacidad publicada que lo mencione (Ley 25.326).
+
 ---
 
 ## Qué queda igual en Vercel
