@@ -2382,3 +2382,69 @@ create index if not exists activity_log_occurred_at_idx on public.activity_log(o
 create index if not exists activity_log_user_id_idx on public.activity_log(user_id);
 create index if not exists activity_log_event_type_idx on public.activity_log(event_type);
 create index if not exists activity_log_entity_type_idx on public.activity_log(entity_type);
+
+-- ---------- activity_log retention (30 days) ---------- see migration_v64_activity_log_retention.sql
+create extension if not exists pg_cron;
+
+create table if not exists public.activity_log_archive (
+  id uuid primary key,
+  occurred_at timestamptz not null,
+  user_id uuid references public.profiles(id) on delete set null,
+  event_type text not null,
+  entity_type text,
+  entity_id uuid,
+  entity_label text,
+  path text,
+  ip_address text,
+  country text,
+  user_agent text,
+  details jsonb,
+  created_at timestamptz not null,
+  archived_at timestamptz not null default now()
+);
+
+comment on table public.activity_log_archive is 'Backup de filas de activity_log con más de 30 días de antigüedad — ver public.archive_old_activity_log() y el cron job "archive-old-activity-log".';
+
+alter table public.activity_log_archive enable row level security;
+
+create policy "activity_log_archive_select_admin" on public.activity_log_archive
+  for select using (public.is_admin());
+
+create index if not exists activity_log_archive_occurred_at_idx on public.activity_log_archive(occurred_at desc);
+create index if not exists activity_log_archive_user_id_idx on public.activity_log_archive(user_id);
+
+create or replace function public.archive_old_activity_log()
+returns integer
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  moved_count integer;
+begin
+  with moved as (
+    delete from public.activity_log
+    where occurred_at < now() - interval '30 days'
+    returning *
+  )
+  insert into public.activity_log_archive (
+    id, occurred_at, user_id, event_type, entity_type, entity_id,
+    entity_label, path, ip_address, country, user_agent, details, created_at
+  )
+  select
+    id, occurred_at, user_id, event_type, entity_type, entity_id,
+    entity_label, path, ip_address, country, user_agent, details, created_at
+  from moved;
+
+  get diagnostics moved_count = row_count;
+  return moved_count;
+end;
+$$;
+
+select cron.unschedule('archive-old-activity-log')
+where exists (select 1 from cron.job where jobname = 'archive-old-activity-log');
+
+select cron.schedule(
+  'archive-old-activity-log',
+  '0 3 * * *',
+  $$select public.archive_old_activity_log();$$
+);
