@@ -104,6 +104,13 @@
 <script src="/assets/script.js?v=15"></script>
 <script>
 (function() {
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
   const STAGE_LABELS_ES = {
     'Concept Stage': 'Etapa Conceptual',
     'Early Structuring': 'Estructuración Temprana',
