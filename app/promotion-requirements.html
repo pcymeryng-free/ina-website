@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Promotion Requirements — INA Platform" data-i18n-es="Requisitos de Promoción — Plataforma INA">Promotion Requirements — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Configure the minimum requirements a project must meet to be promoted between readiness stages." data-i18n-es="Configur&aacute; los requisitos m&iacute;nimos que un proyecto debe cumplir para ser promovido entre etapas." content="Configure the minimum requirements a project must meet to be promoted between readiness stages.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=25">
+<link rel="stylesheet" href="/assets/app.css?v=10">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <nav class="app-nav">
+      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
+      <a href="success-cases.html"><span data-i18n="sc.nav">Success Cases</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <div class="menu nav-menu" id="masterDataNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="masterDataNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="md.nav">Master Data</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="masterDataNavMenuPanel">
+          <a href="master-data.html?tab=contacts" class="menu-item"><span data-i18n="md.tab.contacts">Contacts</span></a>
+          <a href="master-data.html?tab=companies" class="menu-item"><span data-i18n="md.tab.companies">Companies</span></a>
+          <a href="master-data.html?tab=products" class="menu-item"><span data-i18n="md.tab.products">Products</span></a>
+          <a href="master-data.html?tab=agencies" class="menu-item"><span data-i18n="md.tab.agencies">Public Agencies</span></a>
+        </div>
+      </div>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger active" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+          <a href="roles.html" id="rolesMenuItem" class="menu-item" style="display:none;"><span data-i18n="roles.nav">Roles</span></a>
+          <a href="promotion-requirements.html" id="promotionRequirementsMenuItem" class="menu-item" style="display:none;"><span data-i18n="pr.nav">Promotion Requirements</span></a>
+          <a href="activity-log.html" id="activityLogMenuItem" class="menu-item" style="display:none;"><span data-i18n="activitylog.nav">Activity Log</span></a>
+        </div>
+      </div>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span><span data-i18n="pr.title">Promotion Requirements</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="pr.title">Promotion Requirements</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:700px;"><span data-i18n="pr.lede">Set the minimum requirements a project must meet to move from one readiness stage to the next. These thresholds are checked both by the manual Promote action (as a warning, not a hard block) and by the AI Promotion Agent.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="prBody" style="display:none; margin-top:24px;">
+      <div style="overflow-x:auto;">
+        <table class="risk-table" id="prTable">
+          <thead>
+            <tr>
+              <th data-i18n="pr.col.transition">Transition</th>
+              <th data-i18n="pr.col.minScore">Min. analysis score</th>
+              <th data-i18n="pr.col.mandatoryDocs">Mandatory documents</th>
+              <th data-i18n="pr.col.minFinancing">Min. financing coverage %</th>
+              <th data-i18n="pr.col.riskMatrix">Risk Matrix required</th>
+              <th data-i18n="pr.col.updated">Last updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="prTableBody"></tbody>
+        </table>
+      </div>
+      <p style="font-size:12.5px; color:var(--muted); margin-top:14px; max-width:700px;"><span data-i18n="pr.help">Leave a numeric field empty to skip that check for this transition. "Mandatory documents" means at least one attachment in each of: <b id="prMandatoryDocLabels"></b>.</span></p>
+    </div>
+  </div>
+</section>
+</main>
+
+<script src="/assets/i18n.js?v=77"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=90"></script>
+<script src="/assets/script.js?v=15"></script>
+<script>
+(function() {
+  const STAGE_LABELS_ES = {
+    'Concept Stage': 'Etapa Conceptual',
+    'Early Structuring': 'Estructuración Temprana',
+    'Advanced Structuring': 'Estructuración Avanzada',
+    'Investment Ready': 'Listo para Inversión',
+  };
+  const STAGE_LABELS_EN = {
+    'Concept Stage': 'Concept Stage',
+    'Early Structuring': 'Early Structuring',
+    'Advanced Structuring': 'Advanced Structuring',
+    'Investment Ready': 'Investment Ready',
+  };
+  function stageLabel(stage, lang) {
+    return (lang === 'es' ? STAGE_LABELS_ES : STAGE_LABELS_EN)[stage] || stage;
+  }
+
+  function initials(name) {
+    if (!name) return '?';
+    return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+  }
+
+  let requirements = [];
+
+  function renderTable() {
+    const lang = INAPlatform.currentLang();
+    const tbody = document.getElementById('prTableBody');
+    tbody.innerHTML = '';
+    requirements.forEach((req) => {
+      const tr = document.createElement('tr');
+      tr.dataset.id = req.id || '';
+      tr.dataset.fromStage = req.from_stage;
+      tr.dataset.toStage = req.to_stage;
+
+      const transitionTd = document.createElement('td');
+      transitionTd.innerHTML = `<b>${stageLabel(req.from_stage, lang)}</b> → ${stageLabel(req.to_stage, lang)}`;
+      tr.appendChild(transitionTd);
+
+      const scoreTd = document.createElement('td');
+      scoreTd.innerHTML = `<input type="number" min="0" max="100" step="1" class="pr-input pr-min-score" style="width:70px;" value="${req.min_analysis_score != null ? req.min_analysis_score : ''}" placeholder="—">`;
+      tr.appendChild(scoreTd);
+
+      const docsTd = document.createElement('td');
+      docsTd.innerHTML = `<input type="checkbox" class="pr-mandatory-docs" ${req.require_mandatory_documents ? 'checked' : ''}>`;
+      tr.appendChild(docsTd);
+
+      const finTd = document.createElement('td');
+      finTd.innerHTML = `<input type="number" min="0" max="100" step="1" class="pr-input pr-min-financing" style="width:70px;" value="${req.min_financing_coverage_pct != null ? req.min_financing_coverage_pct : ''}" placeholder="—">`;
+      tr.appendChild(finTd);
+
+      const riskTd = document.createElement('td');
+      riskTd.innerHTML = `<input type="checkbox" class="pr-risk-matrix" ${req.require_risk_matrix ? 'checked' : ''}>`;
+      tr.appendChild(riskTd);
+
+      const updatedTd = document.createElement('td');
+      updatedTd.style.fontSize = '12px';
+      updatedTd.style.color = 'var(--muted)';
+      updatedTd.textContent = req.updated_at ? new Date(req.updated_at).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US') : '—';
+      tr.appendChild(updatedTd);
+
+      const saveTd = document.createElement('td');
+      const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'btn amber small';
+      saveBtn.textContent = lang === 'es' ? 'Guardar' : 'Save';
+      saveBtn.onclick = () => saveRow(tr, saveBtn);
+      saveTd.appendChild(saveBtn);
+      tr.appendChild(saveTd);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function saveRow(tr, btn) {
+    const lang = INAPlatform.currentLang();
+    const fromStage = tr.dataset.fromStage;
+    const toStage = tr.dataset.toStage;
+    const scoreVal = tr.querySelector('.pr-min-score').value;
+    const finVal = tr.querySelector('.pr-min-financing').value;
+    const fields = {
+      minAnalysisScore: scoreVal === '' ? null : Number(scoreVal),
+      requireMandatoryDocuments: tr.querySelector('.pr-mandatory-docs').checked,
+      minFinancingCoveragePct: finVal === '' ? null : Number(finVal),
+      requireRiskMatrix: tr.querySelector('.pr-risk-matrix').checked,
+    };
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = lang === 'es' ? 'Guardando…' : 'Saving…';
+    try {
+      const saved = await INAPlatform.updatePromotionRequirement(fromStage, toStage, fields);
+      const idx = requirements.findIndex((r) => r.from_stage === fromStage && r.to_stage === toStage);
+      if (idx !== -1) requirements[idx] = saved; else requirements.push(saved);
+      renderTable();
+    } catch (e) {
+      alert(e.message || (lang === 'es' ? 'No se pudo guardar.' : 'Could not save.'));
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  }
+
+  // The 3 real transitions always render, even if a row hasn't been saved
+  // to promotion_requirements yet (no row = no requirements for that
+  // transition, per evaluatePromotionRequirements()'s convention) — the
+  // admin edits and Saves a row to create it.
+  const ALL_TRANSITIONS = [
+    { from_stage: 'Concept Stage', to_stage: 'Early Structuring' },
+    { from_stage: 'Early Structuring', to_stage: 'Advanced Structuring' },
+    { from_stage: 'Advanced Structuring', to_stage: 'Investment Ready' },
+  ];
+
+  async function loadRequirements() {
+    let existing = [];
+    try {
+      existing = await INAPlatform.getPromotionRequirements();
+    } catch (e) { existing = []; }
+    requirements = ALL_TRANSITIONS.map((t) => {
+      const found = existing.find((r) => r.from_stage === t.from_stage && r.to_stage === t.to_stage);
+      return found || { ...t, min_analysis_score: null, require_mandatory_documents: false, min_financing_coverage_pct: null, require_risk_matrix: false, updated_at: null };
+    });
+    renderTable();
+  }
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAuth();
+    if (!session) return;
+
+    let profile = null;
+    try {
+      profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      const canAdminUsers = INAPlatform.canManageUsers(profile);
+      const canMasterData = INAPlatform.canManageMasterData(profile);
+      if (canAdminUsers) document.getElementById('adminNavMenu').style.display = 'flex';
+      if (canMasterData) document.getElementById('masterDataNavMenu').style.display = 'flex';
+      INAPlatform.initDropdownMenus(document.querySelector('.app-nav'));
+      if (canAdminUsers) document.getElementById('adminUsersMenuItem').style.display = 'flex';
+      if (canAdminUsers) document.getElementById('rolesMenuItem').style.display = 'flex';
+      if (INAPlatform.isAdmin(profile)) document.getElementById('promotionRequirementsMenuItem').style.display = 'flex';
+      if (INAPlatform.isAdmin(profile)) document.getElementById('activityLogMenuItem').style.display = 'flex';
+      if (INAPlatform.canViewRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    // Admin-only — see promotion_requirements_write_admin RLS policy
+    // (migration_v65_promotion_requirements.sql). Unlike Master Data
+    // (advisor+admin), only admin can change these thresholds — an
+    // advisor can still VIEW them (used by evaluatePromotionRequirements())
+    // but doesn't get this editor page.
+    if (!profile || !INAPlatform.isAdmin(profile)) {
+      location.href = 'dashboard.html';
+      return;
+    }
+
+    document.getElementById('prMandatoryDocLabels').textContent = INAPlatform.MANDATORY_DOCUMENT_TYPES
+      .map((t) => (INAPlatform.DOCUMENT_TYPES.find((d) => d.value === t) || {})[INAPlatform.currentLang()] || t)
+      .join(', ');
+
+    await loadRequirements();
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('prBody').style.display = 'block';
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

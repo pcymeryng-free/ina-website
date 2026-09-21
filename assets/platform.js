@@ -137,6 +137,19 @@ function recommendFinancingUrl() {
   return '/api/recommend-financing';
 }
 
+/* Same reasoning/hosting split as analyzeProjectUrl() above — see
+   api/promotion-agent.js, the "Agente de Promoción IA" feature (Pablo, sep
+   2026: quiere un agente que dictamine si un proyecto está en condiciones
+   de ser promovido al siguiente readiness_stage, combinando reglas
+   determinísticas — ver promotion_requirements — con juicio cualitativo de
+   un LLM). See runPromotionAgent() below. */
+function promotionAgentUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/promotion-agent`;
+  }
+  return '/api/promotion-agent';
+}
+
 /* ---------- Reference data (bilingual) ---------- */
 
 const ROLE_TYPES = [
@@ -175,6 +188,17 @@ const DOCUMENT_TYPES = [
   { value: 'licenses', en: 'Licenses', es: 'Licencias' },
   { value: 'other', en: 'Other attachments', es: 'Otros' },
 ];
+
+/* Categorías de DOCUMENT_TYPES consideradas "obligatorias" cuando una
+   promotion_requirements row tiene require_mandatory_documents=true (ver
+   migration_v65_promotion_requirements.sql y evaluatePromotionRequirements()
+   más abajo). No existe un flag "obligatorio" en el catálogo de tipos de
+   documento en sí — es una decisión de negocio separada, por eso vive acá
+   como constante y no como columna de DOCUMENT_TYPES. Técnica + financiera
+   son las que un evaluador necesita como mínimo para juzgar viabilidad;
+   bylaws/administrative/licenses/other quedan fuera del mínimo (pueden no
+   aplicar a todo tipo de proyecto en etapas tempranas).*/
+const MANDATORY_DOCUMENT_TYPES = ['technical', 'financial'];
 
 /* ---------- Roadmaps (regulatory/administrative checklist) ----------
    See supabase/migration_v26_gestion_templates.sql for the full schema.
@@ -6323,6 +6347,206 @@ const INAPlatform = {
       .select('*, advisor:profiles!project_workflow_events_advisor_id_fkey(full_name)')
       .eq('project_id', projectId)
       .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  /* ---------- Promotion requirements (see migration_v65_promotion_requirements.sql) ----------
+     Pablo, sep 2026: quiere requisitos mínimos configurables por transición
+     de readiness_stage, chequeados tanto por el Promote manual (aviso con
+     opción de continuar, comentario obligatorio como siempre) como por un
+     "agente de IA de promoción" nuevo (ver runPromotionAgent() más abajo)
+     que combina estas mismas reglas con juicio cualitativo de un LLM. */
+
+  MANDATORY_DOCUMENT_TYPES,
+
+  /* Todas las filas de promotion_requirements (una por transición) — usado
+     tanto por evaluatePromotionRequirements() como por
+     app/promotion-requirements.html para poblar el editor de umbrales. */
+  async getPromotionRequirements() {
+    const { data, error } = await supabaseClient
+      .from('promotion_requirements')
+      .select('*')
+      .order('from_stage', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  /* La fila de promotion_requirements para una transición puntual, o null si
+     no hay ninguna configurada todavía (evaluatePromotionRequirements()
+     trata "sin fila" como "sin requisitos", nunca como bloqueo). */
+  promotionRequirementFor(requirements, fromStage, toStage) {
+    return (requirements || []).find((r) => r.from_stage === fromStage && r.to_stage === toStage) || null;
+  },
+
+  /* Admin-only a nivel RLS (promotion_requirements_write_admin) — usado por
+     app/promotion-requirements.html. Upsert manual (select + update/insert)
+     en vez de .upsert() con onConflict para quedar en el mismo estilo que
+     el resto de platform.js (ver recommend-financing.js del lado servidor
+     para el mismo criterio). */
+  async updatePromotionRequirement(fromStage, toStage, fields) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const payload = {
+      min_analysis_score: fields.minAnalysisScore == null ? null : Number(fields.minAnalysisScore),
+      require_mandatory_documents: !!fields.requireMandatoryDocuments,
+      min_financing_coverage_pct: fields.minFinancingCoveragePct == null ? null : Number(fields.minFinancingCoveragePct),
+      require_risk_matrix: !!fields.requireRiskMatrix,
+      updated_by: session.user.id,
+      updated_at: new Date().toISOString(),
+    };
+    const { data: existing, error: findErr } = await supabaseClient
+      .from('promotion_requirements')
+      .select('id')
+      .eq('from_stage', fromStage)
+      .eq('to_stage', toStage)
+      .maybeSingle();
+    if (findErr) throw findErr;
+    if (existing) {
+      const { data, error } = await supabaseClient
+        .from('promotion_requirements')
+        .update(payload)
+        .eq('id', existing.id)
+        .select()
+        .single();
+      if (error) throw error;
+      this.logActivity({ eventType: 'update', entityType: 'promotion_requirement', entityLabel: `${fromStage} → ${toStage}` });
+      return data;
+    }
+    const { data, error } = await supabaseClient
+      .from('promotion_requirements')
+      .insert({ from_stage: fromStage, to_stage: toStage, ...payload })
+      .select()
+      .single();
+    if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'promotion_requirement', entityLabel: `${fromStage} → ${toStage}` });
+    return data;
+  },
+
+  /* Corazón del chequeo de requisitos — corre enteramente client-side (los
+     mismos datos que project.html ya tiene cargados: análisis, documentos,
+     financiamiento, riesgos), sin llamar al agente de IA. Usado por:
+       (a) el Promote manual, ANTES de llamar a promoteProjectWorkflow() —
+           si hay requisitos incumplidos, project.html se los muestra al
+           advisor y le pide confirmar igual (avisar pero permitir
+           continuar, decisión de Pablo sep 2026) usando el comentario
+           obligatorio que el RPC ya exige;
+       (b) el propio agente de IA (api/promotion-agent.js) como la parte
+           "reglas" de su veredicto reglas+LLM combinado — el servidor
+           reimplementa esta misma lógica en Node (no puede importar este
+           archivo del navegador), igual que ya hace con
+           computeFinancingCoverage() en recommend-financing.js.
+     Devuelve null si el proyecto ya está en la etapa final o no tiene
+     readiness_stage (nada que evaluar — nextWorkflowStage() ya cubre ese
+     caso para decidir si mostrar el botón Promote). */
+  async evaluatePromotionRequirements(project, { analysis, documents, projectPrograms, risks } = {}) {
+    const toStage = this.nextWorkflowStage(project);
+    if (!toStage) return null;
+    const fromStage = project.readiness_stage;
+
+    const unmet = [];
+    const details = {};
+
+    const score = analysis && analysis.overall_score != null ? Number(analysis.overall_score) : null;
+    details.analysisScore = score;
+
+    const docTypesPresent = new Set((documents || []).map((d) => d.document_type));
+    const missingDocTypes = MANDATORY_DOCUMENT_TYPES.filter((t) => !docTypesPresent.has(t));
+    details.missingDocumentTypes = missingDocTypes;
+
+    const coverage = this.computeFinancingCoverage(project, projectPrograms || []);
+    details.financingCoveragePct = coverage.totalPct;
+
+    const riskCount = (risks || []).length;
+    details.riskCount = riskCount;
+
+    const allRequirements = await this.getPromotionRequirements();
+    const req = this.promotionRequirementFor(allRequirements, fromStage, toStage);
+    if (!req) {
+      // Sin fila configurada para esta transición = sin requisitos.
+      return { fromStage, toStage, eligible: true, unmet: [], requirement: null, details };
+    }
+
+    if (req.min_analysis_score != null && (score == null || score < req.min_analysis_score)) {
+      unmet.push({ key: 'min_analysis_score', threshold: req.min_analysis_score, actual: score });
+    }
+    if (req.require_mandatory_documents && missingDocTypes.length) {
+      unmet.push({ key: 'require_mandatory_documents', missingDocumentTypes: missingDocTypes });
+    }
+    if (req.min_financing_coverage_pct != null && coverage.totalPct < req.min_financing_coverage_pct) {
+      unmet.push({ key: 'min_financing_coverage_pct', threshold: req.min_financing_coverage_pct, actual: coverage.totalPct });
+    }
+    if (req.require_risk_matrix && riskCount === 0) {
+      unmet.push({ key: 'require_risk_matrix' });
+    }
+
+    return { fromStage, toStage, eligible: unmet.length === 0, unmet, requirement: req, details };
+  },
+
+  /* Texto legible (bilingüe) de un item `unmet` devuelto por
+     evaluatePromotionRequirements() — project.html lo usa tanto en el
+     aviso de confirmación del Promote manual como en el panel del agente
+     de IA. */
+  describeUnmetRequirement(item, lang) {
+    const l = lang || currentLang();
+    switch (item.key) {
+      case 'min_analysis_score':
+        return l === 'es'
+          ? `Puntaje de análisis insuficiente (mínimo ${item.threshold}, actual ${item.actual == null ? 'sin análisis' : item.actual})`
+          : `Analysis score too low (minimum ${item.threshold}, current ${item.actual == null ? 'no analysis yet' : item.actual})`;
+      case 'require_mandatory_documents': {
+        const names = (item.missingDocumentTypes || [])
+          .map((t) => (DOCUMENT_TYPES.find((d) => d.value === t) || {})[l] || t)
+          .join(', ');
+        return l === 'es'
+          ? `Faltan documentos obligatorios: ${names}`
+          : `Missing mandatory documents: ${names}`;
+      }
+      case 'min_financing_coverage_pct':
+        return l === 'es'
+          ? `Cobertura de financiamiento insuficiente (mínimo ${item.threshold}%, actual ${item.actual}%)`
+          : `Financing coverage too low (minimum ${item.threshold}%, current ${item.actual}%)`;
+      case 'require_risk_matrix':
+        return l === 'es'
+          ? 'Falta cargar la Matriz de Riesgos (al menos un riesgo)'
+          : 'Risk Matrix is empty (at least one risk required)';
+      default:
+        return item.key;
+    }
+  },
+
+  /* Llama a api/promotion-agent.js: el servidor recalcula las mismas reglas
+     determinísticas (con la data que él mismo levanta de la base) y le
+     agrega el juicio cualitativo de un LLM, persiste el veredicto en
+     promotion_agent_runs, y lo devuelve. */
+  async runPromotionAgent(projectId) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(promotionAgentUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ projectId }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('[runPromotionAgent] failed:', body.error, body.detail || body.raw || '');
+      throw new Error(body.error || 'Promotion agent request failed.');
+    }
+    return body.run;
+  },
+
+  /* Historial de corridas del agente para un proyecto, más reciente
+     primero — project.html lo muestra en el panel "Agente de Promoción IA"
+     junto al botón para correr una nueva evaluación. */
+  async getPromotionAgentRuns(projectId) {
+    const { data, error } = await supabaseClient
+      .from('promotion_agent_runs')
+      .select('*, run_by_profile:profiles!promotion_agent_runs_run_by_fkey(full_name)')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
   },

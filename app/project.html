@@ -156,6 +156,26 @@
         <div class="wf-history" id="wfHistory" style="display:none;"></div>
       </div>
 
+      <!-- Agente de Promoción IA — Pablo, sep 2026: "un agente de AI que
+           analice los datos del proyecto y que lo habilite a ser promovido
+           o lo condicione comentando cuales son los requisitos que no
+           cumple." Reglas (promotion_requirements) + LLM combinados — ver
+           api/promotion-agent.js y migration_v65_promotion_requirements.sql.
+           Hidden by default; shown by renderPromotionAgentBlock() when
+           there's a next stage to evaluate or existing run history. -->
+      <div id="promotionAgentBlock" class="info-block" style="margin-top:24px; display:none;">
+        <h4 style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <span data-i18n="pa.title">Agente de Promoción IA</span>
+          <button type="button" id="runPromotionAgentBtn" class="btn ghost small" style="display:none; padding:6px 12px;">
+            <span data-i18n="pa.run">Evaluar con IA</span>
+          </button>
+        </h4>
+        <p style="font-size:12.5px; color:var(--muted); margin:2px 0 12px;"><span data-i18n="pa.help">Combina los requisitos mínimos configurados con el juicio cualitativo de un modelo de IA para dictaminar si el proyecto está en condiciones de ser promovido a la siguiente etapa.</span></p>
+        <div id="promotionAgentResult" style="display:none;"></div>
+        <div id="promotionAgentHistory" style="display:none; margin-top:14px;"></div>
+        <p id="promotionAgentEmpty" style="font-size:13px; color:var(--muted);"><span data-i18n="pa.empty">Todavía no se corrió el agente de promoción para este proyecto.</span></p>
+      </div>
+
       <!-- Project Attributes — every optional attribute the project can
            carry (country/program/generating entity plus the migration_v33/
            v34 fields: beneficiaries, budget, duration, priority, technical
@@ -438,7 +458,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=75"></script>
+<script src="/assets/i18n.js?v=77"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <!-- pdf-lib: only used by generateProjectPdf() to splice real attached PDF
@@ -446,7 +466,7 @@
      another PDF's existing pages — see the "Anexos" section of that
      function). Everything else in the report still uses jsPDF alone. -->
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="/assets/platform.js?v=89"></script>
+<script src="/assets/platform.js?v=90"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
 (function () {
@@ -689,6 +709,10 @@
   // This project's Risk Matrix rows — see the Risk Matrix block below and
   // supabase/migration_v41_project_risks.sql.
   let currentRisks = [];
+  // History of "Agente de Promoción IA" runs for this project, newest
+  // first — see the Promotion Agent block below and
+  // supabase/migration_v65_promotion_requirements.sql.
+  let currentPromotionAgentRuns = [];
   // This project's linked Success Cases (project_success_cases rows, each
   // with its success_case embedded) and the full library (for the picker
   // below) — see the Success Cases block and
@@ -1021,8 +1045,42 @@
     return trimmed;
   }
 
+  // Pablo, sep 2026: quiere requisitos mínimos por transición (ver
+  // supabase/migration_v65_promotion_requirements.sql) chequeados en el
+  // Promote manual — pero, por decisión explícita suya (AskUserQuestion:
+  // "Avisar pero permitir continuar"), un requisito incumplido NUNCA
+  // bloquea el promote: solo se le muestra al advisor cuáles son antes del
+  // prompt() del comentario obligatorio de siempre, y puede confirmar igual.
+  // Cualquier error evaluando los requisitos (red, RLS, etc.) se ignora en
+  // silencio y el promote sigue funcionando como antes de esta feature —
+  // esto es una capa de aviso, no debe poder romper el flujo existente.
+  async function checkPromotionRequirementsBeforePromote(nextStage) {
+    const lang = INAPlatform.currentLang();
+    try {
+      const result = await INAPlatform.evaluatePromotionRequirements(currentProject, {
+        analysis: currentAnalysis,
+        documents: currentDocs,
+        projectPrograms: currentProjectPrograms,
+        risks: currentRisks,
+      });
+      if (!result || result.eligible) return true;
+      const lines = result.unmet.map((item) => '• ' + INAPlatform.describeUnmetRequirement(item, lang));
+      const message = (lang === 'es'
+        ? `Este proyecto todavía no cumple todos los requisitos mínimos para pasar a "${INAPlatform.stageLabel(nextStage)}":\n\n`
+        : `This project doesn't yet meet all the minimum requirements to move to "${INAPlatform.stageLabel(nextStage)}":\n\n`)
+        + lines.join('\n')
+        + (lang === 'es' ? '\n\n¿Promover de todas formas?' : '\n\nPromote anyway?');
+      return confirm(message);
+    } catch (e) {
+      console.error('[checkPromotionRequirementsBeforePromote] failed, proceeding without the check:', e);
+      return true;
+    }
+  }
+
   async function handlePromote(nextStage) {
     const lang = INAPlatform.currentLang();
+    const proceed = await checkPromotionRequirementsBeforePromote(nextStage);
+    if (!proceed) return;
     const note = promptForNote(lang === 'es'
       ? `Motivo para promover el proyecto a "${INAPlatform.stageLabel(nextStage)}":`
       : `Reason for promoting the project to "${INAPlatform.stageLabel(nextStage)}":`);
@@ -1099,6 +1157,94 @@
       btn.style.display = canReturn ? 'flex' : 'none';
       btn.onclick = canReturn ? handleReturnToNotAnalyzed : null;
     });
+  }
+
+  // Renders the "Agente de Promoción IA" panel: shows the button to run a
+  // fresh evaluation (advisor/admin only — same gating as Promote/Demote),
+  // the most recent verdict, and the run history. Called on load and again
+  // after a run completes (see handleRunPromotionAgent below).
+  function renderPromotionAgentBlock(p) {
+    const lang = INAPlatform.currentLang();
+    const viewerIsAdvisor = currentProfile && (INAPlatform.isAdvisor(currentProfile) || INAPlatform.isAdmin(currentProfile));
+    const nextStage = viewerIsAdvisor ? INAPlatform.nextWorkflowStage(p) : null;
+    const hasHistory = currentPromotionAgentRuns && currentPromotionAgentRuns.length > 0;
+
+    const block = document.getElementById('promotionAgentBlock');
+    if (!nextStage && !hasHistory) {
+      block.style.display = 'none';
+      return;
+    }
+    block.style.display = 'block';
+
+    const runBtn = document.getElementById('runPromotionAgentBtn');
+    if (nextStage) {
+      runBtn.style.display = 'inline-flex';
+      runBtn.onclick = () => handleRunPromotionAgent(nextStage);
+    } else {
+      runBtn.style.display = 'none';
+      runBtn.onclick = null;
+    }
+
+    document.getElementById('promotionAgentEmpty').style.display = hasHistory ? 'none' : 'block';
+
+    const resultEl = document.getElementById('promotionAgentResult');
+    if (!hasHistory) {
+      resultEl.style.display = 'none';
+    } else {
+      const latest = currentPromotionAgentRuns[0];
+      resultEl.style.display = 'block';
+      const eligible = !!latest.eligible;
+      const badgeColor = eligible ? 'var(--success, #2E7D5B)' : 'var(--warning, #D9922E)';
+      const badgeText = eligible
+        ? (lang === 'es' ? 'Habilitado' : 'Eligible')
+        : (lang === 'es' ? 'Condicionado' : 'Conditioned');
+      const unmetItems = (latest.unmet_requirements || []).map((key) => {
+        // The run only stored the key, not the full detail object (unlike
+        // evaluatePromotionRequirements()'s live result) — describe it with
+        // just the key, still meaningful without the threshold/actual pair.
+        return '<li>' + INAPlatform.describeUnmetRequirement({ key }, lang) + '</li>';
+      }).join('');
+      const notes = lang === 'es' ? latest.notes : (latest.notes_en || latest.notes);
+      resultEl.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+          <span style="display:inline-flex; align-items:center; padding:4px 12px; border-radius:999px; font-size:12px; font-weight:600; color:#fff; background:${badgeColor};">${badgeText}</span>
+          <span style="font-size:12px; color:var(--muted);">${latest.from_stage} → ${latest.to_stage} · ${new Date(latest.created_at).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US')}</span>
+        </div>
+        ${unmetItems ? `<ul style="margin:6px 0 8px 18px; font-size:13px; color:var(--muted);">${unmetItems}</ul>` : ''}
+        ${notes ? `<p style="font-size:13px; color:var(--muted); margin:0;">${notes}</p>` : ''}
+      `;
+    }
+
+    const historyEl = document.getElementById('promotionAgentHistory');
+    if (currentPromotionAgentRuns.length > 1) {
+      historyEl.style.display = 'block';
+      const older = currentPromotionAgentRuns.slice(1);
+      historyEl.innerHTML = `<details><summary style="cursor:pointer; font-size:12.5px; color:var(--muted);">${lang === 'es' ? `Ver ${older.length} corrida(s) anterior(es)` : `View ${older.length} earlier run(s)`}</summary>` +
+        older.map((run) => {
+          const badge = run.eligible ? (lang === 'es' ? 'Habilitado' : 'Eligible') : (lang === 'es' ? 'Condicionado' : 'Conditioned');
+          return `<div style="padding:8px 0; border-top:1px solid var(--border);"><span style="font-size:12px; font-weight:600;">${badge}</span> <span style="font-size:12px; color:var(--muted);">— ${run.from_stage} → ${run.to_stage} · ${new Date(run.created_at).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US')}</span></div>`;
+        }).join('') + `</details>`;
+    } else {
+      historyEl.style.display = 'none';
+    }
+  }
+
+  async function handleRunPromotionAgent(nextStage) {
+    const lang = INAPlatform.currentLang();
+    const btn = document.getElementById('runPromotionAgentBtn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = lang === 'es' ? 'Evaluando…' : 'Evaluating…';
+    try {
+      const run = await INAPlatform.runPromotionAgent(currentProject.id);
+      currentPromotionAgentRuns = [run, ...currentPromotionAgentRuns];
+      renderPromotionAgentBlock(currentProject);
+    } catch (e) {
+      alert(e.message || (lang === 'es' ? 'No se pudo correr el agente de promoción.' : 'Could not run the promotion agent.'));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
   }
 
   async function refreshProjectAndWorkflow() {
@@ -3044,6 +3190,16 @@
       document.getElementById('riskMatrixBlock').style.display = 'block';
       renderRiskMatrix();
     }
+
+    // Promotion Agent — shown whenever there's a next stage to promote to
+    // (so an advisor/admin can run it) or there's already run history to
+    // show (any viewer, since the RLS select policy mirrors
+    // project_workflow_events' own-project-or-advisor visibility). See
+    // migration_v65_promotion_requirements.sql and api/promotion-agent.js.
+    try {
+      currentPromotionAgentRuns = await INAPlatform.getPromotionAgentRuns(projectId);
+    } catch (e) { currentPromotionAgentRuns = []; /* non-critical — block just shows empty */ }
+    renderPromotionAgentBlock(project);
 
     try {
       currentSuccessCases = await INAPlatform.listProjectSuccessCases(projectId);

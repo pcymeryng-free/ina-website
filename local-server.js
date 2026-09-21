@@ -62,6 +62,7 @@ const extractTemplateDataHandler = require('./api/extract-template-data');
 const recommendFinancingHandler = require('./api/recommend-financing');
 const extractSuccessCaseHandler = require('./api/extract-success-case');
 const extractProjectDataHandler = require('./api/extract-project-data');
+const promotionAgentHandler = require('./api/promotion-agent');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5050;
@@ -96,6 +97,7 @@ app.post('/api/extract-template-data', extractTemplateDataHandler);
 app.post('/api/recommend-financing', recommendFinancingHandler);
 app.post('/api/extract-success-case', extractSuccessCaseHandler);
 app.post('/api/extract-project-data', extractProjectDataHandler);
+app.post('/api/promotion-agent', promotionAgentHandler);
 
 // A handful of the same top-level redirects vercel.json defines in
 // production, so old-style bookmarks/links behave the same locally.

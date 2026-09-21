@@ -67,6 +67,7 @@
         <div class="menu-panel" id="adminNavMenuPanel">
           <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
           <a href="roles.html" id="rolesMenuItem" class="menu-item" style="display:none;"><span data-i18n="roles.nav">Roles</span></a>
+          <a href="promotion-requirements.html" id="promotionRequirementsMenuItem" class="menu-item" style="display:none;"><span data-i18n="pr.nav">Promotion Requirements</span></a>
           <a href="activity-log.html" id="activityLogMenuItem" class="menu-item" style="display:none;"><span data-i18n="activitylog.nav">Activity Log</span></a>
         </div>
       </div>
@@ -241,6 +242,18 @@
           <button type="button" class="btn amber small" id="newAgencyBtn"><span data-i18n="md.agencies.new">+ New Public Agency</span></button>
         </div>
         <div class="filter-bar">
+          <div class="ffield" style="flex:1 1 200px;">
+            <label for="afName"><span data-i18n="md.agencies.filter.name">Name</span></label>
+            <input type="search" id="afName" placeholder="">
+          </div>
+          <div class="ffield">
+            <label for="afJurisdiction"><span data-i18n="md.agencies.filter.jurisdiction">Jurisdiction</span></label>
+            <select id="afJurisdiction"></select>
+          </div>
+          <div class="ffield">
+            <label for="afCountry"><span data-i18n="md.agencies.filter.country">Country</span></label>
+            <select id="afCountry"></select>
+          </div>
           <div class="ffield">
             <label for="afUser"><span data-i18n="md.contacts.filter.user">Added by</span></label>
             <select id="afUser"></select>
@@ -396,9 +409,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=75"></script>
+<script src="/assets/i18n.js?v=77"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=89"></script>
+<script src="/assets/platform.js?v=90"></script>
 <script src="/assets/script.js?v=15"></script>
 <!-- SheetJS (client-side .xlsx export) — only needed on this page for the
      Contacts list's "Download Excel" button; see contactsExcelBtn below. -->
@@ -1342,10 +1355,32 @@
   }
 
   /* ---------- Public Agencies ---------- */
+  // Same filter-bar pattern as Companies (populateCompanyFilters() above):
+  // Name/Jurisdiction/Country/Added by, options rebuilt whenever agencies
+  // change so a newly created/edited agency's jurisdiction or country shows
+  // up right away. Jurisdiction uses the fixed PUBLIC_AGENCY_JURISDICTIONS
+  // list (national/provincial/municipal/international) in that order,
+  // same as the New Public Agency form — not sorted, since it's a short
+  // fixed taxonomy rather than open-ended values like Country.
   function populateAgencyFilters() {
+    const allLabel = lang === 'es' ? 'Todas' : 'All';
+
+    const jurisdictionSel = document.getElementById('afJurisdiction');
+    const prevJurisdiction = jurisdictionSel.value;
+    jurisdictionSel.innerHTML = `<option value="">${allLabel}</option>` +
+      INAPlatform.PUBLIC_AGENCY_JURISDICTIONS.map((j) => `<option value="${j.value}">${j[lang] || j.en}</option>`).join('');
+    jurisdictionSel.value = INAPlatform.PUBLIC_AGENCY_JURISDICTIONS.some((j) => j.value === prevJurisdiction) ? prevJurisdiction : '';
+
+    const countrySel = document.getElementById('afCountry');
+    const prevCountry = countrySel.value;
+    const countries = new Set();
+    agencies.forEach((a) => { if (a.country) countries.add(a.country); });
+    const sortedCountries = Array.from(countries).sort((a, b) => a.localeCompare(b, lang));
+    countrySel.innerHTML = `<option value="">${allLabel}</option>` + sortedCountries.map((c) => `<option value="${c}">${c}</option>`).join('');
+    countrySel.value = sortedCountries.includes(prevCountry) ? prevCountry : '';
+
     const userSel = document.getElementById('afUser');
     const prevUser = userSel.value;
-    const allLabel = lang === 'es' ? 'Todos' : 'All';
     const users = new Set();
     agencies.forEach((a) => { if (a.created_by_profile && a.created_by_profile.full_name) users.add(a.created_by_profile.full_name); });
     const sortedUsers = Array.from(users).sort((a, b) => a.localeCompare(b, lang));
@@ -1354,15 +1389,26 @@
   }
 
   function getFilteredAgencies() {
+    const nameQ = (document.getElementById('afName').value || '').trim().toLowerCase();
+    const jurisdictionVal = document.getElementById('afJurisdiction').value;
+    const countryVal = document.getElementById('afCountry').value;
     const userVal = document.getElementById('afUser').value;
     return agencies.filter((a) => {
+      if (nameQ && !(a.name || '').toLowerCase().includes(nameQ)) return false;
+      if (jurisdictionVal && a.jurisdiction !== jurisdictionVal) return false;
+      if (countryVal && a.country !== countryVal) return false;
       if (userVal && ((a.created_by_profile && a.created_by_profile.full_name) || '') !== userVal) return false;
       return true;
     });
   }
 
-  document.getElementById('afUser').addEventListener('change', renderAgenciesTable);
+  ['afName', 'afJurisdiction', 'afCountry', 'afUser'].forEach((id) => {
+    document.getElementById(id).addEventListener(id === 'afName' ? 'input' : 'change', () => renderAgenciesTable());
+  });
   document.getElementById('afClear').addEventListener('click', () => {
+    document.getElementById('afName').value = '';
+    document.getElementById('afJurisdiction').value = '';
+    document.getElementById('afCountry').value = '';
     document.getElementById('afUser').value = '';
     renderAgenciesTable();
   });
@@ -1492,6 +1538,7 @@
         populateCompanyFilters();
         renderCompaniesTable();
         renderProductsTable();
+        populateAgencyFilters();
         renderAgenciesTable();
       }, 0);
     });
@@ -1520,6 +1567,7 @@
       if (canAdminUsers) document.getElementById('adminUsersMenuItem').style.display = 'flex';
       if (canAdminUsers) document.getElementById('rolesMenuItem').style.display = 'flex';
       if (INAPlatform.isAdmin(profile)) document.getElementById('activityLogMenuItem').style.display = 'flex';
+      if (INAPlatform.isAdmin(profile)) document.getElementById('promotionRequirementsMenuItem').style.display = 'flex';
       if (INAPlatform.canViewRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
     } catch (e) { /* non-critical */ }
 

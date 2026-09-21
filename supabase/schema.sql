@@ -2215,6 +2215,100 @@ create policy "master_data_delete_advisor_or_admin" on storage.objects
 --   master-data/contacts/{contact_id}/{timestamp}_{filename}
 
 -- ============================================================================
+-- Promotion requirements — see migration_v65_promotion_requirements.sql.
+-- Umbrales mínimos configurables (admin) por transición de readiness_stage
+-- (Concept Stage → Early Structuring → Advanced Structuring → Investment
+-- Ready), evaluados por INAPlatform.evaluatePromotionRequirements() antes de
+-- que el advisor confirme un promote_project_workflow() manual, y por el
+-- agente de IA de promoción (api/promotion-agent.js) que combina estas
+-- reglas determinísticas con el juicio cualitativo de un LLM. Capa nueva y
+-- complementaria al Project Structuring Framework™ (current_gate/
+-- approve_project_gate() más arriba) — ese sigue siendo un checklist manual
+-- de entregables por gate, sin relación con estos umbrales cuantitativos.
+-- ============================================================================
+create table if not exists public.promotion_requirements (
+  id uuid primary key default gen_random_uuid(),
+  from_stage text not null check (from_stage in (
+    'Concept Stage', 'Early Structuring', 'Advanced Structuring'
+  )),
+  to_stage text not null check (to_stage in (
+    'Early Structuring', 'Advanced Structuring', 'Investment Ready'
+  )),
+  -- Puntaje mínimo (0-100) del último framework_analysis.overall_score
+  -- (fuente 'ai' o 'manual', el más reciente). Null = sin umbral.
+  min_analysis_score int check (min_analysis_score is null or min_analysis_score between 0 and 100),
+  -- Exige al menos un documento adjunto en cada categoría de
+  -- MANDATORY_DOCUMENT_TYPES (assets/platform.js).
+  require_mandatory_documents boolean not null default false,
+  -- % mínimo (0-100) de INAPlatform.computeFinancingCoverage().totalPct.
+  -- Null = sin umbral.
+  min_financing_coverage_pct int check (min_financing_coverage_pct is null or min_financing_coverage_pct between 0 and 100),
+  -- Exige al menos una fila en project_risks para el proyecto.
+  require_risk_matrix boolean not null default false,
+  updated_by uuid references public.profiles(id) on delete set null,
+  updated_at timestamptz not null default now(),
+  unique (from_stage, to_stage)
+);
+
+comment on table public.promotion_requirements is 'Umbrales mínimos configurables (admin) por transición de readiness_stage — ver migration_v65_promotion_requirements.sql.';
+
+alter table public.promotion_requirements enable row level security;
+
+create policy "promotion_requirements_select_authenticated" on public.promotion_requirements
+  for select using (auth.role() = 'authenticated');
+
+create policy "promotion_requirements_write_admin" on public.promotion_requirements
+  for all using (public.is_admin()) with check (public.is_admin());
+
+-- Historial de corridas del agente de IA de promoción (api/promotion-agent.js).
+-- Un row por corrida (no se sobrescribe) — permite ver el historial de
+-- veredictos de un proyecto a lo largo del tiempo, igual que
+-- project_workflow_events guarda cada transición real.
+create table if not exists public.promotion_agent_runs (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  from_stage text not null,
+  to_stage text not null,
+  -- true = habilitado para promover, false = condicionado.
+  eligible boolean not null,
+  -- Requisitos determinísticos incumplidos, ej. ["min_analysis_score"].
+  unmet_requirements text[] not null default '{}'::text[],
+  -- Notas cualitativas del LLM (bilingüe, mismo patrón que framework_analysis._en).
+  notes text,
+  notes_en text,
+  raw_model_output text,
+  run_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+comment on table public.promotion_agent_runs is 'Historial de veredictos del agente de IA de promoción (reglas + LLM) — ver migration_v65_promotion_requirements.sql.';
+
+alter table public.promotion_agent_runs enable row level security;
+
+-- Misma visibilidad que project_workflow_events: dueño del proyecto, o
+-- cualquier advisor/admin. Sin policy de insert/update para clientes — cada
+-- fila la escribe api/promotion-agent.js con la service role key.
+create policy "promotion_agent_runs_select_own_or_advisor" on public.promotion_agent_runs
+  for select using (
+    public.is_advisor() or public.is_admin()
+    or exists (
+      select 1 from public.projects pr
+      where pr.id = promotion_agent_runs.project_id and pr.user_id = auth.uid()
+    )
+  );
+
+create index if not exists promotion_agent_runs_project_id_idx on public.promotion_agent_runs(project_id);
+
+-- Semilla: las 3 transiciones reales del stepper, con umbrales progresivos.
+-- Editable después desde app/promotion-requirements.html (admin).
+insert into public.promotion_requirements (from_stage, to_stage, min_analysis_score, require_mandatory_documents, min_financing_coverage_pct, require_risk_matrix)
+values
+  ('Concept Stage', 'Early Structuring', 40, false, null, false),
+  ('Early Structuring', 'Advanced Structuring', 55, true, 30, true),
+  ('Advanced Structuring', 'Investment Ready', 70, true, 80, true)
+on conflict (from_stage, to_stage) do nothing;
+
+-- ============================================================================
 -- Edit locks (concurrent-edit prevention) — see migration_v31_edit_locks.sql
 -- for the full rationale. Hard lock, no manual force-unlock: a second user
 -- can't enter edit mode on a project/program/roadmap_template while someone

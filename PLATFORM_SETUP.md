@@ -5315,7 +5315,109 @@ matching every other render-project call site. Reloading the page was
 always a workaround (the initial-load path calls both correctly) — this
 fix removes the need to reload.
 
+### Promotion requirements + AI Promotion Agent (Pablo, sep 2026)
 
+Pablo: "Me gustaría que hubiera ciertos requisitos para que un proyecto
+pueda pasar de un estado al siguiente. Debería haber un método manual que
+existe ahora que es el promote pero que si el proyecto no cumple los
+requisitos mínimos le pida confirmación al usuario comentando cuales son
+los requisitos que no cumple. A su vez, estaría bueno que haya un agente de
+AI que analice los datos del proyecto y que lo habilite a ser promovido o
+lo condicione comentando cuales son los requisitos que no cumple."
+
+This is a new, complementary layer on top of the existing readiness_stage
+workflow (`promote_project_workflow()` etc., migration_v20) — it does NOT
+replace or interact with the separate Project Structuring Framework™ gate
+system (`projects.current_gate`, `approve_project_gate()`,
+migration_v39_project_gates.sql), which remains a manual deliverables
+checklist unrelated to these data-driven thresholds.
+
+**Schema** (`migration_v65_promotion_requirements.sql`): two new tables.
+`public.promotion_requirements` holds one row per readiness_stage
+transition (Concept Stage→Early Structuring→Advanced Structuring→
+Investment Ready) with four configurable thresholds, chosen via
+AskUserQuestion with Pablo (sep 2026):
+- `min_analysis_score` — minimum `framework_analysis.overall_score` (AI or
+  manual, whichever is most recent).
+- `require_mandatory_documents` — at least one attachment in each category
+  listed in `MANDATORY_DOCUMENT_TYPES` (`assets/platform.js` — currently
+  `['technical', 'financial']`; no "required" flag exists on the document
+  category catalog itself, so this is a separate constant).
+- `min_financing_coverage_pct` — minimum
+  `INAPlatform.computeFinancingCoverage().totalPct`.
+- `require_risk_matrix` — at least one row in `project_risks`.
+
+A null numeric threshold, or no row at all for a transition, means "no
+requirement" for that check. RLS: any authenticated user can read (so
+`evaluatePromotionRequirements()` works for owners too), only admin can
+write (`promotion_requirements_write_admin`). Seeded with progressive
+defaults (40/false/null/false → 55/true/30/true → 70/true/80/true) editable
+from the new admin page below.
+
+`public.promotion_agent_runs` is an append-only audit log (one row per
+agent run, never overwritten) of every AI Promotion Agent verdict — RLS
+mirrors `project_workflow_events`' visibility (project owner, or any
+advisor/admin).
+
+**Manual Promote — warn, don't block** (Pablo's explicit choice via
+AskUserQuestion: "Avisar pero permitir continuar"): `app/project.html`'s
+`handlePromote()` now calls `INAPlatform.evaluatePromotionRequirements()`
+before opening the mandatory-comment prompt. If any requirement is unmet,
+a `confirm()` dialog lists which ones (via
+`INAPlatform.describeUnmetRequirement()`) and asks "Promote anyway?" —
+declining aborts, accepting continues into the same `promptForNote()` +
+`promoteProjectWorkflow()` flow as before. This is a UI-only check —
+`promote_project_workflow()` itself was NOT changed, so nothing at the
+database level blocks a promotion that doesn't meet these thresholds.
+
+**AI Promotion Agent — rules + LLM combined** (Pablo's explicit choice:
+"Reglas + LLM combinados"): a new endpoint, `api/promotion-agent.js`,
+mirrors `api/recommend-financing.js`'s multi-provider pattern
+(`LLM_PROVIDER` env var — anthropic/groq/local/bedrock/bedrock-mock, same
+credentials already configured for AI Analysis / Financing Recommendation,
+no new env vars needed). It re-evaluates the SAME deterministic
+`promotion_requirements` thresholds server-side (reimplemented in plain
+Node, same tradeoff as `computeFinancingCoverage()`'s duplication in
+`recommend-financing.js`), then asks the LLM for a qualitative pass on top.
+The deterministic checks are a hard floor — if any fails, the verdict is
+never eligible regardless of the model's opinion. If all deterministic
+checks pass, the LLM can still CONDITION the project (flag `qualitative_pass:
+false` with `concerns_es`/`concerns_en`) if it spots something the numeric
+thresholds miss — a risk matrix that's present but superficial for the
+project's size, a financing mix that adds up numerically but relies on an
+ill-fitting instrument, etc. Every run is persisted to
+`promotion_agent_runs` (never overwritten, unlike `financing_recommendations`'
+single-row upsert) so the history of past verdicts is visible.
+
+`app/project.html` gained a new "Agente de Promoción IA" panel (right
+below the Workflow stepper, above Project Attributes) — an "Evaluar con
+IA" button (advisor/admin only, hidden once the project is at its final
+stage), the latest verdict as a colored badge (Habilitado/Condicionado)
+with the unmet-requirement list and the LLM's notes, and a collapsible
+history of earlier runs. Visible to any viewer with at least one run in
+history, matching `promotion_agent_runs`' RLS.
+
+**New admin page**: `app/promotion-requirements.html` — a simple editable
+table, one row per transition, admin-only (`INAPlatform.isAdmin()` gate,
+same `location.href = 'dashboard.html'` redirect pattern as
+`master-data.html`'s advisor/admin gate, but stricter: advisors can VIEW
+thresholds via `evaluatePromotionRequirements()` but can't edit them, only
+admin can). Linked from the Admin dropdown (`promotionRequirementsMenuItem`)
+across every `app/*.html` page that has that dropdown.
+
+**platform.js additions**: `MANDATORY_DOCUMENT_TYPES`,
+`getPromotionRequirements()`, `promotionRequirementFor()`,
+`updatePromotionRequirement()` (admin-only upsert),
+`evaluatePromotionRequirements(project, {analysis, documents,
+projectPrograms, risks})` (the client-side rules engine, reused by the
+manual Promote check), `describeUnmetRequirement()` (bilingual text for an
+unmet-requirement item), `runPromotionAgent(projectId)` (calls the new
+endpoint), `getPromotionAgentRuns(projectId)` (history), and
+`promotionAgentUrl()` (same production-hostname-aware URL resolver
+pattern as `recommendFinancingUrl()` etc.).
+
+`local-server.js` and `vercel.json` both register the new
+`/api/promotion-agent` route, same pattern as every other AI endpoint.
 
 - Document parsing is limited to PDF, PNG/JPEG and plain text/Markdown/CSV
   files. Word documents (.docx), Excel files, etc. are listed by filename in

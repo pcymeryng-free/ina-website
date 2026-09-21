@@ -19,6 +19,7 @@
     { "source": "/generate-proposal", "destination": "/api/generate-proposal" },
     { "source": "/recommend-financing", "destination": "/api/recommend-financing" },
     { "source": "/extract-success-case", "destination": "/api/extract-success-case" },
-    { "source": "/extract-project-data", "destination": "/api/extract-project-data" }
+    { "source": "/extract-project-data", "destination": "/api/extract-project-data" },
+    { "source": "/promotion-agent", "destination": "/api/promotion-agent" }
   ]
 }
