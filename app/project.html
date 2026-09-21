@@ -53,6 +53,7 @@
         <div class="menu-panel" id="navWorkflowMenuPanel">
           <button type="button" id="navPromoteBtn" class="menu-item" style="display:none;"></button>
           <button type="button" id="navDemoteBtn" class="menu-item" style="display:none;"></button>
+          <button type="button" id="navRunPromotionAgentBtn" class="menu-item" style="display:none;"><span data-i18n="pa.run">Evaluate with AI</span></button>
           <button type="button" id="navReturnToNotAnalyzedBtn" class="menu-item" style="display:none;"><span data-i18n="wf.returnToNotAnalyzed">Return to Not Analyzed</span></button>
         </div>
       </div>
@@ -139,6 +140,7 @@
             <div class="menu-panel" id="workflowMenuPanel">
               <button type="button" id="promoteBtn" class="menu-item" style="display:none;"></button>
               <button type="button" id="demoteBtn" class="menu-item" style="display:none;"></button>
+              <button type="button" id="runPromotionAgentMenuBtn" class="menu-item" style="display:none;"><span data-i18n="pa.run">Evaluate with AI</span></button>
               <button type="button" id="returnToNotAnalyzedBtn" class="menu-item" style="display:none;"><span data-i18n="wf.returnToNotAnalyzed">Return to Not Analyzed</span></button>
             </div>
           </div>
@@ -1132,6 +1134,20 @@
         btn.style.display = 'flex';
         btn.textContent = (lang === 'es' ? 'Promover a ' : 'Promote to ') + INAPlatform.stageLabel(nextStage);
         btn.onclick = () => handlePromote(nextStage);
+      } else {
+        btn.style.display = 'none';
+        btn.onclick = null;
+      }
+    });
+
+    // Same gating/target stage as Promote — evaluating "readiness to
+    // promote" only makes sense when there's a next stage to evaluate
+    // against (see evaluatePromotionRequirements()/runPromotionAgent()).
+    ['runPromotionAgentMenuBtn', 'navRunPromotionAgentBtn'].forEach((id) => {
+      const btn = document.getElementById(id);
+      if (nextStage) {
+        btn.style.display = 'flex';
+        btn.onclick = () => handleRunPromotionAgent(nextStage);
       } else {
         btn.style.display = 'none';
         btn.onclick = null;
