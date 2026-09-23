@@ -8186,9 +8186,14 @@ const INAPlatform = {
         nav.classList.toggle('open', willOpen);
         toggle.setAttribute('aria-expanded', String(willOpen));
       });
-      nav.addEventListener('click', (e) => {
-        if (e.target.tagName === 'A') closeAll();
-      });
+      // No close-on-link-tap handler here on purpose: every link in this
+      // drawer navigates to another page, which unloads the document
+      // anyway, so there's nothing to clean up — and hiding the nav
+      // (display:none via the "open" class) synchronously inside the same
+      // click that's activating an <a> turned out to suppress the
+      // browser's own pending navigation on iOS Safari/Chrome (reported:
+      // menu opens, options are visible, but tapping any of them does
+      // nothing). closeAll() below only fires for taps OUTSIDE the nav.
     });
     document.addEventListener('click', (e) => {
       const openPair = pairs.find(({ nav }) => nav.classList.contains('open'));
