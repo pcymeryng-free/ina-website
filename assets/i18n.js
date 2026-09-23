@@ -3345,8 +3345,8 @@ const I18N = {
     "es": "Consejo Asesor"
   },
   "ab.intro.lede": {
-    "en": "Four senior leaders spanning law, finance, technology and public policy — engaged directly on every advisory mandate.",
-    "es": "Cuatro líderes senior en derecho, finanzas, tecnología y política pública — involucrados directamente en cada mandato de asesoría."
+    "en": "Five senior leaders spanning law, finance, technology and public policy — engaged directly on every advisory mandate.",
+    "es": "Cinco líderes senior en derecho, finanzas, tecnología y política pública — involucrados directamente en cada mandato de asesoría."
   },
   "ab.francos.role": {
     "en": "Founding Partner, Córdova Francos Abogados",
@@ -3379,6 +3379,14 @@ const I18N = {
   "ab.kaplan.bio": {
     "en": "Digital policy expert with 20+ years in senior leadership roles at technology companies across Latin America. Most recently VP of Government Affairs at Liberty Latin America and Head of Connectivity & Economic Policy for Latin America and the Caribbean at Meta; earlier led regulatory affairs at Millicom (Tigo), Groupon and Claro, and was a Senior Associate at Marval, O'Farrell & Mairal. LLM, Northwestern University School of Law.",
     "es": "Experto en políticas digitales con más de 20 años en cargos de alta dirección en empresas de tecnología de América Latina. Fue Vicepresidente de Asuntos Gubernamentales de Liberty Latin America y Jefe de Conectividad y Política Económica para América Latina y el Caribe en Meta; anteriormente lideró asuntos regulatorios en Millicom (Tigo), Groupon y Claro, y fue Asociado Senior en Marval, O'Farrell & Mairal. Maestría en Derecho (LLM), Northwestern University School of Law."
+  },
+  "ab.mlikota.role": {
+    "en": "Global SVP – International, e& (Etisalat Group)",
+    "es": "Vicepresidente Senior Global – Internacional, e& (Etisalat Group)"
+  },
+  "ab.mlikota.bio": {
+    "en": "Technology and telecom executive with 30+ years of P&L leadership, strategy, sales and M&A across the Americas, Europe, the Middle East and Asia. Currently Global SVP – International at e& (Etisalat Group), based in Dubai and Miami; previously Global SVP and President – Americas at Syniverse (Carlyle), SVP – Sales at Global Crossing (Level 3), and M&A director at AT&T. BSEE and MBA in Leadership & Marketing.",
+    "es": "Ejecutivo de tecnología y telecomunicaciones con más de 30 años liderando P&L, estrategia, ventas y M&A en América, Europa, Medio Oriente y Asia. Actualmente Vicepresidente Senior Global – Internacional en e& (Etisalat Group), con base en Dubái y Miami; previamente Vicepresidente Senior Global y Presidente – Américas en Syniverse (Carlyle), Vicepresidente Senior de Ventas en Global Crossing (Level 3), y director de M&A en AT&T. Ingeniero Eléctrico (BSEE) y MBA en Liderazgo y Marketing."
   },
   "ab.cta.eyebrow": {
     "en": "Join the Conversation",
