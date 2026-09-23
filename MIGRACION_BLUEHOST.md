@@ -124,6 +124,24 @@ Igual que Parte 7 (contacto), esto necesita PHP corriendo directamente en Blueho
 
 ---
 
+## Parte 9 — Auditoría de seguridad: XSS en pantallas admin + hardening ✅ hecho
+
+Encontrado en una revisión de seguridad (2026-09-23): las tablas de Contactos/Empresas/Organismos en `app/master-data.html` y la lista de `app/activity-log.html` insertaban datos directo en `innerHTML` sin escapar. Un usuario cualquiera con permiso de cargar contactos (o, para el caso de Activity Log, **cualquier visitante anónimo** vía `log-visit.php`, sin cuenta) podía poner HTML/JS en un nombre/email/empresa y que se ejecutara en el navegador del Admin que abre esa pantalla — como el token de sesión de Supabase vive en `localStorage`, esto es robo de sesión de Admin.
+
+Arreglado en tres capas:
+1. **Escapado en el render** — `escapeHtml()` (ya existía en el código pero no se aplicaba en estas tablas) ahora envuelve todo dato de usuario en las 4 tablas de Master Data y en Activity Log. También se agregó `safeUrl()` para el campo "website" de Empresas (evita `javascript:...` como link).
+2. **Validación en el origen** — `log-visit.php` ahora rechaza `path` que no sea una ruta relativa (`/algo`) y quita `< > " '` de `path`/`ref` antes de guardarlos.
+3. **Content-Security-Policy** — nuevo header en `.htaccess` (`script-src-attr 'none'`, mismo patrón que usa Cloudflare en su propia página de challenge) que bloquea la ejecución de atributos tipo `onerror=`/`onload=` inyectados vía HTML, como defensa adicional por si se escapa algún caso no cubierto por el punto 1.
+
+**Qué subir a Bluehost:**
+- `.htaccess` (nuevo header de seguridad)
+- `log-visit.php` (validación del parámetro `path`)
+- `app/master-data.html`, `app/activity-log.html`
+
+⚠️ **Después de subir**, probar en el navegador: abrir Master Data (las 4 tabs) y Activity Log, y confirmar que cargan bien. Si algo del sitio deja de funcionar por el CSP nuevo (revisar la consola del navegador por errores "Refused to..."), avisar — el header se puede ajustar o sacar sin tocar el resto.
+
+---
+
 ## Qué queda igual en Vercel
 
 Vercel sigue recibiendo cada push a GitHub y desplegando automáticamente — es tu entorno de pruebas, tal como querés. La única diferencia es que el dominio "real" que le das a usuarios de ENACOM es el de Bluehost, no el de Vercel.

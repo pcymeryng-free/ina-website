@@ -43,6 +43,12 @@ $supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 function ina_log_visit_clean($value, $maxLen = 512) {
     $value = is_string($value) ? $value : '';
     $value = trim($value);
+    // Strip characters that have no business in a URL path/referrer but
+    // are exactly what an HTML/JS injection payload needs (<, >, quotes).
+    // This is a public, unauthenticated endpoint — the value ends up
+    // stored in activity_log and later rendered in app/activity-log.html,
+    // so it's cleaned at the point of entry as well as escaped on render.
+    $value = preg_replace('/[<>"\']/', '', $value);
     if (function_exists('mb_substr')) {
         $value = mb_substr($value, 0, $maxLen);
     } else {
@@ -51,7 +57,14 @@ function ina_log_visit_clean($value, $maxLen = 512) {
     return $value;
 }
 
-$path = ina_log_visit_clean(isset($_GET['path']) ? $_GET['path'] : '/', 512);
+$rawPath = isset($_GET['path']) ? $_GET['path'] : '/';
+// Only accept same-site relative paths ("/foo/bar") — anything else
+// (a full URL, "javascript:", etc.) is replaced with "/" rather than
+// stored as-is.
+if (!is_string($rawPath) || $rawPath === '' || $rawPath[0] !== '/' || strpos($rawPath, '//') === 0) {
+    $rawPath = '/';
+}
+$path = ina_log_visit_clean($rawPath, 512);
 $referrer = ina_log_visit_clean(isset($_GET['ref']) ? $_GET['ref'] : '', 512);
 
 // Real visitor IP: when the site sits behind Cloudflare (it does — see

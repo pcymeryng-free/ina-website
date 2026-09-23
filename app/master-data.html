@@ -43,6 +43,7 @@
       <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
       <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
     </a>
+    <button type="button" class="app-nav-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Menu"><span></span><span></span><span></span></button>
     <nav class="app-nav">
       <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
       <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
@@ -344,12 +345,18 @@
           <p id="cameraCaptureError" style="display:none; color:#b3261e; font-size:13px; margin:0 0 12px;"></p>
           <div style="position:relative; background:#000; border-radius:10px; overflow:hidden; aspect-ratio:4/3;">
             <video id="cameraVideoEl" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; display:block;"></video>
+            <img id="cameraPreviewImg" style="width:100%; height:100%; object-fit:cover; display:none;" alt="">
           </div>
           <canvas id="cameraCanvasEl" style="display:none;"></canvas>
-          <p style="margin:12px 0 0; font-size:12.5px; color:var(--muted);"><span data-i18n="md.contacts.cameraHint">Frame the card so all the text is visible, then capture.</span></p>
-          <div style="display:flex; gap:10px; justify-content:center; margin-top:18px;">
+          <p id="cameraLiveHint" style="margin:12px 0 0; font-size:12.5px; color:var(--muted);"><span data-i18n="md.contacts.cameraHint">Frame the card so all the text is visible, then capture.</span></p>
+          <p id="cameraPreviewHint" style="display:none; margin:12px 0 0; font-size:12.5px; color:var(--muted);"><span data-i18n="md.contacts.cameraPreviewHint">Is the card readable? If not, retake it.</span></p>
+          <div id="cameraLiveControls" style="display:flex; gap:10px; justify-content:center; margin-top:18px;">
             <button type="button" class="btn ghost small" id="cameraCancelBtn"><span data-i18n="md.contacts.cameraCancel">Cancel</span></button>
             <button type="button" class="btn amber small" id="cameraCaptureBtn"><span data-i18n="md.contacts.cameraCapture">📸 Capture</span></button>
+          </div>
+          <div id="cameraPreviewControls" style="display:none; gap:10px; justify-content:center; margin-top:18px;">
+            <button type="button" class="btn ghost small" id="cameraRetakeBtn"><span data-i18n="md.contacts.cameraRetake">↺ Retake</span></button>
+            <button type="button" class="btn amber small" id="cameraUseBtn"><span data-i18n="md.contacts.cameraUse">✓ Use this photo</span></button>
           </div>
         </div>
       </div>
@@ -430,7 +437,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=78"></script>
+<script src="/assets/i18n.js?v=79"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/assets/platform.js?v=90"></script>
 <script src="/assets/script.js?v=15"></script>
@@ -671,6 +678,8 @@
 
   /* ---------- Camera capture (scan card live via getUserMedia) ---------- */
   let cameraStream = null;
+  let capturedCardBlob = null;
+  let capturedCardPreviewUrl = null;
 
   function stopCameraStream() {
     if (cameraStream) {
@@ -680,14 +689,40 @@
     document.getElementById('cameraVideoEl').srcObject = null;
   }
 
+  // Toggles between the live viewfinder (video + Capture button) and the
+  // "is this readable?" preview (still frame + Retake/Use this photo) —
+  // see md.contacts.cameraPreviewHint. The stream stays open across a
+  // retake so re-showing the viewfinder is instant.
+  function showCameraLiveState() {
+    if (capturedCardPreviewUrl) { URL.revokeObjectURL(capturedCardPreviewUrl); capturedCardPreviewUrl = null; }
+    capturedCardBlob = null;
+    document.getElementById('cameraVideoEl').style.display = 'block';
+    document.getElementById('cameraPreviewImg').style.display = 'none';
+    document.getElementById('cameraLiveHint').style.display = 'block';
+    document.getElementById('cameraPreviewHint').style.display = 'none';
+    document.getElementById('cameraLiveControls').style.display = 'flex';
+    document.getElementById('cameraPreviewControls').style.display = 'none';
+  }
+
+  function showCameraPreviewState() {
+    document.getElementById('cameraVideoEl').style.display = 'none';
+    document.getElementById('cameraPreviewImg').style.display = 'block';
+    document.getElementById('cameraLiveHint').style.display = 'none';
+    document.getElementById('cameraPreviewHint').style.display = 'block';
+    document.getElementById('cameraLiveControls').style.display = 'none';
+    document.getElementById('cameraPreviewControls').style.display = 'flex';
+  }
+
   function closeCameraCapture() {
     stopCameraStream();
+    showCameraLiveState();
     document.getElementById('cameraCaptureOverlay').style.display = 'none';
   }
 
   async function openCameraCapture() {
     const errEl = document.getElementById('cameraCaptureError');
     errEl.style.display = 'none';
+    showCameraLiveState();
     document.getElementById('cameraCaptureOverlay').style.display = 'flex';
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       errEl.textContent = lang === 'es'
@@ -715,8 +750,21 @@
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
-    closeCameraCapture();
     if (!blob) return;
+    capturedCardBlob = blob;
+    capturedCardPreviewUrl = URL.createObjectURL(blob);
+    document.getElementById('cameraPreviewImg').src = capturedCardPreviewUrl;
+    showCameraPreviewState();
+  }
+
+  function retakeCameraPhoto() {
+    showCameraLiveState();
+  }
+
+  async function confirmCameraCapture() {
+    if (!capturedCardBlob) return;
+    const blob = capturedCardBlob;
+    closeCameraCapture();
     const file = new File([blob], `business-card-${Date.now()}.jpg`, { type: 'image/jpeg' });
     await processCardFile(file);
   }
@@ -725,6 +773,8 @@
   document.getElementById('closeCameraCapture').addEventListener('click', closeCameraCapture);
   document.getElementById('cameraCancelBtn').addEventListener('click', closeCameraCapture);
   document.getElementById('cameraCaptureBtn').addEventListener('click', captureCameraPhoto);
+  document.getElementById('cameraRetakeBtn').addEventListener('click', retakeCameraPhoto);
+  document.getElementById('cameraUseBtn').addEventListener('click', confirmCameraCapture);
 
   document.getElementById('attachCardBtn').addEventListener('click', () => document.getElementById('cardAttachInput').click());
   document.getElementById('cardAttachInput').addEventListener('change', (e) => {
@@ -841,6 +891,15 @@
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Only http(s) URLs are safe to drop into an href — anything else (most
+  // notably "javascript:") would execute when clicked. A company/agency
+  // "website" field is free text a user typed, so it needs the same
+  // treatment as any other untrusted string rendered into the DOM.
+  function safeUrl(u) {
+    const s = String(u == null ? '' : u).trim();
+    return /^https?:\/\//i.test(s) ? s : '';
   }
 
   // Human-readable summary of the currently active Contacts filters — used
@@ -1000,12 +1059,12 @@
       const dateAdded = c.created_at ? new Date(c.created_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US') : '—';
       return `
         <tr data-id="${c.id}" class="risk-row">
-          <td>${c.full_name}</td>
-          <td>${c.position_title || '—'}</td>
-          <td>${org}</td>
-          <td>${c.email || '—'}</td>
-          <td>${c.phone || '—'}</td>
-          <td>${addedBy}</td>
+          <td>${escapeHtml(c.full_name)}</td>
+          <td>${escapeHtml(c.position_title) || '—'}</td>
+          <td>${escapeHtml(org)}</td>
+          <td>${escapeHtml(c.email) || '—'}</td>
+          <td>${escapeHtml(c.phone) || '—'}</td>
+          <td>${escapeHtml(addedBy)}</td>
           <td>${dateAdded}</td>
           <td>${c.business_card_path ? `<button type="button" class="btn ghost small view-card-btn" data-id="${c.id}" title="${cardTitle}">📇</button>` : ''}</td>
           <td><button type="button" class="btn ghost small edit-contact-btn" data-id="${c.id}"><span data-i18n="risk.edit">Edit</span></button></td>
@@ -1252,13 +1311,14 @@
     tbody.innerHTML = filtered.map((c) => {
       const addedBy = (c.created_by_profile && c.created_by_profile.full_name) || '—';
       const dateAdded = c.created_at ? new Date(c.created_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US') : '—';
+      const url = safeUrl(c.website);
       return `
       <tr data-id="${c.id}" class="risk-row">
-        <td>${c.name}</td>
-        <td>${c.industry ? `<span class="type-tag">${INAPlatform.companyIndustryLabel(c.industry)}</span>` : '—'}</td>
-        <td>${c.country || '—'}</td>
-        <td>${c.website ? `<a href="${c.website}" target="_blank" rel="noopener">${c.website}</a>` : '—'}</td>
-        <td>${addedBy}</td>
+        <td>${escapeHtml(c.name)}</td>
+        <td>${c.industry ? `<span class="type-tag">${escapeHtml(INAPlatform.companyIndustryLabel(c.industry))}</span>` : '—'}</td>
+        <td>${escapeHtml(c.country) || '—'}</td>
+        <td>${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(c.website)}</a>` : (escapeHtml(c.website) || '—')}</td>
+        <td>${escapeHtml(addedBy)}</td>
         <td>${dateAdded}</td>
         <td><button type="button" class="btn ghost small edit-company-btn" data-id="${c.id}"><span data-i18n="risk.edit">Edit</span></button></td>
       </tr>`;
@@ -1358,9 +1418,9 @@
     wrap.style.display = 'table'; empty.style.display = 'none';
     tbody.innerHTML = products.map((p) => `
       <tr data-id="${p.id}" class="risk-row">
-        <td>${p.name}</td>
-        <td>${(p.companies && p.companies.name) || '—'}</td>
-        <td>${p.category || '—'}</td>
+        <td>${escapeHtml(p.name)}</td>
+        <td>${escapeHtml(p.companies && p.companies.name) || '—'}</td>
+        <td>${escapeHtml(p.category) || '—'}</td>
         <td><button type="button" class="btn ghost small edit-product-btn" data-id="${p.id}"><span data-i18n="risk.edit">Edit</span></button></td>
       </tr>`).join('');
     tbody.querySelectorAll('.edit-product-btn').forEach((btn) => btn.addEventListener('click', () => openProductForm(btn.dataset.id)));
@@ -1524,10 +1584,10 @@
       const dateAdded = a.created_at ? new Date(a.created_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US') : '—';
       return `
       <tr data-id="${a.id}" class="risk-row">
-        <td>${a.name}</td>
-        <td>${INAPlatform.publicAgencyJurisdictionLabel(a.jurisdiction)}</td>
-        <td>${a.country || '—'}</td>
-        <td>${addedBy}</td>
+        <td>${escapeHtml(a.name)}</td>
+        <td>${escapeHtml(INAPlatform.publicAgencyJurisdictionLabel(a.jurisdiction))}</td>
+        <td>${escapeHtml(a.country) || '—'}</td>
+        <td>${escapeHtml(addedBy)}</td>
         <td>${dateAdded}</td>
         <td><button type="button" class="btn ghost small edit-agency-btn" data-id="${a.id}"><span data-i18n="risk.edit">Edit</span></button></td>
       </tr>`;
@@ -1647,6 +1707,7 @@
       if (canAdminUsers) document.getElementById('adminNavMenu').style.display = 'flex';
       if (canMasterData) document.getElementById('masterDataNavMenu').style.display = 'flex';
       INAPlatform.initDropdownMenus(document.querySelector('.app-nav'));
+      INAPlatform.initMobileNav();
       if (canAdminUsers) document.getElementById('adminUsersMenuItem').style.display = 'flex';
       if (canAdminUsers) document.getElementById('rolesMenuItem').style.display = 'flex';
       if (INAPlatform.isAdmin(profile)) document.getElementById('activityLogMenuItem').style.display = 'flex';

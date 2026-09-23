@@ -8158,6 +8158,47 @@ const INAPlatform = {
     });
   },
 
+  /* Wires up the hamburger button(s) that reveal .app-nav as a full-screen
+     drawer below 760px (see assets/app.css) — call once per page, after
+     the header markup exists. Each .app-nav-toggle pairs with the <nav
+     class="app-nav"> immediately after it in the DOM (nextElementSibling)
+     rather than an id, so this works unmodified even on a page with more
+     than one .app-nav (app/roadmap-instance.html swaps between a generic
+     and a project nav; whichever one is currently display:none stays
+     unreachable either way, same as its dropdown menus already are). */
+  initMobileNav() {
+    const pairs = Array.from(document.querySelectorAll('.app-nav-toggle')).map((toggle) => {
+      const nav = toggle.nextElementSibling;
+      return (nav && nav.classList.contains('app-nav')) ? { toggle, nav } : null;
+    }).filter(Boolean);
+    if (!pairs.length) return;
+    function closeAll() {
+      pairs.forEach(({ toggle, nav }) => {
+        nav.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      });
+    }
+    pairs.forEach(({ toggle, nav }) => {
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const willOpen = !nav.classList.contains('open');
+        closeAll();
+        nav.classList.toggle('open', willOpen);
+        toggle.setAttribute('aria-expanded', String(willOpen));
+      });
+      nav.addEventListener('click', (e) => {
+        if (e.target.tagName === 'A') closeAll();
+      });
+    });
+    document.addEventListener('click', (e) => {
+      const openPair = pairs.find(({ nav }) => nav.classList.contains('open'));
+      if (openPair && !openPair.nav.contains(e.target) && !openPair.toggle.contains(e.target)) closeAll();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAll();
+    });
+  },
+
   /* Sets hrefs/visibility on the shared project-nav elements (same ids
      as project.html's #navProjectMenu/#navFinancingLink/#navDocsMenu/
      #navAnalysisMenu/#navHelpLink). `opts`:
