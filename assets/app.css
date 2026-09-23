@@ -64,14 +64,22 @@
    Hidden entirely on desktop; the "X" animation is driven purely by the
    aria-expanded attribute initMobileNav() already sets, no extra JS. */
 .app-nav-toggle{
-  display:none; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-  width:36px; height:36px; flex:0 0 auto; border:none; background:none;
+  display:none; align-items:center; justify-content:center;
+  width:36px; height:36px; flex:0 0 auto; border:none; background:none; color:var(--text-on-dark);
   cursor:pointer; padding:0; margin:0; -webkit-appearance:none; appearance:none;
 }
-.app-nav-toggle span{ display:block; width:20px; height:2px; background:var(--text-on-dark); border-radius:1px; transition:transform .15s ease, opacity .15s ease; flex:0 0 auto; }
-.app-nav-toggle[aria-expanded="true"] span:nth-child(1){ transform:translateY(6px) rotate(45deg); }
-.app-nav-toggle[aria-expanded="true"] span:nth-child(2){ opacity:0; }
-.app-nav-toggle[aria-expanded="true"] span:nth-child(3){ transform:translateY(-6px) rotate(-45deg); }
+/* SVG, not <span> bars — a plain button with flex/background bars turned
+   out to render unreliably on iOS (reported: shows as a single vertical
+   line, in both Safari and Chrome for iOS, and doesn't open the menu).
+   The site's own logo mark already uses inline SVG with the same
+   currentColor pattern, so this follows a technique already proven to
+   render consistently here rather than debugging button-content quirks
+   further. */
+.app-nav-toggle svg{ display:block; width:22px; height:22px; pointer-events:none; }
+.app-nav-toggle .bar{ transition:transform .15s ease, opacity .15s ease; transform-origin:12px 12px; }
+.app-nav-toggle[aria-expanded="true"] .bar1{ transform:translateY(5px) rotate(45deg); }
+.app-nav-toggle[aria-expanded="true"] .bar2{ opacity:0; }
+.app-nav-toggle[aria-expanded="true"] .bar3{ transform:translateY(-5px) rotate(-45deg); }
 
 @media (max-width:760px){
   .app-nav-toggle{ display:flex; }

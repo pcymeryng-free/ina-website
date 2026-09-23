@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/style.css?v=25">
-<link rel="stylesheet" href="/assets/app.css?v=12">
+<link rel="stylesheet" href="/assets/app.css?v=13">
 </head>
 <body class="app-body">
 <header class="app-header">
@@ -20,7 +20,7 @@
     </a>
     <!-- Generic nav — shown by default (create-mode / no project yet) and
          whenever a roadmap instance has no linked project. -->
-    <button type="button" class="app-nav-toggle" id="genericNavToggle" aria-haspopup="true" aria-expanded="false" aria-label="Menu"><span></span><span></span><span></span></button>
+    <button type="button" class="app-nav-toggle" id="genericNavToggle" aria-haspopup="true" aria-expanded="false" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path class="bar bar1" d="M4 7h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="bar bar2" d="M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="bar bar3" d="M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     <nav class="app-nav" id="genericNav">
       <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
       <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
@@ -58,7 +58,7 @@
          without one), so this nav starts hidden and is only swapped in
          by loadTracker() once an existing instance's linked project (if
          any) has loaded — see the #genericNav/#projectNav toggle there. -->
-    <button type="button" class="app-nav-toggle" id="projectNavToggle" style="display:none;" aria-haspopup="true" aria-expanded="false" aria-label="Menu"><span></span><span></span><span></span></button>
+    <button type="button" class="app-nav-toggle" id="projectNavToggle" style="display:none;" aria-haspopup="true" aria-expanded="false" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path class="bar bar1" d="M4 7h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="bar bar2" d="M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="bar bar3" d="M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     <nav class="app-nav" id="projectNav" style="display:none;">
       <div class="menu nav-menu" id="navProjectMenu">
         <button type="button" class="nav-menu-trigger menu-trigger" id="navProjectMenuBtn" aria-haspopup="true" aria-expanded="false">
