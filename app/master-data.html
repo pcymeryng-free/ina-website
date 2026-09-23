@@ -110,6 +110,7 @@
             <span id="cardScanStatus" class="card-scan-status" style="display:none;"></span>
             <button type="button" class="btn ghost small" id="scanCardBtn"><span data-i18n="md.contacts.scanCard">📇 Upload from business card</span></button>
             <input type="file" id="cardFileInput" accept="image/*" style="display:none;">
+            <button type="button" class="btn ghost small" id="scanCameraBtn"><span data-i18n="md.contacts.scanCamera">📷 Scan with camera</span></button>
             <button type="button" class="btn ghost small" id="contactsPdfBtn"><span data-i18n="md.contacts.downloadPdf">Download PDF</span></button>
             <button type="button" class="btn ghost small" id="contactsExcelBtn"><span data-i18n="md.contacts.downloadExcel">Download Excel</span></button>
             <button type="button" class="btn amber small" id="newContactBtn"><span data-i18n="md.contacts.new">+ New Contact</span></button>
@@ -333,6 +334,26 @@
         </div>
       </div>
 
+      <!-- ===== Camera capture overlay (scan business card with device camera) ===== -->
+      <div class="risk-form-overlay" id="cameraCaptureOverlay" style="display:none;">
+        <div class="risk-form-panel" style="max-width:480px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <h3 style="margin:0;"><span data-i18n="md.contacts.cameraTitle">Scan Business Card</span></h3>
+            <button type="button" class="btn ghost small" id="closeCameraCapture">&times;</button>
+          </div>
+          <p id="cameraCaptureError" style="display:none; color:#b3261e; font-size:13px; margin:0 0 12px;"></p>
+          <div style="position:relative; background:#000; border-radius:10px; overflow:hidden; aspect-ratio:4/3;">
+            <video id="cameraVideoEl" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; display:block;"></video>
+          </div>
+          <canvas id="cameraCanvasEl" style="display:none;"></canvas>
+          <p style="margin:12px 0 0; font-size:12.5px; color:var(--muted);"><span data-i18n="md.contacts.cameraHint">Frame the card so all the text is visible, then capture.</span></p>
+          <div style="display:flex; gap:10px; justify-content:center; margin-top:18px;">
+            <button type="button" class="btn ghost small" id="cameraCancelBtn"><span data-i18n="md.contacts.cameraCancel">Cancel</span></button>
+            <button type="button" class="btn amber small" id="cameraCaptureBtn"><span data-i18n="md.contacts.cameraCapture">📸 Capture</span></button>
+          </div>
+        </div>
+      </div>
+
       <!-- ===== Company form overlay ===== -->
       <div class="risk-form-overlay" id="companyFormOverlay" style="display:none;">
         <div class="risk-form-panel">
@@ -409,7 +430,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=77"></script>
+<script src="/assets/i18n.js?v=78"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/assets/platform.js?v=90"></script>
 <script src="/assets/script.js?v=15"></script>
@@ -441,6 +462,7 @@
 
   /* ---------- Tabs ---------- */
   function switchTab(tab) {
+    if (document.getElementById('cameraCaptureOverlay').style.display !== 'none') closeCameraCapture();
     document.querySelectorAll('.md-tab').forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tab));
     document.getElementById('panelContacts').style.display = tab === 'contacts' ? 'block' : 'none';
     document.getElementById('panelCompanies').style.display = tab === 'companies' ? 'block' : 'none';
@@ -623,11 +645,7 @@
     }
   }
 
-  document.getElementById('scanCardBtn').addEventListener('click', () => document.getElementById('cardFileInput').click());
-  document.getElementById('cardFileInput').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    e.target.value = '';
-    if (!file) return;
+  async function processCardFile(file) {
     const statusEl = document.getElementById('cardScanStatus');
     statusEl.style.display = 'inline';
     statusEl.textContent = lang === 'es' ? 'Analizando tarjeta…' : 'Reading card…';
@@ -641,7 +659,72 @@
     } finally {
       statusEl.style.display = 'none';
     }
+  }
+
+  document.getElementById('scanCardBtn').addEventListener('click', () => document.getElementById('cardFileInput').click());
+  document.getElementById('cardFileInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    await processCardFile(file);
   });
+
+  /* ---------- Camera capture (scan card live via getUserMedia) ---------- */
+  let cameraStream = null;
+
+  function stopCameraStream() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((t) => t.stop());
+      cameraStream = null;
+    }
+    document.getElementById('cameraVideoEl').srcObject = null;
+  }
+
+  function closeCameraCapture() {
+    stopCameraStream();
+    document.getElementById('cameraCaptureOverlay').style.display = 'none';
+  }
+
+  async function openCameraCapture() {
+    const errEl = document.getElementById('cameraCaptureError');
+    errEl.style.display = 'none';
+    document.getElementById('cameraCaptureOverlay').style.display = 'flex';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      errEl.textContent = lang === 'es'
+        ? 'Este dispositivo o navegador no admite el acceso a la cámara.'
+        : "This device or browser doesn't support camera access.";
+      errEl.style.display = 'block';
+      return;
+    }
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      document.getElementById('cameraVideoEl').srcObject = cameraStream;
+    } catch (err) {
+      errEl.textContent = lang === 'es'
+        ? 'No se pudo acceder a la cámara. Revisá los permisos del navegador para este sitio.'
+        : "Couldn't access the camera. Check this site's camera permission in your browser.";
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function captureCameraPhoto() {
+    const video = document.getElementById('cameraVideoEl');
+    if (!video.videoWidth) return;
+    const canvas = document.getElementById('cameraCanvasEl');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    closeCameraCapture();
+    if (!blob) return;
+    const file = new File([blob], `business-card-${Date.now()}.jpg`, { type: 'image/jpeg' });
+    await processCardFile(file);
+  }
+
+  document.getElementById('scanCameraBtn').addEventListener('click', openCameraCapture);
+  document.getElementById('closeCameraCapture').addEventListener('click', closeCameraCapture);
+  document.getElementById('cameraCancelBtn').addEventListener('click', closeCameraCapture);
+  document.getElementById('cameraCaptureBtn').addEventListener('click', captureCameraPhoto);
 
   document.getElementById('attachCardBtn').addEventListener('click', () => document.getElementById('cardAttachInput').click());
   document.getElementById('cardAttachInput').addEventListener('change', (e) => {
