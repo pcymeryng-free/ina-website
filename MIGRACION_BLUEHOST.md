@@ -165,6 +165,16 @@ No incluye Service Worker (caché offline) en esta primera versión — se evalu
 
 ---
 
+## Parte 11 — Descubrimiento: Bluehost también pasa por Cloudflare (caché de borde)
+
+Encontrado el 2026-09-24, debuggeando por qué el fix de CSP (`img-src ... blob:`, ver Parte 9) no aparecía después de subir `.htaccess` dos veces: el sitio devuelve headers `server: cloudflare` / `cf-cache-status` aunque **la cuenta no tiene Cloudflare propio** — Bluehost integra Cloudflare automáticamente para todas sus cuentas de hosting compartido, sin que haga falta (ni sea posible) loguearse a un dashboard de Cloudflare separado.
+
+Cloudflare cachea las respuestas de archivos estáticos (`.css`/`.js`) **en su borde**, headers incluidos — no solo el contenido. Cuando cambia algo que solo afecta los *headers* (como el `.htaccess`, que no toca el contenido de `app.css` en sí), la URL versionada (`app.css?v=N`) puede seguir teniendo cacheada la respuesta vieja con los headers viejos, aunque el archivo en el servidor ya esté actualizado — confirmado con `curl -I` viendo `cf-cache-status: HIT` y el CSP viejo en `app.css?v=17`, mientras que agregarle un parámetro random (`?cachebust=...`) sí traía la versión nueva (`cf-cache-status: MISS`).
+
+**Cómo se resuelve, sin acceso a Cloudflare:** bumpear el número de versión (`?v=N`) de igual manera que para cualquier otro cambio de caché de Bluehost — eso fuerza una URL que Cloudflare nunca vio, así que no tiene nada cacheado para esa clave y pide todo de cero al origin. **Regla nueva a partir de ahora:** cualquier cambio a `.htaccess` (headers, no contenido de archivo) también requiere bumpear el `?v=` de al menos un asset compartido (`app.css` o `platform.js`) para que el navegador vuelva a pedirlo con una URL nueva — aunque el archivo `.css`/`.js` en sí no haya cambiado.
+
+---
+
 ## Qué queda igual en Vercel
 
 Vercel sigue recibiendo cada push a GitHub y desplegando automáticamente — es tu entorno de pruebas, tal como querés. La única diferencia es que el dominio "real" que le das a usuarios de ENACOM es el de Bluehost, no el de Vercel.
