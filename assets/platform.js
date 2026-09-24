@@ -8135,16 +8135,16 @@ const INAPlatform = {
       if (rect.left < margin) shift = margin - rect.left;
       else if (rect.right > window.innerWidth - margin) shift = (window.innerWidth - margin) - rect.right;
       if (shift) panel.style.transform = `translateX(${shift}px)`;
-      // In the mobile nav drawer (assets/app.css switches .menu-panel to
-      // position:static there, vs. absolute on desktop) the panel expands
-      // inline below its trigger instead of floating — opening "Master
-      // Data"/"Admin" near the bottom of a short drawer revealed items
-      // below the fold with nothing suggesting there was more to scroll
-      // to (reported: menu opens, "shows no options"). Scroll them into
-      // view instead of assuming the trigger's own position is enough.
-      if (getComputedStyle(panel).position === 'static') {
-        panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
+      // A scrollIntoView() used to run here for the mobile nav drawer's
+      // static-position panel (it used to expand inline below its
+      // trigger, so opening it near the bottom of a short drawer could
+      // reveal items below the fold). The drawer is drill-down now
+      // instead (assets/app.css's .submenu-open rules hide every other
+      // top-level item), so the panel always starts at the top of the
+      // visible area and there's nothing left to scroll to — removed
+      // rather than kept as a no-op, since animating a scroll in the
+      // same tick as a display:none->flex change on iOS turned out to
+      // need a second tap before the panel actually rendered.
     }
     function closeMenus(except) {
       menus.forEach((m) => {
@@ -8165,6 +8165,11 @@ const INAPlatform = {
         menu.classList.toggle('open', willOpen);
         trigger.setAttribute('aria-expanded', String(willOpen));
         if (isNav) rootEl.classList.toggle('submenu-open', willOpen);
+        // Forces a synchronous style/layout flush right after toggling
+        // two classes across two different elements (menu + rootEl) in
+        // one tap — cheap insurance against the repaint sometimes not
+        // landing until a second interaction on iOS.
+        void rootEl.offsetHeight;
         if (willOpen) keepPanelOnScreen(menu);
       });
       menu.querySelectorAll('.menu-item').forEach((item) => {
