@@ -101,11 +101,28 @@
   .app-nav a{ padding:14px 2px; border-bottom:1px solid var(--ink-line); }
   .app-nav .nav-menu{ width:100%; }
   .app-nav .nav-menu-trigger{ width:100%; justify-content:space-between; padding:14px 2px; border-bottom:1px solid var(--ink-line); }
+  /* Scoped to a trigger INSIDE a .nav-menu wrapper (Master Data/Admin's
+     own <button>, always-expanded below) — not .nav-menu-trigger alone,
+     which is also reused on plain <a> links styled the same way
+     (Financing/Help in app/project.html and app/roadmap-instance.html)
+     that must stay tappable. */
+  .app-nav .nav-menu .nav-menu-trigger{ pointer-events:none; }
+  .app-nav .nav-menu .menu-caret{ display:none; }
+  /* Always expanded on mobile, not a tap-to-open panel like on desktop —
+     an unconditional (no media query) rule elsewhere in this file,
+     .app-nav .nav-menu .menu-panel{left/top/min-width/padding/box-shadow},
+     shares this exact selector's specificity and sits later in the
+     cascade, so it was winning ties for shared properties regardless of
+     the .open toggle; rather than keep chasing that, Master Data/Admin's
+     items are just always visible here — !important guarantees it over
+     any future rule with equal-or-lower specificity too. Reported: menu
+     opens, options visible, but tapping Master Data/Admin showed nothing
+     — this removes the open/closed state entirely instead of finding
+     yet another way it could fail silently. */
   .app-nav .nav-menu .menu-panel{
-    position:static; display:none; box-shadow:none; background:none; border:none;
-    min-width:0; width:100%; padding:0 0 6px 14px; margin:0;
+    position:static !important; display:flex !important; flex-direction:column; box-shadow:none; background:none; border:none;
+    min-width:0; width:100%; padding:0 0 6px 14px; margin:0; top:auto; left:auto;
   }
-  .app-nav .nav-menu.open .menu-panel{ display:flex; flex-direction:column; }
   .app-nav .menu-panel a.menu-item{ color:var(--muted-on-dark); padding:10px 2px; }
   .app-nav .menu-panel a.menu-item:hover{ color:var(--text-on-dark); background:none; }
   .app-header-inner{ gap:10px; padding:0 20px; min-height:58px; }
