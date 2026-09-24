@@ -123,8 +123,19 @@
     position:static !important; display:flex !important; flex-direction:column; box-shadow:none; background:none; border:none;
     min-width:0; width:100%; padding:0 0 6px 14px; margin:0; top:auto; left:auto;
   }
-  .app-nav .menu-panel a.menu-item{ color:var(--muted-on-dark); padding:10px 2px; }
-  .app-nav .menu-panel a.menu-item:hover{ color:var(--text-on-dark); background:none; }
+  /* !important: .app-nav .menu-panel a.menu-item is ALSO declared,
+     unconditionally, further down in this file (desktop dropdown item
+     styling — dark text for the light .menu-panel background there) —
+     same specificity, later in the file, so it was winning here too and
+     rendering these items in dark text against the drawer's dark
+     background (reported: items are black, only visible while
+     mid-tap/hover). Matches .app-nav a's own color exactly, per request
+     that submenu items look the same as the top-level menu items. */
+  .app-nav .menu-panel a.menu-item{
+    font-family:var(--sans) !important; font-size:13px !important; font-weight:400 !important; letter-spacing:normal !important;
+    color:var(--muted-on-dark) !important; padding:12px 2px !important; border-bottom:1px solid var(--ink-line) !important;
+  }
+  .app-nav .menu-panel a.menu-item:hover{ color:var(--text-on-dark) !important; background:none !important; }
   .app-header-inner{ gap:10px; padding:0 20px; min-height:58px; }
   .app-logo-word i{ display:none; }
 }
