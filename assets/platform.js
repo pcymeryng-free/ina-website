@@ -8118,6 +8118,13 @@ const INAPlatform = {
   initDropdownMenus(rootEl) {
     const menus = Array.from(rootEl.querySelectorAll('.menu'));
     if (!menus.length) return;
+    // Only true when this call is wiring up the header nav itself (every
+    // page calls it as initDropdownMenus(document.querySelector('.app-nav')))
+    // — the mobile drill-down class below (assets/app.css) is scoped to
+    // .app-nav specifically, so this stays a no-op for other .menu/
+    // .menu-panel instances on the page (e.g. project.html's body-level
+    // Actions menu, wired up separately with a different rootEl).
+    const isNav = rootEl.classList && rootEl.classList.contains('app-nav');
     function keepPanelOnScreen(menu) {
       const panel = menu.querySelector('.menu-panel');
       if (!panel) return;
@@ -8146,6 +8153,7 @@ const INAPlatform = {
         const trigger = m.querySelector('.menu-trigger');
         if (trigger) trigger.setAttribute('aria-expanded', 'false');
       });
+      if (isNav && !except) rootEl.classList.remove('submenu-open');
     }
     menus.forEach((menu) => {
       const trigger = menu.querySelector('.menu-trigger');
@@ -8156,6 +8164,7 @@ const INAPlatform = {
         closeMenus();
         menu.classList.toggle('open', willOpen);
         trigger.setAttribute('aria-expanded', String(willOpen));
+        if (isNav) rootEl.classList.toggle('submenu-open', willOpen);
         if (willOpen) keepPanelOnScreen(menu);
       });
       menu.querySelectorAll('.menu-item').forEach((item) => {
@@ -8186,6 +8195,20 @@ const INAPlatform = {
       pairs.forEach(({ toggle, nav }) => {
         nav.classList.remove('open');
         toggle.setAttribute('aria-expanded', 'false');
+        // Reset any drilled-into submenu (Master Data/Admin — see the
+        // drill-down rules in assets/app.css and initDropdownMenus()
+        // above) so the drawer always reopens on the first level, not
+        // wherever it was left. initDropdownMenus()'s own closeMenus()
+        // doesn't run here: this toggle button isn't one of its
+        // .menu-trigger elements, and its click handler's
+        // stopPropagation() keeps that document-level listener from
+        // ever seeing a tap on this button.
+        nav.classList.remove('submenu-open');
+        nav.querySelectorAll('.nav-menu.open').forEach((m) => {
+          m.classList.remove('open');
+          const t = m.querySelector('.menu-trigger');
+          if (t) t.setAttribute('aria-expanded', 'false');
+        });
       });
     }
     pairs.forEach(({ toggle, nav }) => {
