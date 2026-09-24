@@ -8128,6 +8128,16 @@ const INAPlatform = {
       if (rect.left < margin) shift = margin - rect.left;
       else if (rect.right > window.innerWidth - margin) shift = (window.innerWidth - margin) - rect.right;
       if (shift) panel.style.transform = `translateX(${shift}px)`;
+      // In the mobile nav drawer (assets/app.css switches .menu-panel to
+      // position:static there, vs. absolute on desktop) the panel expands
+      // inline below its trigger instead of floating — opening "Master
+      // Data"/"Admin" near the bottom of a short drawer revealed items
+      // below the fold with nothing suggesting there was more to scroll
+      // to (reported: menu opens, "shows no options"). Scroll them into
+      // view instead of assuming the trigger's own position is enough.
+      if (getComputedStyle(panel).position === 'static') {
+        panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
     }
     function closeMenus(except) {
       menus.forEach((m) => {
