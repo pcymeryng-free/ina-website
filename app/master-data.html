@@ -739,7 +739,15 @@
     }
     try {
       cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
-      document.getElementById('cameraVideoEl').srcObject = cameraStream;
+      const videoEl = document.getElementById('cameraVideoEl');
+      videoEl.srcObject = cameraStream;
+      // Don't rely solely on the autoplay attribute — assigning
+      // srcObject via JS (vs. having it in markup) doesn't reliably
+      // autoplay on iOS Safari, which turned out to be why the captured
+      // frame came out solid black: the video element had valid
+      // dimensions (metadata loaded) but was never actually playing, so
+      // there was no real frame for the canvas to draw.
+      try { await videoEl.play(); } catch (playErr) { /* ignored — muted+playsinline should be enough; captureCameraPhoto()'s readyState check below is the real guard */ }
     } catch (err) {
       errEl.textContent = lang === 'es'
         ? 'No se pudo acceder a la cámara. Revisá los permisos del navegador para este sitio.'
@@ -750,7 +758,16 @@
 
   async function captureCameraPhoto() {
     const video = document.getElementById('cameraVideoEl');
-    if (!video.videoWidth) return;
+    // videoWidth alone isn't enough — it comes from loadedmetadata, which
+    // can fire before the first real frame is actually decoded. readyState
+    // >= 2 (HAVE_CURRENT_DATA) means there's an actual frame to draw, not
+    // just known dimensions; a quick tap on "Capturar" right after the
+    // camera opens could otherwise draw a still-black video element.
+    // Give it a brief moment to catch up rather than failing outright.
+    for (let i = 0; i < 10 && video.readyState < 2; i++) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    if (!video.videoWidth || video.readyState < 2) return;
     const canvas = document.getElementById('cameraCanvasEl');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
