@@ -173,6 +173,10 @@ Cloudflare cachea las respuestas de archivos estáticos (`.css`/`.js`) **en su b
 
 **Cómo se resuelve, sin acceso a Cloudflare:** bumpear el número de versión (`?v=N`) de igual manera que para cualquier otro cambio de caché de Bluehost — eso fuerza una URL que Cloudflare nunca vio, así que no tiene nada cacheado para esa clave y pide todo de cero al origin. **Regla nueva a partir de ahora:** cualquier cambio a `.htaccess` (headers, no contenido de archivo) también requiere bumpear el `?v=` de al menos un asset compartido (`app.css` o `platform.js`) para que el navegador vuelva a pedirlo con una URL nueva — aunque el archivo `.css`/`.js` en sí no haya cambiado.
 
+**Actualización 2026-09-24 — también cachea las páginas HTML, no solo `assets/`.** Confirmado con un caso real: se arregló un bug de la cámara (escaneo de tarjetas en Master Data — ver más abajo) subiendo `app/master-data.html` dos veces, y la página seguía mostrando el comportamiento viejo con el ícono de "imagen rota" clásico — imposible con el código nuevo, que ya ni tiene un `<img>`. Entrando a `app/master-data.html?x=2` (cualquier query string nuevo) sí mostró el fix. O sea: las páginas HTML también quedan cacheadas en el borde de Cloudflare, con URL fija (sin `?v=`), así que no hay una forma automática de "bustear" el caché como con los assets.
+
+Se evaluó agregar `Cache-Control` corto a las respuestas HTML vía `.htaccess`, pero ya hay antecedente de que esto rompió algo antes (ver la nota al principio del archivo: un `Cache-Control: no-cache` blanket para `.html` en su momento destapó un bug de auto-redirección infinita en `login.html`, porque dejó de cachearse la respuesta 301 también). Se decidió NO tocarlo por ahora — **truco manual mientras tanto: después de subir un cambio a una página, agregale `?x=N` (cualquier valor nuevo) a la URL para probarlo al toque, en vez de esperar a que Cloudflare la recachee sola.** Los usuarios reales eventualmente ven la versión nueva sin hacer nada, solo puede haber una demora.
+
 ---
 
 ## Qué queda igual en Vercel
