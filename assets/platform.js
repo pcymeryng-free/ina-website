@@ -8183,6 +8183,14 @@ const INAPlatform = {
         e.stopPropagation();
         const willOpen = !nav.classList.contains('open');
         closeAll();
+        if (willOpen) {
+          // Measured, not the CSS fallback's hardcoded 58px — the header
+          // can render taller than that (text wrapping, larger iOS
+          // accessibility font sizes, etc.), which left part of the
+          // drawer positioned under the header and swallowing taps.
+          const header = toggle.closest('.app-header');
+          if (header) nav.style.top = header.getBoundingClientRect().bottom + 'px';
+        }
         nav.classList.toggle('open', willOpen);
         toggle.setAttribute('aria-expanded', String(willOpen));
       });
