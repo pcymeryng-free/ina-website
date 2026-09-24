@@ -142,6 +142,29 @@ Arreglado en tres capas:
 
 ---
 
+## Parte 10 — PWA: instalar la Plataforma como app en el iPhone ✅ hecho
+
+Convierte la plataforma (no el sitio institucional) en una Progressive Web App: agregándola a la pantalla de inicio desde Safari en el iPhone, abre a pantalla completa con ícono propio, sin la barra de Safari — no es una app de la App Store (eso es un proyecto aparte, con cuenta de Apple Developer y revisión de Apple), pero se instala en minutos y reusa toda la plataforma tal como está.
+
+**Archivos nuevos:**
+- `manifest.webmanifest` (raíz del sitio) — nombre, ícono, colores, y que abra en `/app/dashboard.html`.
+- `assets/images/pwa/icon-*.png` (16/32/180/192/512px) — generados a partir del isotipo de INA que ya usa el header (triángulo + 3 puntos ámbar).
+
+**Cómo instalarla (para explicarle al usuario):**
+1. Abrir `https://www.international-network-advisors.com/app/login.html` en Safari en el iPhone (o directo `/app/dashboard.html` si ya está logueado).
+2. Tocar el botón "Compartir" (el cuadrado con flecha hacia arriba).
+3. "Agregar a pantalla de inicio".
+4. Confirmar — queda el ícono de INA en la pantalla de inicio, y al abrirlo entra directo a la plataforma a pantalla completa.
+
+**Qué subir a Bluehost:**
+- `manifest.webmanifest`, `assets/images/pwa/` (carpeta completa, nueva)
+- `.htaccess` (agrega el tipo MIME de `.webmanifest`)
+- Las 31 páginas de `app/*.html` (agregan las etiquetas `<link rel="manifest">`/`apple-touch-icon`/meta tags en el `<head>`)
+
+No incluye Service Worker (caché offline) en esta primera versión — se evaluó y se decidió no sumarlo todavía dado lo mucho que costó destrabar los problemas de caché de Bluehost en la Parte 9/10 de esta sesión; sumaría una capa más de caché para diagnosticar si algo no actualiza. Si en el futuro hace falta que funcione sin conexión, se puede agregar después.
+
+---
+
 ## Qué queda igual en Vercel
 
 Vercel sigue recibiendo cada push a GitHub y desplegando automáticamente — es tu entorno de pruebas, tal como querés. La única diferencia es que el dominio "real" que le das a usuarios de ENACOM es el de Bluehost, no el de Vercel.

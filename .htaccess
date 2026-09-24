@@ -50,3 +50,10 @@ RewriteRule ^app/gestion-instance\.html$ /app/roadmap-instance.html [R=301,L]
 RewriteRule ^app/?$ /app/index.html [R=302,L]
 
 Options -Indexes
+
+# PWA manifest — Apache has no default MIME mapping for .webmanifest,
+# which some browsers are strict about when deciding whether to honor
+# "Add to Home Screen" (see manifest.webmanifest at the site root).
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>

@@ -1,0 +1,15 @@
+{
+  "name": "INA Platform",
+  "short_name": "INA",
+  "description": "Structure digital infrastructure investment — Investment Readiness Index™ scoring, Multilateral Finance Navigator™ and AI-assisted project analysis.",
+  "start_url": "/app/dashboard.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B1526",
+  "theme_color": "#0B1526",
+  "icons": [
+    { "src": "/assets/images/pwa/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/images/pwa/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
