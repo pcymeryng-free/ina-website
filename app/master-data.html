@@ -351,9 +351,16 @@
           <p id="cameraCaptureError" style="display:none; color:#b3261e; font-size:13px; margin:0 0 12px;"></p>
           <div style="position:relative; background:#000; border-radius:10px; overflow:hidden; aspect-ratio:4/3;">
             <video id="cameraVideoEl" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; display:block;"></video>
-            <img id="cameraPreviewImg" style="width:100%; height:100%; object-fit:cover; display:none;" alt="">
+            <!-- The preview is the SAME <canvas> the frame was drawn to,
+                 just made visible — not a separate <img> reloaded from a
+                 data:/blob: URL of it. That re-encode-then-reload round
+                 trip was the actual point of failure (browser's "broken
+                 image" icon, even though the underlying data was valid
+                 enough for the OCR step later) — showing the canvas
+                 directly removes that step instead of continuing to
+                 chase why it failed. -->
+            <canvas id="cameraCanvasEl" style="width:100%; height:100%; object-fit:cover; display:none;"></canvas>
           </div>
-          <canvas id="cameraCanvasEl" style="display:none;"></canvas>
           <p id="cameraLiveHint" style="margin:12px 0 0; font-size:12.5px; color:var(--muted);"><span data-i18n="md.contacts.cameraHint">Frame the card so all the text is visible, then capture.</span></p>
           <p id="cameraPreviewHint" style="display:none; margin:12px 0 0; font-size:12.5px; color:var(--muted);"><span data-i18n="md.contacts.cameraPreviewHint">Is the card readable? If not, retake it.</span></p>
           <div id="cameraLiveControls" style="display:flex; gap:10px; justify-content:center; margin-top:18px;">
@@ -684,7 +691,7 @@
 
   /* ---------- Camera capture (scan card live via getUserMedia) ---------- */
   let cameraStream = null;
-  let capturedCardDataUrl = null;
+  let hasCameraCapture = false;
 
   function stopCameraStream() {
     if (cameraStream) {
@@ -699,9 +706,9 @@
   // see md.contacts.cameraPreviewHint. The stream stays open across a
   // retake so re-showing the viewfinder is instant.
   function showCameraLiveState() {
-    capturedCardDataUrl = null;
+    hasCameraCapture = false;
     document.getElementById('cameraVideoEl').style.display = 'block';
-    document.getElementById('cameraPreviewImg').style.display = 'none';
+    document.getElementById('cameraCanvasEl').style.display = 'none';
     document.getElementById('cameraLiveHint').style.display = 'block';
     document.getElementById('cameraPreviewHint').style.display = 'none';
     document.getElementById('cameraLiveControls').style.display = 'flex';
@@ -710,7 +717,7 @@
 
   function showCameraPreviewState() {
     document.getElementById('cameraVideoEl').style.display = 'none';
-    document.getElementById('cameraPreviewImg').style.display = 'block';
+    document.getElementById('cameraCanvasEl').style.display = 'block';
     document.getElementById('cameraLiveHint').style.display = 'none';
     document.getElementById('cameraPreviewHint').style.display = 'block';
     document.getElementById('cameraLiveControls').style.display = 'none';
@@ -770,27 +777,14 @@
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-    // toDataURL() instead of toBlob()+createObjectURL(): a data: URI is a
-    // plain self-contained string the <img> can show directly, with no
-    // object-URL lifecycle to manage (nothing to forget to revoke, and
-    // no dependency on the browser's blob: URL handling — a capture that
-    // showed the classic "broken image" icon in the corner instead of a
-    // preview turned out to be exactly that: the object URL not
-    // resolving to valid image data reliably on iOS).
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-    // A real photo this size serializes to many KB of base64 — a few
-    // hundred characters means the canvas was empty/blank (0x0, or a
-    // frame that didn't actually render), not a usable capture.
-    if (!dataUrl || dataUrl.length < 1000) {
-      const errEl = document.getElementById('cameraCaptureError');
-      errEl.textContent = lang === 'es'
-        ? 'No se pudo capturar la foto. Probá de nuevo.'
-        : "Couldn't capture the photo. Try again.";
-      errEl.style.display = 'block';
-      return;
-    }
-    capturedCardDataUrl = dataUrl;
-    document.getElementById('cameraPreviewImg').src = dataUrl;
+    // The preview IS this canvas made visible (see the markup comment
+    // above it) — no separate <img> reloaded from a data:/blob: URL of
+    // it. That re-encode-then-reload round trip was the actual point of
+    // failure: the browser's "broken image" icon, even on desktop, even
+    // though the same captured frame was valid enough for the OCR step
+    // when accepted (it reads the canvas fresh at confirm time below,
+    // never touching whatever went wrong with the <img> reload).
+    hasCameraCapture = true;
     showCameraPreviewState();
   }
 
@@ -798,20 +792,13 @@
     showCameraLiveState();
   }
 
-  function dataUrlToBlob(dataUrl) {
-    const [header, base64] = dataUrl.split(',');
-    const mime = (header.match(/:(.*?);/) || [, 'image/jpeg'])[1];
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new Blob([bytes], { type: mime });
-  }
-
   async function confirmCameraCapture() {
-    if (!capturedCardDataUrl) return;
-    const dataUrl = capturedCardDataUrl;
+    if (!hasCameraCapture) return;
+    const canvas = document.getElementById('cameraCanvasEl');
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
     closeCameraCapture();
-    const file = new File([dataUrlToBlob(dataUrl)], `business-card-${Date.now()}.jpg`, { type: 'image/jpeg' });
+    if (!blob) return;
+    const file = new File([blob], `business-card-${Date.now()}.jpg`, { type: 'image/jpeg' });
     await processCardFile(file);
   }
 
