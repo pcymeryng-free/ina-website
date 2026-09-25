@@ -80,14 +80,17 @@
 
     <div id="proposalBody" style="display:none; margin-top:28px;">
 
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:22px;">
-        <div class="prop-tabs" role="tablist">
-          <button type="button" class="prop-tab active" id="editTabBtn" data-tab="edit"><span data-i18n="prop.tab.edit">Edit</span></button>
-          <button type="button" class="prop-tab" id="previewTabBtn" data-tab="preview"><span data-i18n="prop.tab.preview">Preview</span></button>
-        </div>
+      <div style="display:flex; justify-content:flex-end; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:22px;">
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" id="proposalDraftBtn" class="btn ghost small"><span id="proposalDraftBtnLabel" data-i18n="pd.proposal.draft">Generate draft with AI</span></button>
           <button type="button" id="proposalSaveBtn" class="btn small"><span data-i18n="pd.proposal.save">Save</span></button>
+          <!-- Opens the generated PDF in a new tab (window.open on a
+               blob: URL) rather than an embedded <iframe> preview — iOS
+               Safari's PDF viewer inside an iframe only ever showed the
+               cover page, no scroll/pagination, a platform limitation
+               with no CSS/JS fix; a full new tab gets the real native
+               viewer everywhere. -->
+          <button type="button" id="previewBtn" class="btn ghost small"><span id="previewBtnLabel" data-i18n="prop.tab.preview">Preview</span></button>
           <button type="button" id="proposalDownloadBtn" class="btn amber small"><span data-i18n="prop.download">Download PDF</span></button>
         </div>
       </div>
@@ -115,12 +118,6 @@
             <textarea id="proposalPlanningNarrative" style="min-height:160px;" placeholder=""></textarea>
           </div>
         </div>
-      </div>
-
-      <div id="previewPanel" class="prop-panel" style="display:none;">
-        <p style="font-size:12.5px; color:var(--muted); margin-bottom:10px;"><span data-i18n="prop.preview.help">This is exactly what the downloaded PDF will look like — switch tabs or edit and preview again to see changes.</span></p>
-        <div id="previewLoading" style="padding:60px 0; text-align:center; color:var(--muted); font-size:13.5px;"><span data-i18n="prop.preview.loading">Rendering preview…</span></div>
-        <iframe id="previewFrame" title="Proposal preview" style="width:100%; height:75vh; border:1px solid var(--paper-line); border-radius:10px; display:none;"></iframe>
       </div>
 
     </div>
@@ -172,7 +169,6 @@
   let currentFinancingReco = null;
   let isOwner = false;
   let isAssignedAdvisor = false;
-  let previewBlobUrl = null;
 
   // Real INA wordmark, embedded directly as base64 (600x125px PNGs,
   // downscaled from the brand/ originals — plenty crisp at the ~150-250pt
@@ -242,46 +238,46 @@
     }
   }
 
-  // Edit / Preview tabs — Preview builds the exact same jsPDF document as
-  // Download (generateProposalPdf() below, shared by both via a 'mode'
-  // argument) but hands back a blob: URL for the <iframe> instead of
-  // triggering a file save, so the person can see precisely what they'll
-  // get before committing to a download.
-  function showTab(tab) {
-    document.getElementById('editTabBtn').classList.toggle('active', tab === 'edit');
-    document.getElementById('previewTabBtn').classList.toggle('active', tab === 'preview');
-    document.getElementById('editPanel').style.display = tab === 'edit' ? 'block' : 'none';
-    document.getElementById('previewPanel').style.display = tab === 'preview' ? 'block' : 'none';
-    if (tab === 'preview') refreshPreview();
-  }
-  document.getElementById('editTabBtn').addEventListener('click', () => showTab('edit'));
-  document.getElementById('previewTabBtn').addEventListener('click', () => showTab('preview'));
-
-  async function refreshPreview() {
+  // Preview builds the exact same jsPDF document as Download
+  // (generateProposalPdf() below, shared by both via a 'mode' argument)
+  // but hands back a blob: URL to open in a new tab instead of
+  // triggering a file save — was an embedded <iframe> instead, but iOS
+  // Safari's PDF viewer inside an iframe only ever rendered the cover
+  // page with no way to scroll/paginate (a platform limitation, not a
+  // generation bug — the underlying PDF always had every page). A new
+  // tab gets the browser's real, full PDF viewer everywhere.
+  async function openPreview() {
+    const btn = document.getElementById('previewBtn');
+    const originalHTML = btn.innerHTML;
+    // window.open() has to happen synchronously, before the 'await'
+    // below — calling it only once generateProposalPdf() resolves loses
+    // the "this came directly from a click" context browsers require,
+    // and gets silently blocked as a popup instead. Opening a blank tab
+    // now and pointing it at the real URL once it's ready keeps it
+    // recognized as user-initiated.
+    const win = window.open('', '_blank');
     captureProposalFields();
-    const frame = document.getElementById('previewFrame');
-    const loading = document.getElementById('previewLoading');
-    frame.style.display = 'none';
-    loading.style.display = 'block';
-    loading.textContent = INAPlatform.currentLang() === 'es' ? 'Generando vista previa…' : 'Rendering preview…';
+    btn.disabled = true;
+    btn.innerHTML = `<span>${INAPlatform.currentLang() === 'es' ? 'Generando…' : 'Generating…'}</span>`;
     try {
       const url = await generateProposalPdf('preview');
-      if (!url) return;
-      // Revoke the previous blob before requesting a new one so repeated
-      // previews (after edits, language toggles, AI drafts) don't leak
-      // memory over a long editing session.
-      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
-      previewBlobUrl = url;
-      frame.src = url;
-      frame.style.display = 'block';
-      loading.style.display = 'none';
+      if (!url) { if (win) win.close(); return; }
+      if (win) {
+        win.location.href = url;
+      } else {
+        window.open(url, '_blank');
+      }
     } catch (e) {
-      console.error('[refreshPreview] generateProposalPdf failed', e);
+      console.error('[openPreview] generateProposalPdf failed', e);
+      if (win) win.close();
       const lang = INAPlatform.currentLang();
-      loading.textContent = lang === 'es' ? 'No se pudo generar la vista previa.' : "Couldn't render the preview.";
-      loading.style.display = 'block';
+      alert(lang === 'es' ? 'No se pudo generar la vista previa.' : "Couldn't render the preview.");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
     }
   }
+  document.getElementById('previewBtn').addEventListener('click', openPreview);
 
   async function generateProposalPdf(mode) {
     if (!currentProject || !window.jspdf) return;
@@ -1101,7 +1097,6 @@
         planning_narrative_en: result.planning_narrative_en || '',
       };
       renderProposalFields();
-      if (document.getElementById('previewTabBtn').classList.contains('active')) refreshPreview();
     } catch (err) {
       alert(lang5 === 'es'
         ? `No se pudo generar el borrador: ${err.message || err}`
@@ -1180,7 +1175,6 @@
       setTimeout(() => {
         renderProposalFields();
         updateUpdatedAt();
-        if (document.getElementById('previewTabBtn').classList.contains('active')) refreshPreview();
       }, 0);
     });
   });
