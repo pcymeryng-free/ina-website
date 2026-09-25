@@ -8118,13 +8118,13 @@ const INAPlatform = {
   initDropdownMenus(rootEl) {
     const menus = Array.from(rootEl.querySelectorAll('.menu'));
     if (!menus.length) return;
-    // Only true when this call is wiring up the header nav itself (every
-    // page calls it as initDropdownMenus(document.querySelector('.app-nav')))
-    // — the mobile drill-down class below (assets/app.css) is scoped to
-    // .app-nav specifically, so this stays a no-op for other .menu/
-    // .menu-panel instances on the page (e.g. project.html's body-level
-    // Actions menu, wired up separately with a different rootEl).
-    const isNav = rootEl.classList && rootEl.classList.contains('app-nav');
+    // Whether each MENU (not rootEl) sits inside a mobile nav drawer is
+    // checked per-menu via .closest('.app-nav') below — this call can be
+    // scoped either directly to .app-nav (most pages) or to a wider
+    // container that ALSO holds body-level menus outside the nav (e.g.
+    // project.html passes document.body, to wire its Actions/Analysis
+    // menu copies AND their nav-header twins in one call) — a single
+    // rootEl-level check couldn't tell those apart.
     function keepPanelOnScreen(menu) {
       const panel = menu.querySelector('.menu-panel');
       if (!panel) return;
@@ -8152,24 +8152,30 @@ const INAPlatform = {
         m.classList.remove('open');
         const trigger = m.querySelector('.menu-trigger');
         if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        if (!except) {
+          const nav = m.closest('.app-nav');
+          if (nav) nav.classList.remove('submenu-open');
+        }
       });
-      if (isNav && !except) rootEl.classList.remove('submenu-open');
     }
     menus.forEach((menu) => {
       const trigger = menu.querySelector('.menu-trigger');
       if (!trigger) return;
+      const nav = menu.closest('.app-nav');
       trigger.addEventListener('click', (e) => {
         e.stopPropagation();
         const willOpen = !menu.classList.contains('open');
         closeMenus();
         menu.classList.toggle('open', willOpen);
         trigger.setAttribute('aria-expanded', String(willOpen));
-        if (isNav) rootEl.classList.toggle('submenu-open', willOpen);
-        // Forces a synchronous style/layout flush right after toggling
-        // two classes across two different elements (menu + rootEl) in
-        // one tap — cheap insurance against the repaint sometimes not
-        // landing until a second interaction on iOS.
-        void rootEl.offsetHeight;
+        if (nav) {
+          nav.classList.toggle('submenu-open', willOpen);
+          // Forces a synchronous style/layout flush right after toggling
+          // two classes across two different elements (menu + nav) in
+          // one tap — cheap insurance against the repaint sometimes not
+          // landing until a second interaction on iOS.
+          void nav.offsetHeight;
+        }
         if (willOpen) keepPanelOnScreen(menu);
       });
       menu.querySelectorAll('.menu-item').forEach((item) => {

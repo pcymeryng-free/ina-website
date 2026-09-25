@@ -476,7 +476,7 @@
      another PDF's existing pages — see the "Anexos" section of that
      function). Everything else in the report still uses jsPDF alone. -->
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="/assets/platform.js?v=96"></script>
+<script src="/assets/platform.js?v=97"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
 (function () {
@@ -566,70 +566,33 @@
   // just keep the "#" href from actually jumping the page anywhere.
   document.getElementById('navHelpLink').addEventListener('click', (e) => e.preventDefault());
 
-  // Actions / Analysis dropdown menus in the header — plain show/hide via
-  // an "open" class on the .menu wrapper (CSS handles the panel's
-  // position/visibility). Opening one closes the other; clicking anywhere
-  // outside, pressing Escape, or clicking a menu item closes whichever is
-  // open.
+  // Actions / Analysis dropdown menus in the header, plus their nav-bar
+  // twins (#navAnalysisMenu etc. — see the matching comment on .app-nav
+  // .nav-menu in assets/app.css) — this page used to wire these up with
+  // its own inline copy of what's now INAPlatform.initDropdownMenus()
+  // (same show/hide-via-"open"-class logic, the panel-stays-on-screen
+  // nudge, Escape/outside-click to close). Switched to the shared
+  // function so this page picks up its fixes too instead of drifting out
+  // of sync with them — notably the mobile nav drawer's drill-down
+  // behavior (assets/app.css's .submenu-open rules), which this page's
+  // own copy never knew about: tapping any nav-menu trigger here just
+  // closed the whole mobile menu instead of drilling into it, since only
+  // the shared function ever toggled that class.
   //
-  // #actionsMenu's panel is right-aligned in CSS (right:0; left:auto —
-  // see assets/app.css) so it normally hugs the right edge of the
-  // "Acciones" button, which usually sits near the right edge of the
-  // header row. But .platform-header can wrap onto two lines (long
-  // project name/type/meta text pushes header-controls onto its own row),
-  // and when it does, header-controls — and the Acciones button with it —
-  // lands at the LEFT edge of the page instead. The panel's fixed
-  // right:0 CSS then anchors it to that now-left-positioned button and
+  // Scoped to document.body, not .app-nav, because this page (unlike
+  // every other one) also has a body-level menu: #actionsMenu's panel is
+  // right-aligned in CSS (right:0; left:auto) so it normally hugs the
+  // right edge of the "Acciones" button — but .platform-header can wrap
+  // onto two lines (long project name/type/meta text pushes
+  // header-controls onto its own row), and when it does, header-controls
+  // — and the Acciones button with it — lands at the LEFT edge of the
+  // page instead, so the panel's fixed right:0 anchors it there and
   // expands another ~210px further left, pushing it half (or fully) off
-  // the left edge of the browser window — this is the "menu cortado del
-  // lado izquierdo" bug. Rather than guess a breakpoint (the wrap point
-  // depends on the project's name/type/meta text length, not the viewport
-  // width alone), just measure where the panel actually lands each time
-  // it opens and nudge it back on-screen with a transform if it doesn't
-  // fit — cheap, and correct regardless of which menu or how the header
-  // happens to be laid out at that moment.
-  function keepMenuPanelOnScreen(menu) {
-    const panel = menu.querySelector('.menu-panel');
-    if (!panel) return;
-    panel.style.transform = '';
-    const rect = panel.getBoundingClientRect();
-    const margin = 10;
-    let shift = 0;
-    if (rect.left < margin) {
-      shift = margin - rect.left;
-    } else if (rect.right > window.innerWidth - margin) {
-      shift = (window.innerWidth - margin) - rect.right;
-    }
-    if (shift) panel.style.transform = `translateX(${shift}px)`;
-  }
-
-  const menus = Array.from(document.querySelectorAll('.menu'));
-  function closeMenus(except) {
-    menus.forEach((m) => {
-      if (m === except) return;
-      m.classList.remove('open');
-      const trigger = m.querySelector('.menu-trigger');
-      if (trigger) trigger.setAttribute('aria-expanded', 'false');
-    });
-  }
-  menus.forEach((menu) => {
-    const trigger = menu.querySelector('.menu-trigger');
-    trigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const willOpen = !menu.classList.contains('open');
-      closeMenus();
-      menu.classList.toggle('open', willOpen);
-      trigger.setAttribute('aria-expanded', String(willOpen));
-      if (willOpen) keepMenuPanelOnScreen(menu);
-    });
-    menu.querySelectorAll('.menu-item').forEach((item) => {
-      item.addEventListener('click', () => closeMenus());
-    });
-  });
-  document.addEventListener('click', () => closeMenus());
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeMenus();
-  });
+  // the left edge of the browser window ("menu cortado del lado
+  // izquierdo"). initDropdownMenus()'s keepPanelOnScreen() nudge (ported
+  // from this page's original fix) handles that regardless of which menu
+  // or how the header happens to be laid out at that moment.
+  INAPlatform.initDropdownMenus(document.body);
 
   // assets/i18n.js's applyLang() only re-translates elements tagged
   // data-i18n — it doesn't know about the project/analysis content this
