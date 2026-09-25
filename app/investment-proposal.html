@@ -445,6 +445,12 @@
       label = sanitizeText(label);
       value = sanitizeText(value);
       ensureSpace(15);
+      // Same font used to actually draw the value below (helvetica
+      // normal 9.5) has to be set BEFORE splitTextToSize measures it —
+      // measuring with whatever font was left active from the previous
+      // call under-wrapped long values, same bug as the cover title.
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
       const rowLines = doc.splitTextToSize(String(value), PAGE_W - MARGIN * 2 - ATTR_LABEL_W);
       const rowH = 14 * rowLines.length;
       if (attrRowIndex % 2 === 1) {
@@ -542,6 +548,14 @@
         console.error('[generateProposalPdf] INA_LOGO_LIGHT failed to embed on cover, skipping it', e);
       }
 
+      // splitTextToSize() measures at whatever font/size is currently set
+      // on doc — it has to be the SAME 'times' bold 26pt used to actually
+      // draw the title below, not whatever was left active from earlier
+      // content (a smaller font there under-counts how much width each
+      // character needs, so lines came back "fitting" more text than the
+      // real 26pt rendering does, and the title ran past the page edges).
+      doc.setFont('times', 'bold');
+      doc.setFontSize(26);
       const nameLines = doc.splitTextToSize(sanitizeText(currentProject.name) || '', PAGE_W - MARGIN * 2 - 60);
       const blockH = 34 + nameLines.length * 30 + 10 + 26 + 22 + 20;
       let cy = (PAGE_H - blockH) / 2;
