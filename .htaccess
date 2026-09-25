@@ -5,7 +5,7 @@
 # environment) so old bookmarked/indexed URLs keep working on the production
 # domain too. Also disables directory listing.
 #
-# NOTE: an earlier version of this file added a blanket
+# NOTE (2026-09-23): an earlier version of this file added a blanket
 # "Cache-Control: no-cache" header for every .html response, to stop
 # Bluehost from serving stale cached copies of app/*.html after an upload.
 # Removed again — it turned out to also strip caching from 301 redirect
@@ -13,8 +13,21 @@
 # retrigger) a pre-existing self-redirect issue on the www subdomain
 # (https://www.international-network-advisors.com/app/login.html kept
 # 301-ing to itself), previously hidden by normal browser redirect
-# caching. Signing in reliably matters more than avoiding an occasional
-# manual cache-bypass (?x=1 trick) when testing right after an upload.
+# caching.
+#
+# UPDATE (2026-09-25): re-added below, deliberately different this time —
+# max-age=60 instead of no-cache. Turned out Bluehost fronts the whole
+# site through Cloudflare automatically (no separate Cloudflare account
+# exists for it), which edge-caches full HTML pages with no query-string
+# mechanism to bust like assets/*.css|js have (see MIGRACION_BLUEHOST.md
+# Parte 11) — every page edit this session needed a manual "?x=N" trick
+# to actually test, and real visitors could be stuck on stale content
+# indefinitely with no way to force a refresh. A 60s cache (not zero)
+# still lets a browser or Cloudflare absorb a handful of rapid hits to
+# the same URL — including a redirect loop, if login.html's self-redirect
+# bug ever resurfaces — instead of every single hop re-hitting the
+# origin the way true no-cache did before. Re-verified login.html loads
+# fine (no loop) right before making this change.
 # ============================================================================
 
 # ----------------------------------------------------------------------------
@@ -34,6 +47,12 @@
   Header always set X-Frame-Options "SAMEORIGIN"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://lyyuxoltyyckfppfjbyn.supabase.co https://api.international-network-advisors.com; frame-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header always set Cache-Control "max-age=60, must-revalidate"
+  </FilesMatch>
 </IfModule>
 
 RewriteEngine On

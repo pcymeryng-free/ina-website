@@ -175,7 +175,30 @@ Cloudflare cachea las respuestas de archivos estáticos (`.css`/`.js`) **en su b
 
 **Actualización 2026-09-24 — también cachea las páginas HTML, no solo `assets/`.** Confirmado con un caso real: se arregló un bug de la cámara (escaneo de tarjetas en Master Data — ver más abajo) subiendo `app/master-data.html` dos veces, y la página seguía mostrando el comportamiento viejo con el ícono de "imagen rota" clásico — imposible con el código nuevo, que ya ni tiene un `<img>`. Entrando a `app/master-data.html?x=2` (cualquier query string nuevo) sí mostró el fix. O sea: las páginas HTML también quedan cacheadas en el borde de Cloudflare, con URL fija (sin `?v=`), así que no hay una forma automática de "bustear" el caché como con los assets.
 
-Se evaluó agregar `Cache-Control` corto a las respuestas HTML vía `.htaccess`, pero ya hay antecedente de que esto rompió algo antes (ver la nota al principio del archivo: un `Cache-Control: no-cache` blanket para `.html` en su momento destapó un bug de auto-redirección infinita en `login.html`, porque dejó de cachearse la respuesta 301 también). Se decidió NO tocarlo por ahora — **truco manual mientras tanto: después de subir un cambio a una página, agregale `?x=N` (cualquier valor nuevo) a la URL para probarlo al toque, en vez de esperar a que Cloudflare la recachee sola.** Los usuarios reales eventualmente ven la versión nueva sin hacer nada, solo puede haber una demora.
+Se evaluó agregar `Cache-Control` corto a las respuestas HTML vía `.htaccess`, pero ya hay antecedente de que esto rompió algo antes (ver la nota al principio del archivo: un `Cache-Control: no-cache` blanket para `.html` en su momento destapó un bug de auto-redirección infinita en `login.html`, porque dejó de cachearse la respuesta 301 también). Se decidió no tocarlo en ese momento — pero ver la Parte 12 más abajo, donde sí se resolvió.
+
+---
+
+## Parte 12 — Solución definitiva al caché de páginas HTML ✅ hecho (2026-09-25)
+
+Retomado después de que el problema de caché de Cloudflare (Parte 11) causara varios falsos "sigue sin andar" durante la sesión — la mayoría no eran bugs de código sino Cloudflare sirviendo una copia vieja de la página HTML.
+
+Antes de tocar nada, se verificó que `app/login.html` carga bien hoy (sin loop de redirección) — el bug histórico que motivó sacar el `Cache-Control` la primera vez no está reproduciéndose actualmente.
+
+Se agregó, en `.htaccess`:
+```apache
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header always set Cache-Control "max-age=60, must-revalidate"
+  </FilesMatch>
+</IfModule>
+```
+
+A propósito **`max-age=60`, no `no-cache`** — distinto de lo que se probó la vez pasada. Con `no-cache` puro, cada rebote de un eventual loop de redirección le pega al servidor de nuevo (eso fue lo que lo hizo visible e infinito la vez pasada). Con 60 segundos de caché, el navegador (y Cloudflare) absorben varios pedidos repetidos a la misma URL dentro de esa ventana — incluyendo, si volviera a pasar, los rebotes de un loop — sin llegar a tumbar nada, pero sin quedar pegado a una versión vieja por horas como pasaba antes.
+
+**Qué esto soluciona:** de acá en adelante, cualquier cambio a una página HTML llega a los usuarios reales (y a las propias pruebas) dentro de 1 minuto como máximo, sin necesitar el truco de `?x=N`. Ya no hace falta seguir usándolo, aunque sigue funcionando como respaldo si hiciera falta forzar una vista fresca al toque.
+
+**Después de subir**, probar especialmente el login (`app/login.html`) varias veces seguidas para confirmar que no reaparece ningún loop, antes de dar esto por cerrado del todo.
 
 ---
 
