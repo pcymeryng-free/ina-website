@@ -102,10 +102,9 @@
           <thead>
             <tr>
               <th><span data-i18n="contracts.col.title">Title</span></th>
-              <th><span data-i18n="contracts.col.type">Type</span></th>
               <th><span data-i18n="contracts.col.linkedTo">Linked to</span></th>
               <th><span data-i18n="contracts.col.counterparty">Counterparty</span></th>
-              <th><span data-i18n="contracts.col.status">Status</span></th>
+              <th><span data-i18n="contracts.col.documents">Documents</span></th>
               <th><span data-i18n="contracts.col.addedBy">Added by</span></th>
               <th><span data-i18n="contracts.col.dateAdded">Date Added</span></th>
               <th></th>
@@ -134,35 +133,14 @@
             <label for="cxProgramSelect"><span data-i18n="contracts.f.program">Financing Program / Entity</span></label>
             <select id="cxProgramSelect"></select>
           </div>
-          <div class="field"><label for="cxType"><span data-i18n="contracts.f.type">Contract type</span></label><select id="cxType"></select></div>
           <div class="field"><label for="cxTitle"><span data-i18n="contracts.f.title">Title</span></label><input id="cxTitle" type="text" required></div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-            <div class="field"><label for="cxCounterparty"><span data-i18n="contracts.f.counterparty">Counterparty</span></label><input id="cxCounterparty" type="text"></div>
-            <div class="field"><label for="cxStatus"><span data-i18n="contracts.f.status">Status</span></label><select id="cxStatus"></select></div>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-            <div class="field"><label for="cxEffectiveDate"><span data-i18n="contracts.f.effectiveDate">Effective date</span></label><input id="cxEffectiveDate" type="date"></div>
-            <div class="field"><label for="cxExpirationDate"><span data-i18n="contracts.f.expirationDate">Expiration date</span></label><input id="cxExpirationDate" type="date"></div>
-          </div>
+          <div class="field"><label for="cxCounterparty"><span data-i18n="contracts.f.counterparty">Counterparty</span></label><input id="cxCounterparty" type="text"></div>
           <div class="field"><label for="cxNotes"><span data-i18n="contracts.f.notes">Notes</span></label><textarea id="cxNotes" rows="3"></textarea></div>
 
-          <div class="field" id="cxTemplateField" style="display:none;">
-            <label><span data-i18n="contracts.f.draft">Draft document</span></label>
-            <p style="font-size:12px; color:#B9741C; margin:0 0 10px; font-weight:600;"><span data-i18n="contracts.disclaimer">⚠ Reference template, not reviewed by counsel — have a lawyer review before using it for real.</span></p>
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <button type="button" class="btn ghost small" id="cxGenerateBtn"><span data-i18n="contracts.generate">Generate draft PDF</span></button>
-              <a href="#" id="cxGeneratedLink" target="_blank" rel="noopener" style="display:none;"><span data-i18n="contracts.viewDraft">View last generated draft</span></a>
-            </div>
-          </div>
-
-          <div class="field">
-            <label><span data-i18n="contracts.f.signed">Signed copy</span></label>
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <a href="#" id="cxSignedLink" target="_blank" rel="noopener" style="display:none;"><span data-i18n="contracts.viewSigned">View signed copy</span></a>
-              <span id="cxNoSigned" style="font-size:12.5px; color:var(--muted);"><span data-i18n="contracts.noSigned">Not uploaded yet</span></span>
-              <button type="button" class="btn ghost small" id="cxUploadSignedBtn"><span data-i18n="contracts.uploadSigned">Upload signed copy</span></button>
-              <input type="file" id="cxSignedFileInput" accept=".pdf,image/*" style="display:none;">
-            </div>
+          <div class="field" id="cxStagesSection" style="display:none; margin-top:22px; padding-top:18px; border-top:1px solid var(--paper-line);">
+            <label style="margin-bottom:6px; display:block;"><span data-i18n="contracts.stages.title">Agreement documents</span></label>
+            <p style="font-size:12px; color:#B9741C; margin:0 0 14px; font-weight:600;"><span data-i18n="contracts.disclaimer">⚠ Reference template, not reviewed by counsel — have a lawyer review before using it for real.</span></p>
+            <div id="cxStagesList"></div>
           </div>
 
           <div style="display:flex; gap:12px; margin-top:20px; align-items:center;">
@@ -178,9 +156,9 @@
 </section>
 </main>
 
-<script src="/assets/i18n.js?v=80"></script>
+<script src="/assets/i18n.js?v=81"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=100"></script>
+<script src="/assets/platform.js?v=101"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
@@ -196,6 +174,28 @@
   }
   function initials(name) {
     return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+  // I18N is a plain top-level `const` in assets/i18n.js — classic <script>
+  // tags share one global lexical scope, same pattern app/roles.html uses.
+  function t(key, fallback) {
+    return (I18N[key] && I18N[key][lang]) || fallback || key;
+  }
+
+  const STAGE_ORDER = ['nda', 'sow', 'service_contract', 'financing_agreement', 'other'];
+  const STAGE_STATUS_CLASS = { draft: 'submitted', sent: 'analyzing', signed: 'completed', expired: 'error', terminated: 'error' };
+  function sortedStages(c) {
+    return (c.contract_stages || []).slice().sort((a, b) => STAGE_ORDER.indexOf(a.stage_type) - STAGE_ORDER.indexOf(b.stage_type));
+  }
+  const STAGE_SHORT_LABEL = {
+    nda: 'NDA', sow: 'SOW',
+    service_contract: { en: 'Contract', es: 'Contrato' },
+    financing_agreement: { en: 'Financing', es: 'Financiamiento' },
+    other: { en: 'Other', es: 'Otro' },
+  };
+  function stageShortLabel(type) {
+    const v = STAGE_SHORT_LABEL[type];
+    if (!v) return type;
+    return typeof v === 'string' ? v : (v[lang] || v.en);
   }
 
   document.getElementById('signOutBtn').addEventListener('click', async (e) => {
@@ -229,7 +229,13 @@
   function getFiltered() {
     const type = document.getElementById('cfType').value;
     const status = document.getElementById('cfStatus').value;
-    return contracts.filter((c) => (!type || c.contract_type === type) && (!status || c.status === status));
+    return contracts.filter((c) => {
+      const stages = c.contract_stages || [];
+      if (type && status) return stages.some((s) => s.stage_type === type && s.status === status);
+      if (type) return stages.some((s) => s.stage_type === type);
+      if (status) return stages.some((s) => s.status === status);
+      return true;
+    });
   }
 
   /* ---------- Table ---------- */
@@ -255,13 +261,13 @@
     tbody.innerHTML = filtered.map((c) => {
       const addedBy = (c.profiles && c.profiles.full_name) || '—';
       const dateAdded = c.created_at ? new Date(c.created_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US') : '—';
+      const chips = sortedStages(c).map((s) => `<span class="status-pill ${STAGE_STATUS_CLASS[s.status] || 'submitted'}" style="margin:0 4px 4px 0; display:inline-block;">${escapeHtml(stageShortLabel(s.stage_type))}: ${escapeHtml(INAPlatform.contractStatusLabel(s.status))}</span>`).join('') || '—';
       return `
       <tr data-id="${c.id}" class="risk-row">
         <td>${escapeHtml(c.title)}</td>
-        <td><span class="type-tag">${escapeHtml(INAPlatform.contractTypeLabel(c.contract_type))}</span></td>
         <td>${escapeHtml(linkedToLabel(c))}</td>
         <td>${escapeHtml(c.counterparty_name) || '—'}</td>
-        <td><span class="status-pill">${escapeHtml(INAPlatform.contractStatusLabel(c.status))}</span></td>
+        <td>${chips}</td>
         <td>${escapeHtml(addedBy)}</td>
         <td>${dateAdded}</td>
         <td><button type="button" class="btn ghost small edit-contract-btn" data-id="${c.id}"><span data-i18n="risk.edit">Edit</span></button></td>
@@ -292,182 +298,129 @@
     document.getElementById('cxProgramField').style.display = val === 'program' ? '' : 'none';
   }
 
-  function populateTypeSelect(selected) {
-    const el = document.getElementById('cxType');
-    el.innerHTML = INAPlatform.CONTRACT_TYPES.map((t) => `<option value="${t.value}" ${t.value === selected ? 'selected' : ''}>${t[lang] || t.en}</option>`).join('');
-    updateTemplateFieldVisibility();
-  }
-  document.getElementById('cxType').addEventListener('change', updateTemplateFieldVisibility);
-  function updateTemplateFieldVisibility() {
-    const val = document.getElementById('cxType').value;
-    document.getElementById('cxTemplateField').style.display = INAPlatform.CONTRACT_TEMPLATE_TYPES.includes(val) ? '' : 'none';
-  }
-
-  function populateStatusSelect(selected) {
-    const el = document.getElementById('cxStatus');
-    el.innerHTML = INAPlatform.CONTRACT_STATUS.map((s) => `<option value="${s.value}" ${s.value === selected ? 'selected' : ''}>${s[lang] || s.en}</option>`).join('');
-  }
-
-  function populateProjectSelect(selected) {
-    const el = document.getElementById('cxProjectSelect');
-    el.innerHTML = `<option value="">${lang === 'es' ? '— Seleccionar —' : '— Select —'}</option>` +
-      projects.map((p) => `<option value="${p.id}" ${p.id === selected ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
-  }
-  function populateProgramSelect(selected) {
-    const el = document.getElementById('cxProgramSelect');
-    el.innerHTML = `<option value="">${lang === 'es' ? '— Seleccionar —' : '— Select —'}</option>` +
-      programs.map((p) => `<option value="${p.id}" ${p.id === selected ? 'selected' : ''}>${escapeHtml(INAPlatform.programDisplayName ? INAPlatform.programDisplayName(p, lang) : p.name)}</option>`).join('');
-  }
-
-  function openContractForm(id) {
-    editingContractId = id || null;
-    const form = document.getElementById('contractForm');
-    form.reset();
-    document.getElementById('contractFormNote').textContent = '';
-    document.getElementById('deleteContractBtn').style.display = editingContractId ? 'inline-block' : 'none';
-    document.getElementById('contractFormTitle').innerHTML = editingContractId
-      ? `<span data-i18n="contracts.edit">Edit Contract</span>` : `<span data-i18n="contracts.new">+ New Contract</span>`;
-    populateProjectSelect();
-    populateProgramSelect();
-
+  /* ---------- Stage cards (NDA -> SOW -> Service Contract, or a single
+     Financing Agreement card) ---------- */
+  function renderStageCards() {
+    const container = document.getElementById('cxStagesList');
     const existing = editingContractId ? contracts.find((c) => c.id === editingContractId) : null;
-    renderLinkOptions(existing ? (existing.project_id ? 'project' : 'program') : 'project');
-    if (existing) {
-      populateProjectSelect(existing.project_id);
-      populateProgramSelect(existing.program_id);
-      populateTypeSelect(existing.contract_type);
-      populateStatusSelect(existing.status);
-      document.getElementById('cxTitle').value = existing.title || '';
-      document.getElementById('cxCounterparty').value = existing.counterparty_name || '';
-      document.getElementById('cxEffectiveDate').value = existing.effective_date || '';
-      document.getElementById('cxExpirationDate').value = existing.expiration_date || '';
-      document.getElementById('cxNotes').value = existing.notes || '';
-      updateGeneratedLink(existing);
-      updateSignedLink(existing);
-    } else {
-      populateTypeSelect('nda');
-      populateStatusSelect('draft');
-      updateGeneratedLink(null);
-      updateSignedLink(null);
-    }
-    document.getElementById('contractFormOverlay').style.display = 'flex';
+    if (!existing) { container.innerHTML = ''; return; }
+    container.innerHTML = sortedStages(existing).map((s) => `
+      <div class="risk-row" style="padding:14px; margin-bottom:10px; border:1px solid var(--paper-line); border-radius:10px;" data-stage-id="${s.id}" data-stage-type="${s.stage_type}">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+          <strong style="font-size:13.5px;">${escapeHtml(INAPlatform.contractTypeLabel(s.stage_type))}${s.stage_type === 'nda' ? ` <span style="font-weight:400; color:var(--muted); font-size:11.5px;">(${escapeHtml(t('contracts.stages.optional', 'optional'))})</span>` : ''}</strong>
+          <select class="stage-status-select" style="max-width:170px;">
+            ${INAPlatform.CONTRACT_STATUS.map((st) => `<option value="${st.value}" ${st.value === s.status ? 'selected' : ''}>${st[lang] || st.en}</option>`).join('')}
+          </select>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px;">
+          <div class="field" style="margin:0;"><label style="font-size:11px;">${escapeHtml(t('contracts.f.effectiveDate', 'Effective date'))}</label><input type="date" class="stage-effective-date" value="${s.effective_date || ''}"></div>
+          <div class="field" style="margin:0;"><label style="font-size:11px;">${escapeHtml(t('contracts.f.expirationDate', 'Expiration date'))}</label><input type="date" class="stage-expiration-date" value="${s.expiration_date || ''}"></div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
+          ${INAPlatform.CONTRACT_TEMPLATE_TYPES.includes(s.stage_type) ? `<button type="button" class="btn ghost small stage-generate-btn">${escapeHtml(t('contracts.generate', 'Generate draft PDF'))}</button>` : ''}
+          <a href="#" class="stage-generated-link" data-path="${s.generated_storage_path || ''}" style="${s.generated_storage_path ? '' : 'display:none;'}">${escapeHtml(t('contracts.viewDraft', 'View last generated draft'))}</a>
+          <button type="button" class="btn ghost small stage-upload-signed-btn">${escapeHtml(t('contracts.uploadSigned', 'Upload signed copy'))}</button>
+          <input type="file" class="stage-signed-file-input" accept=".pdf,image/*" style="display:none;">
+          <a href="#" class="stage-signed-link" data-path="${s.signed_storage_path || ''}" style="${s.signed_storage_path ? '' : 'display:none;'}">${escapeHtml(t('contracts.viewSigned', 'View signed copy'))}</a>
+          <span class="stage-no-signed" style="font-size:11.5px; color:var(--muted); ${s.signed_storage_path ? 'display:none;' : ''}">${escapeHtml(t('contracts.noSigned', 'Not uploaded yet'))}</span>
+          <span class="stage-save-note" style="font-size:11px; color:var(--muted);"></span>
+        </div>
+      </div>`).join('');
   }
-  function closeContractForm() {
-    document.getElementById('contractFormOverlay').style.display = 'none';
-    editingContractId = null;
-  }
-  document.getElementById('newContractBtn').addEventListener('click', () => openContractForm(null));
-  document.getElementById('closeContractForm').addEventListener('click', closeContractForm);
 
-  function updateGeneratedLink(existing) {
-    const link = document.getElementById('cxGeneratedLink');
-    if (existing && existing.generated_storage_path) {
-      link.style.display = 'inline';
-      link.dataset.path = existing.generated_storage_path;
-    } else {
-      link.style.display = 'none';
-      link.removeAttribute('data-path');
-    }
+  function applyStageUpdate(savedStage) {
+    const idx = contracts.findIndex((c) => c.id === editingContractId);
+    if (idx === -1) return;
+    const stages = contracts[idx].contract_stages || (contracts[idx].contract_stages = []);
+    const sIdx = stages.findIndex((s) => s.id === savedStage.id);
+    if (sIdx !== -1) stages[sIdx] = { ...stages[sIdx], ...savedStage };
+    else stages.push(savedStage);
+    renderTable();
   }
-  function updateSignedLink(existing) {
-    const link = document.getElementById('cxSignedLink');
-    const none = document.getElementById('cxNoSigned');
-    if (existing && existing.signed_storage_path) {
-      link.style.display = 'inline'; none.style.display = 'none';
-      link.dataset.path = existing.signed_storage_path;
-    } else {
-      link.style.display = 'none'; none.style.display = 'inline';
-      link.removeAttribute('data-path');
-    }
-  }
-  [document.getElementById('cxGeneratedLink'), document.getElementById('cxSignedLink')].forEach((link) => {
-    link.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const path = link.dataset.path;
-      if (!path) return;
-      try {
-        const url = await INAPlatform.getDocumentUrl(path);
-        window.open(url, '_blank');
-      } catch (err) {
-        alert(err.message || (lang === 'es' ? 'No se pudo abrir el archivo.' : "Couldn't open the file."));
-      }
-    });
-  });
 
-  document.getElementById('contractForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const note = document.getElementById('contractFormNote');
-    note.textContent = '';
-    const submitBtn = document.getElementById('contractSubmitBtn');
-    submitBtn.disabled = true;
-    const linkVal = (document.querySelector('input[name="cxLink"]:checked') || {}).value || 'project';
-    const payload = {
-      projectId: linkVal === 'project' ? (document.getElementById('cxProjectSelect').value || null) : null,
-      programId: linkVal === 'program' ? (document.getElementById('cxProgramSelect').value || null) : null,
-      contractType: document.getElementById('cxType').value,
-      title: document.getElementById('cxTitle').value.trim(),
-      counterpartyName: document.getElementById('cxCounterparty').value.trim(),
-      status: document.getElementById('cxStatus').value,
-      effectiveDate: document.getElementById('cxEffectiveDate').value || null,
-      expirationDate: document.getElementById('cxExpirationDate').value || null,
-      notes: document.getElementById('cxNotes').value.trim(),
-    };
-    if (!payload.projectId && !payload.programId) {
-      note.textContent = lang === 'es' ? 'Elegí un proyecto o una entidad financiera.' : 'Pick a project or a financing entity.';
-      submitBtn.disabled = false;
+  document.getElementById('cxStagesList').addEventListener('change', async (e) => {
+    const card = e.target.closest('[data-stage-id]');
+    if (!card) return;
+    if (e.target.classList.contains('stage-signed-file-input')) {
+      const file = e.target.files[0];
+      e.target.value = '';
+      if (file) await uploadStageSigned(card, file);
       return;
     }
-    try {
-      if (editingContractId) await INAPlatform.updateContract(editingContractId, payload);
-      else await INAPlatform.createContract(payload);
-      closeContractForm();
-      await loadContracts();
-    } catch (err) {
-      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar.' : "Couldn't save.");
-    } finally {
-      submitBtn.disabled = false;
+    if (e.target.classList.contains('stage-status-select') || e.target.classList.contains('stage-effective-date') || e.target.classList.contains('stage-expiration-date')) {
+      await saveStageFields(card);
     }
   });
+  document.getElementById('cxStagesList').addEventListener('click', async (e) => {
+    const genBtn = e.target.closest('.stage-generate-btn');
+    const uploadBtn = e.target.closest('.stage-upload-signed-btn');
+    const genLink = e.target.closest('.stage-generated-link');
+    const signedLink = e.target.closest('.stage-signed-link');
+    if (genBtn) { e.preventDefault(); await generateStageDraft(genBtn.closest('[data-stage-id]')); }
+    else if (uploadBtn) { e.preventDefault(); uploadBtn.closest('[data-stage-id]').querySelector('.stage-signed-file-input').click(); }
+    else if (genLink) { e.preventDefault(); await openStoredFile(genLink.dataset.path); }
+    else if (signedLink) { e.preventDefault(); await openStoredFile(signedLink.dataset.path); }
+  });
 
-  document.getElementById('deleteContractBtn').addEventListener('click', async () => {
-    if (!editingContractId) return;
+  async function saveStageFields(card) {
+    const note = card.querySelector('.stage-save-note');
+    try {
+      const saved = await INAPlatform.updateContractStage(card.dataset.stageId, {
+        status: card.querySelector('.stage-status-select').value,
+        effectiveDate: card.querySelector('.stage-effective-date').value || null,
+        expirationDate: card.querySelector('.stage-expiration-date').value || null,
+      });
+      applyStageUpdate(saved);
+      note.textContent = t('contracts.stages.saved', 'Saved');
+      setTimeout(() => { note.textContent = ''; }, 2000);
+    } catch (err) {
+      note.textContent = err.message || t('contracts.stages.saveFailed', 'Save failed');
+    }
+  }
+
+  async function openStoredFile(path) {
+    if (!path) return;
+    try {
+      const url = await INAPlatform.getDocumentUrl(path);
+      window.open(url, '_blank');
+    } catch (err) {
+      alert(err.message || (lang === 'es' ? 'No se pudo abrir el archivo.' : "Couldn't open the file."));
+    }
+  }
+
+  async function uploadStageSigned(card, file) {
     const existing = contracts.find((c) => c.id === editingContractId);
-    const ok = confirm(lang === 'es' ? '¿Eliminar este contrato?' : 'Delete this contract?');
-    if (!ok || !existing) return;
+    if (!existing) return;
     try {
-      await INAPlatform.deleteContract(existing);
-      closeContractForm();
-      await loadContracts();
+      const saved = await INAPlatform.uploadSignedContract(existing.id, card.dataset.stageId, card.dataset.stageType, file, existing.title);
+      applyStageUpdate(saved);
+      renderStageCards();
     } catch (err) {
-      document.getElementById('contractFormNote').textContent = err.message || (lang === 'es' ? 'No se pudo eliminar.' : "Couldn't delete.");
+      alert(err.message || (lang === 'es' ? 'No se pudo subir el archivo.' : "Couldn't upload the file."));
     }
-  });
+  }
 
-  /* ---------- Generate draft PDF ---------- */
-  document.getElementById('cxGenerateBtn').addEventListener('click', async () => {
-    const btn = document.getElementById('cxGenerateBtn');
-    if (!editingContractId) {
-      alert(lang === 'es' ? 'Guardá el contrato primero.' : 'Save the contract first.');
-      return;
-    }
-    const linkVal = (document.querySelector('input[name="cxLink"]:checked') || {}).value;
-    const type = document.getElementById('cxType').value;
-    if (!INAPlatform.CONTRACT_TEMPLATE_TYPES.includes(type)) return;
+  async function generateStageDraft(card) {
+    const stageId = card.dataset.stageId;
+    const stageType = card.dataset.stageType;
+    const btn = card.querySelector('.stage-generate-btn');
+    const existing = contracts.find((c) => c.id === editingContractId);
+    if (!existing) return;
     let subjectReference = '';
-    if (linkVal === 'project') {
-      const p = projects.find((x) => x.id === document.getElementById('cxProjectSelect').value);
+    if (existing.project_id) {
+      const p = projects.find((x) => x.id === existing.project_id);
       subjectReference = p ? p.name : '';
     } else {
-      const p = programs.find((x) => x.id === document.getElementById('cxProgramSelect').value);
+      const p = programs.find((x) => x.id === existing.program_id);
       subjectReference = p ? (INAPlatform.programDisplayName ? INAPlatform.programDisplayName(p, lang) : p.name) : '';
     }
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<span>${lang === 'es' ? 'Generando…' : 'Generating…'}</span>`;
     try {
-      const filled = INAPlatform.fillContractTemplate(type, {
+      const filled = INAPlatform.fillContractTemplate(stageType, {
         counterpartyName: document.getElementById('cxCounterparty').value.trim(),
-        effectiveDate: document.getElementById('cxEffectiveDate').value,
+        effectiveDate: card.querySelector('.stage-effective-date').value,
         subjectReference,
       });
       const { jsPDF } = window.jspdf;
@@ -503,10 +456,9 @@
       doc.text(document.getElementById('cxCounterparty').value.trim() || (lang === 'es' ? 'Contraparte' : 'Counterparty'), PAGE_W - MARGIN - 180, y);
 
       const blob = doc.output('blob');
-      const saved = await INAPlatform.uploadGeneratedContractPdf(editingContractId, blob);
-      const idx = contracts.findIndex((c) => c.id === editingContractId);
-      if (idx !== -1) contracts[idx] = { ...contracts[idx], ...saved };
-      updateGeneratedLink(saved);
+      const saved = await INAPlatform.uploadGeneratedContractPdf(existing.id, stageId, stageType, blob, existing.title);
+      applyStageUpdate(saved);
+      renderStageCards();
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (err) {
@@ -515,28 +467,107 @@
       btn.disabled = false;
       btn.innerHTML = originalHTML;
     }
-  });
+  }
 
-  /* ---------- Upload signed copy ---------- */
-  document.getElementById('cxUploadSignedBtn').addEventListener('click', () => {
-    if (!editingContractId) {
-      alert(lang === 'es' ? 'Guardá el contrato primero.' : 'Save the contract first.');
+  function populateProjectSelect(selected) {
+    const el = document.getElementById('cxProjectSelect');
+    el.innerHTML = `<option value="">${lang === 'es' ? '— Seleccionar —' : '— Select —'}</option>` +
+      projects.map((p) => `<option value="${p.id}" ${p.id === selected ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
+  }
+  function populateProgramSelect(selected) {
+    const el = document.getElementById('cxProgramSelect');
+    el.innerHTML = `<option value="">${lang === 'es' ? '— Seleccionar —' : '— Select —'}</option>` +
+      programs.map((p) => `<option value="${p.id}" ${p.id === selected ? 'selected' : ''}>${escapeHtml(INAPlatform.programDisplayName ? INAPlatform.programDisplayName(p, lang) : p.name)}</option>`).join('');
+  }
+
+  function openContractForm(id) {
+    editingContractId = id || null;
+    const form = document.getElementById('contractForm');
+    form.reset();
+    document.getElementById('contractFormNote').textContent = '';
+    document.getElementById('deleteContractBtn').style.display = editingContractId ? 'inline-block' : 'none';
+    document.getElementById('contractFormTitle').innerHTML = editingContractId
+      ? `<span data-i18n="contracts.edit">Edit Contract</span>` : `<span data-i18n="contracts.new">+ New Contract</span>`;
+    populateProjectSelect();
+    populateProgramSelect();
+
+    const existing = editingContractId ? contracts.find((c) => c.id === editingContractId) : null;
+    renderLinkOptions(existing ? (existing.project_id ? 'project' : 'program') : 'project');
+    if (existing) {
+      populateProjectSelect(existing.project_id);
+      populateProgramSelect(existing.program_id);
+      document.getElementById('cxTitle').value = existing.title || '';
+      document.getElementById('cxCounterparty').value = existing.counterparty_name || '';
+      document.getElementById('cxNotes').value = existing.notes || '';
+    }
+    document.getElementById('cxStagesSection').style.display = existing ? '' : 'none';
+    renderStageCards();
+    document.getElementById('contractFormOverlay').style.display = 'flex';
+  }
+  function closeContractForm() {
+    document.getElementById('contractFormOverlay').style.display = 'none';
+    editingContractId = null;
+  }
+  document.getElementById('newContractBtn').addEventListener('click', () => openContractForm(null));
+  document.getElementById('closeContractForm').addEventListener('click', closeContractForm);
+
+  document.getElementById('contractForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('contractFormNote');
+    note.textContent = '';
+    const submitBtn = document.getElementById('contractSubmitBtn');
+    submitBtn.disabled = true;
+    const linkVal = (document.querySelector('input[name="cxLink"]:checked') || {}).value || 'project';
+    const payload = {
+      projectId: linkVal === 'project' ? (document.getElementById('cxProjectSelect').value || null) : null,
+      programId: linkVal === 'program' ? (document.getElementById('cxProgramSelect').value || null) : null,
+      title: document.getElementById('cxTitle').value.trim(),
+      counterpartyName: document.getElementById('cxCounterparty').value.trim(),
+      notes: document.getElementById('cxNotes').value.trim(),
+    };
+    if (!payload.projectId && !payload.programId) {
+      note.textContent = lang === 'es' ? 'Elegí un proyecto o una entidad financiera.' : 'Pick a project or a financing entity.';
+      submitBtn.disabled = false;
       return;
     }
-    document.getElementById('cxSignedFileInput').click();
-  });
-  document.getElementById('cxSignedFileInput').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    e.target.value = '';
-    if (!file || !editingContractId) return;
     try {
-      const saved = await INAPlatform.uploadSignedContract(editingContractId, file);
-      const idx = contracts.findIndex((c) => c.id === editingContractId);
-      if (idx !== -1) contracts[idx] = { ...contracts[idx], ...saved };
-      updateSignedLink(saved);
-      populateStatusSelect(saved.status);
+      if (editingContractId) {
+        await INAPlatform.updateContract(editingContractId, payload);
+        closeContractForm();
+        await loadContracts();
+      } else {
+        // Stay open after creating (rather than closing) so the newly
+        // created stage cards (NDA/SOW/Contract or Financing Agreement)
+        // are immediately usable — this is the whole point of the
+        // "one relationship, several stages" model: draft a contract,
+        // then generate/upload its documents right away.
+        const created = await INAPlatform.createContract(payload);
+        contracts.unshift(created);
+        editingContractId = created.id;
+        document.getElementById('contractFormTitle').innerHTML = `<span data-i18n="contracts.edit">Edit Contract</span>`;
+        document.getElementById('deleteContractBtn').style.display = 'inline-block';
+        document.getElementById('cxStagesSection').style.display = '';
+        renderStageCards();
+        renderTable();
+      }
     } catch (err) {
-      alert(err.message || (lang === 'es' ? 'No se pudo subir el archivo.' : "Couldn't upload the file."));
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar.' : "Couldn't save.");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('deleteContractBtn').addEventListener('click', async () => {
+    if (!editingContractId) return;
+    const existing = contracts.find((c) => c.id === editingContractId);
+    const ok = confirm(lang === 'es' ? '¿Eliminar este contrato?' : 'Delete this contract?');
+    if (!ok || !existing) return;
+    try {
+      await INAPlatform.deleteContract(existing);
+      closeContractForm();
+      await loadContracts();
+    } catch (err) {
+      document.getElementById('contractFormNote').textContent = err.message || (lang === 'es' ? 'No se pudo eliminar.' : "Couldn't delete.");
     }
   });
 
@@ -551,6 +582,7 @@
         lang = INAPlatform.currentLang();
         populateFilterSelects();
         renderTable();
+        if (document.getElementById('contractFormOverlay').style.display === 'flex') renderStageCards();
       }, 0);
     });
   });

@@ -522,31 +522,24 @@ create policy "program_documents_delete_own" on public.program_documents
 
 create index if not exists program_documents_program_id_idx on public.program_documents(program_id);
 
--- ---------- contracts ---------- (see migration_v67_contracts.sql)
--- NDA/SOW/Service Contract with whoever submitted a project, or a
--- Financing Agreement with a financing entity (public.programs) — exactly
--- one of project_id/program_id, never both. Advisor/admin-only (unlike
--- project_documents/program_documents, which the owner can also see):
--- these are INA's internal legal/business records, not the submitting
--- client's. Signing is tracked manually (status + signed_storage_path
--- for the uploaded signed copy) — no e-signature provider integration.
+-- ---------- contracts ---------- (see migration_v67_contracts.sql,
+-- migration_v68_contract_stages.sql)
+-- One row per RELATIONSHIP with whoever submitted a project, or with a
+-- financing entity (public.programs) — exactly one of project_id/
+-- program_id, never both. Advisor/admin-only (unlike project_documents/
+-- program_documents, which the owner can also see): these are INA's
+-- internal legal/business records, not the submitting client's. The
+-- actual documents (NDA/SOW/Service Contract/Financing Agreement), each
+-- independently tracked (status, dates, generated/signed PDF), live in
+-- contract_stages below — a contract row itself carries no
+-- type/status/dates anymore.
 create table if not exists public.contracts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   project_id uuid references public.projects(id) on delete cascade,
   program_id uuid references public.programs(id) on delete cascade,
-  contract_type text not null default 'other'
-    check (contract_type in ('nda', 'sow', 'service_contract', 'financing_agreement', 'other')),
   title text not null,
   counterparty_name text,
-  status text not null default 'draft'
-    check (status in ('draft', 'sent', 'signed', 'expired', 'terminated')),
-  template_key text,
-  generated_storage_path text,
-  signed_storage_path text,
-  signed_at timestamptz,
-  effective_date date,
-  expiration_date date,
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -575,8 +568,49 @@ create policy "contracts_delete_advisor_or_admin" on public.contracts
 
 create index if not exists contracts_project_id_idx on public.contracts(project_id);
 create index if not exists contracts_program_id_idx on public.contracts(program_id);
-create index if not exists contracts_status_idx on public.contracts(status);
-create index if not exists contracts_contract_type_idx on public.contracts(contract_type);
+
+-- Signing is tracked manually per document/stage (status +
+-- signed_storage_path for the uploaded signed copy) — no e-signature
+-- provider integration. Project-linked contracts always have all 3 rows
+-- (nda/sow/service_contract) created up front so the UI can render fixed
+-- stage cards; program-linked contracts get a single row
+-- (financing_agreement or other).
+create table public.contract_stages (
+  id uuid primary key default gen_random_uuid(),
+  contract_id uuid not null references public.contracts(id) on delete cascade,
+  stage_type text not null
+    check (stage_type in ('nda', 'sow', 'service_contract', 'financing_agreement', 'other')),
+  status text not null default 'draft'
+    check (status in ('draft', 'sent', 'signed', 'expired', 'terminated')),
+  template_key text,
+  generated_storage_path text,
+  signed_storage_path text,
+  signed_at timestamptz,
+  effective_date date,
+  expiration_date date,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint contract_stages_unique_per_contract unique (contract_id, stage_type)
+);
+
+alter table public.contract_stages enable row level security;
+
+create policy "contract_stages_select_advisor_or_admin" on public.contract_stages
+  for select using (public.is_advisor() or public.is_admin());
+
+create policy "contract_stages_insert_advisor_or_admin" on public.contract_stages
+  for insert with check (public.is_advisor() or public.is_admin());
+
+create policy "contract_stages_update_advisor_or_admin" on public.contract_stages
+  for update using (public.is_advisor() or public.is_admin())
+  with check (public.is_advisor() or public.is_admin());
+
+create policy "contract_stages_delete_advisor_or_admin" on public.contract_stages
+  for delete using (public.is_advisor() or public.is_admin());
+
+create index if not exists contract_stages_contract_id_idx on public.contract_stages(contract_id);
+create index if not exists contract_stages_stage_type_idx on public.contract_stages(stage_type);
+create index if not exists contract_stages_status_idx on public.contract_stages(status);
 
 -- ---------- projects ----------
 create table if not exists public.projects (

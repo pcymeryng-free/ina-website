@@ -6901,35 +6901,37 @@ const INAPlatform = {
     return data.signedUrl;
   },
 
-  /* ---------- Contracts & Agreements (see migration_v67_contracts.sql) ----------
+  /* ---------- Contracts & Agreements (see migration_v67_contracts.sql,
+     migration_v68_contract_stages.sql) ----------
      Advisor/admin-only (enforced by RLS, not just hidden in the UI) —
-     app/contracts.html is the only caller. Reuses the same private
-     "project-documents" Storage bucket as project_documents/
-     program_documents, under a "{user_id}/contracts/{contract_id}/..."
-     prefix — the leading {user_id} segment is what the existing
-     doc_upload_own_folder/doc_read_own_folder_or_advisor/doc_delete_own_folder
-     Storage policies check (storage.foldername(name))[1] against, same
-     convention as project_documents' "{user_id}/{project_id}/{filename}"
-     — a "contracts/..." prefix (no matching policy) throws "new row
-     violates row-level security policy" on upload. getDocumentUrl()
+     app/contracts.html is the only caller. A `contracts` row is the
+     RELATIONSHIP with a Project or a Program (exactly one); the actual
+     documents live in `contract_stages`, one row per stage_type, always
+     pre-created by createContract() below: ['nda','sow','service_contract']
+     for a project-linked contract, ['financing_agreement'] for a
+     program-linked one. Reuses the same private "project-documents"
+     Storage bucket as project_documents/program_documents, under
+     "{user_id}/contracts/{contract_id}/{stage_type}/..." — the leading
+     {user_id} segment is what the existing doc_upload_own_folder/
+     doc_read_own_folder_or_advisor/doc_delete_own_folder Storage policies
+     check (storage.foldername(name))[1] against, same convention as
+     project_documents' "{user_id}/{project_id}/{filename}". getDocumentUrl()
      above already works for any path in that bucket, so contracts don't
      need their own signed-URL function. */
 
-  async listContracts({ projectId, programId, status, contractType } = {}) {
+  async listContracts({ projectId, programId } = {}) {
     let query = supabaseClient
       .from('contracts')
-      .select('*, projects(name), programs(name), profiles!contracts_user_id_fkey(full_name)')
+      .select('*, projects(name), programs(name), profiles!contracts_user_id_fkey(full_name), contract_stages(*)')
       .order('created_at', { ascending: false });
     if (projectId) query = query.eq('project_id', projectId);
     if (programId) query = query.eq('program_id', programId);
-    if (status) query = query.eq('status', status);
-    if (contractType) query = query.eq('contract_type', contractType);
     const { data, error } = await query;
     if (error) throw error;
     return data;
   },
 
-  async createContract({ projectId, programId, contractType, title, counterpartyName, status, effectiveDate, expirationDate, notes, templateKey }) {
+  async createContract({ projectId, programId, title, counterpartyName, notes }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const { data, error } = await supabaseClient
@@ -6938,34 +6940,29 @@ const INAPlatform = {
         user_id: session.user.id,
         project_id: projectId || null,
         program_id: programId || null,
-        contract_type: contractType || 'other',
         title,
         counterparty_name: counterpartyName || null,
-        status: status || 'draft',
-        effective_date: effectiveDate || null,
-        expiration_date: expirationDate || null,
         notes: notes || null,
-        template_key: templateKey || null,
       })
       .select()
       .single();
     if (error) throw error;
+    const initialStages = projectId ? ['nda', 'sow', 'service_contract'] : ['financing_agreement'];
+    const { data: stages, error: stagesError } = await supabaseClient
+      .from('contract_stages')
+      .insert(initialStages.map((stageType) => ({ contract_id: data.id, stage_type: stageType })))
+      .select();
+    if (stagesError) throw stagesError;
     this.logActivity({ eventType: 'create', entityType: 'contract', entityId: data.id, entityLabel: data.title });
-    return data;
+    return { ...data, contract_stages: stages };
   },
 
-  async updateContract(id, { projectId, programId, contractType, title, counterpartyName, status, effectiveDate, expirationDate, notes }) {
+  async updateContract(id, { title, counterpartyName, notes }) {
     const { data, error } = await supabaseClient
       .from('contracts')
       .update({
-        project_id: projectId || null,
-        program_id: programId || null,
-        contract_type: contractType || 'other',
         title,
         counterparty_name: counterpartyName || null,
-        status: status || 'draft',
-        effective_date: effectiveDate || null,
-        expiration_date: expirationDate || null,
         notes: notes || null,
         updated_at: new Date().toISOString(),
       })
@@ -6979,12 +6976,33 @@ const INAPlatform = {
 
   async deleteContract(contract) {
     try {
-      const paths = [contract.generated_storage_path, contract.signed_storage_path].filter(Boolean);
+      const paths = (contract.contract_stages || [])
+        .flatMap((s) => [s.generated_storage_path, s.signed_storage_path])
+        .filter(Boolean);
       if (paths.length) await supabaseClient.storage.from('project-documents').remove(paths);
     } catch (e) { /* best-effort — see deleteDocument()'s comment above */ }
     const { error } = await supabaseClient.from('contracts').delete().eq('id', contract.id);
     if (error) throw error;
     this.logActivity({ eventType: 'delete', entityType: 'contract', entityId: contract.id, entityLabel: contract.title });
+  },
+
+  /* Updates one stage's status/dates in place — every project-linked
+     contract has all 3 stage rows pre-created by createContract() above,
+     so this is always an UPDATE, never an insert. */
+  async updateContractStage(stageId, { status, effectiveDate, expirationDate }) {
+    const { data, error } = await supabaseClient
+      .from('contract_stages')
+      .update({
+        status: status || 'draft',
+        effective_date: effectiveDate || null,
+        expiration_date: expirationDate || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', stageId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
   },
 
   /* Fills a CONTRACT_TEMPLATES entry's {{token}} placeholders with real
@@ -7008,42 +7026,43 @@ const INAPlatform = {
     return { title: tpl.title[lang], body: fill(tpl.body[lang]) };
   },
 
-  async uploadGeneratedContractPdf(contractId, blob) {
+  async uploadGeneratedContractPdf(contractId, stageId, stageType, blob, contractTitle) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
-    const storagePath = `${session.user.id}/contracts/${contractId}/draft_${Date.now()}.pdf`;
+    const storagePath = `${session.user.id}/contracts/${contractId}/${stageType}/draft_${Date.now()}.pdf`;
     const { error: uploadError } = await supabaseClient.storage.from('project-documents').upload(storagePath, blob, { contentType: 'application/pdf' });
     if (uploadError) throw uploadError;
     const { data, error } = await supabaseClient
-      .from('contracts')
+      .from('contract_stages')
       .update({ generated_storage_path: storagePath, updated_at: new Date().toISOString() })
-      .eq('id', contractId)
+      .eq('id', stageId)
       .select()
       .single();
     if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'contract', entityId: contractId, entityLabel: contractTitle, details: { stage: stageType, generated: true } });
     return data;
   },
 
-  async uploadSignedContract(contractId, file) {
+  async uploadSignedContract(contractId, stageId, stageType, file, contractTitle) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `${session.user.id}/contracts/${contractId}/signed_${Date.now()}_${safeName}`;
+    const storagePath = `${session.user.id}/contracts/${contractId}/${stageType}/signed_${Date.now()}_${safeName}`;
     const { error: uploadError } = await supabaseClient.storage.from('project-documents').upload(storagePath, file);
     if (uploadError) throw uploadError;
     const { data, error } = await supabaseClient
-      .from('contracts')
+      .from('contract_stages')
       .update({
         signed_storage_path: storagePath,
         status: 'signed',
         signed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq('id', contractId)
+      .eq('id', stageId)
       .select()
       .single();
     if (error) throw error;
-    this.logActivity({ eventType: 'update', entityType: 'contract', entityId: contractId, entityLabel: data.title, details: { signed: true } });
+    this.logActivity({ eventType: 'update', entityType: 'contract', entityId: contractId, entityLabel: contractTitle, details: { stage: stageType, signed: true } });
     return data;
   },
 
