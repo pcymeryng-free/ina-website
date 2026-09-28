@@ -6905,9 +6905,15 @@ const INAPlatform = {
      Advisor/admin-only (enforced by RLS, not just hidden in the UI) —
      app/contracts.html is the only caller. Reuses the same private
      "project-documents" Storage bucket as project_documents/
-     program_documents, under a "contracts/{user_id}/{contract_id}/..."
-     prefix — getDocumentUrl() above already works for any path in that
-     bucket, so contracts don't need their own signed-URL function. */
+     program_documents, under a "{user_id}/contracts/{contract_id}/..."
+     prefix — the leading {user_id} segment is what the existing
+     doc_upload_own_folder/doc_read_own_folder_or_advisor/doc_delete_own_folder
+     Storage policies check (storage.foldername(name))[1] against, same
+     convention as project_documents' "{user_id}/{project_id}/{filename}"
+     — a "contracts/..." prefix (no matching policy) throws "new row
+     violates row-level security policy" on upload. getDocumentUrl()
+     above already works for any path in that bucket, so contracts don't
+     need their own signed-URL function. */
 
   async listContracts({ projectId, programId, status, contractType } = {}) {
     let query = supabaseClient
@@ -7005,7 +7011,7 @@ const INAPlatform = {
   async uploadGeneratedContractPdf(contractId, blob) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
-    const storagePath = `contracts/${session.user.id}/${contractId}/draft_${Date.now()}.pdf`;
+    const storagePath = `${session.user.id}/contracts/${contractId}/draft_${Date.now()}.pdf`;
     const { error: uploadError } = await supabaseClient.storage.from('project-documents').upload(storagePath, blob, { contentType: 'application/pdf' });
     if (uploadError) throw uploadError;
     const { data, error } = await supabaseClient
@@ -7022,7 +7028,7 @@ const INAPlatform = {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `contracts/${session.user.id}/${contractId}/signed_${Date.now()}_${safeName}`;
+    const storagePath = `${session.user.id}/contracts/${contractId}/signed_${Date.now()}_${safeName}`;
     const { error: uploadError } = await supabaseClient.storage.from('project-documents').upload(storagePath, file);
     if (uploadError) throw uploadError;
     const { data, error } = await supabaseClient

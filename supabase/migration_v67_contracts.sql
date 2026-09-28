@@ -12,9 +12,10 @@
 -- Reutiliza el mismo bucket privado "project-documents" que ya usan
 -- project_documents/program_documents (ver el comentario sobre
 -- uploadProgramDocument() en assets/platform.js), bajo un prefijo nuevo
--- "contracts/{user_id}/{contract_id}/..." — no hace falta un bucket ni
--- una policy de Storage nueva, las políticas existentes solo miran el
--- prefijo {user_id}.
+-- "{user_id}/contracts/{contract_id}/..." — no hace falta un bucket ni
+-- una policy de Storage nueva, las políticas existentes (doc_upload_own_folder
+-- y las demás "own folder") solo miran el PRIMER segmento del path y
+-- exigen que sea el {user_id} de quien sube el archivo.
 --
 -- La firma queda manual por decisión de Pablo (sep 2026): la plataforma
 -- genera un PDF borrador a partir de una plantilla (generated_storage_path)
