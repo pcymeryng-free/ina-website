@@ -522,6 +522,62 @@ create policy "program_documents_delete_own" on public.program_documents
 
 create index if not exists program_documents_program_id_idx on public.program_documents(program_id);
 
+-- ---------- contracts ---------- (see migration_v67_contracts.sql)
+-- NDA/SOW/Service Contract with whoever submitted a project, or a
+-- Financing Agreement with a financing entity (public.programs) — exactly
+-- one of project_id/program_id, never both. Advisor/admin-only (unlike
+-- project_documents/program_documents, which the owner can also see):
+-- these are INA's internal legal/business records, not the submitting
+-- client's. Signing is tracked manually (status + signed_storage_path
+-- for the uploaded signed copy) — no e-signature provider integration.
+create table if not exists public.contracts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  project_id uuid references public.projects(id) on delete cascade,
+  program_id uuid references public.programs(id) on delete cascade,
+  contract_type text not null default 'other'
+    check (contract_type in ('nda', 'sow', 'service_contract', 'financing_agreement', 'other')),
+  title text not null,
+  counterparty_name text,
+  status text not null default 'draft'
+    check (status in ('draft', 'sent', 'signed', 'expired', 'terminated')),
+  template_key text,
+  generated_storage_path text,
+  signed_storage_path text,
+  signed_at timestamptz,
+  effective_date date,
+  expiration_date date,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint contracts_project_xor_program check (
+    (project_id is not null and program_id is null) or
+    (project_id is null and program_id is not null)
+  )
+);
+
+alter table public.contracts enable row level security;
+
+create policy "contracts_select_advisor_or_admin" on public.contracts
+  for select using (public.is_advisor() or public.is_admin());
+
+create policy "contracts_insert_advisor_or_admin" on public.contracts
+  for insert with check (
+    (public.is_advisor() or public.is_admin()) and auth.uid() = user_id
+  );
+
+create policy "contracts_update_advisor_or_admin" on public.contracts
+  for update using (public.is_advisor() or public.is_admin())
+  with check (public.is_advisor() or public.is_admin());
+
+create policy "contracts_delete_advisor_or_admin" on public.contracts
+  for delete using (public.is_advisor() or public.is_admin());
+
+create index if not exists contracts_project_id_idx on public.contracts(project_id);
+create index if not exists contracts_program_id_idx on public.contracts(program_id);
+create index if not exists contracts_status_idx on public.contracts(status);
+create index if not exists contracts_contract_type_idx on public.contracts(contract_type);
+
 -- ---------- projects ----------
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),

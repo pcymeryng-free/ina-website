@@ -200,6 +200,164 @@ const DOCUMENT_TYPES = [
    aplicar a todo tipo de proyecto en etapas tempranas).*/
 const MANDATORY_DOCUMENT_TYPES = ['technical', 'financial'];
 
+/* ---------- Contracts & Agreements (see migration_v67_contracts.sql) ----------
+   A contract links to exactly one of a Project (NDA/SOW/Service Contract
+   with whoever submitted it) or a Program (Financing Agreement with a
+   financing entity — see app/master-data.html's Financing Programs tab).
+   Advisor/admin-only, unlike project_documents/program_documents. */
+const CONTRACT_TYPES = [
+  { value: 'nda', en: 'NDA (Non-Disclosure Agreement)', es: 'NDA (Acuerdo de Confidencialidad)' },
+  { value: 'sow', en: 'SOW (Statement of Work)', es: 'SOW (Alcance de Trabajo)' },
+  { value: 'service_contract', en: 'Service Contract', es: 'Contrato de Servicio' },
+  { value: 'financing_agreement', en: 'Financing Agreement', es: 'Acuerdo de Financiamiento' },
+  { value: 'other', en: 'Other', es: 'Otro' },
+];
+
+const CONTRACT_STATUS = [
+  { value: 'draft', en: 'Draft', es: 'Borrador' },
+  { value: 'sent', en: 'Sent', es: 'Enviado' },
+  { value: 'signed', en: 'Signed', es: 'Firmado' },
+  { value: 'expired', en: 'Expired', es: 'Vencido' },
+  { value: 'terminated', en: 'Terminated', es: 'Rescindido' },
+];
+
+/* Which CONTRACT_TYPES values have a template in CONTRACT_TEMPLATES below
+   — drives whether app/contracts.html shows the "Generate draft PDF"
+   button at all (financing_agreement/other don't have one: financing
+   agreements vary too much by financing entity to templatize generically,
+   and "other" is a catch-all by definition). */
+const CONTRACT_TEMPLATE_TYPES = ['nda', 'sow', 'service_contract'];
+
+/* Starter legal-document text, NOT reviewed by counsel — every one of
+   these is a plain-language placeholder meant to get a first draft on
+   paper, not a ready-to-sign contract. app/contracts.html shows a
+   permanent disclaimer next to the "Generate draft PDF" button; this
+   comment is the same warning for whoever next touches this code.
+   {{token}} placeholders are substituted by fillContractTemplate() below
+   with real data from the linked project or program — INA's own
+   name/address and governing law are deliberately left as blanks for
+   someone to fill in by hand, since this file has no reliable source for
+   them. */
+const CONTRACT_TEMPLATES = {
+  nda: {
+    title: { en: 'Mutual Non-Disclosure Agreement', es: 'Acuerdo Mutuo de Confidencialidad' },
+    body: {
+      en: `This Non-Disclosure Agreement ("Agreement") is entered into as of {{effective_date}} by and between International Network Advisors ("INA"), and {{counterparty_name}} ("Counterparty"), together referred to as the "Parties", in connection with {{subject_reference}}.
+
+1. PURPOSE. The Parties wish to explore a potential business relationship in connection with the above-referenced matter (the "Purpose"), during which each Party may disclose to the other certain confidential and proprietary information.
+
+2. CONFIDENTIAL INFORMATION. "Confidential Information" means any non-public information disclosed by either Party, whether orally, in writing, or in any other form, that is designated as confidential or that reasonably should be understood to be confidential given the nature of the information and the circumstances of disclosure.
+
+3. OBLIGATIONS. The receiving Party shall (a) hold the Confidential Information in strict confidence, (b) not disclose it to any third party without the prior written consent of the disclosing Party, and (c) use it solely for the Purpose.
+
+4. EXCLUSIONS. Confidential Information does not include information that: (a) is or becomes publicly available through no fault of the receiving Party; (b) was rightfully known by the receiving Party before disclosure; (c) is rightfully received from a third party without breach of any confidentiality obligation; or (d) is independently developed without use of the Confidential Information.
+
+5. TERM. This Agreement shall remain in effect for {{term_years}} year(s) from the effective date, unless earlier terminated by either Party upon written notice.
+
+6. GOVERNING LAW. This Agreement shall be governed by the laws of {{governing_law}}.
+
+7. NO LICENSE. Nothing in this Agreement shall be construed as granting any rights under any patent, copyright, trademark, or other intellectual property right.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date first written above.`,
+      es: `El presente Acuerdo de Confidencialidad ("Acuerdo") se celebra con fecha {{effective_date}} entre International Network Advisors ("INA") y {{counterparty_name}} ("Contraparte"), en conjunto las "Partes", en relación con {{subject_reference}}.
+
+1. OBJETO. Las Partes desean explorar una potencial relación comercial vinculada al asunto referido (el "Objeto"), en cuyo marco cada Parte podrá revelar a la otra cierta información confidencial y de carácter reservado.
+
+2. INFORMACIÓN CONFIDENCIAL. Se entiende por "Información Confidencial" toda información no pública revelada por cualquiera de las Partes, en forma oral, escrita o de cualquier otro modo, que sea designada como confidencial o que razonablemente deba considerarse tal según su naturaleza y las circunstancias de su revelación.
+
+3. OBLIGACIONES. La Parte receptora deberá (a) mantener la Información Confidencial en estricta reserva, (b) no divulgarla a terceros sin el consentimiento previo y por escrito de la Parte reveladora, y (c) utilizarla exclusivamente para el Objeto.
+
+4. EXCLUSIONES. No se considera Información Confidencial aquella que: (a) sea o se torne pública sin culpa de la Parte receptora; (b) fuera legítimamente conocida por la Parte receptora antes de su revelación; (c) sea recibida legítimamente de un tercero sin violación de obligación de confidencialidad alguna; o (d) sea desarrollada de forma independiente sin utilizar la Información Confidencial.
+
+5. PLAZO. Este Acuerdo permanecerá vigente por {{term_years}} año(s) desde la fecha de entrada en vigencia, salvo terminación anticipada por cualquiera de las Partes mediante notificación por escrito.
+
+6. LEY APLICABLE. Este Acuerdo se rige por las leyes de {{governing_law}}.
+
+7. SIN LICENCIA. Nada de lo aquí dispuesto podrá interpretarse como el otorgamiento de derecho alguno sobre patentes, derechos de autor, marcas u otra propiedad intelectual.
+
+EN FE DE LO CUAL, las Partes suscriben el presente Acuerdo en la fecha arriba indicada.`,
+    },
+  },
+  sow: {
+    title: { en: 'Statement of Work', es: 'Alcance de Trabajo' },
+    body: {
+      en: `This Statement of Work ("SOW") is entered into as of {{effective_date}} by and between International Network Advisors ("INA") and {{counterparty_name}} ("Client"), in connection with {{subject_reference}}, and is governed by the terms of the underlying Service Contract between the Parties.
+
+1. SCOPE OF WORK. INA shall provide advisory services in connection with the Project, including [describe specific deliverables — structuring support, financing readiness assessment, multilateral finance navigation, etc.].
+
+2. DELIVERABLES. [List specific deliverables and their expected form — reports, assessments, recommendations, introductions to financing entities, etc.]
+
+3. TIMELINE. The services described herein are expected to be performed over a period of [duration], commencing on {{effective_date}}.
+
+4. FEES. [Describe fee structure — fixed fee, retainer, success fee, or a combination.]
+
+5. CLIENT RESPONSIBILITIES. Client shall provide timely access to project information, documentation, and personnel reasonably necessary for INA to perform the services described herein.
+
+6. GOVERNING LAW. This SOW shall be governed by the laws of {{governing_law}}, and incorporates by reference the terms of the Service Contract between the Parties.
+
+IN WITNESS WHEREOF, the Parties have executed this Statement of Work as of the date first written above.`,
+      es: `El presente Alcance de Trabajo ("SOW") se celebra con fecha {{effective_date}} entre International Network Advisors ("INA") y {{counterparty_name}} ("Cliente"), en relación con {{subject_reference}}, y se rige por los términos del Contrato de Servicio suscripto entre las Partes.
+
+1. ALCANCE DEL TRABAJO. INA prestará servicios de asesoría en relación con el Proyecto, incluyendo [describir entregables específicos — apoyo en estructuración, evaluación de preparación para financiamiento, navegación de financiamiento multilateral, etc.].
+
+2. ENTREGABLES. [Detallar los entregables específicos y su forma esperada — informes, evaluaciones, recomendaciones, presentaciones a entidades financieras, etc.]
+
+3. PLAZO. Se espera que los servicios aquí descriptos se presten durante un período de [duración], a partir del {{effective_date}}.
+
+4. HONORARIOS. [Describir la estructura de honorarios — fee fijo, retainer, fee de éxito, o una combinación.]
+
+5. RESPONSABILIDADES DEL CLIENTE. El Cliente deberá brindar acceso oportuno a la información del proyecto, documentación y personal razonablemente necesarios para que INA preste los servicios aquí descriptos.
+
+6. LEY APLICABLE. Este SOW se rige por las leyes de {{governing_law}}, e incorpora por referencia los términos del Contrato de Servicio entre las Partes.
+
+EN FE DE LO CUAL, las Partes suscriben el presente Alcance de Trabajo en la fecha arriba indicada.`,
+    },
+  },
+  service_contract: {
+    title: { en: 'Service Contract', es: 'Contrato de Servicio' },
+    body: {
+      en: `This Service Contract ("Contract") is entered into as of {{effective_date}} by and between International Network Advisors ("INA") and {{counterparty_name}} ("Client"), in connection with {{subject_reference}}.
+
+1. SERVICES. INA shall provide advisory services to Client as further described in one or more Statements of Work ("SOW") executed by the Parties from time to time and incorporated herein by reference.
+
+2. TERM. This Contract shall commence on {{effective_date}} and continue for {{term_years}} year(s), unless earlier terminated as provided herein.
+
+3. FEES AND PAYMENT. Fees for services under this Contract shall be as set forth in the applicable SOW. [Describe payment terms — invoicing frequency, currency, late payment terms.]
+
+4. CONFIDENTIALITY. The Parties' confidentiality obligations are governed by the Non-Disclosure Agreement executed between them, incorporated herein by reference.
+
+5. INDEPENDENT CONTRACTOR. INA is an independent contractor, and nothing in this Contract shall be construed to create a partnership, joint venture, or employment relationship between the Parties.
+
+6. LIMITATION OF LIABILITY. [Describe liability caps and exclusions, per INA's standard terms.]
+
+7. TERMINATION. Either Party may terminate this Contract upon [notice period] written notice to the other Party.
+
+8. GOVERNING LAW. This Contract shall be governed by the laws of {{governing_law}}.
+
+IN WITNESS WHEREOF, the Parties have executed this Contract as of the date first written above.`,
+      es: `El presente Contrato de Servicio ("Contrato") se celebra con fecha {{effective_date}} entre International Network Advisors ("INA") y {{counterparty_name}} ("Cliente"), en relación con {{subject_reference}}.
+
+1. SERVICIOS. INA prestará servicios de asesoría al Cliente según se detalle en uno o más Alcances de Trabajo ("SOW") que las Partes suscriban oportunamente, incorporados aquí por referencia.
+
+2. PLAZO. Este Contrato entrará en vigencia el {{effective_date}} y continuará por {{term_years}} año(s), salvo terminación anticipada conforme a lo aquí previsto.
+
+3. HONORARIOS Y PAGO. Los honorarios por los servicios bajo este Contrato serán los establecidos en el SOW aplicable. [Describir condiciones de pago — frecuencia de facturación, moneda, mora.]
+
+4. CONFIDENCIALIDAD. Las obligaciones de confidencialidad de las Partes se rigen por el Acuerdo de Confidencialidad suscripto entre ellas, incorporado aquí por referencia.
+
+5. CONTRATISTA INDEPENDIENTE. INA actúa como contratista independiente, y nada en este Contrato podrá interpretarse como la creación de una sociedad, joint venture o relación laboral entre las Partes.
+
+6. LIMITACIÓN DE RESPONSABILIDAD. [Describir topes y exclusiones de responsabilidad, según los términos estándar de INA.]
+
+7. RESCISIÓN. Cualquiera de las Partes podrá rescindir este Contrato mediante notificación por escrito con [plazo de preaviso] de anticipación.
+
+8. LEY APLICABLE. Este Contrato se rige por las leyes de {{governing_law}}.
+
+EN FE DE LO CUAL, las Partes suscriben el presente Contrato en la fecha arriba indicada.`,
+    },
+  },
+};
+
 /* ---------- Roadmaps (regulatory/administrative checklist) ----------
    See supabase/migration_v26_gestion_templates.sql for the full schema.
    roadmap_templates.entity_type / project_roadmaps.entity_type share this
@@ -4531,6 +4689,11 @@ const INAPlatform = {
   projectTypeLabel(value) { return labelFor(PROJECT_TYPES, value, currentLang()); },
   DOCUMENT_TYPES,
   documentTypeLabel(value) { return labelFor(DOCUMENT_TYPES, value, currentLang()); },
+  CONTRACT_TYPES,
+  contractTypeLabel(value) { return labelFor(CONTRACT_TYPES, value, currentLang()); },
+  CONTRACT_STATUS,
+  contractStatusLabel(value) { return labelFor(CONTRACT_STATUS, value, currentLang()); },
+  CONTRACT_TEMPLATE_TYPES,
   ROADMAP_ENTITY_TYPES,
   roadmapEntityTypeLabel(value) { return labelFor(ROADMAP_ENTITY_TYPES, value, currentLang()); },
   ROADMAP_STATUS,
@@ -6736,6 +6899,146 @@ const INAPlatform = {
       .createSignedUrl(storagePath, 3600);
     if (error) throw error;
     return data.signedUrl;
+  },
+
+  /* ---------- Contracts & Agreements (see migration_v67_contracts.sql) ----------
+     Advisor/admin-only (enforced by RLS, not just hidden in the UI) —
+     app/contracts.html is the only caller. Reuses the same private
+     "project-documents" Storage bucket as project_documents/
+     program_documents, under a "contracts/{user_id}/{contract_id}/..."
+     prefix — getDocumentUrl() above already works for any path in that
+     bucket, so contracts don't need their own signed-URL function. */
+
+  async listContracts({ projectId, programId, status, contractType } = {}) {
+    let query = supabaseClient
+      .from('contracts')
+      .select('*, projects(name), programs(name), profiles!contracts_user_id_fkey(full_name)')
+      .order('created_at', { ascending: false });
+    if (projectId) query = query.eq('project_id', projectId);
+    if (programId) query = query.eq('program_id', programId);
+    if (status) query = query.eq('status', status);
+    if (contractType) query = query.eq('contract_type', contractType);
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+  },
+
+  async createContract({ projectId, programId, contractType, title, counterpartyName, status, effectiveDate, expirationDate, notes, templateKey }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('contracts')
+      .insert({
+        user_id: session.user.id,
+        project_id: projectId || null,
+        program_id: programId || null,
+        contract_type: contractType || 'other',
+        title,
+        counterparty_name: counterpartyName || null,
+        status: status || 'draft',
+        effective_date: effectiveDate || null,
+        expiration_date: expirationDate || null,
+        notes: notes || null,
+        template_key: templateKey || null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'contract', entityId: data.id, entityLabel: data.title });
+    return data;
+  },
+
+  async updateContract(id, { projectId, programId, contractType, title, counterpartyName, status, effectiveDate, expirationDate, notes }) {
+    const { data, error } = await supabaseClient
+      .from('contracts')
+      .update({
+        project_id: projectId || null,
+        program_id: programId || null,
+        contract_type: contractType || 'other',
+        title,
+        counterparty_name: counterpartyName || null,
+        status: status || 'draft',
+        effective_date: effectiveDate || null,
+        expiration_date: expirationDate || null,
+        notes: notes || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'contract', entityId: data.id, entityLabel: data.title });
+    return data;
+  },
+
+  async deleteContract(contract) {
+    try {
+      const paths = [contract.generated_storage_path, contract.signed_storage_path].filter(Boolean);
+      if (paths.length) await supabaseClient.storage.from('project-documents').remove(paths);
+    } catch (e) { /* best-effort — see deleteDocument()'s comment above */ }
+    const { error } = await supabaseClient.from('contracts').delete().eq('id', contract.id);
+    if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'contract', entityId: contract.id, entityLabel: contract.title });
+  },
+
+  /* Fills a CONTRACT_TEMPLATES entry's {{token}} placeholders with real
+     data — called from app/contracts.html before handing the text to
+     jsPDF. subjectReference is a human-readable description of what the
+     agreement concerns (the linked project's name, or the linked
+     program's name + organization), built by the caller since it already
+     has the joined project/program data from listContracts()/the picker. */
+  fillContractTemplate(contractType, { counterpartyName, effectiveDate, subjectReference, termYears, governingLaw } = {}) {
+    const tpl = CONTRACT_TEMPLATES[contractType];
+    if (!tpl) return null;
+    const lang = currentLang();
+    const tokens = {
+      counterparty_name: counterpartyName || (lang === 'es' ? '[Contraparte]' : '[Counterparty]'),
+      effective_date: effectiveDate || '__________',
+      subject_reference: subjectReference || (lang === 'es' ? '[el Proyecto]' : '[the Project]'),
+      term_years: termYears || '__',
+      governing_law: governingLaw || '__________',
+    };
+    const fill = (s) => s.replace(/\{\{(\w+)\}\}/g, (_, k) => tokens[k] != null ? tokens[k] : '');
+    return { title: tpl.title[lang], body: fill(tpl.body[lang]) };
+  },
+
+  async uploadGeneratedContractPdf(contractId, blob) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const storagePath = `contracts/${session.user.id}/${contractId}/draft_${Date.now()}.pdf`;
+    const { error: uploadError } = await supabaseClient.storage.from('project-documents').upload(storagePath, blob, { contentType: 'application/pdf' });
+    if (uploadError) throw uploadError;
+    const { data, error } = await supabaseClient
+      .from('contracts')
+      .update({ generated_storage_path: storagePath, updated_at: new Date().toISOString() })
+      .eq('id', contractId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async uploadSignedContract(contractId, file) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `contracts/${session.user.id}/${contractId}/signed_${Date.now()}_${safeName}`;
+    const { error: uploadError } = await supabaseClient.storage.from('project-documents').upload(storagePath, file);
+    if (uploadError) throw uploadError;
+    const { data, error } = await supabaseClient
+      .from('contracts')
+      .update({
+        signed_storage_path: storagePath,
+        status: 'signed',
+        signed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', contractId)
+      .select()
+      .single();
+    if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'contract', entityId: contractId, entityLabel: data.title, details: { signed: true } });
+    return data;
   },
 
   /* ---------- Shared field-answer pool + document autofill ----------
