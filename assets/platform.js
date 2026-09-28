@@ -8178,11 +8178,33 @@ const INAPlatform = {
         }
         if (willOpen) keepPanelOnScreen(menu);
       });
+      // Only <button> menu-items (in-page actions — Delete, AI Analysis,
+      // etc.) close the menu synchronously on click; <a> items (every
+      // link inside Master Data/Admin's mobile submenu, the Project
+      // menu, ...) navigate to another page, which unloads the document
+      // anyway. Same bug as the top-level nav links had before
+      // (INAPlatform.initMobileNav() above): hiding the menu — and with
+      // it, the very <a> just tapped — synchronously inside that <a>'s
+      // own click handler suppressed the browser's pending navigation on
+      // iOS. This was the one place that fix never got ported to.
       menu.querySelectorAll('.menu-item').forEach((item) => {
-        item.addEventListener('click', () => closeMenus());
+        if (item.tagName !== 'A') {
+          item.addEventListener('click', () => closeMenus());
+        }
       });
     });
-    document.addEventListener('click', () => closeMenus());
+    // Same care as above: skip closing when the click is on (or inside)
+    // an <a> menu-item — it's about to navigate, and closing the menu
+    // it's inside of, synchronously, during that same click can still
+    // suppress that pending navigation on iOS even though the item's own
+    // listener above no longer does it directly (this one runs too,
+    // since the click bubbles all the way to document regardless).
+    // Genuine outside-clicks, and clicks on non-link menu-items, still
+    // close normally — only skipped when the target IS the navigating link.
+    document.addEventListener('click', (e) => {
+      if (e.target.closest && e.target.closest('a.menu-item')) return;
+      closeMenus();
+    });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeMenus();
     });
