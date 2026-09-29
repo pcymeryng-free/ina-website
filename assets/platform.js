@@ -7010,11 +7010,17 @@ const INAPlatform = {
      jsPDF. subjectReference is a human-readable description of what the
      agreement concerns (the linked project's name, or the linked
      program's name + organization), built by the caller since it already
-     has the joined project/program data from listContracts()/the picker. */
-  fillContractTemplate(contractType, { counterpartyName, effectiveDate, subjectReference, termYears, governingLaw } = {}) {
+     has the joined project/program data from listContracts()/the picker.
+     titleOverride/bodyOverride (see contract_templates /
+     migration_v69_contract_templates.sql) substitute the org's saved
+     default for that stage_type+language instead of the hardcoded
+     CONTRACT_TEMPLATES text — everything else about the call is the same. */
+  fillContractTemplate(contractType, { counterpartyName, effectiveDate, subjectReference, termYears, governingLaw, titleOverride, bodyOverride } = {}) {
     const tpl = CONTRACT_TEMPLATES[contractType];
-    if (!tpl) return null;
+    if (!tpl && titleOverride == null && bodyOverride == null) return null;
     const lang = currentLang();
+    const rawTitle = titleOverride != null ? titleOverride : (tpl ? tpl.title[lang] : '');
+    const rawBody = bodyOverride != null ? bodyOverride : (tpl ? tpl.body[lang] : '');
     const tokens = {
       counterparty_name: counterpartyName || (lang === 'es' ? '[Contraparte]' : '[Counterparty]'),
       effective_date: effectiveDate || '__________',
@@ -7023,7 +7029,40 @@ const INAPlatform = {
       governing_law: governingLaw || '__________',
     };
     const fill = (s) => s.replace(/\{\{(\w+)\}\}/g, (_, k) => tokens[k] != null ? tokens[k] : '');
-    return { title: tpl.title[lang], body: fill(tpl.body[lang]) };
+    return { title: fill(rawTitle), body: fill(rawBody) };
+  },
+
+  /* ---------- Contract template overrides (contract_templates,
+     migration_v69_contract_templates.sql) ---------- */
+
+  async listContractTemplateOverrides() {
+    const { data, error } = await supabaseClient.from('contract_templates').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  /* Upserts only the columns for `lang` (title_en/body_en or
+     title_es/body_es) — a partial payload on conflict leaves the other
+     language's columns untouched, so editing the Spanish default never
+     clobbers a previously-saved English one (or vice versa). */
+  async saveContractTemplateOverride(stageType, lang, { title, body }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const payload = {
+      stage_type: stageType,
+      updated_at: new Date().toISOString(),
+      updated_by: session.user.id,
+    };
+    payload[`title_${lang}`] = title;
+    payload[`body_${lang}`] = body;
+    const { data, error } = await supabaseClient
+      .from('contract_templates')
+      .upsert(payload, { onConflict: 'stage_type' })
+      .select()
+      .single();
+    if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'contract_template', entityId: stageType, entityLabel: stageType });
+    return data;
   },
 
   async uploadGeneratedContractPdf(contractId, stageId, stageType, blob, contractTitle) {

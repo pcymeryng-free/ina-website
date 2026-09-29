@@ -156,9 +156,9 @@
 </section>
 </main>
 
-<script src="/assets/i18n.js?v=81"></script>
+<script src="/assets/i18n.js?v=82"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=101"></script>
+<script src="/assets/platform.js?v=102"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
@@ -168,6 +168,10 @@
   let projects = [];
   let programs = [];
   let editingContractId = null;
+  // {stage_type: row} — org-wide saved defaults from contract_templates
+  // (migration_v69_contract_templates.sql), overriding CONTRACT_TEMPLATES'
+  // hardcoded starter text per language. Loaded once in init().
+  let templateOverrides = {};
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -317,7 +321,7 @@
           <div class="field" style="margin:0;"><label style="font-size:11px;">${escapeHtml(t('contracts.f.expirationDate', 'Expiration date'))}</label><input type="date" class="stage-expiration-date" value="${s.expiration_date || ''}"></div>
         </div>
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
-          ${INAPlatform.CONTRACT_TEMPLATE_TYPES.includes(s.stage_type) ? `<button type="button" class="btn ghost small stage-generate-btn">${escapeHtml(t('contracts.generate', 'Generate draft PDF'))}</button>` : ''}
+          ${INAPlatform.CONTRACT_TEMPLATE_TYPES.includes(s.stage_type) ? `<button type="button" class="btn ghost small stage-generate-btn">${escapeHtml(t('contracts.stages.editGenerate', 'Edit & generate draft'))}</button>` : ''}
           <a href="#" class="stage-generated-link" data-path="${s.generated_storage_path || ''}" style="${s.generated_storage_path ? '' : 'display:none;'}">${escapeHtml(t('contracts.viewDraft', 'View last generated draft'))}</a>
           <button type="button" class="btn ghost small stage-upload-signed-btn">${escapeHtml(t('contracts.uploadSigned', 'Upload signed copy'))}</button>
           <input type="file" class="stage-signed-file-input" accept=".pdf,image/*" style="display:none;">
@@ -325,6 +329,24 @@
           <span class="stage-no-signed" style="font-size:11.5px; color:var(--muted); ${s.signed_storage_path ? 'display:none;' : ''}">${escapeHtml(t('contracts.noSigned', 'Not uploaded yet'))}</span>
           <span class="stage-save-note" style="font-size:11px; color:var(--muted);"></span>
         </div>
+        ${INAPlatform.CONTRACT_TEMPLATE_TYPES.includes(s.stage_type) ? `
+        <div class="stage-editor" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed var(--paper-line);">
+          <div class="field" style="margin:0 0 10px;"><label style="font-size:11px;">${escapeHtml(t('contracts.f.templateTitle', 'Document title'))}</label><input type="text" class="stage-editor-title"></div>
+          <div class="field" style="margin:0;"><textarea class="stage-editor-body" rows="14" style="font-family:var(--mono); font-size:11.5px;"></textarea></div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px;">
+            <button type="button" class="btn ghost small stage-editor-upload-btn">${escapeHtml(t('contracts.stages.uploadTemplate', 'Upload from file (.txt)'))}</button>
+            <input type="file" class="stage-editor-upload-input" accept=".txt,text/plain" style="display:none;">
+            <button type="button" class="btn ghost small stage-editor-restore-btn">${escapeHtml(t('contracts.stages.restoreDefault', 'Restore factory text'))}</button>
+          </div>
+          <label style="display:flex; gap:8px; align-items:flex-start; margin-top:12px; font-size:12px; color:var(--muted); cursor:pointer;">
+            <input type="checkbox" class="stage-editor-save-default" style="margin-top:2px;">
+            <span>${escapeHtml(t('contracts.stages.saveAsDefault', 'Save this text as the new default template'))}<br><span style="font-size:11px;">${escapeHtml(t('contracts.stages.saveAsDefaultHint', ''))}</span></span>
+          </label>
+          <div style="display:flex; gap:10px; align-items:center; margin-top:12px;">
+            <button type="button" class="btn amber small stage-editor-generate-btn">${escapeHtml(t('contracts.generate', 'Generate draft PDF'))}</button>
+            <span class="stage-editor-note" style="font-size:11px; color:var(--muted);"></span>
+          </div>
+        </div>` : ''}
       </div>`).join('');
   }
 
@@ -347,6 +369,15 @@
       if (file) await uploadStageSigned(card, file);
       return;
     }
+    if (e.target.classList.contains('stage-editor-upload-input')) {
+      const file = e.target.files[0];
+      e.target.value = '';
+      if (file) {
+        const text = await file.text();
+        card.querySelector('.stage-editor-body').value = text;
+      }
+      return;
+    }
     if (e.target.classList.contains('stage-status-select') || e.target.classList.contains('stage-effective-date') || e.target.classList.contains('stage-expiration-date')) {
       await saveStageFields(card);
     }
@@ -356,10 +387,16 @@
     const uploadBtn = e.target.closest('.stage-upload-signed-btn');
     const genLink = e.target.closest('.stage-generated-link');
     const signedLink = e.target.closest('.stage-signed-link');
-    if (genBtn) { e.preventDefault(); await generateStageDraft(genBtn.closest('[data-stage-id]')); }
+    const editorUploadBtn = e.target.closest('.stage-editor-upload-btn');
+    const editorRestoreBtn = e.target.closest('.stage-editor-restore-btn');
+    const editorGenerateBtn = e.target.closest('.stage-editor-generate-btn');
+    if (genBtn) { e.preventDefault(); toggleStageEditor(genBtn.closest('[data-stage-id]')); }
     else if (uploadBtn) { e.preventDefault(); uploadBtn.closest('[data-stage-id]').querySelector('.stage-signed-file-input').click(); }
     else if (genLink) { e.preventDefault(); await openStoredFile(genLink.dataset.path); }
     else if (signedLink) { e.preventDefault(); await openStoredFile(signedLink.dataset.path); }
+    else if (editorUploadBtn) { e.preventDefault(); editorUploadBtn.closest('[data-stage-id]').querySelector('.stage-editor-upload-input').click(); }
+    else if (editorRestoreBtn) { e.preventDefault(); populateStageEditor(editorRestoreBtn.closest('[data-stage-id]'), { useDefault: true }); }
+    else if (editorGenerateBtn) { e.preventDefault(); await generateStageDraft(editorGenerateBtn.closest('[data-stage-id]')); }
   });
 
   async function saveStageFields(card) {
@@ -400,29 +437,61 @@
     }
   }
 
+  function computeSubjectReference(existing) {
+    if (existing.project_id) {
+      const p = projects.find((x) => x.id === existing.project_id);
+      return p ? p.name : '';
+    }
+    const p = programs.find((x) => x.id === existing.program_id);
+    return p ? (INAPlatform.programDisplayName ? INAPlatform.programDisplayName(p, lang) : p.name) : '';
+  }
+
+  /* useDefault:true ignores any saved contract_templates override and
+     goes straight to the hardcoded CONTRACT_TEMPLATES starter text
+     ("Restaurar texto de fábrica"); otherwise prefers the saved org
+     default for this stage_type+language, if one exists. Either way the
+     text comes back with THIS contract's real data already substituted —
+     see the plan's note on why the editor works on filled-in text, not
+     raw {{tokens}}. */
+  function populateStageEditor(card, { useDefault } = {}) {
+    const stageType = card.dataset.stageType;
+    const existing = contracts.find((c) => c.id === editingContractId);
+    if (!existing) return;
+    const override = useDefault ? null : templateOverrides[stageType];
+    const filled = INAPlatform.fillContractTemplate(stageType, {
+      counterpartyName: document.getElementById('cxCounterparty').value.trim(),
+      effectiveDate: card.querySelector('.stage-effective-date').value,
+      subjectReference: computeSubjectReference(existing),
+      titleOverride: override ? override[`title_${lang}`] : null,
+      bodyOverride: override ? override[`body_${lang}`] : null,
+    });
+    card.querySelector('.stage-editor-title').value = filled.title;
+    card.querySelector('.stage-editor-body').value = filled.body;
+  }
+
+  function toggleStageEditor(card) {
+    const panel = card.querySelector('.stage-editor');
+    if (!panel) return;
+    const willOpen = panel.style.display === 'none';
+    if (willOpen) populateStageEditor(card, { useDefault: false });
+    panel.style.display = willOpen ? 'block' : 'none';
+  }
+
   async function generateStageDraft(card) {
     const stageId = card.dataset.stageId;
     const stageType = card.dataset.stageType;
-    const btn = card.querySelector('.stage-generate-btn');
+    const btn = card.querySelector('.stage-editor-generate-btn');
+    const note = card.querySelector('.stage-editor-note');
     const existing = contracts.find((c) => c.id === editingContractId);
     if (!existing) return;
-    let subjectReference = '';
-    if (existing.project_id) {
-      const p = projects.find((x) => x.id === existing.project_id);
-      subjectReference = p ? p.name : '';
-    } else {
-      const p = programs.find((x) => x.id === existing.program_id);
-      subjectReference = p ? (INAPlatform.programDisplayName ? INAPlatform.programDisplayName(p, lang) : p.name) : '';
-    }
+    const title = card.querySelector('.stage-editor-title').value.trim();
+    const body = card.querySelector('.stage-editor-body').value;
+    const saveAsDefault = card.querySelector('.stage-editor-save-default').checked;
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<span>${lang === 'es' ? 'Generando…' : 'Generating…'}</span>`;
+    note.textContent = '';
     try {
-      const filled = INAPlatform.fillContractTemplate(stageType, {
-        counterpartyName: document.getElementById('cxCounterparty').value.trim(),
-        effectiveDate: card.querySelector('.stage-effective-date').value,
-        subjectReference,
-      });
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'pt', format: 'letter' });
       const MARGIN = 56;
@@ -431,11 +500,11 @@
       let y = 72;
       doc.setFont('times', 'bold');
       doc.setFontSize(16);
-      doc.text(filled.title, PAGE_W / 2, y, { align: 'center' });
+      doc.text(title, PAGE_W / 2, y, { align: 'center' });
       y += 34;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
-      const paragraphs = filled.body.split('\n\n');
+      const paragraphs = body.split('\n\n');
       paragraphs.forEach((para) => {
         const lines = doc.splitTextToSize(para, PAGE_W - MARGIN * 2);
         lines.forEach((line) => {
@@ -458,11 +527,15 @@
       const blob = doc.output('blob');
       const saved = await INAPlatform.uploadGeneratedContractPdf(existing.id, stageId, stageType, blob, existing.title);
       applyStageUpdate(saved);
+      if (saveAsDefault) {
+        const savedTpl = await INAPlatform.saveContractTemplateOverride(stageType, lang, { title, body });
+        templateOverrides[stageType] = savedTpl;
+      }
       renderStageCards();
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (err) {
-      alert(err.message || (lang === 'es' ? 'No se pudo generar el borrador.' : "Couldn't generate the draft."));
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo generar el borrador.' : "Couldn't generate the draft.");
     } finally {
       btn.disabled = false;
       btn.innerHTML = originalHTML;
@@ -628,6 +701,11 @@
     try {
       [projects, programs] = await Promise.all([INAPlatform.listProjects(), INAPlatform.listPrograms()]);
     } catch (e) { projects = []; programs = []; }
+    try {
+      const overrides = await INAPlatform.listContractTemplateOverrides();
+      templateOverrides = {};
+      overrides.forEach((row) => { templateOverrides[row.stage_type] = row; });
+    } catch (e) { templateOverrides = {}; }
     await loadContracts();
 
     document.getElementById('loadingState').style.display = 'none';

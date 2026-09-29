@@ -612,6 +612,38 @@ create index if not exists contract_stages_contract_id_idx on public.contract_st
 create index if not exists contract_stages_stage_type_idx on public.contract_stages(stage_type);
 create index if not exists contract_stages_status_idx on public.contract_stages(status);
 
+-- ---------- contract_templates ---------- (see migration_v69_contract_templates.sql)
+-- An editable, reusable default per stage_type, layered on top of the
+-- hardcoded CONTRACT_TEMPLATES starter text in assets/platform.js. One row
+-- per stage_type, org-wide (advisor/admin shared, not per-owner) — a NULL
+-- title_*/body_* column means "no override for that language yet, fall
+-- back to CONTRACT_TEMPLATES".
+create table if not exists public.contract_templates (
+  stage_type text primary key
+    check (stage_type in ('nda', 'sow', 'service_contract')),
+  title_en text,
+  title_es text,
+  body_en text,
+  body_es text,
+  updated_at timestamptz not null default now(),
+  updated_by uuid references public.profiles(id) on delete set null
+);
+
+alter table public.contract_templates enable row level security;
+
+create policy "contract_templates_select_advisor_or_admin" on public.contract_templates
+  for select using (public.is_advisor() or public.is_admin());
+
+create policy "contract_templates_insert_advisor_or_admin" on public.contract_templates
+  for insert with check (public.is_advisor() or public.is_admin());
+
+create policy "contract_templates_update_advisor_or_admin" on public.contract_templates
+  for update using (public.is_advisor() or public.is_admin())
+  with check (public.is_advisor() or public.is_admin());
+
+create policy "contract_templates_delete_advisor_or_admin" on public.contract_templates
+  for delete using (public.is_advisor() or public.is_admin());
+
 -- ---------- projects ----------
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
