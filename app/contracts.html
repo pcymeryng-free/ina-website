@@ -116,6 +116,20 @@
       </div>
     </div>
 
+    <!-- ===== Contract view overlay (read-only) ===== -->
+    <div class="risk-form-overlay" id="contractViewOverlay" style="display:none;">
+      <div class="risk-form-panel" style="max-width:600px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+          <h3 style="margin:0;" id="contractViewTitle"></h3>
+          <button type="button" class="btn ghost small" id="closeContractView">&times;</button>
+        </div>
+        <div id="contractViewBody"></div>
+        <div style="display:flex; gap:12px; margin-top:22px;">
+          <button type="button" class="btn amber small" id="contractViewEditBtn"><span data-i18n="risk.edit">Edit</span></button>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== Contract form overlay ===== -->
     <div class="risk-form-overlay" id="contractFormOverlay" style="display:none;">
       <div class="risk-form-panel" style="max-width:620px;">
@@ -267,17 +281,44 @@
       const dateAdded = c.created_at ? new Date(c.created_at).toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US') : '—';
       const chips = sortedStages(c).map((s) => `<span class="status-pill ${STAGE_STATUS_CLASS[s.status] || 'submitted'}" style="margin:0 4px 4px 0; display:inline-block;">${escapeHtml(stageShortLabel(s.stage_type))}: ${escapeHtml(INAPlatform.contractStatusLabel(s.status))}</span>`).join('') || '—';
       return `
-      <tr data-id="${c.id}" class="risk-row">
+      <tr data-id="${c.id}" class="risk-row" style="cursor:pointer;">
         <td>${escapeHtml(c.title)}</td>
         <td>${escapeHtml(linkedToLabel(c))}</td>
         <td>${escapeHtml(c.counterparty_name) || '—'}</td>
         <td>${chips}</td>
         <td>${escapeHtml(addedBy)}</td>
         <td>${dateAdded}</td>
-        <td><button type="button" class="btn ghost small edit-contract-btn" data-id="${c.id}"><span data-i18n="risk.edit">Edit</span></button></td>
+        <td style="white-space:nowrap;">
+          <button type="button" class="btn ghost small edit-contract-btn" data-id="${c.id}"><span data-i18n="risk.edit">Edit</span></button>
+          <button type="button" class="btn ghost small delete-contract-row-btn" data-id="${c.id}"><span data-i18n="md.delete">Delete</span></button>
+        </td>
       </tr>`;
     }).join('');
-    tbody.querySelectorAll('.edit-contract-btn').forEach((btn) => btn.addEventListener('click', () => openContractForm(btn.dataset.id)));
+  }
+
+  // Delegated once (not re-bound per render) — row click opens read-only
+  // view; Edit/Delete buttons inside the row stop it from also opening
+  // the view via the `closest('button')` guard.
+  document.getElementById('contractsTableBody').addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('.edit-contract-btn');
+    const deleteBtn = e.target.closest('.delete-contract-row-btn');
+    if (editBtn) { openContractForm(editBtn.dataset.id); return; }
+    if (deleteBtn) { await deleteContractById(deleteBtn.dataset.id); return; }
+    const row = e.target.closest('tr[data-id]');
+    if (row) openContractView(row.dataset.id);
+  });
+
+  async function deleteContractById(id) {
+    const existing = contracts.find((c) => c.id === id);
+    if (!existing) return;
+    const ok = confirm(lang === 'es' ? '¿Eliminar este contrato?' : 'Delete this contract?');
+    if (!ok) return;
+    try {
+      await INAPlatform.deleteContract(existing);
+      await loadContracts();
+    } catch (err) {
+      alert(err.message || (lang === 'es' ? 'No se pudo eliminar.' : "Couldn't delete."));
+    }
   }
 
   /* ---------- Form ---------- */
@@ -552,6 +593,53 @@
     el.innerHTML = `<option value="">${lang === 'es' ? '— Seleccionar —' : '— Select —'}</option>` +
       programs.map((p) => `<option value="${p.id}" ${p.id === selected ? 'selected' : ''}>${escapeHtml(INAPlatform.programDisplayName ? INAPlatform.programDisplayName(p, lang) : p.name)}</option>`).join('');
   }
+
+  /* ---------- Read-only view (row click) ---------- */
+  function openContractView(id) {
+    const c = contracts.find((x) => x.id === id);
+    if (!c) return;
+    document.getElementById('contractViewTitle').textContent = c.title;
+    const rows = sortedStages(c).map((s) => {
+      const dates = [];
+      if (s.effective_date) dates.push(`${t('contracts.f.effectiveDate', 'Effective date')}: ${s.effective_date}`);
+      if (s.expiration_date) dates.push(`${t('contracts.f.expirationDate', 'Expiration date')}: ${s.expiration_date}`);
+      return `
+        <div style="padding:12px 0; border-bottom:1px solid var(--paper-line);">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <strong style="font-size:13px;">${escapeHtml(INAPlatform.contractTypeLabel(s.stage_type))}</strong>
+            <span class="status-pill ${STAGE_STATUS_CLASS[s.status] || 'submitted'}">${escapeHtml(INAPlatform.contractStatusLabel(s.status))}</span>
+          </div>
+          ${dates.length ? `<p style="font-size:11.5px; color:var(--muted); margin:6px 0 0;">${dates.join(' · ')}</p>` : ''}
+          <div style="display:flex; gap:14px; margin-top:8px; flex-wrap:wrap;">
+            ${s.generated_storage_path ? `<a href="#" class="view-file-link" data-path="${s.generated_storage_path}">${escapeHtml(t('contracts.viewDraft', 'View last generated draft'))}</a>` : `<span style="font-size:11.5px; color:var(--muted);">${lang === 'es' ? 'Sin borrador generado' : 'No draft generated'}</span>`}
+            ${s.signed_storage_path ? `<a href="#" class="view-file-link" data-path="${s.signed_storage_path}">${escapeHtml(t('contracts.viewSigned', 'View signed copy'))}</a>` : ''}
+          </div>
+        </div>`;
+    }).join('') || `<p style="font-size:12.5px; color:var(--muted);">—</p>`;
+    document.getElementById('contractViewBody').innerHTML = `
+      <p style="font-size:12.5px; color:var(--muted); margin:0 0 4px;">${escapeHtml(t('contracts.f.linkedTo', 'Linked to'))}: <strong style="color:var(--ink);">${escapeHtml(linkedToLabel(c))}</strong></p>
+      ${c.counterparty_name ? `<p style="font-size:12.5px; color:var(--muted); margin:0 0 4px;">${escapeHtml(t('contracts.f.counterparty', 'Counterparty'))}: <strong style="color:var(--ink);">${escapeHtml(c.counterparty_name)}</strong></p>` : ''}
+      ${c.notes ? `<p style="font-size:12.5px; color:var(--muted); margin:10px 0 0; white-space:pre-wrap;">${escapeHtml(c.notes)}</p>` : ''}
+      <div style="margin-top:16px;">${rows}</div>
+    `;
+    document.getElementById('contractViewEditBtn').dataset.id = c.id;
+    document.getElementById('contractViewOverlay').style.display = 'flex';
+  }
+  function closeContractView() {
+    document.getElementById('contractViewOverlay').style.display = 'none';
+  }
+  document.getElementById('closeContractView').addEventListener('click', closeContractView);
+  document.getElementById('contractViewEditBtn').addEventListener('click', () => {
+    const id = document.getElementById('contractViewEditBtn').dataset.id;
+    closeContractView();
+    openContractForm(id);
+  });
+  document.getElementById('contractViewBody').addEventListener('click', async (e) => {
+    const link = e.target.closest('.view-file-link');
+    if (!link) return;
+    e.preventDefault();
+    await openStoredFile(link.dataset.path);
+  });
 
   function openContractForm(id) {
     editingContractId = id || null;
