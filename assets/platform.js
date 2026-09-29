@@ -318,40 +318,52 @@ EN FE DE LO CUAL, las Partes suscriben el presente Alcance de Trabajo en la fech
     body: {
       en: `This Service Contract ("Contract") is entered into as of {{effective_date}} by and between International Network Advisors ("INA") and {{counterparty_name}} ("Client"), in connection with {{subject_reference}}.
 
-1. SERVICES. INA shall provide advisory services to Client as further described in one or more Statements of Work ("SOW") executed by the Parties from time to time and incorporated herein by reference.
+1. SERVICES. INA shall provide Client the following advisory services: [describe the specific services to be provided]. Any additional services may be further detailed in one or more Statements of Work ("SOW") executed by the Parties from time to time and incorporated herein by reference.
 
-2. TERM. This Contract shall commence on {{effective_date}} and continue for {{term_years}} year(s), unless earlier terminated as provided herein.
+2. WORK PLAN AND DELIVERABLES. The services shall be performed in accordance with the following work plan: [describe the work plan — phases, milestones, expected sequencing]. The deliverables to be provided by INA under this Contract are: [list specific deliverables — reports, assessments, recommendations, introductions to financing entities, etc.].
 
-3. FEES AND PAYMENT. Fees for services under this Contract shall be as set forth in the applicable SOW. [Describe payment terms — invoicing frequency, currency, late payment terms.]
+3. PROJECT TEAM. The services shall be performed by the following INA team: [list the team members assigned to this engagement and their roles/responsibilities]. INA may substitute any team member with personnel of comparable experience upon reasonable notice to Client.
 
-4. CONFIDENTIALITY. The Parties' confidentiality obligations are governed by the Non-Disclosure Agreement executed between them, incorporated herein by reference.
+4. METHODOLOGY. INA shall perform the services in accordance with the following working methodology: [describe the general approach — review/feedback cycles, tools, reporting cadence, coordination meetings, etc.].
 
-5. INDEPENDENT CONTRACTOR. INA is an independent contractor, and nothing in this Contract shall be construed to create a partnership, joint venture, or employment relationship between the Parties.
+5. TERM AND DURATION. This Contract shall commence on {{effective_date}} and continue for {{term_years}} year(s), unless earlier terminated as provided herein. The work plan described in Section 2 is expected to be completed within [estimated duration].
 
-6. LIMITATION OF LIABILITY. [Describe liability caps and exclusions, per INA's standard terms.]
+6. FEES AND PAYMENT. [Describe payment terms — fee structure, invoicing frequency, currency, late payment terms.]
 
-7. TERMINATION. Either Party may terminate this Contract upon [notice period] written notice to the other Party.
+7. CONFIDENTIALITY. The Parties' confidentiality obligations are governed by the Non-Disclosure Agreement executed between them, incorporated herein by reference.
 
-8. GOVERNING LAW. This Contract shall be governed by the laws of {{governing_law}}.
+8. INDEPENDENT CONTRACTOR. INA is an independent contractor, and nothing in this Contract shall be construed to create a partnership, joint venture, or employment relationship between the Parties.
+
+9. LIMITATION OF LIABILITY. [Describe liability caps and exclusions, per INA's standard terms.]
+
+10. TERMINATION. Either Party may terminate this Contract upon [notice period] written notice to the other Party.
+
+11. GOVERNING LAW. This Contract shall be governed by the laws of {{governing_law}}.
 
 IN WITNESS WHEREOF, the Parties have executed this Contract as of the date first written above.`,
       es: `El presente Contrato de Servicio ("Contrato") se celebra con fecha {{effective_date}} entre International Network Advisors ("INA") y {{counterparty_name}} ("Cliente"), en relación con {{subject_reference}}.
 
-1. SERVICIOS. INA prestará servicios de asesoría al Cliente según se detalle en uno o más Alcances de Trabajo ("SOW") que las Partes suscriban oportunamente, incorporados aquí por referencia.
+1. SERVICIOS. INA prestará al Cliente los siguientes servicios de asesoría: [describir los servicios específicos a prestar]. Cualquier servicio adicional podrá detallarse en uno o más Alcances de Trabajo ("SOW") que las Partes suscriban oportunamente, incorporados aquí por referencia.
 
-2. PLAZO. Este Contrato entrará en vigencia el {{effective_date}} y continuará por {{term_years}} año(s), salvo terminación anticipada conforme a lo aquí previsto.
+2. PLAN DE TRABAJO Y ENTREGABLES. Los servicios se prestarán conforme al siguiente plan de trabajo: [describir el plan de trabajo — etapas, hitos, secuencia esperada]. Los entregables que INA proveerá bajo este Contrato son: [detallar los entregables específicos — informes, evaluaciones, recomendaciones, presentaciones a entidades financieras, etc.].
 
-3. HONORARIOS Y PAGO. Los honorarios por los servicios bajo este Contrato serán los establecidos en el SOW aplicable. [Describir condiciones de pago — frecuencia de facturación, moneda, mora.]
+3. EQUIPO DE TRABAJO. Los servicios serán prestados por el siguiente equipo de INA: [listar los integrantes del equipo asignado a este proyecto y sus roles/responsabilidades]. INA podrá sustituir a cualquier integrante del equipo por personal de experiencia comparable, previa notificación razonable al Cliente.
 
-4. CONFIDENCIALIDAD. Las obligaciones de confidencialidad de las Partes se rigen por el Acuerdo de Confidencialidad suscripto entre ellas, incorporado aquí por referencia.
+4. METODOLOGÍA. INA prestará los servicios conforme a la siguiente metodología de trabajo: [describir el enfoque general — ciclos de revisión/feedback, herramientas, frecuencia de reportes, reuniones de coordinación, etc.].
 
-5. CONTRATISTA INDEPENDIENTE. INA actúa como contratista independiente, y nada en este Contrato podrá interpretarse como la creación de una sociedad, joint venture o relación laboral entre las Partes.
+5. PLAZO Y DURACIÓN. Este Contrato entrará en vigencia el {{effective_date}} y continuará por {{term_years}} año(s), salvo terminación anticipada conforme a lo aquí previsto. Se estima que el plan de trabajo descripto en la Sección 2 se completará en [duración estimada].
 
-6. LIMITACIÓN DE RESPONSABILIDAD. [Describir topes y exclusiones de responsabilidad, según los términos estándar de INA.]
+6. HONORARIOS Y PAGO. [Describir condiciones de pago — estructura de honorarios, frecuencia de facturación, moneda, mora.]
 
-7. RESCISIÓN. Cualquiera de las Partes podrá rescindir este Contrato mediante notificación por escrito con [plazo de preaviso] de anticipación.
+7. CONFIDENCIALIDAD. Las obligaciones de confidencialidad de las Partes se rigen por el Acuerdo de Confidencialidad suscripto entre ellas, incorporado aquí por referencia.
 
-8. LEY APLICABLE. Este Contrato se rige por las leyes de {{governing_law}}.
+8. CONTRATISTA INDEPENDIENTE. INA actúa como contratista independiente, y nada en este Contrato podrá interpretarse como la creación de una sociedad, joint venture o relación laboral entre las Partes.
+
+9. LIMITACIÓN DE RESPONSABILIDAD. [Describir topes y exclusiones de responsabilidad, según los términos estándar de INA.]
+
+10. RESCISIÓN. Cualquiera de las Partes podrá rescindir este Contrato mediante notificación por escrito con [plazo de preaviso] de anticipación.
+
+11. LEY APLICABLE. Este Contrato se rige por las leyes de {{governing_law}}.
 
 EN FE DE LO CUAL, las Partes suscriben el presente Contrato en la fecha arriba indicada.`,
     },
