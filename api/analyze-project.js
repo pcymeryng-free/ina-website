@@ -207,6 +207,17 @@ Respond with ONLY a single valid JSON object — no markdown code fences, no com
 
 overall_score must be the weighted average of the 8 dimension scores (equal weighting is fine unless the project profile clearly warrants otherwise). gap_roadmap should have 3-6 items ordered by priority. financing_recommendations should have 2-4 items, each mechanism used at most once.`;
 
+// max_tokens below (every provider branch) is 6000, not the previous 3000 —
+// this schema asks for ~38 bilingual text fields (8 dimensions x 2
+// rationales, up to 6 gap_roadmap x 2, up to 4 financing_recommendations x
+// 2, 2 summaries), and a detailed project (e.g. one extracted from a rich
+// PDF) can make the model's response long enough to get cut off mid-JSON
+// at 3000, which then fails JSON.parse() below with "Could not parse
+// analysis output" — intermittent and provider-length-dependent, so a
+// retry can "fix" it by luck alone without the underlying cap being the
+// real problem. Bumped once already (2026-10-01); if this recurs, raise it
+// further rather than relying on retries.
+
 function json(res, status, body) {
   res.status(status).setHeader('Content-Type', 'application/json');
   res.end(JSON.stringify(body));
@@ -656,7 +667,7 @@ async function handler(req, res) {
         },
         body: JSON.stringify({
           model: GROQ_MODEL || GROQ_MODEL_DEFAULT,
-          max_tokens: 3000,
+          max_tokens: 6000,
           temperature: 0.2,
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
@@ -700,7 +711,7 @@ async function handler(req, res) {
         },
         body: JSON.stringify({
           model: LOCAL_LLM_MODEL,
-          max_tokens: 3000,
+          max_tokens: 6000,
           temperature: 0.2,
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
@@ -747,7 +758,7 @@ async function handler(req, res) {
           modelId: BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT,
           system: [{ text: SYSTEM_PROMPT }],
           messages: [{ role: 'user', content: [{ text: projectText }] }],
-          inferenceConfig: { maxTokens: 3000, temperature: 0.2 },
+          inferenceConfig: { maxTokens: 6000, temperature: 0.2 },
         }));
         const outputContent = (bedrockRes.output && bedrockRes.output.message && bedrockRes.output.message.content) || [];
         rawText = outputContent.map((b) => b.text || '').join('');
@@ -774,7 +785,7 @@ async function handler(req, res) {
         },
         body: JSON.stringify({
           model: CLAUDE_MODEL || 'claude-sonnet-5',
-          max_tokens: 3000,
+          max_tokens: 6000,
           system: SYSTEM_PROMPT,
           messages: [{ role: 'user', content: contentBlocks }],
         }),
