@@ -69,6 +69,30 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+// Groq's "on_demand" free tier caps at a low tokens-per-minute budget
+// SHARED across every AI feature on this same account — a 429 with code
+// "rate_limit_exceeded" is routine under normal use, not a real failure,
+// and Groq's own error body names exactly how long to wait ("Please try
+// again in 17.9s"). One automatic retry after that wait turns a transient
+// cross-feature collision into a few extra seconds instead of a hard
+// error shown to the user. Bounded at 25s so a single retry can't blow
+// past this function's maxDuration once the actual model call time is
+// added back in. Groq-specific (unlike the 'local' branch this shares a
+// fetch() with below, since a local server's error shape/semantics aren't
+// Groq's). Same helper duplicated across every api/*.js that calls Groq
+// (no shared module bundling on Vercel here).
+async function fetchGroqWithRetry(url, body, headers) {
+  const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+  if (res.status !== 429) return res;
+  const errBody = await res.clone().json().catch(() => null);
+  if ((errBody && errBody.error && errBody.error.code) !== 'rate_limit_exceeded') return res;
+  const match = /try again in ([\d.]+)s/i.exec((errBody.error && errBody.error.message) || '');
+  const waitMs = Math.min(match ? Math.ceil(parseFloat(match[1]) * 1000) + 500 : 5000, 25000);
+  console.warn(`[generate-proposal] Groq rate-limited, retrying once in ${waitMs}ms`);
+  await new Promise((resolve) => setTimeout(resolve, waitMs));
+  return fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+}
+
 /* Same allowlist as api/analyze-project.js — see that file's comment. */
 const ALLOWED_ORIGINS = [
   'https://international-network-advisors.com',
@@ -318,14 +342,14 @@ async function handler(req, res) {
         : `${(LOCAL_LLM_BASE_URL || LOCAL_LLM_BASE_URL_DEFAULT).replace(/\/$/, '')}/chat/completions`;
       const apiKey = provider === 'groq' ? GROQ_API_KEY : LOCAL_LLM_API_KEY;
       const model = provider === 'groq' ? (GROQ_MODEL || GROQ_MODEL_DEFAULT) : LOCAL_LLM_MODEL;
-      const chatRes = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}) },
-        body: JSON.stringify({
-          model, max_tokens: 4000, temperature: 0.4,
-          messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: contextText }],
-        }),
-      });
+      const chatHeaders = { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}) };
+      const chatBody = {
+        model, max_tokens: 4000, temperature: 0.4,
+        messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: contextText }],
+      };
+      const chatRes = provider === 'groq'
+        ? await fetchGroqWithRetry(url, chatBody, chatHeaders)
+        : await fetch(url, { method: 'POST', headers: chatHeaders, body: JSON.stringify(chatBody) });
       if (!chatRes.ok) {
         const errText = await chatRes.text().catch(() => '');
         console.error(`[generate-proposal] projectId=${projectId} ${provider} request failed (status ${chatRes.status}):`, errText);

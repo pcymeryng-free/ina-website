@@ -223,6 +223,33 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+// Groq's "on_demand" free tier caps at a low tokens-per-minute budget
+// SHARED across every AI feature on this same account — a 429 with code
+// "rate_limit_exceeded" is routine under normal use (more so now that
+// max_tokens was raised above — see that comment), not a real failure,
+// and Groq's own error body names exactly how long to wait ("Please try
+// again in 17.9s"). One automatic retry after that wait turns a transient
+// cross-feature collision into a few extra seconds instead of a hard
+// error shown to the user. Bounded at 25s so a single retry can't blow
+// past this function's maxDuration once the actual model call time is
+// added back in. Same helper duplicated across every api/*.js that calls
+// Groq (no shared module bundling on Vercel here).
+async function fetchGroqWithRetry(body, headers) {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST', headers, body: JSON.stringify(body),
+  });
+  if (res.status !== 429) return res;
+  const errBody = await res.clone().json().catch(() => null);
+  if ((errBody && errBody.error && errBody.error.code) !== 'rate_limit_exceeded') return res;
+  const match = /try again in ([\d.]+)s/i.exec((errBody.error && errBody.error.message) || '');
+  const waitMs = Math.min(match ? Math.ceil(parseFloat(match[1]) * 1000) + 500 : 5000, 25000);
+  console.warn(`[analyze-project] Groq rate-limited, retrying once in ${waitMs}ms`);
+  await new Promise((resolve) => setTimeout(resolve, waitMs));
+  return fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST', headers, body: JSON.stringify(body),
+  });
+}
+
 /* CORS — needed once the site moved to Bluehost for production (see
    MIGRACION_BLUEHOST.md Parte 3/4): this function stays on Vercel
    permanently (Bluehost has no Node.js support), reachable from the
@@ -659,22 +686,15 @@ async function handler(req, res) {
       // `projectText` is sent (no contentBlocks/vision — see above), as a
       // plain string user message rather than Anthropic's content-block
       // array shape.
-      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${GROQ_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: GROQ_MODEL || GROQ_MODEL_DEFAULT,
-          max_tokens: 6000,
-          temperature: 0.2,
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: projectText },
-          ],
-        }),
-      });
+      const groqRes = await fetchGroqWithRetry({
+        model: GROQ_MODEL || GROQ_MODEL_DEFAULT,
+        max_tokens: 6000,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: projectText },
+        ],
+      }, { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` });
 
       if (!groqRes.ok) {
         const errText = await groqRes.text().catch(() => '');

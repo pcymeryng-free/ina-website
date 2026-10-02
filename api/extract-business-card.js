@@ -67,6 +67,33 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+// Groq's "on_demand" free tier caps at a low tokens-per-minute budget
+// SHARED across every AI feature on this same account — a 429 with code
+// "rate_limit_exceeded" is routine under normal use (see also the
+// max_tokens:700 history above), not a real failure, and Groq's own error
+// body names exactly how long to wait ("Please try again in 17.9s"). One
+// automatic retry after that wait turns a transient cross-feature
+// collision into a few extra seconds instead of a hard error shown to the
+// user. Bounded at 25s so a single retry can't blow past this function's
+// maxDuration once the actual model call time is added back in. Same
+// helper duplicated across every api/*.js that calls Groq (no shared
+// module bundling on Vercel here — see file headers).
+async function fetchGroqWithRetry(body, headers) {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST', headers, body: JSON.stringify(body),
+  });
+  if (res.status !== 429) return res;
+  const errBody = await res.clone().json().catch(() => null);
+  if ((errBody && errBody.error && errBody.error.code) !== 'rate_limit_exceeded') return res;
+  const match = /try again in ([\d.]+)s/i.exec((errBody.error && errBody.error.message) || '');
+  const waitMs = Math.min(match ? Math.ceil(parseFloat(match[1]) * 1000) + 500 : 5000, 25000);
+  console.warn(`[extract-business-card] Groq rate-limited, retrying once in ${waitMs}ms`);
+  await new Promise((resolve) => setTimeout(resolve, waitMs));
+  return fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST', headers, body: JSON.stringify(body),
+  });
+}
+
 /* Same allowlist/CORS approach as api/analyze-project.js — see that file's
    comment for why this stays a small explicit list rather than '*'. */
 const ALLOWED_ORIGINS = [
@@ -213,10 +240,7 @@ async function handler(req, res) {
     if (provider === 'groq') {
       // OpenAI-compatible chat completions shape — image_url content block
       // with a data: URL, per Groq's vision docs (console.groq.com/docs/vision).
-      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
-        body: JSON.stringify({
+      const groqRes = await fetchGroqWithRetry({
           model: GROQ_VISION_MODEL || GROQ_VISION_MODEL_DEFAULT,
           // History: was 500, then bumped to 1024 (see PLATFORM_SETUP.md) —
           // with reasoning enabled, hidden reasoning tokens still counted
@@ -260,8 +284,7 @@ async function handler(req, res) {
               ],
             },
           ],
-        }),
-      });
+        }, { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` });
       if (!groqRes.ok) {
         const errText = await groqRes.text().catch(() => '');
         console.error(`[extract-business-card] Groq request failed (status ${groqRes.status}):`, errText);
