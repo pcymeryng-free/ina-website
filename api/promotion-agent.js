@@ -178,6 +178,26 @@ function evaluateRules(project, toStage, requirement, { analysis, documents, cov
   return unmet;
 }
 
+// Per-agent hint (see migration_v71_agent_hints.sql / app/ai-hints.html) —
+// a row of free text an admin can edit live from the platform, fetched
+// fresh on every request and appended to buildSystemPrompt()'s output by
+// the handler below. Replaces the old api/promotion-agent.hints.js static
+// file (oct 2026) — see api/analyze-project.js's matching comment for why.
+async function getAgentHint(agentKey, { supabaseUrl, serviceKey }) {
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/agent_hints?agent_key=eq.${agentKey}&select=hint_text`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    return (rows[0] && rows[0].hint_text) || '';
+  } catch (e) { return ''; }
+}
+function hintsSuffix(text) {
+  return text && text.trim() ? `\n\nADDITIONAL GUIDANCE FROM INA:\n${text.trim()}` : '';
+}
+
 function buildSystemPrompt() {
   return `You are a project-structuring reviewer for INA (International Network Advisors), helping ENACOM Argentina's advisors decide whether a digital-infrastructure project is genuinely ready to be promoted to its next readiness stage (Concept Stage → Early Structuring → Advanced Structuring → Investment Ready).
 
@@ -260,6 +280,7 @@ async function handler(req, res) {
   if (!accessToken) return json(res, 401, { error: 'Missing Authorization header' });
 
   try {
+    const extraHints = await getAgentHint('promotion-agent', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
 
@@ -346,7 +367,7 @@ async function handler(req, res) {
       deterministic_unmet_requirements: unmetRules,
     };
 
-    const systemPrompt = buildSystemPrompt();
+    const systemPrompt = buildSystemPrompt() + hintsSuffix(extraHints);
     const userContent = `PROJECT + DETERMINISTIC CHECK RESULTS (JSON):\n${JSON.stringify(projectSummary)}`;
 
     let rawText;

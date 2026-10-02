@@ -230,6 +230,27 @@ function buildFieldsSpec() {
   });
 }
 
+// Per-agent hint (see migration_v71_agent_hints.sql / app/ai-hints.html) —
+// a row of free text an admin can edit live from the platform, fetched
+// fresh on every request and appended to buildSystemPrompt()'s output by
+// the handler below. Replaces the old api/extract-project-data.hints.js
+// static file (oct 2026) — see api/analyze-project.js's matching comment
+// for why.
+async function getAgentHint(agentKey, { supabaseUrl, serviceKey }) {
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/agent_hints?agent_key=eq.${agentKey}&select=hint_text`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    return (rows[0] && rows[0].hint_text) || '';
+  } catch (e) { return ''; }
+}
+function hintsSuffix(text) {
+  return text && text.trim() ? `\n\nADDITIONAL GUIDANCE FROM INA:\n${text.trim()}` : '';
+}
+
 function buildSystemPrompt(fieldsSpec) {
   return `You are a form-filling assistant for INA (International Network Advisors)'s project intake platform. You will be given the text of one or more documents describing a proposed digital-infrastructure/connectivity project (a technical folder, terms of reference, project brief, feasibility study, etc.) and a list of form fields that need values to help create a new project record. Your goal is to extract as much real, stated information as the documents actually contain — leave nothing on the table, but never invent anything that isn't there.
 
@@ -380,6 +401,7 @@ async function handler(req, res) {
   if (!accessToken) return json(res, 401, { error: 'Missing Authorization header' });
 
   try {
+    const extraHints = await getAgentHint('extract-project-data', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
 
@@ -471,7 +493,7 @@ async function handler(req, res) {
       });
     }
 
-    const systemPrompt = buildSystemPrompt(fieldsSpec);
+    const systemPrompt = buildSystemPrompt(fieldsSpec) + hintsSuffix(extraHints);
     const userContent = `PROJECT DOCUMENTS:\n${combinedText}`;
 
     // max_tokens below (every provider branch) raised from 3000 to 6000

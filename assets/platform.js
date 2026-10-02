@@ -7190,6 +7190,47 @@ const INAPlatform = {
     return data;
   },
 
+  /* ---------- AI agent hints (see migration_v71_agent_hints.sql) ----------
+     One row of free-text guidance per AI agent, edited from
+     app/ai-hints.html and fetched live by each api/<agent>.js on every
+     request (never bundled at deploy time — see that migration's header
+     for why a DB row, not a file, is the only way this is genuinely
+     editable from a web UI). Admin-only, unlike most tables here. */
+  AGENT_HINT_KEYS: [
+    { value: 'analyze-project', en: 'AI Analysis', es: 'Análisis IA' },
+    { value: 'extract-project-data', en: 'Project PDF extraction', es: 'Extracción de PDF de proyecto' },
+    { value: 'extract-success-case', en: 'Success Case extraction', es: 'Extracción de Success Case' },
+    { value: 'extract-business-card', en: 'Business card extraction', es: 'Extracción de tarjeta de presentación' },
+    { value: 'extract-template-data', en: 'Template autofill', es: 'Autocompletado de template' },
+    { value: 'recommend-financing', en: 'Financing Recommendation', es: 'Recomendación de Financiamiento' },
+    { value: 'generate-proposal', en: 'Investment Proposal drafting', es: 'Redacción de Propuesta de Financiamiento' },
+    { value: 'promotion-agent', en: 'Promotion Agent', es: 'Agente de Promoción' },
+  ],
+
+  async listAgentHints() {
+    const { data, error } = await supabaseClient.from('agent_hints').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  async saveAgentHint(agentKey, hintText) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data, error } = await supabaseClient
+      .from('agent_hints')
+      .upsert({
+        agent_key: agentKey,
+        hint_text: hintText || '',
+        updated_at: new Date().toISOString(),
+        updated_by: session.user.id,
+      }, { onConflict: 'agent_key' })
+      .select()
+      .single();
+    if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'agent_hint', entityId: agentKey, entityLabel: agentKey });
+    return data;
+  },
+
   async uploadGeneratedContractPdf(contractId, stageId, stageType, blob, contractTitle) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');

@@ -230,6 +230,27 @@ function buildProjectProfile(project, coverage, appliedProgramsDetail) {
   };
 }
 
+// Per-agent hint (see migration_v71_agent_hints.sql / app/ai-hints.html) —
+// a row of free text an admin can edit live from the platform, fetched
+// fresh on every request and appended to buildSystemPrompt()'s output by
+// the handler below. Replaces the old api/recommend-financing.hints.js
+// static file (oct 2026) — see api/analyze-project.js's matching comment
+// for why.
+async function getAgentHint(agentKey, { supabaseUrl, serviceKey }) {
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/agent_hints?agent_key=eq.${agentKey}&select=hint_text`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    return (rows[0] && rows[0].hint_text) || '';
+  } catch (e) { return ''; }
+}
+function hintsSuffix(text) {
+  return text && text.trim() ? `\n\nADDITIONAL GUIDANCE FROM INA:\n${text.trim()}` : '';
+}
+
 function buildSystemPrompt() {
   return `You are a financing-structuring advisor for INA (International Network Advisors), helping ENACOM Argentina and digital-infrastructure project sponsors pick the best combination of financing instruments for a specific project.
 
@@ -345,6 +366,7 @@ async function handler(req, res) {
   if (!accessToken) return json(res, 401, { error: 'Missing Authorization header' });
 
   try {
+    const extraHints = await getAgentHint('recommend-financing', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
 
@@ -405,7 +427,7 @@ async function handler(req, res) {
     const projectProfile = buildProjectProfile(project, coverage, appliedProgramsDetail);
     const catalog = buildProgramsCatalog(programs);
 
-    const systemPrompt = buildSystemPrompt();
+    const systemPrompt = buildSystemPrompt() + hintsSuffix(extraHints);
     const userContent = `PROJECT PROFILE (JSON):\n${JSON.stringify(projectProfile)}\n\nPROGRAMS CATALOG (JSON):\n${JSON.stringify(catalog)}`;
 
     let rawText;

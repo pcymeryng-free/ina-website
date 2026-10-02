@@ -42,7 +42,7 @@ const BEDROCK_MODEL_DEFAULT = 'meta.llama3-3-70b-instruct-v1:0';
 const BEDROCK_REGION_DEFAULT = 'us-east-1';
 const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
 
-const SYSTEM_PROMPT = `You are a senior infrastructure-finance writer at INA (International Network Advisors), drafting chapters of a formal Investment Proposal document. This document will be presented to financial institutions — multilateral development banks (e.g. IDB), development finance institutions (USTDA, DFC), Universal Service Funds, or commercial/institutional capital — to request financing for the project described to you. Write persuasively but honestly: ground every claim in the actual project data given, never invent figures, and flag genuine gaps as areas the sponsor should still address rather than glossing over them.
+const BASE_SYSTEM_PROMPT = `You are a senior infrastructure-finance writer at INA (International Network Advisors), drafting chapters of a formal Investment Proposal document. This document will be presented to financial institutions — multilateral development banks (e.g. IDB), development finance institutions (USTDA, DFC), Universal Service Funds, or commercial/institutional capital — to request financing for the project described to you. Write persuasively but honestly: ground every claim in the actual project data given, never invent figures, and flag genuine gaps as areas the sponsor should still address rather than glossing over them.
 
 You will be given the project's core data (name, type, country, description, budget, duration), its financing mix so far, any Investment Readiness Index™ analysis on file (scores/rationale across 8 dimensions), its risk register, its active implementation roadmaps, and possibly supporting documents. Draft FIVE chapters:
 
@@ -63,6 +63,26 @@ Respond with ONLY a single valid JSON object — no markdown code fences, no com
   "benefits_es": "<...>", "benefits_en": "<...>",
   "planning_narrative_es": "<...>", "planning_narrative_en": "<...>"
 }`;
+
+// Per-agent hint (see migration_v71_agent_hints.sql / app/ai-hints.html) —
+// a row of free text an admin can edit live from the platform, fetched
+// fresh on every request and appended to BASE_SYSTEM_PROMPT above.
+// Replaces the old api/generate-proposal.hints.js static file (oct 2026)
+// — see api/analyze-project.js's matching comment for why.
+async function getAgentHint(agentKey, { supabaseUrl, serviceKey }) {
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/agent_hints?agent_key=eq.${agentKey}&select=hint_text`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    return (rows[0] && rows[0].hint_text) || '';
+  } catch (e) { return ''; }
+}
+function hintsSuffix(text) {
+  return text && text.trim() ? `\n\nADDITIONAL GUIDANCE FROM INA:\n${text.trim()}` : '';
+}
 
 function json(res, status, body) {
   res.status(status).setHeader('Content-Type', 'application/json');
@@ -259,6 +279,9 @@ async function handler(req, res) {
   try {
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
+
+    const extraHints = await getAgentHint('generate-proposal', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
+    const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + hintsSuffix(extraHints);
 
     const projects = await supabaseRest(`/projects?id=eq.${projectId}&select=*`, {
       serviceKey: SUPABASE_SERVICE_ROLE_KEY, supabaseUrl: SUPABASE_URL,

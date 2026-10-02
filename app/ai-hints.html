@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="AI Hints — INA Platform" data-i18n-es="Hints de IA — Plataforma INA">AI Hints — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Tune each AI agent's behavior with extra guidance, without a code deploy." data-i18n-es="Afiná el comportamiento de cada agente de IA con guía adicional, sin necesidad de un deploy." content="Tune each AI agent's behavior with extra guidance, without a code deploy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=25">
+<link rel="stylesheet" href="/assets/app.css?v=21">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/assets/images/pwa/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INA">
+<meta name="theme-color" content="#0B1526">
+</head>
+<body class="app-body">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a href="dashboard.html" class="app-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="app-logo-word"><b>INA</b><i><span data-i18n="app.logo.label">Platform</span></i></span>
+    </a>
+    <button type="button" class="app-nav-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path class="bar bar1" d="M4 7h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="bar bar2" d="M4 12h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="bar bar3" d="M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <nav class="app-nav">
+      <a href="initiatives.html"><span data-i18n="init.nav">Initiatives</span></a>
+      <a href="dashboard.html"><span data-i18n="dash.h1">Projects</span></a>
+      <a href="financing-programs.html"><span data-i18n="progfin.nav">Financing</span></a>
+      <a href="success-cases.html"><span data-i18n="sc.nav">Success Cases</span></a>
+      <a href="roadmap-templates.html" id="roadmapsNavLink" style="display:none;"><span data-i18n="rm.nav">Roadmaps</span></a>
+      <div class="menu nav-menu" id="masterDataNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger" id="masterDataNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="md.nav">Master Data</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="masterDataNavMenuPanel">
+          <a href="master-data.html?tab=contacts" class="menu-item"><span data-i18n="md.tab.contacts">Contacts</span></a>
+          <a href="master-data.html?tab=companies" class="menu-item"><span data-i18n="md.tab.companies">Companies</span></a>
+          <a href="master-data.html?tab=products" class="menu-item"><span data-i18n="md.tab.products">Products</span></a>
+          <a href="master-data.html?tab=agencies" class="menu-item"><span data-i18n="md.tab.agencies">Public Agencies</span></a>
+        </div>
+      </div>
+      <div class="menu nav-menu" id="adminNavMenu" style="display:none;">
+        <button type="button" class="nav-menu-trigger menu-trigger active" id="adminNavMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <span data-i18n="admin.nav">Admin</span><span class="menu-caret">▾</span>
+        </button>
+        <div class="menu-panel" id="adminNavMenuPanel">
+          <a href="admin.html" id="adminUsersMenuItem" class="menu-item" style="display:none;"><span data-i18n="admin.title">User Management</span></a>
+          <a href="roles.html" id="rolesMenuItem" class="menu-item" style="display:none;"><span data-i18n="roles.nav">Roles</span></a>
+          <a href="promotion-requirements.html" id="promotionRequirementsMenuItem" class="menu-item" style="display:none;"><span data-i18n="pr.nav">Promotion Requirements</span></a>
+          <a href="contracts.html" id="contractsMenuItem" class="menu-item" style="display:none;"><span data-i18n="contracts.nav">Contracts</span></a>
+          <a href="ai-hints.html" id="aiHintsMenuItem" class="menu-item active" style="display:none;"><span data-i18n="aihints.nav">AI Hints</span></a>
+          <a href="activity-log.html" id="activityLogMenuItem" class="menu-item" style="display:none;"><span data-i18n="activitylog.nav">Activity Log</span></a>
+        </div>
+      </div>
+    </nav>
+    <div class="app-header-actions">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+      </div>
+      <a href="profile.html" class="app-user" id="appUser" style="display:none;" title="Profile">
+        <span class="app-user-avatar" id="appUserAvatar">–</span>
+        <span class="app-user-name" id="appUserName"></span>
+      </a>
+      <a href="#" id="signOutBtn" class="btn ghost small"><span data-i18n="auth.signOut">Sign out</span></a>
+    </div>
+  </div>
+</header>
+<main class="app-main">
+<section class="tight">
+  <div class="wrap">
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span><span data-i18n="aihints.nav">AI Hints</span></span></div>
+    <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="aihints.title">AI Agent Hints</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:700px;"><span data-i18n="aihints.lede">Add extra guidance for any AI agent on the platform — tips, corrections, institutional knowledge. Takes effect on the very next AI call, no deploy needed. Visible to administrators only.</span></p>
+
+    <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
+
+    <div id="hintsBody" style="display:none; margin-top:28px; flex-direction:column; gap:18px;"></div>
+  </div>
+</section>
+</main>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <span>&copy; 2026 INA Platform</span>
+    <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
+  </div>
+</footer>
+<script src="/assets/i18n.js?v=85"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/platform.js?v=105"></script>
+<script src="/assets/script.js?v=15"></script>
+<script>
+(function () {
+  let lang = INAPlatform.currentLang();
+  let hintRows = []; // from agent_hints — only agents that already have a saved row appear here
+
+  const signOutBtn = document.getElementById('signOutBtn');
+  signOutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await INAPlatform.signOut();
+    location.href = 'login.html';
+  });
+
+  function initials(name) {
+    return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || '?';
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function fmtDateTime(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+  }
+
+  function renderHints() {
+    const body = document.getElementById('hintsBody');
+    body.innerHTML = INAPlatform.AGENT_HINT_KEYS.map((agent) => {
+      const row = hintRows.find((r) => r.agent_key === agent.value);
+      const text = (row && row.hint_text) || '';
+      const meta = row && row.updated_at
+        ? `<span data-updated-note>${escapeHtml(lang === 'es' ? 'Última edición: ' : 'Last edited: ')}${fmtDateTime(row.updated_at)}</span>`
+        : `<span data-updated-note style="color:var(--muted);">${escapeHtml(lang === 'es' ? 'Todavía sin guía adicional.' : 'No extra guidance yet.')}</span>`;
+      return `
+      <div class="wizard-panel" data-agent-key="${agent.value}" style="padding:22px 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+          <h3 style="margin:0; font-size:16px;">${escapeHtml(agent[lang] || agent.en)}</h3>
+          <p style="margin:0; font-size:11.5px; color:var(--muted); font-family:var(--mono);">${agent.value}</p>
+        </div>
+        <div class="field" style="margin:0;"><textarea class="hint-textarea" rows="5" placeholder="${escapeHtml(lang === 'es' ? 'Ej: tené en cuenta que...' : 'E.g: keep in mind that...')}">${escapeHtml(text)}</textarea></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap;">
+          <p class="contact-note" data-hint-note style="margin:0; font-size:11.5px;">${meta}</p>
+          <button type="button" class="btn amber small save-hint-btn"><span data-i18n="md.save">Save</span></button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('hintsBody').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.save-hint-btn');
+    if (!btn) return;
+    const card = btn.closest('[data-agent-key]');
+    const agentKey = card.dataset.agentKey;
+    const textarea = card.querySelector('.hint-textarea');
+    const note = card.querySelector('[data-hint-note]');
+    btn.disabled = true;
+    const original = btn.innerHTML;
+    btn.innerHTML = `<span>${lang === 'es' ? 'Guardando…' : 'Saving…'}</span>`;
+    try {
+      const saved = await INAPlatform.saveAgentHint(agentKey, textarea.value);
+      const idx = hintRows.findIndex((r) => r.agent_key === agentKey);
+      if (idx !== -1) hintRows[idx] = saved; else hintRows.push(saved);
+      note.innerHTML = `<span data-updated-note>${escapeHtml(lang === 'es' ? 'Última edición: ' : 'Last edited: ')}${fmtDateTime(saved.updated_at)}</span>`;
+    } catch (err) {
+      note.innerHTML = `<span style="color:#a13a3a;">${escapeHtml(err.message || (lang === 'es' ? 'No se pudo guardar.' : "Couldn't save."))}</span>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
+  });
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setTimeout(() => {
+        lang = INAPlatform.currentLang();
+        renderHints();
+      }, 0);
+    });
+  });
+
+  async function init() {
+    if (!INAPlatform.isConfigured()) {
+      document.getElementById('loadingState').textContent =
+        'Platform not configured yet — set SUPABASE_URL / SUPABASE_ANON_KEY in assets/platform.js.';
+      return;
+    }
+    const session = await INAPlatform.requireAdmin();
+    if (!session) return;
+
+    try {
+      const profile = await INAPlatform.getProfile(session.user.id);
+      document.getElementById('appUserAvatar').textContent = initials(profile.full_name);
+      document.getElementById('appUserName').textContent = profile.full_name || '';
+      document.getElementById('appUser').style.display = 'flex';
+      document.getElementById('adminNavMenu').style.display = 'flex';
+      document.getElementById('adminUsersMenuItem').style.display = 'flex';
+      document.getElementById('rolesMenuItem').style.display = 'flex';
+      document.getElementById('activityLogMenuItem').style.display = 'flex';
+      document.getElementById('contractsMenuItem').style.display = 'flex';
+      document.getElementById('promotionRequirementsMenuItem').style.display = 'flex';
+      document.getElementById('aiHintsMenuItem').style.display = 'flex';
+      if (INAPlatform.canManageMasterData(profile)) document.getElementById('masterDataNavMenu').style.display = 'flex';
+      INAPlatform.initDropdownMenus(document.querySelector('.app-nav'));
+      INAPlatform.initMobileNav();
+      if (INAPlatform.canViewRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
+    } catch (e) { /* non-critical */ }
+
+    try {
+      hintRows = await INAPlatform.listAgentHints();
+    } catch (e) { hintRows = []; }
+    renderHints();
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('hintsBody').style.display = 'flex';
+  }
+  init();
+})();
+</script>
+</body>
+</html>

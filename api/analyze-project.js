@@ -171,7 +171,7 @@ const FINANCING_MECHANISMS = [
   'Universal Service Funds',
 ];
 
-const SYSTEM_PROMPT = `You are the analysis engine behind two of INA's (International Network Advisors) proprietary frameworks, applied together to a single submitted project:
+const BASE_SYSTEM_PROMPT = `You are the analysis engine behind two of INA's (International Network Advisors) proprietary frameworks, applied together to a single submitted project:
 
 1. INVESTMENT READINESS INDEX™ (Framework F2): scores a digital infrastructure project 0–100 across 8 weighted dimensions: Legal & Regulatory Clarity, Technical Design Maturity, Financial Model Robustness, Sponsor Capacity, Market Demand Evidence, Environmental & Social Readiness, Risk Mitigation Coverage, and Governance & Reporting. Score bands: 0–25 Concept Stage, 26–50 Early Structuring, 51–75 Advanced Structuring, 76–100 Investment Ready.
 
@@ -206,6 +206,29 @@ Respond with ONLY a single valid JSON object — no markdown code fences, no com
 }
 
 overall_score must be the weighted average of the 8 dimension scores (equal weighting is fine unless the project profile clearly warrants otherwise). gap_roadmap should have 3-6 items ordered by priority. financing_recommendations should have 2-4 items, each mechanism used at most once.`;
+
+// Per-agent hint (see migration_v71_agent_hints.sql / app/ai-hints.html) —
+// a row of free text an admin can edit live from the platform, fetched
+// fresh on every request (never cached at module load) and appended to
+// BASE_SYSTEM_PROMPT above. Replaces the old api/analyze-project.hints.js
+// static file (oct 2026): Vercel can't rewrite its own deployed source at
+// runtime, so a DB row is the only way this is actually editable from a
+// web UI without a new deploy. Falls back to '' (no-op) on any failure —
+// never blocks the real AI call.
+async function getAgentHint(agentKey, { supabaseUrl, serviceKey }) {
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/agent_hints?agent_key=eq.${agentKey}&select=hint_text`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    return (rows[0] && rows[0].hint_text) || '';
+  } catch (e) { return ''; }
+}
+function hintsSuffix(text) {
+  return text && text.trim() ? `\n\nADDITIONAL GUIDANCE FROM INA:\n${text.trim()}` : '';
+}
 
 // max_tokens below (every provider branch) is 6000, not the previous 3000 —
 // this schema asks for ~38 bilingual text fields (8 dimensions x 2
@@ -474,6 +497,9 @@ async function handler(req, res) {
   try {
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
+
+    const extraHints = await getAgentHint('analyze-project', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
+    const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + hintsSuffix(extraHints);
 
     const projects = await supabaseRest(`/projects?id=eq.${projectId}&select=*`, {
       serviceKey: SUPABASE_SERVICE_ROLE_KEY,

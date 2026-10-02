@@ -180,6 +180,27 @@ function buildFieldsSpec(fields) {
   });
 }
 
+// Per-agent hint (see migration_v71_agent_hints.sql / app/ai-hints.html) —
+// a row of free text an admin can edit live from the platform, fetched
+// fresh on every request and appended to buildSystemPrompt()'s output by
+// the handler below. Replaces the old api/extract-template-data.hints.js
+// static file (oct 2026) — see api/analyze-project.js's matching comment
+// for why.
+async function getAgentHint(agentKey, { supabaseUrl, serviceKey }) {
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/agent_hints?agent_key=eq.${agentKey}&select=hint_text`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    return (rows[0] && rows[0].hint_text) || '';
+  } catch (e) { return ''; }
+}
+function hintsSuffix(text) {
+  return text && text.trim() ? `\n\nADDITIONAL GUIDANCE FROM INA:\n${text.trim()}` : '';
+}
+
 function buildSystemPrompt(fieldsSpec) {
   return `You are a form-filling assistant for INA (International Network Advisors)'s project intake platform. You will be given the text of one or more documents attached to a digital-infrastructure project (technical folders, economic/financial documentation, administrative documentation, etc.) and a list of form fields that need values.
 
@@ -275,6 +296,7 @@ async function handler(req, res) {
   if (!accessToken) return json(res, 401, { error: 'Missing Authorization header' });
 
   try {
+    const extraHints = await getAgentHint('extract-template-data', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
 
@@ -356,7 +378,7 @@ async function handler(req, res) {
     }
 
     const fieldsSpec = buildFieldsSpec(fields);
-    const systemPrompt = buildSystemPrompt(fieldsSpec);
+    const systemPrompt = buildSystemPrompt(fieldsSpec) + hintsSuffix(extraHints);
     const userContent = `PROJECT DOCUMENTS:\n${combinedText || '(none readable)'}`;
 
     let rawText;

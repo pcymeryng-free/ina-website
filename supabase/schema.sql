@@ -2734,3 +2734,33 @@ select cron.schedule(
   '0 3 * * *',
   $$select public.archive_old_activity_log();$$
 );
+
+-- ---------- agent_hints ---------- (see migration_v71_agent_hints.sql)
+-- One row of free-text guidance per AI agent, appended to that agent's
+-- system prompt at request time (getAgentHint()/hintsSuffix() in each
+-- api/<agent>.js) — edited live from app/ai-hints.html, no deploy needed.
+-- Admin-only both ways, unlike most tables here (model-tuning knowledge,
+-- not something an advisor needs). No pre-seeded rows — a missing
+-- agent_key just means no hint set yet.
+create table if not exists public.agent_hints (
+  agent_key text primary key check (agent_key in (
+    'analyze-project', 'extract-project-data', 'extract-success-case',
+    'extract-business-card', 'extract-template-data', 'recommend-financing',
+    'generate-proposal', 'promotion-agent'
+  )),
+  hint_text text not null default '',
+  updated_at timestamptz not null default now(),
+  updated_by uuid references public.profiles(id) on delete set null
+);
+
+alter table public.agent_hints enable row level security;
+
+create policy "agent_hints_select_admin" on public.agent_hints
+  for select using (public.is_admin());
+
+create policy "agent_hints_upsert_admin" on public.agent_hints
+  for insert with check (public.is_admin());
+
+create policy "agent_hints_update_admin" on public.agent_hints
+  for update using (public.is_admin())
+  with check (public.is_admin());

@@ -157,7 +157,7 @@ async function getProfileRole(userId, { supabaseUrl, serviceKey }) {
   return (rows && rows[0] && rows[0].role) || null;
 }
 
-const SYSTEM_PROMPT = `You are a form-filling assistant for INA (International Network Advisors)'s project intake platform. You will be given the extracted text of a case-study document (a real-world example of digital infrastructure or connectivity technology reaching a community, sector or region) and must propose values for a "Success Case" library entry.
+const BASE_SYSTEM_PROMPT = `You are a form-filling assistant for INA (International Network Advisors)'s project intake platform. You will be given the extracted text of a case-study document (a real-world example of digital infrastructure or connectivity technology reaching a community, sector or region) and must propose values for a "Success Case" library entry.
 
 Extract these fields:
 - title: a short, specific case title (e.g. "Conectividad satelital en escuelas rurales de la Amazonía").
@@ -175,6 +175,26 @@ Extract these fields:
 If the document actually describes MULTIPLE distinct cases, extract only the FIRST/most prominent one — never merge several cases into one entry.
 
 Respond with ONLY a single valid JSON object with exactly these keys: title, provider, country, region, sector, summary_es, summary_en, beneficiaries_count, metrics_es, metrics_en, source_label. Use null for any field you can't confidently fill — never fabricate a plausible-sounding value. No markdown code fences, no commentary.`;
+
+// Per-agent hint (see migration_v71_agent_hints.sql / app/ai-hints.html) —
+// a row of free text an admin can edit live from the platform, fetched
+// fresh on every request and appended to BASE_SYSTEM_PROMPT above.
+// Replaces the old api/extract-success-case.hints.js static file (oct
+// 2026) — see api/analyze-project.js's matching comment for why.
+async function getAgentHint(agentKey, { supabaseUrl, serviceKey }) {
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/agent_hints?agent_key=eq.${agentKey}&select=hint_text`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    return (rows[0] && rows[0].hint_text) || '';
+  } catch (e) { return ''; }
+}
+function hintsSuffix(text) {
+  return text && text.trim() ? `\n\nADDITIONAL GUIDANCE FROM INA:\n${text.trim()}` : '';
+}
 
 function cleanText(v, cap) {
   if (v === null || v === undefined) return null;
@@ -273,6 +293,9 @@ async function handler(req, res) {
   try {
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
+
+    const extraHints = await getAgentHint('extract-success-case', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
+    const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + hintsSuffix(extraHints);
 
     const role = await getProfileRole(user.id, { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
     if (role !== 'advisor' && role !== 'admin') {

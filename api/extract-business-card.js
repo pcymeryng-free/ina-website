@@ -134,7 +134,7 @@ const ALLOWED_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/hei
 // than enough for a photographed business card.
 const MAX_BASE64_LENGTH = 8 * 1024 * 1024;
 
-const SYSTEM_PROMPT = `You are reading a photo of a business card (tarjeta de presentación) for INA (International Network Advisors)'s internal contact directory. Extract exactly these fields from the card:
+const BASE_SYSTEM_PROMPT = `You are reading a photo of a business card (tarjeta de presentación) for INA (International Network Advisors)'s internal contact directory. Extract exactly these fields from the card:
 
 - full_name: the person's full name.
 - position_title: their job title / position (e.g. "Gerente de Infraestructura", "Director of Financing"). Not the company name.
@@ -146,6 +146,26 @@ const SYSTEM_PROMPT = `You are reading a photo of a business card (tarjeta de pr
 If a field isn't present on the card or you can't read it confidently, respond with null for that field — never guess or fabricate a value.
 
 Respond with ONLY a single valid JSON object with exactly these keys: full_name, position_title, email, phone, org_name, is_public_agency. No markdown code fences, no commentary.`;
+
+// Per-agent hint (see migration_v71_agent_hints.sql / app/ai-hints.html) —
+// a row of free text an admin can edit live from the platform, fetched
+// fresh on every request and appended to BASE_SYSTEM_PROMPT above.
+// Replaces the old api/extract-business-card.hints.js static file (oct
+// 2026) — see api/analyze-project.js's matching comment for why.
+async function getAgentHint(agentKey, { supabaseUrl, serviceKey }) {
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/agent_hints?agent_key=eq.${agentKey}&select=hint_text`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    return (rows[0] && rows[0].hint_text) || '';
+  } catch (e) { return ''; }
+}
+function hintsSuffix(text) {
+  return text && text.trim() ? `\n\nADDITIONAL GUIDANCE FROM INA:\n${text.trim()}` : '';
+}
 
 function cleanField(v) {
   if (v === null || v === undefined) return null;
@@ -230,6 +250,9 @@ async function handler(req, res) {
   try {
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
+
+    const extraHints = await getAgentHint('extract-business-card', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
+    const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + hintsSuffix(extraHints);
 
     const role = await getProfileRole(user.id, { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
     if (role !== 'advisor' && role !== 'admin') {

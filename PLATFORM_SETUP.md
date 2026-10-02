@@ -5447,3 +5447,50 @@ pattern as `recommendFinancingUrl()` etc.).
   doesn't define partial credit below that threshold, so neither does
   `computeFsuScore()`. If ENACOM later clarifies a partial-credit scale,
   update the function in `assets/platform.js`.
+
+## Per-agent AI hints, editable live from the platform (Pablo, oct 2026)
+
+Every AI feature on the platform (`api/*.js` that calls an LLM) reads one
+row of free-text guidance from `public.agent_hints`
+(`migration_v71_agent_hints.sql`) on every request and appends it to that
+agent's system prompt. The point is to let INA-specific tips, corrections,
+or institutional knowledge tune a model's behavior **without a code
+deploy** — edit the text in `app/ai-hints.html` (Admin menu → AI Hints,
+admin-only) and it takes effect on the very next AI call.
+
+- `analyze-project` — AI Analysis (Investment Readiness Index™ /
+  Multilateral Finance Navigator™).
+- `extract-project-data` — "Cargar desde uno o varios PDF" on
+  `app/new-project.html` (identity/attribute/budget/phases extraction).
+- `extract-success-case` — Success Case library PDF autofill.
+- `extract-business-card` — Master Data business-card scanner.
+- `extract-template-data` — guided-template "Autocomplete from documents".
+- `recommend-financing` — AI Financing Recommendation.
+- `generate-proposal` — Investment Proposal chapter drafting.
+- `promotion-agent` — Promotion Agent qualitative review.
+
+**History**: the first version of this (same day) used a companion
+`api/<agent-name>.hints.js` file per agent, `require()`d once at module
+load. That turned out to be a dead end the moment Pablo asked for an
+admin-menu edit UI: Vercel serverless functions run from an immutable
+deployment, so a function can never rewrite its own deployed source at
+runtime — there is no way for a web page to change a `.js` file's
+contents without a new git commit + deploy. Moving the hint text into a
+database row, read fresh on every request instead of once at deploy time,
+is what actually makes "edit it from the platform" true. The 8
+`.hints.js` files were deleted in the same change that added the table.
+
+Each agent's own file now does, inside its handler (fresh per request,
+never cached at module load):
+```js
+const extraHints = await getAgentHint('<agent-key>', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
+const systemPrompt = basePromptText + hintsSuffix(extraHints); // hintsSuffix() no-ops on ''
+```
+`getAgentHint()`/`hintsSuffix()` are small helpers duplicated in each
+`api/*.js` file (same reasoning as every other small helper there — no
+shared module bundling across these standalone Vercel functions). A
+failed fetch (network hiccup, RLS misconfigured, etc.) degrades to `''`
+— same as "no hint set" — and never blocks the actual AI call.
+`agent_hints` is admin-only both ways (`is_admin()`, not
+`is_advisor()`): this is model-tuning knowledge, not something an advisor
+needs to see or change.
