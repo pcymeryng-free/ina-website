@@ -177,6 +177,24 @@ const FIELDS = [
   { key: 'financingRequiredPercentage', label: 'Percentage (0-100) of the total budget that still needs external financing', type: 'text' },
 ];
 
+// English labels for assets/platform.js's DOCUMENT_TYPES values (same 7
+// categories app/new-project.html's Step 3 upload zones use) — duplicated
+// here for the same reason as every other taxonomy above (this file runs
+// standalone on Vercel). Each file in the "Cargar desde uno o varios PDF"
+// box now carries the type the person picked for it (oct 2026, previously
+// not collected at all); shown to the model as a hint about where to look
+// for what (budget more likely in a "financial" doc, team/scope in a
+// "technical" one, etc.) — never trusted blindly, just context.
+const CATEGORY_LABELS = {
+  technical: 'Technical description',
+  economic: 'Economic documentation',
+  financial: 'Financial documentation',
+  bylaws: 'Bylaws / corporate charter',
+  administrative: 'Administrative documentation',
+  licenses: 'Licenses',
+  other: 'Other attachments',
+};
+
 function buildFieldsSpec() {
   return FIELDS.map((f) => {
     const spec = { key: f.key, label: f.label, type: f.type };
@@ -192,6 +210,7 @@ For EACH field in the list, look for a clearly stated or directly inferable valu
 - For a "select" field, respond with EXACTLY one of that field's allowed_values — never invent a value outside that list. If nothing in the documents clearly matches one of the allowed values, respond null rather than guessing the closest one.
 - For a "text" field that is actually a plain number (duration, budget, exchange rate, percentage, beneficiary count), respond with just the number, no currency symbols, no thousands separators, no unit text.
 - Budget and other financial figures (budgetAmount, budgetAmountUsd, exchangeRate, financingRequiredPercentage) are often stated in a dedicated budget table, financial annex, or "presupuesto"/"costos" section that can appear ANYWHERE in the document — including well past the introduction/technical description. Read the ENTIRE text provided before concluding a figure isn't there; do not limit your search to the opening paragraphs. If a budget is broken down by line item/phase rather than given as one total, sum the line items into a single total for budgetAmount/budgetAmountUsd regardless of whether you also report a "phases" breakdown below.
+- Each document below is headed "--- FILE: <name> (declared type: <type>) ---" whenever the person uploading it set a type (Technical/Economic/Financial/Bylaws/Administrative/Licenses/Other) — a useful hint for where to look (a budget is more likely in a "Financial documentation" file, team/scope detail in a "Technical description" one), but treat it only as a hint: read every document regardless of its declared type, since a real document doesn't always match the category it was filed under.
 - For "description", write a factual 3-6 sentence summary in the SAME LANGUAGE the source documents are mostly written in, covering what the project is and its main objective — do not just copy a long passage verbatim.
 - For "name", propose a short, specific project name/title (a few words) — not a full sentence.
 
@@ -401,7 +420,9 @@ async function handler(req, res) {
         const extracted = await pdfParseFn(pdfBuffer);
         const text = (extracted.text || '').trim();
         if (text) {
-          combinedText += `\n\n--- FILE: ${fileName} ---\n${text.slice(0, MAX_CHARS_PER_DOC)}`;
+          const categoryLabel = CATEGORY_LABELS[file.category] || null;
+          const header = categoryLabel ? `${fileName} (declared type: ${categoryLabel})` : fileName;
+          combinedText += `\n\n--- FILE: ${header} ---\n${text.slice(0, MAX_CHARS_PER_DOC)}`;
           documentsUsed.push(fileName);
         } else {
           skipped.push(`${fileName} (no extractable text — likely scanned/image-only)`);

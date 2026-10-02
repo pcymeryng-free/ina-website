@@ -99,42 +99,57 @@
       <p style="font-size:12px; color:var(--muted); margin:0 0 10px;"><span data-i18n="np.f.uploadPdf.help">Upload the project's technical folder, terms of reference or any descriptive PDF — an AI agent will read them and pre-fill as many fields below as possible. Review and complete anything missing by hand before continuing.</span></p>
       <button type="button" class="btn ghost small" id="pUploadPdfBtn"><span data-i18n="np.f.uploadPdf.btn">📄 Upload PDF(s)</span></button>
       <input type="file" id="pPdfInput" accept="application/pdf,.pdf" multiple style="display:none;">
+      <!-- Staged, not uploaded yet — lets the person set each file's
+           document type (same DOCUMENT_TYPES catalog as Step 3's Attached
+           documents zones) before anything is sent for analysis. See
+           stagedPdfFiles/renderStagedPdfList()/pAnalyzePdfBtn below. -->
+      <div id="pPdfStagedList" style="margin-top:14px; display:none;">
+        <p style="font-size:12px; color:var(--muted); margin:0 0 8px;"><span data-i18n="np.f.uploadPdf.typeHelp">Set each document's type below (helps the AI agent know where to look), then analyze.</span></p>
+        <div id="pPdfStagedItems" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <button type="button" class="btn amber small" id="pAnalyzePdfBtn" style="margin-top:12px;"><span data-i18n="np.f.uploadPdf.analyze">Analyze documents</span></button>
+      </div>
       <p id="pPdfStatus" style="font-size:12.5px; margin-top:10px; display:none;"></p>
     </div>
 
     <form id="projectForm" style="max-width:640px; margin-top:24px;">
 
-      <!-- Same 4-section interface for creating AND editing a project — one
+      <!-- Same 5-section interface for creating AND editing a project — one
            .wizard-panel visible at a time: 1) project (name/type/entity/
            description/program/country/beneficiaries — everything about the
-           project that ISN'T financing), 2) documents, 3) financing
-           (preparation funding + execution/financing programs, kept
-           separate from each other and from every other project
-           attribute), 4) optional guided-template/AI-autofill offer + final
-           submit. The section names above (#wizardSteps) are directly
-           clickable to jump to any of the 4 sections — see canJumpTo() and
-           the wizard-step-dot click handler further down. When creating a
-           brand-new project, section 1's "Continue" is what actually
-           creates the project record (so section 2's document uploads have
-           a real id to attach to, and so the other sections/section-names
-           become reachable at all); when editing, the project already
-           exists from the start, so every section is reachable immediately.
-           A creation session interrupted partway through (closed tab, etc.)
-           resumes exactly where it left off, since the project already
-           exists and the URL already carries its real ?id=. -->
+           project that ISN'T financing), 2) project phases (optional
+           breakdown into stages, each with its own scope/budget/duration —
+           see migration_v70_project_phases.sql; promoted to its own step
+           oct 2026, previously folded into financing), 3) documents,
+           4) financing (preparation funding + execution/financing
+           programs, kept separate from each other and from every other
+           project attribute), 5) optional guided-template/AI-autofill
+           offer + final submit. The section names above (#wizardSteps) are
+           directly clickable to jump to any of the 5 sections — see
+           canJumpTo() and the wizard-step-dot click handler further down.
+           When creating a brand-new project, section 1's "Continue" is
+           what actually creates the project record (so section 2's phases
+           and section 3's document uploads have a real id to attach to,
+           and so the other sections/section-names become reachable at
+           all); when editing, the project already exists from the start,
+           so every section is reachable immediately. A creation session
+           interrupted partway through (closed tab, etc.) resumes exactly
+           where it left off, since the project already exists and the URL
+           already carries its real ?id=. -->
       <div class="wizard-steps" id="wizardSteps">
         <span class="wizard-step-dot" data-step-dot="1"><span class="num">1</span><span data-i18n="np.wizard.step1">Project</span></span>
-        <span class="wizard-step-dot" data-step-dot="2"><span class="num">2</span><span data-i18n="np.wizard.step2">Attached documents</span></span>
-        <span class="wizard-step-dot" data-step-dot="3"><span class="num">3</span><span data-i18n="np.wizard.step3">Financing</span></span>
-        <span class="wizard-step-dot" data-step-dot="4"><span class="num">4</span><span data-i18n="np.wizard.step4">Templates</span></span>
+        <span class="wizard-step-dot" data-step-dot="2"><span class="num">2</span><span data-i18n="np.wizard.stepPhases">Project phases</span></span>
+        <span class="wizard-step-dot" data-step-dot="3"><span class="num">3</span><span data-i18n="np.wizard.step2">Attached documents</span></span>
+        <span class="wizard-step-dot" data-step-dot="4"><span class="num">4</span><span data-i18n="np.wizard.step3">Financing</span></span>
+        <span class="wizard-step-dot" data-step-dot="5"><span class="num">5</span><span data-i18n="np.wizard.step4">Templates</span></span>
       </div>
 
       <!-- STEP 1 — everything about the project itself that isn't
            financing: name, type, presenting entity, description, Initiative
            (organizational grouping, not a funding source — see the
-           note on step 3 below), country, beneficiaries. "Continue" creates
+           note on step 4 below), country, beneficiaries. "Continue" creates
            the project record with all of these already filled in, so step
-           2's document uploads have a real project id to attach to. -->
+           2's phases and step 3's document uploads have a real project id
+           to attach to. -->
       <div class="wizard-panel" data-step="1">
         <div class="field"><label for="pname"><span data-i18n="np.f.name">Project name</span></label><input id="pname" type="text" required></div>
 
@@ -163,7 +178,7 @@
              cable and a datacenter as separate projects), NOT itself a
              funding source, so it lives here with the project's other
              non-financing attributes rather than in the Financing section
-             (step 3) below. Only offers programs.program_role = 'umbrella'
+             (step 4) below. Only offers programs.program_role = 'umbrella'
              — see loadPrograms() below and
              supabase/migration_v43_program_role.sql. Field/element ids
              (pprogram, createProgramLink) were kept as-is when this field
@@ -174,9 +189,9 @@
           <select id="pprogram"></select>
           <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.initiative.help">Group this project under an Initiative if it's part of a broader effort with several independently-financed projects.</span> <a href="new-program.html?role=umbrella" target="_blank" id="createProgramLink" style="display:none;"><span data-i18n="np.f.initiative.create">Create a new initiative &rarr;</span></a></p>
           <!-- If this Program has its own guided template, it's filled in
-               from the Templates section (4), not here — see
+               from the Templates section (5), not here — see
                updateProgramTemplateBtnVisibility() and the
-               programTemplateOfferCard in step 4 below. -->
+               programTemplateOfferCard in step 5 below. -->
         </div>
 
         <div class="field" style="margin-top:18px;"><label for="pcountry"><span data-i18n="np.f.country">Country</span></label>
@@ -228,9 +243,9 @@
         <div class="wizard-nav">
           <button type="button" class="btn amber" id="step1NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
           <!-- Edit-mode only — lets an editor save from this section
-               directly instead of having to click through to section 4.
+               directly instead of having to click through to section 5.
                Runs the exact same save (performSave() below) as the
-               step-4 submit button — hidden here in create mode because
+               step-5 submit button — hidden here in create mode because
                nothing exists yet to save until step 1's own "Continue"
                creates the record. See the .save-anywhere-btn reveal in the
                isEdit block below. -->
@@ -244,15 +259,42 @@
         </div>
       </div>
 
-      <!-- STEP 2 — documents. Seven separate, independently-optional upload
+      <!-- STEP 2 — project phases, optional breakdown into stages, each
+           with its own scope/budget/duration (migration_v70_project_
+           phases.sql). Promoted to its own step (oct 2026) — previously
+           folded into what's now Step 4 (Financing). Once >=1 phase
+           exists, Step 4's budget fields (and Step 1's duration field
+           above) become read-only, computed as the sum of the phases —
+           see applyPhaseTotalsLock()/recomputeProjectTotalsFromPhases()
+           in the script below. -->
+      <div class="wizard-panel" data-step="2">
+        <div class="field">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <label style="margin:0;"><span data-i18n="np.phases.title">Project phases (optional)</span></label>
+            <button type="button" class="btn ghost small" id="addPhaseBtn"><span data-i18n="np.phases.add">+ Add phase</span></button>
+          </div>
+          <p style="font-size:12px; color:var(--muted); margin-top:4px;"><span data-i18n="np.phases.help">Break the project down into phases if useful, each with its own scope, budget and duration. Once you add a phase, the budget and duration elsewhere in this form are computed automatically from all the project's phases.</span></p>
+          <div id="phasesList" style="margin-top:12px; display:flex; flex-direction:column; gap:10px;"></div>
+          <p id="phasesEmpty" style="font-size:12.5px; color:var(--muted); margin-top:8px;"><span data-i18n="np.phases.empty">No phases added yet.</span></p>
+        </div>
+        <div class="wizard-nav">
+          <button type="button" class="btn ghost" id="step2BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
+          <button type="button" class="btn amber" id="step2NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <button type="button" class="btn amber small save-anywhere-btn" style="display:none;"><span data-i18n="np.edit.submit">Save Changes</span></button>
+          <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
+        </div>
+        <p class="contact-note" data-save-note style="margin-top:10px; min-height:18px;"></p>
+      </div>
+
+      <!-- STEP 3 — documents. Seven separate, independently-optional upload
            zones — see supabase/migration_v24_document_categories_expand.sql
            and DOCUMENT_TYPES in assets/platform.js. Each zone uploads
            immediately on file-select/drop (rather than staging in memory
            until final submit, as before) so the project's real documents
-           exist by step 4, where the AI agent can scan them. Driven
+           exist by step 5, where the AI agent can scan them. Driven
            generically by the JS below via each group's [data-category]
            attribute rather than seven hand-wired copies. -->
-      <div class="wizard-panel" data-step="2">
+      <div class="wizard-panel" data-step="3">
         <div id="existingDocsBlock" style="display:none;">
           <label><span data-i18n="np.f.docs.existing">Already uploaded</span></label>
           <div id="existingDocsList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
@@ -333,8 +375,8 @@
         </div>
 
         <div class="wizard-nav">
-          <button type="button" class="btn ghost" id="step2BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
-          <button type="button" class="btn amber" id="step2NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <button type="button" class="btn ghost" id="step3BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
+          <button type="button" class="btn amber" id="step3NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
           <button type="button" class="btn amber small save-anywhere-btn" style="display:none;"><span data-i18n="np.edit.submit">Save Changes</span></button>
           <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
         </div>
@@ -354,23 +396,7 @@
            total cost (ARS/USD, moved here from what used to be step 1) and
            the new financing_required_percentage — see
            migration_v56_financing_required_percentage.sql. -->
-      <div class="wizard-panel" data-step="3">
-        <!-- Project phases — optional breakdown into stages, each with its
-             own scope/budget/duration (migration_v70_project_phases.sql).
-             Once >=1 phase exists, the budget fields right below (and
-             Step 1's duration field) become read-only, computed as the sum
-             of the phases — see applyPhaseTotalsLock()/recomputeProjectTotalsFromPhases()
-             in the script below. -->
-        <div class="field" style="margin-bottom:26px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-            <label style="margin:0;"><span data-i18n="np.phases.title">Project phases (optional)</span></label>
-            <button type="button" class="btn ghost small" id="addPhaseBtn"><span data-i18n="np.phases.add">+ Add phase</span></button>
-          </div>
-          <p style="font-size:12px; color:var(--muted); margin-top:4px;"><span data-i18n="np.phases.help">Break the project down into phases if useful, each with its own scope, budget and duration. Once you add a phase, the budget and duration below are computed automatically from all the project's phases.</span></p>
-          <div id="phasesList" style="margin-top:12px; display:flex; flex-direction:column; gap:10px;"></div>
-          <p id="phasesEmpty" style="font-size:12.5px; color:var(--muted); margin-top:8px;"><span data-i18n="np.phases.empty">No phases added yet.</span></p>
-        </div>
-
+      <div class="wizard-panel" data-step="4">
         <div class="field">
           <label for="pBudgetAmount"><span data-i18n="np.f.budget">Total estimated budget (ARS, optional)</span></label>
           <input id="pBudgetAmount" type="number" min="0" step="1">
@@ -411,8 +437,8 @@
         <p style="font-size:12.5px; color:var(--muted); margin-top:24px; padding-top:20px; border-top:1px solid var(--paper-line);"><span data-i18n="np.f.financingManagement.hint">Applying to FSU, BID, CAF, USTDA or any other registered financing program — and getting an AI-generated financing recommendation — happens afterward, from the project's own "Financiación" section.</span></p>
 
         <div class="wizard-nav">
-          <button type="button" class="btn ghost" id="step3BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
-          <button type="button" class="btn amber" id="step3NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <button type="button" class="btn ghost" id="step4BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
+          <button type="button" class="btn amber" id="step4NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
           <button type="button" class="btn amber small save-anywhere-btn" style="display:none;"><span data-i18n="np.edit.submit">Save Changes</span></button>
           <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
         </div>
@@ -423,11 +449,11 @@
            real submit button. "Fill using template" hands off to
            project-template.html, which (the project already exists by this
            point) exposes its own "Autocomplete from documents" button
-           reading whatever was uploaded in step 2. Submitting here always
+           reading whatever was uploaded in step 3. Submitting here always
            saves via updateProject() (the project record already exists from
            step 1 in create mode, or from the original ?id= when editing) —
            see the submit handler below. -->
-      <div class="wizard-panel" data-step="4">
+      <div class="wizard-panel" data-step="5">
         <div class="template-offer-card" id="templateOfferCard" style="display:none;">
           <p style="font-size:14px; margin:0 0 6px;"><span data-i18n="np.wizard.step3.lede">This project type has a guided template. Fill it in manually, or — if you uploaded documents earlier — let INA's AI agent scan them and prefill it automatically.</span></p>
           <p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;"><span data-i18n="np.f.templateForType">Corresponds to the project type:</span> <strong id="templateOfferTypeName"></strong></p>
@@ -454,7 +480,7 @@
         <p id="editNote" style="font-size:12.5px; color:var(--amber-deep); margin-top:18px; display:none;"><span data-i18n="np.edit.reanalyze">Saving changes clears the current analysis — run the Investment Readiness Index&trade; again manually from the project page afterwards.</span></p>
 
         <div class="wizard-nav">
-          <button type="button" class="btn ghost" id="step4BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
+          <button type="button" class="btn ghost" id="step5BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
           <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
         </div>
         <button type="submit" class="btn amber" style="margin-top:14px;" id="submitBtn"><span data-i18n="np.submit">Submit for Analysis</span></button>
@@ -503,7 +529,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=83"></script>
+<script src="/assets/i18n.js?v=84"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/assets/platform.js?v=104"></script>
 <script src="/assets/script.js?v=15"></script>
@@ -527,11 +553,12 @@
   // the "Cargar desde uno o varios PDF" box (above step 1) runs BEFORE the
   // project exists, so those files can't be attached via uploadDocument()
   // at pick-time (it needs a real project id — see the doc-upload-group
-  // comment further down). Instead the actual File objects picked there are
-  // kept here and re-uploaded as ordinary "other" documents right after
-  // step 1's "Continue" creates the project record (see step1NextBtn below)
-  // — same uploadDocument() call every doc-upload-group zone already uses,
-  // just deferred until a project id exists. Cleared once attached so
+  // comment further down). Instead each {file, category} pair picked there
+  // is kept here and re-uploaded under ITS OWN chosen category (oct 2026 —
+  // previously always hardcoded to "other") right after step 1's
+  // "Continue" creates the project record (see step1NextBtn below) — same
+  // uploadDocument() call every doc-upload-group zone already uses, just
+  // deferred until a project id exists. Cleared once attached so
   // re-visiting step 1 (activeProjectId already set, goToStep(2) short-
   // circuits) never re-attaches the same files twice.
   let pendingAutofillFiles = [];
@@ -950,31 +977,86 @@
     if (f.financingRequiredPercentage != null && f.financingRequiredPercentage !== '') setIfPresent('pFinancingRequiredPercentage', parseFloat(f.financingRequiredPercentage));
   }
 
+  // Picked but not yet uploaded/analyzed — {file, category} pairs, category
+  // defaulting to 'other' and changeable per file via renderStagedPdfList()
+  // below before "Analyze documents" actually fires the upload+extract
+  // flow. Same DOCUMENT_TYPES catalog Step 3's Attached documents zones
+  // use (see assets/platform.js), so a file picked here as e.g.
+  // "financial" uploads into that exact category once the project exists
+  // — not always "other" as before (oct 2026).
+  let stagedPdfFiles = [];
+
+  function renderStagedPdfList() {
+    const wrap = document.getElementById('pPdfStagedList');
+    const items = document.getElementById('pPdfStagedItems');
+    if (!stagedPdfFiles.length) {
+      wrap.style.display = 'none';
+      items.innerHTML = '';
+      return;
+    }
+    wrap.style.display = 'block';
+    items.innerHTML = stagedPdfFiles.map((s, i) => `
+      <div class="risk-row" style="padding:8px 12px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span style="font-size:12.5px; word-break:break-all; min-width:0;">${escapeHtml(s.file.name)}</span>
+        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+          <select class="pdf-staged-type" data-idx="${i}" style="font-size:12px;">
+            ${INAPlatform.DOCUMENT_TYPES.map((t) => `<option value="${t.value}" ${t.value === s.category ? 'selected' : ''}>${t[lang] || t.en}</option>`).join('')}
+          </select>
+          <button type="button" class="btn ghost small remove-staged-pdf-btn" data-idx="${i}">✕</button>
+        </div>
+      </div>`).join('');
+  }
+
+  document.getElementById('pPdfStagedItems').addEventListener('change', (e) => {
+    const sel = e.target.closest('.pdf-staged-type');
+    if (!sel) return;
+    const s = stagedPdfFiles[Number(sel.dataset.idx)];
+    if (s) s.category = sel.value;
+  });
+  document.getElementById('pPdfStagedItems').addEventListener('click', (e) => {
+    const btn = e.target.closest('.remove-staged-pdf-btn');
+    if (!btn) return;
+    stagedPdfFiles.splice(Number(btn.dataset.idx), 1);
+    renderStagedPdfList();
+  });
+
   document.getElementById('pUploadPdfBtn').addEventListener('click', () => document.getElementById('pPdfInput').click());
-  document.getElementById('pPdfInput').addEventListener('change', async (e) => {
+  document.getElementById('pPdfInput').addEventListener('change', (e) => {
     const fileList = Array.from(e.target.files || []);
     e.target.value = '';
     if (!fileList.length) return;
-    const btn = document.getElementById('pUploadPdfBtn');
+    stagedPdfFiles.push(...fileList.map((file) => ({ file, category: 'other' })));
+    renderStagedPdfList();
+  });
+
+  document.getElementById('pAnalyzePdfBtn').addEventListener('click', async () => {
+    if (!stagedPdfFiles.length) return;
+    const toAnalyze = stagedPdfFiles;
+    const fileList = toAnalyze.map((s) => s.file);
+    const analyzeBtn = document.getElementById('pAnalyzePdfBtn');
     const statusEl = document.getElementById('pPdfStatus');
-    btn.disabled = true;
+    analyzeBtn.disabled = true;
     statusEl.style.display = 'block';
     statusEl.textContent = lang === 'es'
       ? `Subiendo ${fileList.length > 1 ? fileList.length + ' documentos' : 'el documento'}…`
       : `Uploading ${fileList.length > 1 ? fileList.length + ' documents' : 'the document'}…`;
     let files = [];
     try {
-      files = await Promise.all(fileList.map(async (file) => ({
-        storagePath: await INAPlatform.uploadTempExtractionFile(file),
-        fileName: file.name,
+      files = await Promise.all(toAnalyze.map(async (s) => ({
+        storagePath: await INAPlatform.uploadTempExtractionFile(s.file),
+        fileName: s.file.name,
+        category: s.category,
       })));
       // Remember the actual File objects (not just their temp storage
-      // paths, which get deleted in the `finally` below) so step 1's
-      // "Continue" can attach them as real project documents once the
-      // project exists — see the pendingAutofillFiles comment above.
-      // Kept regardless of whether extraction itself succeeds below: the
-      // upload succeeded, so the PDF is real and worth keeping either way.
-      pendingAutofillFiles = fileList;
+      // paths, which get deleted in the `finally` below) + each one's
+      // chosen category, so step 1's "Continue" can attach them as real
+      // project documents once the project exists — see the
+      // pendingAutofillFiles comment above. Kept regardless of whether
+      // extraction itself succeeds below: the upload succeeded, so the
+      // PDF is real and worth keeping either way.
+      pendingAutofillFiles = toAnalyze.map((s) => ({ file: s.file, category: s.category }));
+      stagedPdfFiles = [];
+      renderStagedPdfList();
       statusEl.textContent = lang === 'es'
         ? `Leyendo ${fileList.length > 1 ? fileList.length + ' documentos' : 'el documento'}…`
         : `Reading ${fileList.length > 1 ? fileList.length + ' documents' : 'the document'}…`;
@@ -1011,7 +1093,7 @@
     } catch (err) {
       statusEl.textContent = (lang === 'es' ? 'No se pudo leer el/los PDF: ' : "Couldn't read the PDF(s): ") + (err.message || err);
     } finally {
-      btn.disabled = false;
+      analyzeBtn.disabled = false;
       files.forEach((f) => { if (f && f.storagePath) INAPlatform.deleteTempExtractionFile(f.storagePath); });
     }
   });
@@ -1084,6 +1166,7 @@
       renderExistingDocs();
       updateTemplateBtnVisibility();
       renderPhases();
+      renderStagedPdfList();
       if (document.getElementById('phaseFormOverlay').style.display === 'flex') renderDurationUnitOptions(document.getElementById('phDurationUnit'));
       if (lastLockResult) showEditLockBanner(lastLockResult);
     });
@@ -1100,7 +1183,7 @@
   function updateTemplateBtnVisibility() {
     const hasTemplate = !!INAPlatform.projectTemplateFor(typeSelect.value);
     useTemplateBtn.style.display = hasTemplate ? 'inline-flex' : 'none';
-    // templateOfferCard wraps useTemplateBtn inside step 4 — hidden
+    // templateOfferCard wraps useTemplateBtn inside step 5 — hidden
     // entirely (not just the button) when this project type has no
     // registered template; templateOfferEmpty shows instead.
     if (templateOfferCard) templateOfferCard.style.display = hasTemplate ? 'block' : 'none';
@@ -1125,9 +1208,9 @@
   const useProgramTemplateBtn = document.getElementById('useProgramTemplateBtn');
   const programTemplateOfferCard = document.getElementById('programTemplateOfferCard');
   const programTemplateOfferName = document.getElementById('programTemplateOfferName');
-  // programTemplateOfferCard lives in the Templates section (4) — it only
+  // programTemplateOfferCard lives in the Templates section (5) — it only
   // shows up once the Initiative picked in the Project section (section 1)
-  // actually has a registered template, so section 4 always reflects
+  // actually has a registered template, so section 5 always reflects
   // whatever was just selected in section 1.
   function updateProgramTemplateBtnVisibility() {
     const program = programsCache.find((pg) => pg.id === programSelect.value);
@@ -1293,10 +1376,10 @@
     // cancel out of yet (closing the tab is enough there); clearing the
     // inline display:none lets .btn's own CSS display rule take over.
     document.querySelectorAll('.cancel-edit-btn').forEach((btn) => { btn.style.display = ''; });
-    // "Save Changes" is also reachable from sections 1-3, not just the
-    // final section 4 — an editor tweaking one field shouldn't have to
+    // "Save Changes" is also reachable from sections 1-4, not just the
+    // final section 5 — an editor tweaking one field shouldn't have to
     // click through the whole wizard just to save it. Wired to the same
-    // performSave() as the section-4 submit button, below.
+    // performSave() as the section-5 submit button, below.
     document.querySelectorAll('.save-anywhere-btn').forEach((btn) => {
       btn.style.display = '';
       btn.addEventListener('click', () => performSave());
@@ -1304,11 +1387,11 @@
   }
 
   // Documents now upload immediately on select/drop instead of staging in
-  // memory until final submit — this is what makes the step 4 AI
+  // memory until final submit — this is what makes the step 5 AI
   // autofill/template-scanning offer possible: the documents genuinely
   // exist on the project by the time that step is reached. Requires a real
   // project id, which is why wizard mode creates the project record at step
-  // 1 before step 2's upload zones ever become reachable; in edit mode
+  // 1 before step 3's upload zones ever become reachable; in edit mode
   // activeProjectId (=editId) is already known from the start. Wired
   // generically here off each .doc-upload-group's [data-category] — see
   // DOCUMENT_TYPES in assets/platform.js — instead of seven hand-copied
@@ -1444,12 +1527,12 @@
 
   // --- Wizard step navigation — identical in both create and edit mode:
   //     one .wizard-panel visible at a time, with clickable section names
-  //     in #wizardSteps for direct access to any of the 4 sections. Moving
+  //     in #wizardSteps for direct access to any of the 5 sections. Moving
   //     between sections never loses data: every field stays in the DOM
   //     the whole time (sections are just shown/hidden), and the final
   //     submit always re-reads current field values — so editing name/type
-  //     after leaving section 1, or documents after leaving section 2, is
-  //     picked up correctly whenever the user eventually reaches section 4
+  //     after leaving section 1, or documents after leaving section 3, is
+  //     picked up correctly whenever the user eventually reaches section 5
   //     and submits. ---
   let currentStep = 1;
   // Which sections have actually been shown at least once — drives the
@@ -1527,9 +1610,9 @@
     // First time through — create the project record with everything
     // collected in this section (name/type/entity/description/program/
     // country/beneficiaries — every non-financing project attribute) so
-    // step 2's document uploads have a real project id to attach to.
-    // Financing is now just budget totals + % required, collected in step
-    // 3 as part of this same project record — applying to Programs, FSU,
+    // step 2's phases and step 3's document uploads have a real project id
+    // to attach to. Financing is now just budget totals + % required, collected in step
+    // 4 as part of this same project record — applying to Programs, FSU,
     // and "other source" all live on app/project-financing.html instead.
     const btn = document.getElementById('step1NextBtn');
     btn.disabled = true;
@@ -1557,13 +1640,14 @@
       // PDF" autofill above (see pendingAutofillFiles comment near its
       // declaration) — only reachable now that activeProjectId exists.
       // Best-effort per file: one failing upload shouldn't block the user
-      // from moving on, they can always re-attach manually in step 2.
-      // Filed under "other" since these source documents don't reliably
-      // map to one of the six specific categories.
+      // from moving on, they can always re-attach manually in step 3.
+      // Each file's own chosen category (set in the staged list above the
+      // wizard, defaulting to "other") carries through here instead of
+      // always being "other" (oct 2026).
       if (pendingAutofillFiles.length) {
-        for (const file of pendingAutofillFiles) {
+        for (const { file, category } of pendingAutofillFiles) {
           try {
-            const doc = await INAPlatform.uploadDocument(activeProjectId, file, 'other');
+            const doc = await INAPlatform.uploadDocument(activeProjectId, file, category || 'other');
             existingDocs.push(doc);
           } catch (err) {
             console.error('[step1NextBtn] could not attach autofill PDF as a document:', err);
@@ -1615,16 +1699,19 @@
   document.getElementById('step3NextBtn').addEventListener('click', () => goToStep(4));
 
   document.getElementById('step4BackBtn').addEventListener('click', () => goToStep(3));
+  document.getElementById('step4NextBtn').addEventListener('click', () => goToStep(5));
 
-  // Pressing Enter inside a field on sections 1-3 would otherwise submit
-  // the form natively (section 4 contains required <select>/<textarea>
+  document.getElementById('step5BackBtn').addEventListener('click', () => goToStep(4));
+
+  // Pressing Enter inside a field on sections 1-4 would otherwise submit
+  // the form natively (section 5 contains required <select>/<textarea>
   // fields that are hidden off-screen while that section isn't active,
   // which browsers silently refuse to submit around) — block that
-  // everywhere except section 4, where the submit button actually lives.
+  // everywhere except section 5, where the submit button actually lives.
   // Applies in both create and edit mode now that both use the same
   // one-section-at-a-time interface.
   form.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && currentStep !== 4) {
+    if (e.key === 'Enter' && currentStep !== 5) {
       e.preventDefault();
     }
   });
@@ -1761,8 +1848,8 @@
 
   // All the note-ish elements a save can report into — whichever one(s)
   // happen to be visible depend on which section is currently active
-  // (#step1Note in section 1, the two new [data-save-note] paragraphs in
-  // sections 2/3, #formNote in section 4). Setting all of them is cheap
+  // (#step1Note in section 1, the [data-save-note] paragraphs in
+  // sections 2-4, #formNote in section 5). Setting all of them is cheap
   // and guarantees the message shows up regardless of which "Save" button
   // triggered performSave() below.
   const saveButtons = () => [submitBtn, ...document.querySelectorAll('.save-anywhere-btn')];
@@ -1816,7 +1903,7 @@
       // runs — either from wizard step 1 (activeProjectId set there) or
       // from editing an existing one (activeProjectId = editId from the
       // start) — so this is always a save-in-place, never a fresh insert.
-      // Documents were uploaded immediately back in step 2, so there's no
+      // Documents were uploaded immediately back in step 3, so there's no
       // pending-files loop left to run here. Financing management (FSU,
       // applying to Programs, "other source") now lives entirely on
       // app/project-financing.html — nothing left to reconcile here.
