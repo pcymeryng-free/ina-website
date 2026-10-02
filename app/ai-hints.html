@@ -127,7 +127,7 @@
         ? `<span data-updated-note>${escapeHtml(lang === 'es' ? 'Última edición: ' : 'Last edited: ')}${fmtDateTime(row.updated_at)}</span>`
         : `<span data-updated-note style="color:var(--muted);">${escapeHtml(lang === 'es' ? 'Todavía sin guía adicional.' : 'No extra guidance yet.')}</span>`;
       return `
-      <div class="wizard-panel" data-agent-key="${agent.value}" style="padding:22px 24px;">
+      <div data-agent-key="${agent.value}" style="background:#fff; border:1px solid var(--paper-line); border-radius:14px; padding:22px 24px;">
         <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
           <h3 style="margin:0; font-size:16px;">${escapeHtml(agent[lang] || agent.en)}</h3>
           <p style="margin:0; font-size:11.5px; color:var(--muted); font-family:var(--mono);">${agent.value}</p>
