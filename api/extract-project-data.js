@@ -191,16 +191,20 @@ function buildSystemPrompt(fieldsSpec) {
 For EACH field in the list, look for a clearly stated or directly inferable value in the documents. If you find one:
 - For a "select" field, respond with EXACTLY one of that field's allowed_values — never invent a value outside that list. If nothing in the documents clearly matches one of the allowed values, respond null rather than guessing the closest one.
 - For a "text" field that is actually a plain number (duration, budget, exchange rate, percentage, beneficiary count), respond with just the number, no currency symbols, no thousands separators, no unit text.
-- Budget and other financial figures (budgetAmount, budgetAmountUsd, exchangeRate, financingRequiredPercentage) are often stated in a dedicated budget table, financial annex, or "presupuesto"/"costos" section that can appear ANYWHERE in the document — including well past the introduction/technical description. Read the ENTIRE text provided before concluding a figure isn't there; do not limit your search to the opening paragraphs. If a budget is broken down by line item/phase rather than given as one total, sum the line items into a single total.
+- Budget and other financial figures (budgetAmount, budgetAmountUsd, exchangeRate, financingRequiredPercentage) are often stated in a dedicated budget table, financial annex, or "presupuesto"/"costos" section that can appear ANYWHERE in the document — including well past the introduction/technical description. Read the ENTIRE text provided before concluding a figure isn't there; do not limit your search to the opening paragraphs. If a budget is broken down by line item/phase rather than given as one total, sum the line items into a single total for budgetAmount/budgetAmountUsd regardless of whether you also report a "phases" breakdown below.
 - For "description", write a factual 3-6 sentence summary in the SAME LANGUAGE the source documents are mostly written in, covering what the project is and its main objective — do not just copy a long passage verbatim.
 - For "name", propose a short, specific project name/title (a few words) — not a full sentence.
 
 If a field's value is not stated anywhere in the documents, or you are not reasonably confident, respond with null for that field — never guess or fabricate a plausible-sounding answer.
 
+PROJECT PHASES — separately from the fields above, also look for the project being broken down into distinct phases/stages/etapas (e.g. "Fase 1: Permisos y diseño", "Etapa de construcción", "Fase de prueba y puesta en marcha"), each with its own scope and/or budget and/or duration described in the documents. Only report a phase if the documents clearly name or describe it as a distinct stage — do NOT invent a breakdown for a project that's described as a single undifferentiated whole just to have something to report; in that case return an empty phases array. For each real phase found, report:
+{"name": "<short phase name/title, in the source documents' language>", "scope": "<1-3 sentence description of what this phase covers, or null if not described>", "budgetAmount": <this phase's own budget in ARS, number only, or null>, "budgetAmountUsd": <this phase's own budget in USD, number only, or null>, "durationValue": <this phase's own duration, number only, or null>, "durationUnit": <"days" or "months", or null>}
+A phase needs at least a name to be worth reporting — leave any of the other fields null if that particular detail isn't stated for that phase.
+
 Fields to fill (JSON):
 ${JSON.stringify(fieldsSpec)}
 
-Respond with ONLY a single valid JSON object — no markdown code fences, no commentary — mapping every field's "key" to either a value (string) or null. Include every key exactly once.`;
+Respond with ONLY a single valid JSON object — no markdown code fences, no commentary. It must have every field's "key" above as a top-level key, each mapped to either a value (string) or null (include every field key exactly once), PLUS one more top-level key, "phases", mapped to an array of phase objects in the shape described above (use an empty array [] if the documents don't clearly describe distinct phases).`;
 }
 
 function normalizeExtractedValue(field, raw) {
@@ -213,6 +217,36 @@ function normalizeExtractedValue(field, raw) {
   }
   const cap = field.type === 'textarea' ? 3000 : 300;
   return value.slice(0, cap);
+}
+
+// Same {key,label,type} shape as the flat FIELDS above would normally
+// expect, but phases are a model-proposed ARRAY (count unknown ahead of
+// time, unlike every other field here) — validated by hand rather than
+// through normalizeExtractedValue(), which assumes one field = one
+// top-level key. Caps the array length as cheap insurance against a
+// pathological/hallucinated response, same spirit as MAX_FILES above.
+const MAX_PHASES = 12;
+function normalizePhase(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const name = typeof raw.name === 'string' ? raw.name.trim().slice(0, 200) : '';
+  if (!name) return null; // a phase needs at least a name to be worth keeping
+  const num = (v) => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  return {
+    name,
+    scope: typeof raw.scope === 'string' && raw.scope.trim() ? raw.scope.trim().slice(0, 1000) : null,
+    budgetAmount: num(raw.budgetAmount),
+    budgetAmountUsd: num(raw.budgetAmountUsd),
+    durationValue: num(raw.durationValue),
+    durationUnit: raw.durationUnit === 'days' || raw.durationUnit === 'months' ? raw.durationUnit : null,
+  };
+}
+function normalizePhases(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(normalizePhase).filter(Boolean).slice(0, MAX_PHASES);
 }
 
 function guessMediaType(fileName) {
@@ -319,6 +353,7 @@ async function handler(req, res) {
       return json(res, 200, {
         ok: true,
         fields: Object.fromEntries(FIELDS.map((f) => [f.key, null])),
+        phases: [],
         documentsUsed: [],
         skipped: files.map((f) => (f && f.fileName) || 'file'),
       });
@@ -380,6 +415,7 @@ async function handler(req, res) {
       return json(res, 200, {
         ok: true,
         fields: Object.fromEntries(FIELDS.map((f) => [f.key, null])),
+        phases: [],
         documentsUsed: [],
         skipped,
       });
@@ -388,6 +424,11 @@ async function handler(req, res) {
     const systemPrompt = buildSystemPrompt(fieldsSpec);
     const userContent = `PROJECT DOCUMENTS:\n${combinedText}`;
 
+    // max_tokens below (every provider branch) raised from 3000 to 6000
+    // (oct 2026) when the "phases" array was added to the output — up to
+    // MAX_PHASES (12) phase objects plus the existing 16 flat fields could
+    // otherwise get cut off mid-JSON for a rich/detailed document, same
+    // failure mode fixed in api/analyze-project.js's own max_tokens bump.
     let rawText;
     if (provider === 'groq') {
       const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -395,7 +436,7 @@ async function handler(req, res) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
         body: JSON.stringify({
           model: GROQ_MODEL || GROQ_MODEL_DEFAULT,
-          max_tokens: 3000,
+          max_tokens: 6000,
           temperature: 0,
           messages: [
             { role: 'system', content: systemPrompt },
@@ -419,7 +460,7 @@ async function handler(req, res) {
         },
         body: JSON.stringify({
           model: LOCAL_LLM_MODEL,
-          max_tokens: 3000,
+          max_tokens: 6000,
           temperature: 0,
           messages: [
             { role: 'system', content: systemPrompt },
@@ -445,7 +486,7 @@ async function handler(req, res) {
           modelId: BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT,
           system: [{ text: systemPrompt }],
           messages: [{ role: 'user', content: [{ text: userContent }] }],
-          inferenceConfig: { maxTokens: 3000, temperature: 0 },
+          inferenceConfig: { maxTokens: 6000, temperature: 0 },
         }));
         const outputContent = (bedrockRes.output && bedrockRes.output.message && bedrockRes.output.message.content) || [];
         rawText = outputContent.map((b) => b.text || '').join('');
@@ -466,7 +507,7 @@ async function handler(req, res) {
         },
         body: JSON.stringify({
           model: CLAUDE_MODEL || 'claude-sonnet-5',
-          max_tokens: 3000,
+          max_tokens: 6000,
           temperature: 0,
           system: systemPrompt,
           messages: [{ role: 'user', content: userContent }],
@@ -493,8 +534,9 @@ async function handler(req, res) {
     FIELDS.forEach((f) => {
       fields[f.key] = normalizeExtractedValue(f, parsed[f.key]);
     });
+    const phases = normalizePhases(parsed.phases);
 
-    return json(res, 200, { ok: true, fields, documentsUsed, skipped });
+    return json(res, 200, { ok: true, fields, phases, documentsUsed, skipped });
   } catch (err) {
     console.error('[extract-project-data] unhandled error:', err);
     return json(res, 500, { error: 'Extraction failed', detail: String((err && err.message) || err) });

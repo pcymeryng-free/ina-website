@@ -536,6 +536,14 @@
   // circuits) never re-attaches the same files twice.
   let pendingAutofillFiles = [];
 
+  // Phases the PDF-extraction agent proposed (see api/extract-project-
+  // data.js's "phases" output, added oct 2026) — staged here for the same
+  // reason pendingAutofillFiles is: there's no project_id yet this early.
+  // Actually created (via INAPlatform.createProjectPhase()) right after
+  // step1NextBtn below creates the project record. Cleared once applied,
+  // same as pendingAutofillFiles, so revisiting step 1 never re-adds them.
+  let pendingAutofillPhases = [];
+
   // Project phases (migration_v70_project_phases.sql) — starts empty for
   // a brand-new project, loaded from the DB in init()'s isEdit branch for
   // an existing one. See renderPhases()/applyPhaseTotalsLock() further
@@ -972,6 +980,12 @@
         : `Reading ${fileList.length > 1 ? fileList.length + ' documents' : 'the document'}…`;
       const result = await INAPlatform.extractProjectData(files);
       prefillFromPdfExtraction(result.fields);
+      // Staged the same way as pendingAutofillFiles above — project_phases
+      // rows need a real project_id, which doesn't exist yet this early
+      // (this box runs before Step 1's "Continue"), so the actual
+      // createProjectPhase() calls happen right after that creates the
+      // project — see step1NextBtn below.
+      pendingAutofillPhases = Array.isArray(result.phases) ? result.phases : [];
       const filledCount = Object.values(result.fields || {}).filter((v) => v !== null && v !== undefined && v !== '').length;
       const parts = [];
       if (filledCount) {
@@ -982,6 +996,11 @@
         parts.push(lang === 'es'
           ? 'No se encontró información suficiente en el/los documento(s) para completar campos.'
           : "Couldn't find enough information in the document(s) to fill in any fields.");
+      }
+      if (pendingAutofillPhases.length) {
+        parts.push(lang === 'es'
+          ? `✓ Se detectaron ${pendingAutofillPhases.length} fase(s) — se van a agregar al crear el proyecto.`
+          : `✓ Detected ${pendingAutofillPhases.length} phase(s) — they'll be added once the project is created.`);
       }
       if ((result.skipped || []).length) {
         parts.push(lang === 'es'
@@ -1552,6 +1571,33 @@
         }
         pendingAutofillFiles = [];
         renderExistingDocs();
+      }
+      // Same best-effort, one-failure-shouldn't-block-the-rest approach as
+      // the documents loop above — create each phase the PDF-extraction
+      // agent proposed (see pendingAutofillPhases' declaration). Each
+      // createProjectPhase() call also recomputes the project's own
+      // budget/duration totals server-side, so by the time this loop
+      // finishes those fields already reflect the detected phases.
+      if (pendingAutofillPhases.length) {
+        for (const phase of pendingAutofillPhases) {
+          try {
+            const saved = await INAPlatform.createProjectPhase({
+              projectId: activeProjectId,
+              name: phase.name,
+              scope: phase.scope,
+              budgetAmount: phase.budgetAmount,
+              budgetAmountUsd: phase.budgetAmountUsd,
+              durationValue: phase.durationValue,
+              durationUnit: phase.durationUnit,
+            });
+            phases.push(saved);
+          } catch (err) {
+            console.error('[step1NextBtn] could not create an autofill-detected phase:', err);
+          }
+        }
+        pendingAutofillPhases = [];
+        renderPhases();
+        refreshBudgetDurationFieldsFromProject();
       }
       noteEl.textContent = '';
       goToStep(2);
