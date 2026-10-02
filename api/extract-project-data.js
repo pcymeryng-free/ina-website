@@ -74,8 +74,17 @@ const BEDROCK_REGION_DEFAULT = 'us-east-1';
 const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
 
 const MAX_FILES = 5;
-const MAX_CHARS_PER_DOC = 8000;
-const MAX_TOTAL_CHARS = 30000;
+// Raised from 8000/30000 (sep 2026) — budget figures and other financial
+// detail are frequently in a table/annex well into a technical folder
+// (pliego, carpeta técnica), past where the old 8000-char-per-doc cutoff
+// landed, so budgetAmount/budgetAmountUsd/exchangeRate/
+// financingRequiredPercentage came back null even when the document
+// stated them clearly. The configured models all comfortably handle
+// 60000 chars (~15-20k tokens) of input well within their context
+// windows, so there's no real cost to extending the cutoff rather than
+// truncating.
+const MAX_CHARS_PER_DOC = 20000;
+const MAX_TOTAL_CHARS = 60000;
 
 function json(res, status, body) {
   res.status(status).setHeader('Content-Type', 'application/json');
@@ -182,6 +191,7 @@ function buildSystemPrompt(fieldsSpec) {
 For EACH field in the list, look for a clearly stated or directly inferable value in the documents. If you find one:
 - For a "select" field, respond with EXACTLY one of that field's allowed_values — never invent a value outside that list. If nothing in the documents clearly matches one of the allowed values, respond null rather than guessing the closest one.
 - For a "text" field that is actually a plain number (duration, budget, exchange rate, percentage, beneficiary count), respond with just the number, no currency symbols, no thousands separators, no unit text.
+- Budget and other financial figures (budgetAmount, budgetAmountUsd, exchangeRate, financingRequiredPercentage) are often stated in a dedicated budget table, financial annex, or "presupuesto"/"costos" section that can appear ANYWHERE in the document — including well past the introduction/technical description. Read the ENTIRE text provided before concluding a figure isn't there; do not limit your search to the opening paragraphs. If a budget is broken down by line item/phase rather than given as one total, sum the line items into a single total.
 - For "description", write a factual 3-6 sentence summary in the SAME LANGUAGE the source documents are mostly written in, covering what the project is and its main objective — do not just copy a long passage verbatim.
 - For "name", propose a short, specific project name/title (a few words) — not a full sentence.
 
