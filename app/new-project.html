@@ -204,6 +204,7 @@
             <input id="pDurationValue" type="number" min="1" step="1" style="flex:1;">
             <select id="pDurationUnit" style="flex:1;"></select>
           </div>
+          <p id="phasesDurationNote" class="contact-note" style="display:none; margin-top:8px;"></p>
         </div>
 
         <div class="field" style="margin-top:18px;">
@@ -354,9 +355,26 @@
            the new financing_required_percentage — see
            migration_v56_financing_required_percentage.sql. -->
       <div class="wizard-panel" data-step="3">
+        <!-- Project phases — optional breakdown into stages, each with its
+             own scope/budget/duration (migration_v70_project_phases.sql).
+             Once >=1 phase exists, the budget fields right below (and
+             Step 1's duration field) become read-only, computed as the sum
+             of the phases — see applyPhaseTotalsLock()/recomputeProjectTotalsFromPhases()
+             in the script below. -->
+        <div class="field" style="margin-bottom:26px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <label style="margin:0;"><span data-i18n="np.phases.title">Project phases (optional)</span></label>
+            <button type="button" class="btn ghost small" id="addPhaseBtn"><span data-i18n="np.phases.add">+ Add phase</span></button>
+          </div>
+          <p style="font-size:12px; color:var(--muted); margin-top:4px;"><span data-i18n="np.phases.help">Break the project down into phases if useful, each with its own scope, budget and duration. Once you add a phase, the budget and duration below are computed automatically from all the project's phases.</span></p>
+          <div id="phasesList" style="margin-top:12px; display:flex; flex-direction:column; gap:10px;"></div>
+          <p id="phasesEmpty" style="font-size:12.5px; color:var(--muted); margin-top:8px;"><span data-i18n="np.phases.empty">No phases added yet.</span></p>
+        </div>
+
         <div class="field">
           <label for="pBudgetAmount"><span data-i18n="np.f.budget">Total estimated budget (ARS, optional)</span></label>
           <input id="pBudgetAmount" type="number" min="0" step="1">
+          <p id="phasesBudgetNote" class="contact-note" style="display:none; margin-top:8px;"></p>
         </div>
 
         <!-- USD twin of the budget above, plus the shared exchange rate —
@@ -443,6 +461,39 @@
         <p class="contact-note" id="formNote" style="margin-top:14px; min-height:18px;"></p>
       </div>
     </form>
+
+    <!-- ===== Project phase form overlay — a sibling of #projectForm above,
+         deliberately NOT nested inside it (forms can't nest; its own
+         "Save"/"Delete" buttons would otherwise risk also triggering the
+         outer wizard form's submit). See the phases.* JS below. ===== -->
+    <div class="risk-form-overlay" id="phaseFormOverlay" style="display:none;">
+      <div class="risk-form-panel" style="max-width:520px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+          <h3 style="margin:0;" id="phaseFormTitle"><span data-i18n="np.phases.new">+ New phase</span></h3>
+          <button type="button" class="btn ghost small" id="closePhaseForm">&times;</button>
+        </div>
+        <form id="phaseForm">
+          <div class="field"><label for="phName"><span data-i18n="np.phases.f.name">Phase name</span></label><input id="phName" type="text" required></div>
+          <div class="field" style="margin-top:16px;"><label for="phScope"><span data-i18n="np.phases.f.scope">Scope</span></label><textarea id="phScope" rows="3"></textarea></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+            <div class="field"><label for="phBudgetAmount"><span data-i18n="np.f.budget">Total estimated budget (ARS, optional)</span></label><input id="phBudgetAmount" type="number" min="0" step="1"></div>
+            <div class="field"><label for="phBudgetAmountUsd"><span data-i18n="np.f.budgetUsd">Total estimated budget (USD, optional)</span></label><input id="phBudgetAmountUsd" type="number" min="0" step="1"></div>
+          </div>
+          <div class="field" style="margin-top:16px;">
+            <label for="phDurationValue"><span data-i18n="np.f.duration">Estimated duration (optional)</span></label>
+            <div style="display:flex; gap:10px;">
+              <input id="phDurationValue" type="number" min="1" step="1" style="flex:1;">
+              <select id="phDurationUnit" style="flex:1;"></select>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px; margin-top:20px; align-items:center;">
+            <button type="submit" class="btn amber" id="phaseSubmitBtn"><span data-i18n="md.save">Save</span></button>
+            <button type="button" class="btn ghost" id="deletePhaseBtn" style="display:none;"><span data-i18n="md.delete">Delete</span></button>
+            <p id="phaseFormNote" class="contact-note" style="margin:0;"></p>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </section>
 </main>
@@ -452,9 +503,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=82"></script>
+<script src="/assets/i18n.js?v=83"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=103"></script>
+<script src="/assets/platform.js?v=104"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
 (function () {
@@ -484,6 +535,17 @@
   // re-visiting step 1 (activeProjectId already set, goToStep(2) short-
   // circuits) never re-attaches the same files twice.
   let pendingAutofillFiles = [];
+
+  // Project phases (migration_v70_project_phases.sql) — starts empty for
+  // a brand-new project, loaded from the DB in init()'s isEdit branch for
+  // an existing one. See renderPhases()/applyPhaseTotalsLock() further
+  // down.
+  let phases = [];
+  let editingPhaseId = null;
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
 
   // Set only when this tab actually holds the edit lock on an existing
   // project (see the isEdit block in init() below) — calling this stops
@@ -615,22 +677,199 @@
   // "blank option first, since all 3 are optional" pattern as
   // renderEntityTypeOptions() above. See migration_v33_project_attributes.sql.
   const durationUnitSelect = document.getElementById('pDurationUnit');
-  function renderDurationUnitOptions() {
-    const selected = durationUnitSelect.value;
-    durationUnitSelect.innerHTML = '';
+  // selectEl param added for the phase form's own phDurationUnit select
+  // (same days/months vocabulary) — defaults to the project-level select
+  // so every pre-existing call site keeps working unchanged.
+  function renderDurationUnitOptions(selectEl) {
+    selectEl = selectEl || durationUnitSelect;
+    const selected = selectEl.value;
+    selectEl.innerHTML = '';
     const blankOpt = document.createElement('option');
     blankOpt.value = '';
     blankOpt.textContent = lang === 'es' ? '— Unidad —' : '— Unit —';
-    durationUnitSelect.appendChild(blankOpt);
+    selectEl.appendChild(blankOpt);
     ['days', 'months'].forEach((u) => {
       const opt = document.createElement('option');
       opt.value = u;
       opt.textContent = INAPlatform.DURATION_UNIT_LABELS[u][lang] || INAPlatform.DURATION_UNIT_LABELS[u].en;
-      durationUnitSelect.appendChild(opt);
+      selectEl.appendChild(opt);
     });
-    if (selected) durationUnitSelect.value = selected;
+    if (selected) selectEl.value = selected;
   }
   renderDurationUnitOptions();
+
+  /* ---------- Project phases (migration_v70_project_phases.sql) ---------- */
+  function formatPhaseMoney(n) {
+    return n == null ? null : Number(n).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US');
+  }
+  function phaseSummaryLine(p) {
+    const parts = [];
+    if (p.budget_amount != null) parts.push(`ARS ${formatPhaseMoney(p.budget_amount)}`);
+    if (p.budget_amount_usd != null) parts.push(`USD ${formatPhaseMoney(p.budget_amount_usd)}`);
+    if (p.duration_value != null) {
+      const unitLabel = p.duration_unit ? (INAPlatform.DURATION_UNIT_LABELS[p.duration_unit][lang] || INAPlatform.DURATION_UNIT_LABELS[p.duration_unit].en) : '';
+      parts.push(`${p.duration_value} ${unitLabel}`.trim());
+    }
+    return parts.join(' · ');
+  }
+
+  function renderPhases() {
+    const list = document.getElementById('phasesList');
+    const empty = document.getElementById('phasesEmpty');
+    if (!phases.length) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      list.innerHTML = phases.map((p) => {
+        const summary = phaseSummaryLine(p);
+        return `
+        <div class="risk-row" style="padding:12px 14px; border:1px solid var(--paper-line); border-radius:10px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+          <div style="min-width:0;">
+            <strong style="font-size:13.5px;">${escapeHtml(p.name)}</strong>
+            ${p.scope ? `<p style="font-size:12px; color:var(--muted); margin:4px 0 0; max-width:420px;">${escapeHtml(p.scope)}</p>` : ''}
+            ${summary ? `<p style="font-size:11.5px; color:var(--muted); margin:6px 0 0;">${escapeHtml(summary)}</p>` : ''}
+          </div>
+          <div style="display:flex; gap:8px; flex-shrink:0;">
+            <button type="button" class="btn ghost small edit-phase-btn" data-id="${p.id}"><span data-i18n="risk.edit">Edit</span></button>
+            <button type="button" class="btn ghost small delete-phase-btn" data-id="${p.id}"><span data-i18n="md.delete">Delete</span></button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    applyPhaseTotalsLock();
+  }
+
+  function applyPhaseTotalsLock() {
+    const locked = phases.length > 0;
+    ['pBudgetAmount', 'pBudgetAmountUsd', 'pDurationValue', 'pDurationUnit'].forEach((id) => {
+      document.getElementById(id).disabled = locked;
+    });
+    const budgetNote = document.getElementById('phasesBudgetNote');
+    const durationNote = document.getElementById('phasesDurationNote');
+    if (locked) {
+      const n = phases.length;
+      const text = lang === 'es'
+        ? `Calculado automáticamente a partir de ${n} fase${n === 1 ? '' : 's'} — editá las fases para cambiarlo.`
+        : `Computed automatically from ${n} phase${n === 1 ? '' : 's'} — edit the phases to change it.`;
+      budgetNote.textContent = text;
+      budgetNote.style.display = 'block';
+      durationNote.textContent = text;
+      durationNote.style.display = 'block';
+    } else {
+      budgetNote.style.display = 'none';
+      durationNote.style.display = 'none';
+    }
+  }
+
+  function openPhaseForm(id) {
+    editingPhaseId = id || null;
+    const form = document.getElementById('phaseForm');
+    form.reset();
+    document.getElementById('phaseFormNote').textContent = '';
+    document.getElementById('deletePhaseBtn').style.display = editingPhaseId ? 'inline-block' : 'none';
+    document.getElementById('phaseFormTitle').innerHTML = editingPhaseId
+      ? `<span data-i18n="np.phases.edit">Edit phase</span>` : `<span data-i18n="np.phases.new">+ New phase</span>`;
+    renderDurationUnitOptions(document.getElementById('phDurationUnit'));
+    const existing = editingPhaseId ? phases.find((p) => p.id === editingPhaseId) : null;
+    if (existing) {
+      document.getElementById('phName').value = existing.name || '';
+      document.getElementById('phScope').value = existing.scope || '';
+      document.getElementById('phBudgetAmount').value = existing.budget_amount != null ? existing.budget_amount : '';
+      document.getElementById('phBudgetAmountUsd').value = existing.budget_amount_usd != null ? existing.budget_amount_usd : '';
+      document.getElementById('phDurationValue').value = existing.duration_value != null ? existing.duration_value : '';
+      document.getElementById('phDurationUnit').value = existing.duration_unit || '';
+    }
+    document.getElementById('phaseFormOverlay').style.display = 'flex';
+  }
+  function closePhaseForm() {
+    document.getElementById('phaseFormOverlay').style.display = 'none';
+    editingPhaseId = null;
+  }
+  document.getElementById('addPhaseBtn').addEventListener('click', () => openPhaseForm(null));
+  document.getElementById('closePhaseForm').addEventListener('click', closePhaseForm);
+
+  document.getElementById('phasesList').addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.edit-phase-btn');
+    const deleteBtn = e.target.closest('.delete-phase-btn');
+    if (editBtn) openPhaseForm(editBtn.dataset.id);
+    else if (deleteBtn) deletePhase(deleteBtn.dataset.id);
+  });
+
+  async function deletePhase(id) {
+    const ok = confirm(lang === 'es' ? '¿Eliminar esta fase?' : 'Delete this phase?');
+    if (!ok) return;
+    try {
+      await INAPlatform.deleteProjectPhase(id, activeProjectId);
+      phases = phases.filter((p) => p.id !== id);
+      renderPhases();
+      refreshBudgetDurationFieldsFromProject();
+    } catch (err) {
+      alert(err.message || (lang === 'es' ? 'No se pudo eliminar.' : "Couldn't delete."));
+    }
+  }
+
+  // After any phase CRUD, the project's own budget/duration columns were
+  // just recomputed server-side (recomputeProjectTotalsFromPhases()) —
+  // re-reads whatever value is now actually stored, whether that's a
+  // freshly-computed sum (phases still exist) or whatever was last there
+  // untouched (the last phase was just deleted — see that function's
+  // comment on why it doesn't zero things out), rather than leaving a
+  // stale number in the inputs either way.
+  async function refreshBudgetDurationFieldsFromProject() {
+    if (!activeProjectId) return;
+    try {
+      const project = await INAPlatform.getProject(activeProjectId);
+      if (!project) return;
+      document.getElementById('pBudgetAmount').value = project.budget_amount != null ? project.budget_amount : '';
+      document.getElementById('pBudgetAmountUsd').value = project.budget_amount_usd != null ? project.budget_amount_usd : '';
+      document.getElementById('pDurationValue').value = project.duration_value != null ? project.duration_value : '';
+      durationUnitSelect.value = project.duration_unit || '';
+    } catch (e) { /* non-critical */ }
+  }
+
+  document.getElementById('phaseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('phaseFormNote');
+    note.textContent = '';
+    const submitBtn = document.getElementById('phaseSubmitBtn');
+    submitBtn.disabled = true;
+    const payload = {
+      projectId: activeProjectId,
+      name: document.getElementById('phName').value.trim(),
+      scope: document.getElementById('phScope').value.trim(),
+      budgetAmount: document.getElementById('phBudgetAmount').value,
+      budgetAmountUsd: document.getElementById('phBudgetAmountUsd').value,
+      durationValue: document.getElementById('phDurationValue').value,
+      durationUnit: document.getElementById('phDurationUnit').value,
+    };
+    try {
+      let saved;
+      if (editingPhaseId) {
+        saved = await INAPlatform.updateProjectPhase(editingPhaseId, payload);
+        const idx = phases.findIndex((p) => p.id === editingPhaseId);
+        if (idx !== -1) phases[idx] = saved;
+      } else {
+        saved = await INAPlatform.createProjectPhase(payload);
+        phases.push(saved);
+      }
+      closePhaseForm();
+      renderPhases();
+      // Pull the freshly recomputed totals so the (now disabled) budget/
+      // duration inputs show the real sum, not whatever was there before.
+      refreshBudgetDurationFieldsFromProject();
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo guardar.' : "Couldn't save.");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('deletePhaseBtn').addEventListener('click', async () => {
+    if (!editingPhaseId) return;
+    await deletePhase(editingPhaseId);
+    closePhaseForm();
+  });
 
   const prioritySelect = document.getElementById('pPriority');
   const criticalitySelect = document.getElementById('pTechnicalCriticality');
@@ -825,6 +1064,8 @@
       updateProgramTemplateBtnVisibility();
       renderExistingDocs();
       updateTemplateBtnVisibility();
+      renderPhases();
+      if (document.getElementById('phaseFormOverlay').style.display === 'flex') renderDurationUnitOptions(document.getElementById('phDurationUnit'));
       if (lastLockResult) showEditLockBanner(lastLockResult);
     });
   });
@@ -1291,6 +1532,8 @@
       const project = await INAPlatform.createProject({ name, projectType, programId, country, description, beneficiaryCount, generatingEntityName, generatingEntityType, durationValue, durationUnit, priority, technicalCriticality, budgetAmount, budgetAmountUsd, exchangeRate, exchangeRateDate, complexity });
       activeProjectId = project.id;
       history.replaceState(null, '', `new-project.html?id=${project.id}`);
+      phases = []; // brand-new project — always starts with zero phases
+      renderPhases();
       // Attach whatever PDF(s) were used for the "Cargar desde uno o varios
       // PDF" autofill above (see pendingAutofillFiles comment near its
       // declaration) — only reachable now that activeProjectId exists.
@@ -1451,6 +1694,11 @@
       try {
         existingDocs = (await INAPlatform.listDocuments(editId)) || [];
         renderExistingDocs();
+      } catch (e) { /* non-critical */ }
+
+      try {
+        phases = (await INAPlatform.listProjectPhases(editId)) || [];
+        renderPhases();
       } catch (e) { /* non-critical */ }
 
       if (lockResult.acquired) {

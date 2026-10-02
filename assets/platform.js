@@ -5687,6 +5687,119 @@ const INAPlatform = {
     this.logActivity({ eventType: 'delete', entityType: 'project', entityId: id });
   },
 
+  /* ---------- Project phases (see migration_v70_project_phases.sql) ----------
+     Optional breakdown of a project into phases, each with its own scope/
+     budget/duration. Every create/update/delete below ends with
+     recomputeProjectTotalsFromPhases() — once a project has >=1 phase, its
+     own budget_amount/budget_amount_usd/duration_value/duration_unit stop
+     being hand-entered and become the sum of its phases, read by every
+     existing consumer (dashboard, AI Analysis, Investment Proposal, etc.)
+     completely unchanged, since they still just read those same columns. */
+
+  async listProjectPhases(projectId) {
+    const { data, error } = await supabaseClient
+      .from('project_phases')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  async createProjectPhase({ projectId, name, scope, budgetAmount, budgetAmountUsd, durationValue, durationUnit }) {
+    const { data, error } = await supabaseClient
+      .from('project_phases')
+      .insert({
+        project_id: projectId,
+        name,
+        scope: scope || null,
+        budget_amount: budgetAmount === '' || budgetAmount == null ? null : Number(budgetAmount),
+        budget_amount_usd: budgetAmountUsd === '' || budgetAmountUsd == null ? null : Number(budgetAmountUsd),
+        duration_value: durationValue === '' || durationValue == null ? null : Number(durationValue),
+        duration_unit: durationUnit || null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    this.logActivity({ eventType: 'create', entityType: 'project_phase', entityId: data.id, entityLabel: data.name });
+    await this.recomputeProjectTotalsFromPhases(projectId);
+    return data;
+  },
+
+  async updateProjectPhase(id, { projectId, name, scope, budgetAmount, budgetAmountUsd, durationValue, durationUnit }) {
+    const { data, error } = await supabaseClient
+      .from('project_phases')
+      .update({
+        name,
+        scope: scope || null,
+        budget_amount: budgetAmount === '' || budgetAmount == null ? null : Number(budgetAmount),
+        budget_amount_usd: budgetAmountUsd === '' || budgetAmountUsd == null ? null : Number(budgetAmountUsd),
+        duration_value: durationValue === '' || durationValue == null ? null : Number(durationValue),
+        duration_unit: durationUnit || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'project_phase', entityId: data.id, entityLabel: data.name });
+    await this.recomputeProjectTotalsFromPhases(projectId);
+    return data;
+  },
+
+  async deleteProjectPhase(id, projectId) {
+    const { error } = await supabaseClient.from('project_phases').delete().eq('id', id);
+    if (error) throw error;
+    this.logActivity({ eventType: 'delete', entityType: 'project_phase', entityId: id });
+    await this.recomputeProjectTotalsFromPhases(projectId);
+  },
+
+  /* Sums the project's current phases back into its own budget_amount/
+     budget_amount_usd/duration_value/duration_unit columns. Deliberately
+     leaves a field untouched (rather than writing null/0) whenever every
+     phase has a null value for it — a phase with no USD figure shouldn't
+     wipe out a manually-entered budget_amount_usd, for instance. With zero
+     phases, does nothing at all, so a project that never had phases (or
+     just had its last one deleted) keeps whatever was last there. Phase
+     durations are normalized to days before summing (months * 30) since
+     phases can mix units — the total is always written back as
+     {duration_value: <days>, duration_unit: 'days'}, not preserved
+     per-unit. */
+  async recomputeProjectTotalsFromPhases(projectId) {
+    const phases = await this.listProjectPhases(projectId);
+    if (!phases.length) return null;
+
+    const sumOrNull = (key) => {
+      const vals = phases.map((p) => p[key]).filter((v) => v != null);
+      return vals.length ? vals.reduce((a, b) => a + Number(b), 0) : null;
+    };
+    const budgetAmount = sumOrNull('budget_amount');
+    const budgetAmountUsd = sumOrNull('budget_amount_usd');
+    const totalDays = phases.reduce((acc, p) => {
+      if (p.duration_value == null) return acc;
+      const days = p.duration_unit === 'months' ? p.duration_value * 30 : p.duration_value;
+      return (acc || 0) + days;
+    }, null);
+
+    const update = { updated_at: new Date().toISOString() };
+    if (budgetAmount != null) update.budget_amount = budgetAmount;
+    if (budgetAmountUsd != null) update.budget_amount_usd = budgetAmountUsd;
+    if (totalDays != null) {
+      update.duration_value = totalDays;
+      update.duration_unit = 'days';
+    }
+    if (Object.keys(update).length === 1) return null; // nothing but updated_at to write
+
+    const { data, error } = await supabaseClient
+      .from('projects')
+      .update(update)
+      .eq('id', projectId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   /* ---------- Programs ----------
      A Program groups several related projects under one umbrella — e.g.
      Chubut's "Hub Digital Patagónico", which bundled a submarine cable

@@ -891,6 +891,76 @@ create policy "projects_delete_own_or_admin" on public.projects
 create index if not exists projects_user_id_idx on public.projects(user_id);
 create index if not exists projects_program_id_idx on public.projects(program_id);
 
+-- ---------- project_phases ---------- (see migration_v70_project_phases.sql)
+-- Optional breakdown of a project into phases, each with its own scope,
+-- budget (ARS/USD) and duration. Once a project has >=1 phase, its own
+-- budget_amount/budget_amount_usd/duration_value/duration_unit above are
+-- computed as the sum of its phases (recomputeProjectTotalsFromPhases()
+-- in assets/platform.js) instead of being entered by hand — a project
+-- with zero phases keeps working exactly as before. Listed by created_at;
+-- no separate sort column since reordering isn't needed.
+create table if not exists public.project_phases (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  name text not null,
+  scope text,
+  budget_amount numeric check (budget_amount is null or budget_amount >= 0),
+  budget_amount_usd numeric check (budget_amount_usd is null or budget_amount_usd >= 0),
+  duration_value integer check (duration_value is null or duration_value > 0),
+  duration_unit text check (duration_unit is null or duration_unit in ('days', 'months')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.project_phases enable row level security;
+
+create policy "project_phases_select_own_or_advisor" on public.project_phases
+  for select using (exists (
+    select 1 from public.projects p where p.id = project_phases.project_id
+    and (
+      auth.uid() = p.user_id
+      or auth.uid() = p.assigned_advisor_id
+      or public.is_advisor()
+      or public.is_admin()
+      or public.has_entity_access(auth.uid(), 'projects', 'view', p.user_id)
+    )
+  ));
+
+create policy "project_phases_insert_own_or_advisor" on public.project_phases
+  for insert with check (exists (
+    select 1 from public.projects p where p.id = project_phases.project_id
+    and (
+      auth.uid() = p.user_id
+      or auth.uid() = p.assigned_advisor_id
+      or public.has_entity_access(auth.uid(), 'projects', 'edit', p.user_id)
+    )
+  ));
+
+create policy "project_phases_update_own_or_advisor" on public.project_phases
+  for update using (exists (
+    select 1 from public.projects p where p.id = project_phases.project_id
+    and (
+      auth.uid() = p.user_id
+      or auth.uid() = p.assigned_advisor_id
+      or public.has_entity_access(auth.uid(), 'projects', 'edit', p.user_id)
+    )
+  )) with check (exists (
+    select 1 from public.projects p where p.id = project_phases.project_id
+    and (
+      auth.uid() = p.user_id
+      or auth.uid() = p.assigned_advisor_id
+      or public.has_entity_access(auth.uid(), 'projects', 'edit', p.user_id)
+    )
+  ));
+
+create policy "project_phases_delete_own_or_admin" on public.project_phases
+  for delete using (exists (
+    select 1 from public.projects p where p.id = project_phases.project_id
+    and (auth.uid() = p.user_id or public.is_admin())
+  ));
+
+create index if not exists project_phases_project_id_idx on public.project_phases(project_id);
+
 -- ---------- project_programs ----------
 -- A project can apply to MANY financing/preparation Programs at once — e.g.
 -- FSU + BID together for implementation financing, plus USTDA separately
