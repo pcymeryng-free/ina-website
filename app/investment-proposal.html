@@ -1018,7 +1018,13 @@
     // chapter's real page number is known. ----
     try {
       doc.setPage(tocPageNum);
-      let tocRowY = tocY + 24;
+      // tocY+18 is where the amber divider line under "Índice"/"Contents"
+      // sits (see the +8/+10 math just below `newPage()` above) — +44
+      // leaves the same ~26pt breathing room below it that h2() leaves
+      // below every chapter's own divider line, rather than the previous
+      // +24 (just 6pt under the line, which read as the row text touching
+      // the rule).
+      let tocRowY = tocY + 44;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       tocEntries.forEach((entry) => {
@@ -1068,7 +1074,12 @@
       // a new one, so repeated previews don't leak memory.
       return doc.output('bloburl');
     }
-    doc.save(`INA_Propuesta_${safeName}.pdf`);
+    // Matches the cover page's own title ("FINANCING PROPOSAL" /
+    // "PROPUESTA DE FINANCIAMIENTO" a few hundred lines up) — previously
+    // just "INA_Propuesta_{name}.pdf", which didn't say what kind of
+    // document it was.
+    const docTypeLabel = lang === 'es' ? 'Propuesta_de_Financiamiento' : 'Financing_Proposal';
+    doc.save(`INA_${docTypeLabel}_${safeName}.pdf`);
   }
   // "Generate draft with AI" — calls api/generate-proposal.js (via
   // INAPlatform.requestProposalDraft), which reads the project's own
