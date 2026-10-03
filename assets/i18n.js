@@ -3548,6 +3548,7 @@ const I18N = {
   "np.f.docs.section": { "en": "Supporting documents", "es": "Documentos de respaldo" },
   "np.f.docs.section.help": { "en": "Nothing here is required to submit — attach what you have now and add the rest later. Files upload immediately and are used during evaluation.", "es": "Nada de esto es obligatorio para enviar — adjuntá lo que tengas ahora y sumá el resto más adelante. Los archivos se suben al instante y se usan durante la evaluación." },
   "np.wizard.step1": { "en": "Project", "es": "Proyecto" },
+  "np.wizard.stepTechData": { "en": "Technical Data", "es": "Datos Técnicos" },
   "np.wizard.stepPhases": { "en": "Project phases", "es": "Fases del proyecto" },
   "np.wizard.step2": { "en": "Attached documents", "es": "Documentación adjunta" },
   "np.wizard.step3": { "en": "Financing", "es": "Financiación" },

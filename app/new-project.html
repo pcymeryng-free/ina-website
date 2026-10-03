@@ -117,40 +117,46 @@
       <!-- Same 5-section interface for creating AND editing a project — one
            .wizard-panel visible at a time: 1) project (name/type/entity/
            description/program/country/beneficiaries — everything about the
-           project that ISN'T financing), 2) project phases (optional
-           breakdown into stages, each with its own scope/budget/duration —
-           see migration_v70_project_phases.sql; promoted to its own step
-           oct 2026, previously folded into financing), 3) documents,
-           4) financing (preparation funding + execution/financing
+           project that ISN'T financing — PLUS the Initiative-based
+           guided-template offer, moved here oct 2026 since it's keyed off
+           pprogram which is set right here), 2) Datos Técnicos — the
+           project-TYPE guided template's own fields, inlined directly
+           (oct 2026, replacing a plain launcher button that used to sit in
+           Step 1 and hand off to app/project-template.html — see that
+           step's own comment), 3) project phases (optional breakdown into
+           stages, each with its own scope/budget/duration — see
+           migration_v70_project_phases.sql; promoted to its own step oct
+           2026, previously folded into financing), 4) documents,
+           5) financing (preparation funding + execution/financing
            programs, kept separate from each other and from every other
-           project attribute), 5) optional guided-template/AI-autofill
-           offer + final submit. The section names above (#wizardSteps) are
-           directly clickable to jump to any of the 5 sections — see
-           canJumpTo() and the wizard-step-dot click handler further down.
-           When creating a brand-new project, section 1's "Continue" is
-           what actually creates the project record (so section 2's phases
-           and section 3's document uploads have a real id to attach to,
-           and so the other sections/section-names become reachable at
-           all); when editing, the project already exists from the start,
-           so every section is reachable immediately. A creation session
-           interrupted partway through (closed tab, etc.) resumes exactly
-           where it left off, since the project already exists and the URL
-           already carries its real ?id=. -->
+           project attribute) + the real final submit button. The section
+           names above (#wizardSteps) are directly clickable to jump to any
+           of the 5 sections — see canJumpTo() and the wizard-step-dot click
+           handler further down. When creating a brand-new project, section
+           1's "Continue" is what actually creates the project record (so
+           section 2's template answers, section 3's phases and section 4's
+           document uploads have a real id to attach to, and so the other
+           sections/section-names become reachable at all); when editing,
+           the project already exists from the start, so every section is
+           reachable immediately. A creation session interrupted partway
+           through (closed tab, etc.) resumes exactly where it left off,
+           since the project already exists and the URL already carries
+           its real ?id=. -->
       <div class="wizard-steps" id="wizardSteps">
         <span class="wizard-step-dot" data-step-dot="1"><span class="num">1</span><span data-i18n="np.wizard.step1">Project</span></span>
-        <span class="wizard-step-dot" data-step-dot="2"><span class="num">2</span><span data-i18n="np.wizard.stepPhases">Project phases</span></span>
-        <span class="wizard-step-dot" data-step-dot="3"><span class="num">3</span><span data-i18n="np.wizard.step2">Attached documents</span></span>
-        <span class="wizard-step-dot" data-step-dot="4"><span class="num">4</span><span data-i18n="np.wizard.step3">Financing</span></span>
-        <span class="wizard-step-dot" data-step-dot="5"><span class="num">5</span><span data-i18n="np.wizard.step4">Templates</span></span>
+        <span class="wizard-step-dot" data-step-dot="2"><span class="num">2</span><span data-i18n="np.wizard.stepTechData">Technical Data</span></span>
+        <span class="wizard-step-dot" data-step-dot="3"><span class="num">3</span><span data-i18n="np.wizard.stepPhases">Project phases</span></span>
+        <span class="wizard-step-dot" data-step-dot="4"><span class="num">4</span><span data-i18n="np.wizard.step2">Attached documents</span></span>
+        <span class="wizard-step-dot" data-step-dot="5"><span class="num">5</span><span data-i18n="np.wizard.step3">Financing</span></span>
       </div>
 
       <!-- STEP 1 — everything about the project itself that isn't
            financing: name, type, presenting entity, description, Initiative
            (organizational grouping, not a funding source — see the
-           note on step 4 below), country, beneficiaries. "Continue" creates
-           the project record with all of these already filled in, so step
-           2's phases and step 3's document uploads have a real project id
-           to attach to. -->
+           note on step 5 below), country, beneficiaries. "Continue" creates
+           the project record with all of these already filled in, so
+           step 2's template answers, step 3's phases and step 4's document
+           uploads have a real project id to attach to. -->
       <div class="wizard-panel" data-step="1">
         <div class="field"><label for="pname"><span data-i18n="np.f.name">Project name</span></label><input id="pname" type="text" required></div>
 
@@ -179,7 +185,7 @@
              cable and a datacenter as separate projects), NOT itself a
              funding source, so it lives here with the project's other
              non-financing attributes rather than in the Financing section
-             (step 4) below. Only offers programs.program_role = 'umbrella'
+             (step 5) below. Only offers programs.program_role = 'umbrella'
              — see loadPrograms() below and
              supabase/migration_v43_program_role.sql. Field/element ids
              (pprogram, createProgramLink) were kept as-is when this field
@@ -189,10 +195,10 @@
           <label for="pprogram"><span data-i18n="np.f.initiative">Initiative (optional)</span></label>
           <select id="pprogram"></select>
           <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.initiative.help">Group this project under an Initiative if it's part of a broader effort with several independently-financed projects.</span> <a href="new-program.html?role=umbrella" target="_blank" id="createProgramLink" style="display:none;"><span data-i18n="np.f.initiative.create">Create a new initiative &rarr;</span></a></p>
-          <!-- If this Program has its own guided template, it's filled in
-               from the Templates section (5), not here — see
-               updateProgramTemplateBtnVisibility() and the
-               programTemplateOfferCard in step 5 below. -->
+          <!-- If this Program has its own guided template, a "Fill using
+               this program's template" offer appears further down this
+               same section — see updateProgramTemplateBtnVisibility() and
+               the programTemplateOfferCard below. -->
         </div>
 
         <div class="field" style="margin-top:18px;"><label for="pcountry"><span data-i18n="np.f.country">Country</span></label>
@@ -240,6 +246,28 @@
           <p style="font-size:12px; color:var(--muted); margin-top:8px;"><span data-i18n="np.f.complexity.help">The project's intrinsic difficulty — moving parts, interdependencies, unproven technology. A different axis from priority and technical criticality above.</span></p>
         </div>
 
+        <!-- The project-type template offer used to live here (moved here
+             from its own step in Oct 2026, then moved AGAIN — see Step 2,
+             "Datos Técnicos" — to inline the actual fields instead of just
+             a launcher button, per Pablo's follow-up ask). Only the
+             Initiative-based offer stays here, since it's a separate
+             concern (tied to pprogram, not ptype) that was never part of
+             either ask. -->
+
+        <!-- Shown only when the Initiative picked above (pprogram — only
+             ever umbrella-role programs, see loadPrograms() above) has its
+             own guided template — see updateProgramTemplateBtnVisibility()
+             below. Element/function ids stay "program"-flavored on
+             purpose, per the top-of-file note; only the visible text +
+             i18n keys say "Initiative" (this card can never show a
+             financing program, since pprogram only ever offers
+             umbrella-role ones). -->
+        <div class="template-offer-card" id="programTemplateOfferCard" style="display:none; margin-top:16px;">
+          <p style="font-size:14px; margin:0 0 6px;"><span data-i18n="np.wizard.step4.initiative.lede">The Initiative selected in the Project section has its own guided template.</span></p>
+          <p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;"><span data-i18n="np.f.templateForInitiative">Corresponds to the initiative:</span> <strong id="programTemplateOfferName"></strong></p>
+          <button type="button" id="useProgramTemplateBtn" class="btn ghost small"><span data-i18n="np.f.useProgramTemplate">Fill using this program's template</span></button>
+        </div>
+
         <p id="step1Note" class="contact-note" style="margin-top:14px; min-height:18px;"></p>
         <div class="wizard-nav">
           <button type="button" class="btn amber" id="step1NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
@@ -260,15 +288,65 @@
         </div>
       </div>
 
-      <!-- STEP 2 — project phases, optional breakdown into stages, each
+      <!-- STEP 2 — Datos Técnicos / Technical Data (oct 2026, Pablo:
+           "agregar una pantalla denominada Datos técnicos... y pasar la
+           parte de llenar a través de un template a esa pantalla. Esa
+           pantalla se arma en base al tipo de proyecto... lo primero que
+           se debe hacer es pedir que utilice el template asociado al tipo
+           de proyecto, luego la opción de obtener los datos de los
+           documentos y por último permitir la edición manual."). Built
+           dynamically from INAPlatform.projectTemplateFor(ptype) — see
+           renderTechDataStep()/renderTechDataFields() in the script below.
+           Answers persist directly into projects.shared_field_answers (the
+           SAME cross-template pool app/project-template.html's draft flow
+           already used — see migration_v23_project_shared_field_answers.sql
+           and INAPlatform.getSharedFieldAnswers()/mergeSharedFieldAnswers()),
+           merged on every field change, same "saves itself as you go"
+           convention as Phases/Documents below — no separate Submit for
+           this step, unlike project-template.html's old page-hop flow.
+           Only the project-TYPE template is inlined here; the Initiative-
+           based one (programTemplateOfferCard, back in Step 1) is a
+           separate concern and still links out to project-template.html
+           unchanged. project-template.html itself is untouched — its
+           "apply mode" (project-financing.html/financing-recommendation.html
+           deep-linking to it for Program applications) has nothing to do
+           with project creation and keeps working exactly as before. -->
+      <div class="wizard-panel" data-step="2">
+        <div id="techDataTemplateHeader" style="display:none;">
+          <h3 id="techDataTitle" style="margin:0 0 6px; font-size:16px;"></h3>
+          <p id="techDataIntro" style="font-size:13px; color:var(--muted); margin:0 0 18px;"></p>
+          <div style="display:flex; gap:10px; align-items:center; margin-bottom:22px; flex-wrap:wrap;">
+            <button type="button" class="btn ghost small" id="techDataAutofillBtn"><span data-i18n="pt.autofill">Autocomplete from documents</span></button>
+          </div>
+          <p id="techDataAutofillNote" class="contact-note" style="margin:0 0 18px; display:none;"></p>
+          <div id="techDataFields"></div>
+          <div class="field" id="techDataNotesField" style="margin-top:8px;">
+            <label id="techDataNotesLabel" for="techDataNotes"></label>
+            <textarea id="techDataNotes" rows="3"></textarea>
+          </div>
+        </div>
+        <!-- Shown instead of the template content above when the selected
+             project type has no registered guided template. -->
+        <p id="techDataEmpty" style="display:none; font-size:13.5px; color:var(--muted);"><span data-i18n="np.wizard.step3.empty">This project type doesn't have a guided template — there's nothing to fill in here.</span></p>
+
+        <div class="wizard-nav" style="margin-top:24px;">
+          <button type="button" class="btn ghost" id="techDataBackBtn"><span data-i18n="np.wizard.back">Back</span></button>
+          <button type="button" class="btn amber" id="techDataNextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <button type="button" class="btn amber small save-anywhere-btn" style="display:none;"><span data-i18n="np.edit.submit">Save Changes</span></button>
+          <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
+        </div>
+        <p class="contact-note" data-save-note style="margin-top:10px; min-height:18px;"></p>
+      </div>
+
+      <!-- STEP 3 — project phases, optional breakdown into stages, each
            with its own scope/budget/duration (migration_v70_project_
            phases.sql). Promoted to its own step (oct 2026) — previously
-           folded into what's now Step 4 (Financing). Once >=1 phase
-           exists, Step 4's budget fields (and Step 1's duration field
+           folded into what's now Step 5 (Financing). Once >=1 phase
+           exists, Step 5's budget fields (and Step 1's duration field
            above) become read-only, computed as the sum of the phases —
            see applyPhaseTotalsLock()/recomputeProjectTotalsFromPhases()
            in the script below. -->
-      <div class="wizard-panel" data-step="2">
+      <div class="wizard-panel" data-step="3">
         <div class="field">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
             <label style="margin:0;"><span data-i18n="np.phases.title">Project phases (optional)</span></label>
@@ -279,23 +357,27 @@
           <p id="phasesEmpty" style="font-size:12.5px; color:var(--muted); margin-top:8px;"><span data-i18n="np.phases.empty">No phases added yet.</span></p>
         </div>
         <div class="wizard-nav">
-          <button type="button" class="btn ghost" id="step2BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
-          <button type="button" class="btn amber" id="step2NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <button type="button" class="btn ghost" id="step3BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
+          <button type="button" class="btn amber" id="step3NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
           <button type="button" class="btn amber small save-anywhere-btn" style="display:none;"><span data-i18n="np.edit.submit">Save Changes</span></button>
           <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
         </div>
         <p class="contact-note" data-save-note style="margin-top:10px; min-height:18px;"></p>
       </div>
 
-      <!-- STEP 3 — documents. Seven separate, independently-optional upload
+      <!-- STEP 4 — documents. Seven separate, independently-optional upload
            zones — see supabase/migration_v24_document_categories_expand.sql
            and DOCUMENT_TYPES in assets/platform.js. Each zone uploads
            immediately on file-select/drop (rather than staging in memory
            until final submit, as before) so the project's real documents
-           exist by step 5, where the AI agent can scan them. Driven
-           generically by the JS below via each group's [data-category]
-           attribute rather than seven hand-wired copies. -->
-      <div class="wizard-panel" data-step="3">
+           exist for Step 2's ("Datos Técnicos") "Autocomplete from
+           documents" button to scan — that step comes BEFORE this one, so
+           using it before ever visiting this step just means there's
+           nothing yet for that particular button to scan; manually filling
+           the template still works regardless of order. Driven generically
+           by the JS below via each group's [data-category] attribute
+           rather than seven hand-wired copies. -->
+      <div class="wizard-panel" data-step="4">
         <div id="existingDocsBlock" style="display:none;">
           <label><span data-i18n="np.f.docs.existing">Already uploaded</span></label>
           <div id="existingDocsList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
@@ -376,15 +458,15 @@
         </div>
 
         <div class="wizard-nav">
-          <button type="button" class="btn ghost" id="step3BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
-          <button type="button" class="btn amber" id="step3NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
+          <button type="button" class="btn ghost" id="step4BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
+          <button type="button" class="btn amber" id="step4NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
           <button type="button" class="btn amber small save-anywhere-btn" style="display:none;"><span data-i18n="np.edit.submit">Save Changes</span></button>
           <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
         </div>
         <p class="contact-note" data-save-note style="margin-top:10px; min-height:18px;"></p>
       </div>
 
-      <!-- STEP 3 — Financing, simplified (Pablo, sep 2026): "en la parte de
+      <!-- STEP 5 — Financing, simplified (Pablo, sep 2026): "en la parte de
            Financing, incluir solo el monto total del proyecto en pesos y
            dólares y el % requerido de financiación. La gestión de
            financiación separarla de la edición del proyecto." Everything
@@ -397,7 +479,7 @@
            total cost (ARS/USD, moved here from what used to be step 1) and
            the new financing_required_percentage — see
            migration_v56_financing_required_percentage.sql. -->
-      <div class="wizard-panel" data-step="4">
+      <div class="wizard-panel" data-step="5">
         <div class="field">
           <label for="pBudgetAmount"><span data-i18n="np.f.budget">Total estimated budget (ARS, optional)</span></label>
           <input id="pBudgetAmount" type="number" min="0" step="1">
@@ -437,47 +519,13 @@
 
         <p style="font-size:12.5px; color:var(--muted); margin-top:24px; padding-top:20px; border-top:1px solid var(--paper-line);"><span data-i18n="np.f.financingManagement.hint">Applying to FSU, BID, CAF, USTDA or any other registered financing program — and getting an AI-generated financing recommendation — happens afterward, from the project's own "Financiación" section.</span></p>
 
-        <div class="wizard-nav">
-          <button type="button" class="btn ghost" id="step4BackBtn"><span data-i18n="np.wizard.back">Back</span></button>
-          <button type="button" class="btn amber" id="step4NextBtn"><span data-i18n="np.wizard.next">Continue</span></button>
-          <button type="button" class="btn amber small save-anywhere-btn" style="display:none;"><span data-i18n="np.edit.submit">Save Changes</span></button>
-          <button type="button" class="btn ghost small cancel-edit-btn" style="display:none; margin-left:auto;"><span data-i18n="np.wizard.cancel">Cancel</span></button>
-        </div>
-        <p class="contact-note" data-save-note style="margin-top:10px; min-height:18px;"></p>
-      </div>
-
-      <!-- STEP 4 — optional guided template + AI document autofill, and the
-           real submit button. "Fill using template" hands off to
-           project-template.html, which (the project already exists by this
-           point) exposes its own "Autocomplete from documents" button
-           reading whatever was uploaded in step 3. Submitting here always
-           saves via updateProject() (the project record already exists from
-           step 1 in create mode, or from the original ?id= when editing) —
-           see the submit handler below. -->
-      <div class="wizard-panel" data-step="5">
-        <div class="template-offer-card" id="templateOfferCard" style="display:none;">
-          <p style="font-size:14px; margin:0 0 6px;"><span data-i18n="np.wizard.step3.lede">This project type has a guided template. Fill it in manually, or — if you uploaded documents earlier — let INA's AI agent scan them and prefill it automatically.</span></p>
-          <p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;"><span data-i18n="np.f.templateForType">Corresponds to the project type:</span> <strong id="templateOfferTypeName"></strong></p>
-          <button type="button" id="useTemplateBtn" class="btn ghost small"><span data-i18n="np.f.useTemplate">Fill using template</span></button>
-        </div>
-        <!-- Shown instead of templateOfferCard when the selected project
-             type has no registered template. -->
-        <p id="templateOfferEmpty" style="display:none; font-size:13.5px; color:var(--muted);"><span data-i18n="np.wizard.step3.empty">This project type doesn't have a guided template — there's nothing to fill in here.</span></p>
-
-        <!-- Shown only when the Initiative picked in the Project section
-             (pprogram — only ever umbrella-role programs, see loadPrograms()
-             above) has its own guided template — see
-             updateProgramTemplateBtnVisibility() below. Element/function ids
-             below stay "program"-flavored on purpose, per the top-of-file
-             note; only the visible text + i18n keys changed to say
-             "Initiative" (this card can never show a financing program,
-             since pprogram only ever offers umbrella-role ones). -->
-        <div class="template-offer-card" id="programTemplateOfferCard" style="display:none; margin-top:16px;">
-          <p style="font-size:14px; margin:0 0 6px;"><span data-i18n="np.wizard.step4.initiative.lede">The Initiative selected in the Project section has its own guided template.</span></p>
-          <p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;"><span data-i18n="np.f.templateForInitiative">Corresponds to the initiative:</span> <strong id="programTemplateOfferName"></strong></p>
-          <button type="button" id="useProgramTemplateBtn" class="btn ghost small"><span data-i18n="np.f.useProgramTemplate">Fill using this program's template</span></button>
-        </div>
-
+        <!-- The real submit button lives here now (oct 2026) — this is the
+             last step since the dedicated "Templates" step was removed
+             (its guided-template offers moved into Step 1, right where
+             ptype/pprogram are set). Submitting always saves via
+             updateProject() (the project record already exists from step 1
+             in create mode, or from the original ?id= when editing) — see
+             the submit handler below. -->
         <p id="editNote" style="font-size:12.5px; color:var(--amber-deep); margin-top:18px; display:none;"><span data-i18n="np.edit.reanalyze">Saving changes clears the current analysis — run the Investment Readiness Index&trade; again manually from the project page afterwards.</span></p>
 
         <div class="wizard-nav">
@@ -530,7 +578,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=85"></script>
+<script src="/assets/i18n.js?v=86"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/assets/platform.js?v=105"></script>
 <script src="/assets/script.js?v=15"></script>
@@ -1165,7 +1213,7 @@
       updateProgramPlaceholderLang();
       updateProgramTemplateBtnVisibility();
       renderExistingDocs();
-      updateTemplateBtnVisibility();
+      renderTechDataStep();
       renderPhases();
       renderStagedPdfList();
       if (document.getElementById('phaseFormOverlay').style.display === 'flex') renderDurationUnitOptions(document.getElementById('phDurationUnit'));
@@ -1173,29 +1221,151 @@
     });
   });
 
-  // "Fill using template" — only shown for project types that have a
-  // guided template registered in INAPlatform.PROJECT_TEMPLATES (currently
-  // just Datacenter). Re-checked on every type change and language switch
-  // since renderTypeOptions() rebuilds the <select> from scratch.
-  const useTemplateBtn = document.getElementById('useTemplateBtn');
-  const templateOfferCard = document.getElementById('templateOfferCard');
-  const templateOfferEmpty = document.getElementById('templateOfferEmpty');
-  const templateOfferTypeName = document.getElementById('templateOfferTypeName');
-  function updateTemplateBtnVisibility() {
-    const hasTemplate = !!INAPlatform.projectTemplateFor(typeSelect.value);
-    useTemplateBtn.style.display = hasTemplate ? 'inline-flex' : 'none';
-    // templateOfferCard wraps useTemplateBtn inside step 5 — hidden
-    // entirely (not just the button) when this project type has no
-    // registered template; templateOfferEmpty shows instead.
-    if (templateOfferCard) templateOfferCard.style.display = hasTemplate ? 'block' : 'none';
-    if (templateOfferEmpty) templateOfferEmpty.style.display = hasTemplate ? 'none' : 'block';
-    // Names the exact project type this card's template belongs to — the
-    // card can otherwise be ambiguous once the Program/prep-program cards
-    // sit right below it with their own "Fill using template" buttons.
-    if (templateOfferTypeName) templateOfferTypeName.textContent = hasTemplate ? INAPlatform.projectTypeLabel(typeSelect.value) : '';
+  /* ---------- Step 2 — Datos Técnicos (project-type guided template,
+     inlined) ----------
+     techDataAnswers is the project's shared_field_answers pool (same one
+     app/project-template.html's draft flow already reads/writes) —
+     project-scoped, not template-scoped, so a ptype change just swaps
+     which template's fields render against the SAME already-loaded
+     answers; it does not need a fresh fetch. loadTechDataAnswers() is the
+     only thing that hits the network, called once whenever activeProjectId
+     first becomes known (step1NextBtn creating the project, or edit-mode
+     init() below) — everything else (ptype change, language switch) just
+     re-renders from what's already in memory. */
+  let techDataTemplate = null;
+  let techDataAnswers = {};
+
+  async function loadTechDataAnswers() {
+    techDataAnswers = activeProjectId
+      ? await INAPlatform.getSharedFieldAnswers(activeProjectId).catch(() => ({}))
+      : {};
   }
-  typeSelect.addEventListener('change', updateTemplateBtnVisibility);
-  updateTemplateBtnVisibility();
+
+  function renderTechDataStep() {
+    techDataTemplate = INAPlatform.projectTemplateFor(typeSelect.value);
+    const header = document.getElementById('techDataTemplateHeader');
+    const empty = document.getElementById('techDataEmpty');
+    if (!techDataTemplate) {
+      header.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    header.style.display = 'block';
+    document.getElementById('techDataTitle').textContent = techDataTemplate.title[lang] || techDataTemplate.title.en;
+    document.getElementById('techDataIntro').textContent = techDataTemplate.intro ? (techDataTemplate.intro[lang] || techDataTemplate.intro.en) : '';
+    renderTechDataFields();
+  }
+  typeSelect.addEventListener('change', renderTechDataStep);
+
+  // Same section-grouped, three-input-type (select/textarea/text) DOM
+  // build as app/project-template.html's renderForm() — see that file if
+  // this ever needs to grow a fourth field type. data-field="<key>" on
+  // every input is the same convention that file uses.
+  function renderTechDataFields() {
+    const container = document.getElementById('techDataFields');
+    if (!techDataTemplate) { container.innerHTML = ''; return; }
+    container.innerHTML = techDataTemplate.sections.map((section) => {
+      const sectionTitle = section.title[lang] || section.title.en;
+      const fieldsHtml = section.fields.map((field) => {
+        const value = techDataAnswers[field.key] || '';
+        const label = field.label[lang] || field.label.en;
+        let inputHtml;
+        if (field.type === 'select') {
+          const placeholder = lang === 'es' ? '— Seleccionar —' : '— Select —';
+          const options = (field.options || []).map((o) => `<option value="${o.value}" ${o.value === value ? 'selected' : ''}>${escapeHtml(o[lang] || o.en)}</option>`).join('');
+          inputHtml = `<select data-field="${field.key}"><option value="">${placeholder}</option>${options}</select>`;
+        } else if (field.type === 'textarea') {
+          inputHtml = `<textarea data-field="${field.key}" style="min-height:80px;">${escapeHtml(value)}</textarea>`;
+        } else {
+          inputHtml = `<input type="text" data-field="${field.key}" value="${escapeHtml(value)}">`;
+        }
+        const fullWidth = field.type === 'textarea' ? ' style="grid-column:1 / -1;"' : '';
+        return `<div class="field"${fullWidth}><label>${escapeHtml(label)}</label>${inputHtml}</div>`;
+      }).join('');
+      return `<div class="tmpl-section"><h3>${escapeHtml(sectionTitle)}</h3><div class="tmpl-fields">${fieldsHtml}</div></div>`;
+    }).join('');
+
+    const notesWrap = document.getElementById('techDataNotesField');
+    const notesLabel = document.getElementById('techDataNotesLabel');
+    const notesInput = document.getElementById('techDataNotes');
+    if (techDataTemplate.notesField) {
+      notesWrap.style.display = '';
+      notesLabel.textContent = techDataTemplate.notesField.label[lang] || techDataTemplate.notesField.label.en;
+      notesInput.value = techDataAnswers[techDataTemplate.notesField.key] || '';
+      notesInput.dataset.field = techDataTemplate.notesField.key;
+    } else {
+      notesWrap.style.display = 'none';
+    }
+  }
+
+  // Persists every field as you go, straight into shared_field_answers —
+  // same "this step saves itself" convention as Phases/Documents, unlike
+  // project-template.html's old page's "only on Submit" (which doesn't fit
+  // a wizard step with no separate submit action of its own). Best-effort:
+  // a failed merge here is non-critical, same reasoning as every other
+  // best-effort DB write in this file — the value stays visible in the
+  // field either way, just not yet persisted.
+  document.getElementById('techDataFields').addEventListener('change', async (e) => {
+    const key = e.target.dataset.field;
+    if (!key || !activeProjectId) return;
+    techDataAnswers[key] = e.target.value;
+    try { await INAPlatform.mergeSharedFieldAnswers(activeProjectId, { [key]: e.target.value }); } catch (err) { /* non-critical */ }
+  });
+  document.getElementById('techDataNotes').addEventListener('change', async (e) => {
+    if (!techDataTemplate || !techDataTemplate.notesField || !activeProjectId) return;
+    const key = techDataTemplate.notesField.key;
+    techDataAnswers[key] = e.target.value;
+    try { await INAPlatform.mergeSharedFieldAnswers(activeProjectId, { [key]: e.target.value }); } catch (err) { /* non-critical */ }
+  });
+
+  // Checks the shared pool first (free), then calls api/extract-template-
+  // data.js for whatever's still missing — see
+  // INAPlatform.autofillTemplateAnswers() in assets/platform.js, which
+  // also merges anything newly-extracted back into the pool itself. Only
+  // ever fills fields that are still empty, exactly like
+  // project-template.html's own runAutofill() — never overwrites
+  // something already typed, whether that came from the person or from a
+  // previous autofill run.
+  document.getElementById('techDataAutofillBtn').addEventListener('click', async () => {
+    if (!activeProjectId || !techDataTemplate) return;
+    const btn = document.getElementById('techDataAutofillBtn');
+    const note = document.getElementById('techDataAutofillNote');
+    btn.disabled = true;
+    note.style.display = 'block';
+    note.textContent = lang === 'es' ? 'Analizando los documentos del proyecto…' : 'Analyzing the project’s documents…';
+    try {
+      const result = await INAPlatform.autofillTemplateAnswers(activeProjectId, techDataTemplate);
+      let filledCount = 0;
+      Object.keys(result.answers || {}).forEach((key) => {
+        if (techDataAnswers[key] == null || techDataAnswers[key] === '') {
+          techDataAnswers[key] = result.answers[key];
+          filledCount += 1;
+        }
+      });
+      renderTechDataFields();
+      const parts = [];
+      if (filledCount) {
+        parts.push(lang === 'es'
+          ? `✓ Se completaron ${filledCount} campo(s) — revisalos antes de continuar.`
+          : `✓ Filled in ${filledCount} field(s) — please review before continuing.`);
+      } else {
+        parts.push(lang === 'es'
+          ? 'No se encontró información adicional para completar campos vacíos.'
+          : 'No additional information was found to fill in blank fields.');
+      }
+      if ((result.skipped || []).length) {
+        parts.push(lang === 'es'
+          ? `(${result.skipped.length} adjunto(s) no se pudieron leer, ej. imágenes o escaneos.)`
+          : `(${result.skipped.length} attachment(s) couldn't be read, e.g. images or scans.)`);
+      }
+      note.textContent = parts.join(' ');
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudo autocompletar.' : "Couldn't autofill.");
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   // "Fill using this program's template" — a second, independent template
   // entry point (see PROGRAM_TEMPLATES in assets/platform.js): shown only
@@ -1209,10 +1379,10 @@
   const useProgramTemplateBtn = document.getElementById('useProgramTemplateBtn');
   const programTemplateOfferCard = document.getElementById('programTemplateOfferCard');
   const programTemplateOfferName = document.getElementById('programTemplateOfferName');
-  // programTemplateOfferCard lives in the Templates section (5) — it only
-  // shows up once the Initiative picked in the Project section (section 1)
-  // actually has a registered template, so section 5 always reflects
-  // whatever was just selected in section 1.
+  // programTemplateOfferCard lives in this same section now (moved out of
+  // its own former "Templates" step, oct 2026) — it only shows up once the
+  // Initiative picked just above (pprogram) actually has a registered
+  // template.
   function updateProgramTemplateBtnVisibility() {
     const program = programsCache.find((pg) => pg.id === programSelect.value);
     const template = program && program.template_key ? INAPlatform.programTemplateFor(program.template_key) : null;
@@ -1230,43 +1400,10 @@
 
   // Saves whatever's currently in the form (so it isn't lost) into
   // sessionStorage, then hands off to app/project-template.html for the
-  // selected project type. See restoreTemplateDraftIfAny() below for the
-  // other half of this round trip.
-  useTemplateBtn.addEventListener('click', () => {
-    const draft = {
-      name: document.getElementById('pname').value,
-      projectType: typeSelect.value,
-      programId: document.getElementById('pprogram').value,
-      country: countrySelect.value,
-      beneficiaries: document.getElementById('pbeneficiaries').value,
-      description: document.getElementById('pdesc').value,
-      entityName: document.getElementById('pEntityName').value,
-      entityType: entityTypeSelect.value,
-      durationValue: document.getElementById('pDurationValue').value,
-      durationUnit: durationUnitSelect.value,
-      priority: prioritySelect.value,
-      technicalCriticality: criticalitySelect.value,
-      budgetAmount: document.getElementById('pBudgetAmount').value,
-      budgetAmountUsd: document.getElementById('pBudgetAmountUsd').value,
-      exchangeRate: document.getElementById('pExchangeRate').value,
-      exchangeRateDate: document.getElementById('pExchangeRateDate').value,
-      complexity: complexitySelect.value,
-      financingRequiredPercentage: document.getElementById('pFinancingRequiredPercentage').value,
-    };
-    sessionStorage.setItem('inaTemplateDraft', JSON.stringify(draft));
-    sessionStorage.setItem('inaTemplateReturnUrl', activeProjectId ? `new-project.html?id=${activeProjectId}` : 'new-project.html');
-    // &project=<id> once the project record exists (always true by the time
-    // this button is reachable — either from wizard step 1 having already
-    // created it, or from editing an existing one) — lets
-    // project-template.html's "Autocomplete from documents" button read
-    // this project's already-uploaded documents and shared-answer pool.
-    const projectParam = activeProjectId ? `&project=${encodeURIComponent(activeProjectId)}` : '';
-    location.href = `project-template.html?type=${encodeURIComponent(draft.projectType)}${projectParam}`;
-  });
-
-  // Same draft-save round trip as useTemplateBtn above, but hands off to
-  // the selected Program's template (?ptpl=) instead of the project type's
-  // (?type=) — see project-template.html, which resolves either.
+  // selected Program's template. See restoreTemplateDraftIfAny() below for
+  // the other half of this round trip. (The project-TYPE equivalent of
+  // this used to live right here too — it's now Step 2, "Datos Técnicos",
+  // inlined directly instead of handing off anywhere.)
   useProgramTemplateBtn.addEventListener('click', () => {
     const program = programsCache.find((pg) => pg.id === programSelect.value);
     if (!program || !program.template_key) return;
@@ -1309,7 +1446,7 @@
       try {
         const draft = JSON.parse(draftRaw);
         if (draft.name) document.getElementById('pname').value = draft.name;
-        if (draft.projectType) { typeSelect.value = draft.projectType; updateTemplateBtnVisibility(); }
+        if (draft.projectType) { typeSelect.value = draft.projectType; renderTechDataStep(); }
         if (draft.programId) { programSelect.value = draft.programId; updateProgramTemplateBtnVisibility(); }
         if (draft.country) {
           countrySelect.value = draft.country;
@@ -1378,9 +1515,11 @@
     // inline display:none lets .btn's own CSS display rule take over.
     document.querySelectorAll('.cancel-edit-btn').forEach((btn) => { btn.style.display = ''; });
     // "Save Changes" is also reachable from sections 1-4, not just the
-    // final section 5 — an editor tweaking one field shouldn't have to
-    // click through the whole wizard just to save it. Wired to the same
-    // performSave() as the section-5 submit button, below.
+    // final section 5 (which has the real submit button instead, no
+    // separate .save-anywhere-btn needed there) — an editor tweaking one
+    // field shouldn't have to click through the whole wizard just to save
+    // it. Wired to the same performSave() as the section-5 submit button,
+    // below.
     document.querySelectorAll('.save-anywhere-btn').forEach((btn) => {
       btn.style.display = '';
       btn.addEventListener('click', () => performSave());
@@ -1388,15 +1527,15 @@
   }
 
   // Documents now upload immediately on select/drop instead of staging in
-  // memory until final submit — this is what makes the step 5 AI
-  // autofill/template-scanning offer possible: the documents genuinely
-  // exist on the project by the time that step is reached. Requires a real
-  // project id, which is why wizard mode creates the project record at step
-  // 1 before step 3's upload zones ever become reachable; in edit mode
-  // activeProjectId (=editId) is already known from the start. Wired
-  // generically here off each .doc-upload-group's [data-category] — see
-  // DOCUMENT_TYPES in assets/platform.js — instead of seven hand-copied
-  // dropzone handlers.
+  // memory until final submit — this is what makes Step 2's ("Datos
+  // Técnicos") "Autocomplete from documents" button possible: the
+  // documents genuinely exist on the project by the time that step reads
+  // them. Requires a real project id, which is why wizard mode creates the
+  // project record at step 1 before step 4's upload zones ever become
+  // reachable; in edit mode activeProjectId (=editId) is already known
+  // from the start. Wired generically here off each .doc-upload-group's
+  // [data-category] — see DOCUMENT_TYPES in assets/platform.js — instead
+  // of seven hand-copied dropzone handlers.
   document.querySelectorAll('.doc-upload-group').forEach((group) => {
     const category = group.getAttribute('data-category');
     const dropZone = group.querySelector('[data-dropzone]');
@@ -1532,7 +1671,7 @@
   //     between sections never loses data: every field stays in the DOM
   //     the whole time (sections are just shown/hidden), and the final
   //     submit always re-reads current field values — so editing name/type
-  //     after leaving section 1, or documents after leaving section 3, is
+  //     after leaving section 1, or documents after leaving section 4, is
   //     picked up correctly whenever the user eventually reaches section 5
   //     and submits. ---
   let currentStep = 1;
@@ -1611,10 +1750,11 @@
     // First time through — create the project record with everything
     // collected in this section (name/type/entity/description/program/
     // country/beneficiaries — every non-financing project attribute) so
-    // step 2's phases and step 3's document uploads have a real project id
-    // to attach to. Financing is now just budget totals + % required, collected in step
-    // 4 as part of this same project record — applying to Programs, FSU,
-    // and "other source" all live on app/project-financing.html instead.
+    // step 2's template answers, step 3's phases and step 4's document
+    // uploads have a real project id to attach to. Financing is now just
+    // budget totals + % required, collected in step 5 as part of this
+    // same project record — applying to Programs, FSU, and "other source"
+    // all live on app/project-financing.html instead.
     const btn = document.getElementById('step1NextBtn');
     btn.disabled = true;
     noteEl.textContent = lang === 'es' ? 'Creando proyecto…' : 'Creating project…';
@@ -1637,11 +1777,13 @@
       history.replaceState(null, '', `new-project.html?id=${project.id}`);
       phases = []; // brand-new project — always starts with zero phases
       renderPhases();
+      techDataAnswers = {}; // brand-new project — nothing in the shared pool yet
+      renderTechDataStep();
       // Attach whatever PDF(s) were used for the "Cargar desde uno o varios
       // PDF" autofill above (see pendingAutofillFiles comment near its
       // declaration) — only reachable now that activeProjectId exists.
       // Best-effort per file: one failing upload shouldn't block the user
-      // from moving on, they can always re-attach manually in step 3.
+      // from moving on, they can always re-attach manually in step 4.
       // Each file's own chosen category (set in the staged list above the
       // wizard, defaulting to "other") carries through here instead of
       // always being "other" (oct 2026).
@@ -1693,8 +1835,8 @@
     }
   });
 
-  document.getElementById('step2BackBtn').addEventListener('click', () => goToStep(1));
-  document.getElementById('step2NextBtn').addEventListener('click', () => goToStep(3));
+  document.getElementById('techDataBackBtn').addEventListener('click', () => goToStep(1));
+  document.getElementById('techDataNextBtn').addEventListener('click', () => goToStep(3));
 
   document.getElementById('step3BackBtn').addEventListener('click', () => goToStep(2));
   document.getElementById('step3NextBtn').addEventListener('click', () => goToStep(4));
@@ -1702,15 +1844,16 @@
   document.getElementById('step4BackBtn').addEventListener('click', () => goToStep(3));
   document.getElementById('step4NextBtn').addEventListener('click', () => goToStep(5));
 
+  // Step 5 (Financing) is the last step now — no "Next" button, just the
+  // real submit button right there (see its wizard-nav in the HTML).
   document.getElementById('step5BackBtn').addEventListener('click', () => goToStep(4));
 
   // Pressing Enter inside a field on sections 1-4 would otherwise submit
-  // the form natively (section 5 contains required <select>/<textarea>
-  // fields that are hidden off-screen while that section isn't active,
-  // which browsers silently refuse to submit around) — block that
-  // everywhere except section 5, where the submit button actually lives.
-  // Applies in both create and edit mode now that both use the same
-  // one-section-at-a-time interface.
+  // the form natively (fields in whichever section isn't active are
+  // hidden off-screen, which browsers silently refuse to submit around)
+  // — block that everywhere except section 5, where the submit button
+  // actually lives. Applies in both create and edit mode now that both
+  // use the same one-section-at-a-time interface.
   form.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && currentStep !== 5) {
       e.preventDefault();
@@ -1789,11 +1932,15 @@
       document.getElementById('pname').value = project.name || '';
       document.getElementById('ptype').value = project.project_type || '';
       // Setting .value programmatically doesn't fire 'change' — without
-      // this, the Templates section's project-type card kept showing
-      // whatever template matched the dropdown's default/first option
-      // (computed at initial page load, before the real saved type was
-      // known) instead of this project's actual type.
-      updateTemplateBtnVisibility();
+      // this, Step 2 ("Datos Técnicos") kept showing whatever template
+      // matched the dropdown's default/first option (computed at initial
+      // page load, before the real saved type was known) instead of this
+      // project's actual type. Fetches this project's shared_field_answers
+      // pool once here (editing always has a real project id from the
+      // start) — see loadTechDataAnswers()'s own comment for why this is
+      // the only place that needs the network fetch.
+      await loadTechDataAnswers();
+      renderTechDataStep();
       document.getElementById('pprogram').value = project.program_id || '';
       updateProgramTemplateBtnVisibility();
       // Country used to be free text; if this project's stored value
@@ -1905,7 +2052,7 @@
       // runs — either from wizard step 1 (activeProjectId set there) or
       // from editing an existing one (activeProjectId = editId from the
       // start) — so this is always a save-in-place, never a fresh insert.
-      // Documents were uploaded immediately back in step 3, so there's no
+      // Documents were uploaded immediately back in step 4, so there's no
       // pending-files loop left to run here. Financing management (FSU,
       // applying to Programs, "other source") now lives entirely on
       // app/project-financing.html — nothing left to reconcile here.
