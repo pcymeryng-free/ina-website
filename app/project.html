@@ -1891,7 +1891,10 @@
     // whole document is built — so this just advances y past it; the
     // "Índice" heading and entries are painted back onto page 1 near the
     // very end of the function, once tocEntries is complete. Sized for up
-    // to ~10 chapters (18pt heading + ~16.5pt per row).
+    // to ~12 chapters (18pt heading + ~16.5pt per row) — Datos principales,
+    // Datos técnicos, Fases, Descripción, Financiación, Estado actual,
+    // Próximos pasos, Resultados IA, FSU, Riesgos, Anexos is 11 at most
+    // today, so this leaves one spare row.
     const tocPageNum = pageNum;
     const tocY = y;
     doc.setFont('helvetica', 'bold');
@@ -1899,7 +1902,7 @@
     doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
     doc.text(lang === 'es' ? 'Índice' : 'Contents', MARGIN, y);
     y += 24;
-    y += 10 * 16.5 + 10;
+    y += 12 * 16.5 + 10;
 
     // ============================================================
     // 1. Datos principales — every scalar project attribute, as a
@@ -1946,6 +1949,67 @@
     // Anexos (real attachment content, not just file names) is now built
     // as its own chapter at the very end of the document — see the
     // "Anexos" section below, after the closing page setup.
+
+    // ============================================================
+    // Datos técnicos — the guided template fields for this project's type
+    // (see app/new-project.html's "Datos Técnicos" wizard step), read from
+    // the same shared_field_answers pool that step writes to. Skipped
+    // entirely if the type has no registered template, or the pool has
+    // nothing in it yet.
+    // ============================================================
+    {
+      const techTemplate = INAPlatform.projectTemplateFor(currentProject.project_type);
+      if (techTemplate) {
+        let techAnswers = {};
+        try { techAnswers = await INAPlatform.getSharedFieldAnswers(currentProject.id); } catch (e) { /* non-critical — chapter just ends up empty */ }
+        const flatFields = INAPlatform.flattenTemplateFields(techTemplate);
+        const notesVal = techTemplate.notesField ? techAnswers[techTemplate.notesField.key] : null;
+        const hasAnyAnswer = flatFields.some((f) => techAnswers[f.key] != null && String(techAnswers[f.key]).trim() !== '') || !!notesVal;
+        if (hasAnyAnswer) {
+          h2(lang === 'es' ? 'Datos técnicos' : 'Technical data');
+          flatFields.forEach((f) => {
+            const raw = techAnswers[f.key];
+            if (raw == null || String(raw).trim() === '') return;
+            let value = raw;
+            if (f.type === 'select' && f.options) {
+              const opt = f.options.find((o) => o.value === raw);
+              if (opt) value = opt.label;
+            }
+            if (f.type === 'textarea') {
+              h3(f.label);
+              bodyText(value);
+            } else {
+              attrRow(f.label, value);
+            }
+          });
+          if (notesVal) {
+            h3(techTemplate.notesField.label[lang] || techTemplate.notesField.label.en);
+            bodyText(notesVal);
+          }
+          y += 8;
+        }
+      }
+    }
+
+    // ============================================================
+    // Fases del proyecto — only shown once the project has at least one
+    // (migration_v70_project_phases.sql / INAPlatform.listProjectPhases()).
+    // ============================================================
+    {
+      let phases = [];
+      try { phases = await INAPlatform.listProjectPhases(currentProject.id); } catch (e) { phases = []; }
+      if (phases && phases.length) {
+        h2(lang === 'es' ? 'Fases del proyecto' : 'Project phases');
+        phases.forEach((ph, idx) => {
+          h3(`${idx + 1}. ${ph.name}`);
+          attrRow(lang === 'es' ? 'Presupuesto' : 'Budget', INAPlatform.formatCurrency(ph.budget_amount));
+          attrRow(lang === 'es' ? 'Presupuesto (USD)' : 'Budget (USD)', INAPlatform.formatCurrencyUSD(ph.budget_amount_usd));
+          attrRow(lang === 'es' ? 'Duración' : 'Duration', INAPlatform.formatDuration(ph.duration_value, ph.duration_unit));
+          if (ph.scope) bodyText(ph.scope);
+          y += 4;
+        });
+      }
+    }
 
     // ============================================================
     // 2. Financiación — INAPlatform.computeFinancingCoverage() is the

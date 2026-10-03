@@ -680,6 +680,41 @@
     attrRow(lang === 'es' ? 'Complejidad' : 'Complexity', currentProject.complexity ? INAPlatform.complexityLabel(currentProject.complexity) : null);
     attrRow(lang === 'es' ? 'Criticidad técnica' : 'Technical criticality', currentProject.technical_criticality ? INAPlatform.technicalCriticalityLabel(currentProject.technical_criticality) : null);
 
+    // ---- Datos técnicos — the guided template fields for this project's
+    // type (see app/new-project.html's "Datos Técnicos" wizard step), read
+    // from the same shared_field_answers pool that step writes to. ----
+    {
+      const techTemplate = INAPlatform.projectTemplateFor(currentProject.project_type);
+      if (techTemplate) {
+        let techAnswers = {};
+        try { techAnswers = await INAPlatform.getSharedFieldAnswers(currentProject.id); } catch (e) { /* non-critical — section just ends up empty */ }
+        const flatFields = INAPlatform.flattenTemplateFields(techTemplate);
+        const notesVal = techTemplate.notesField ? techAnswers[techTemplate.notesField.key] : null;
+        const hasAnyAnswer = flatFields.some((f) => techAnswers[f.key] != null && String(techAnswers[f.key]).trim() !== '') || !!notesVal;
+        if (hasAnyAnswer) {
+          y += 4;
+          h3(techTemplate.title ? (techTemplate.title[lang] || techTemplate.title.en) : (lang === 'es' ? 'Datos técnicos del template' : 'Template technical data'));
+          flatFields.forEach((f) => {
+            const raw = techAnswers[f.key];
+            if (raw == null || String(raw).trim() === '') return;
+            let value = raw;
+            if (f.type === 'select' && f.options) {
+              const opt = f.options.find((o) => o.value === raw);
+              if (opt) value = opt.label;
+            }
+            if (f.type === 'textarea') {
+              bulletText(`${f.label}: ${value}`);
+            } else {
+              attrRow(f.label, value);
+            }
+          });
+          if (notesVal) {
+            bulletText(`${techTemplate.notesField.label[lang] || techTemplate.notesField.label.en}: ${notesVal}`);
+          }
+        }
+      }
+    }
+
     // ============================================================
     // 5. Planificación y Gobernanza — merged chapter (Pablo's spec,
     // Sep 2026): the former separate "Planificación" and "Equipo y
@@ -753,6 +788,28 @@
       y += 4;
       if (hasAnyFinancing) {
         miniBar(lang === 'es' ? 'Cobertura total del presupuesto' : 'Total budget coverage', totalPct, `${totalPct}%`);
+        y += 4;
+      }
+
+      // ---- Fases del proyecto — only shown once the project has at least
+      // one (migration_v70_project_phases.sql / INAPlatform.listProjectPhases()). ----
+      let proposalPhases = [];
+      try { proposalPhases = await INAPlatform.listProjectPhases(currentProject.id); } catch (e) { proposalPhases = []; }
+      if (proposalPhases && proposalPhases.length) {
+        h3(lang === 'es' ? 'Fases del proyecto' : 'Project phases');
+        proposalPhases.forEach((ph, idx) => {
+          ensureSpace(20);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9.8);
+          doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+          doc.text(sanitizeText(`${idx + 1}. ${ph.name}`), MARGIN, y);
+          y += 13;
+          attrRow(lang === 'es' ? 'Presupuesto' : 'Budget', INAPlatform.formatCurrency(ph.budget_amount));
+          attrRow(lang === 'es' ? 'Presupuesto (USD)' : 'Budget (USD)', INAPlatform.formatCurrencyUSD(ph.budget_amount_usd));
+          attrRow(lang === 'es' ? 'Duración' : 'Duration', INAPlatform.formatDuration(ph.duration_value, ph.duration_unit));
+          if (ph.scope) bulletText(ph.scope, 8);
+          y += 4;
+        });
         y += 4;
       }
 
