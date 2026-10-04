@@ -1106,13 +1106,40 @@ a.roadmap-row:hover{ border-color:var(--amber); }
 .wizard-panel{ display:none; }
 .wizard-panel.active{ display:block; }
 /* Tab panel for app/project.html's tabbed redesign (Pablo, oct 2026) — a
-   plain content-switcher pair, same shape as .wizard-panel above but a
+   content-switcher pair, same show/hide shape as .wizard-panel above but a
    DISTINCT class on purpose: reusing .wizard-panel itself for non-wizard
    card styling earlier this session silently hid that content (it has no
    .active by default), so this one is scoped to its own concern instead
-   of being repurposed. */
+   of being repurposed. The active panel also doubles as the "folder body"
+   that .proj-tab below visually sits on top of — see that comment for the
+   full "carpeta con subcarpetas" look Pablo asked for.
+   border-radius is square on the top-left on purpose, regardless of which
+   tab is active — the same simplification real tabbed-folder UIs use, so
+   it doesn't need to track which tab is in the first wrapped row. */
 .tab-panel{ display:none; }
-.tab-panel.active{ display:block; }
+.tab-panel.active{
+  display:block; background:#fff; border:1px solid var(--paper-line);
+  border-radius:0 12px 12px 12px; padding:26px 28px;
+}
+/* .proj-tabs/.proj-tab — "solapas recortadas": each tab is its own fully-
+   bordered, squared-off block (like a cardstock folder divider), sized to
+   its label, sitting flush on the content panel's top edge. The row sits
+   one pixel below the panel's top border (margin-bottom:-1px) so the
+   active tab's now-white bottom edge erases that border line right where
+   they meet — the classic "fused with the panel below" connected-tab
+   trick. Distinct from .md-tab (app/master-data.html's plain underline
+   tabs) — kept separate so this didn't change that page's look too. */
+.proj-tabs{ display:flex; flex-wrap:wrap; gap:6px 6px; margin:0 0 -1px; position:relative; z-index:1; }
+.proj-tab{
+  font-family:var(--sans); font-size:13px; font-weight:600; color:var(--muted);
+  background:var(--paper-2); border:1px solid var(--paper-line);
+  border-radius:10px 10px 0 0; padding:10px 18px 11px; cursor:pointer; margin:0;
+}
+.proj-tab:hover{ color:var(--text); }
+.proj-tab.active{
+  color:var(--ink); background:#fff; border-color:var(--paper-line); border-bottom-color:#fff;
+  position:relative; z-index:2;
+}
 .wizard-nav{ display:flex; gap:12px; margin-top:30px; align-items:center; }
 .wizard-skip{ font-size:12.5px; color:var(--muted); text-decoration:underline; cursor:pointer; background:none; border:none; padding:0; }
 .template-offer-card{

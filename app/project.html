@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=26">
+<link rel="stylesheet" href="/assets/style.css?v=27">
 <link rel="stylesheet" href="/assets/app.css?v=21">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/images/pwa/icon-180.png">
@@ -170,19 +170,19 @@
            (see the script below) hides a tab's chip entirely whenever its
            wrapped content is currently empty, so clicking a visible chip
            can never land on a blank panel. -->
-      <div class="md-tabs" id="projectTabs" style="display:flex; flex-wrap:wrap; gap:4px 18px; border-bottom:1px solid var(--paper-line); margin:0 0 24px;">
-        <button type="button" class="md-tab active" data-tab="overview"><span data-i18n="pd.tab.overview">Overview</span></button>
-        <button type="button" class="md-tab" data-tab="attrs"><span data-i18n="pd.tab.attrs">Key Data</span></button>
-        <button type="button" class="md-tab" data-tab="techdata" style="display:none;"><span data-i18n="pd.tab.techdata">Technical Data</span></button>
-        <button type="button" class="md-tab" data-tab="phases" style="display:none;"><span data-i18n="pd.tab.phases">Phases</span></button>
-        <button type="button" class="md-tab" data-tab="fsu" style="display:none;"><span data-i18n="pd.tab.fsu">FSU Scoring</span></button>
-        <button type="button" class="md-tab" data-tab="docs" style="display:none;"><span data-i18n="pd.tab.docs">Documents</span></button>
-        <button type="button" class="md-tab" data-tab="financing"><span data-i18n="pd.tab.financing">Financing</span></button>
-        <button type="button" class="md-tab" data-tab="roadmaps" style="display:none;"><span data-i18n="pd.tab.roadmaps">Roadmaps</span></button>
-        <button type="button" class="md-tab" data-tab="risks" style="display:none;"><span data-i18n="pd.tab.risks">Risk Matrix</span></button>
-        <button type="button" class="md-tab" data-tab="successcases" style="display:none;"><span data-i18n="pd.tab.successcases">Success Cases</span></button>
-        <button type="button" class="md-tab" data-tab="proposal" style="display:none;"><span data-i18n="pd.tab.proposal">Investment Proposal</span></button>
-        <button type="button" class="md-tab" data-tab="analysis"><span data-i18n="pd.tab.analysis">AI Analysis Results</span></button>
+      <div class="proj-tabs" id="projectTabs">
+        <button type="button" class="proj-tab active" data-tab="overview"><span data-i18n="pd.tab.overview">Overview</span></button>
+        <button type="button" class="proj-tab" data-tab="attrs"><span data-i18n="pd.tab.attrs">Key Data</span></button>
+        <button type="button" class="proj-tab" data-tab="techdata" style="display:none;"><span data-i18n="pd.tab.techdata">Technical Data</span></button>
+        <button type="button" class="proj-tab" data-tab="phases" style="display:none;"><span data-i18n="pd.tab.phases">Phases</span></button>
+        <button type="button" class="proj-tab" data-tab="fsu" style="display:none;"><span data-i18n="pd.tab.fsu">FSU Scoring</span></button>
+        <button type="button" class="proj-tab" data-tab="docs" style="display:none;"><span data-i18n="pd.tab.docs">Documents</span></button>
+        <button type="button" class="proj-tab" data-tab="financing"><span data-i18n="pd.tab.financing">Financing</span></button>
+        <button type="button" class="proj-tab" data-tab="roadmaps" style="display:none;"><span data-i18n="pd.tab.roadmaps">Roadmaps</span></button>
+        <button type="button" class="proj-tab" data-tab="risks" style="display:none;"><span data-i18n="pd.tab.risks">Risk Matrix</span></button>
+        <button type="button" class="proj-tab" data-tab="successcases" style="display:none;"><span data-i18n="pd.tab.successcases">Success Cases</span></button>
+        <button type="button" class="proj-tab" data-tab="proposal" style="display:none;"><span data-i18n="pd.tab.proposal">Investment Proposal</span></button>
+        <button type="button" class="proj-tab" data-tab="analysis"><span data-i18n="pd.tab.analysis">AI Analysis Results</span></button>
       </div>
 
       <div class="tab-panel active" data-tab-panel="overview">
@@ -227,7 +227,7 @@
            already has its own heading/framing. Populated by renderAttrs()
            below; any attribute that isn't set on the project is simply
            omitted, same convention as the rest of the page. -->
-      <div id="attrsBlock" class="info-block" style="margin-top:24px;">
+      <div id="attrsBlock" class="info-block" style="margin-top:0;">
         <h4><span data-i18n="pd.attrs.title">Project Attributes</span></h4>
         <div class="attrs-grid" id="attrsGrid"></div>
       </div>
@@ -299,7 +299,7 @@
            blocks below (see proposalBlock). Visible to any viewer (the
            destination page itself gates editing to owner/assigned advisor/
            admin); populated by renderFinancingSummary() below. -->
-      <div id="financingSummaryBlock" class="info-block" style="margin-top:24px;">
+      <div id="financingSummaryBlock" class="info-block" style="margin-top:0;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
           <div>
             <h4><span data-i18n="pf.title">Financing Management</span></h4>
@@ -330,7 +330,7 @@
            owner sees the list read-only (canManageRoadmaps() below gates
            every editable control — the server-side RLS enforces the same
            bar regardless of what the UI shows). -->
-      <div id="roadmapsBlock" class="info-block" style="margin-top:24px; display:none;">
+      <div id="roadmapsBlock" class="info-block" style="margin-top:0; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
           <div>
             <h4><span data-i18n="pd.roadmaps.title">Roadmaps</span></h4>
@@ -355,7 +355,7 @@
            same bar regardless of what the UI shows). Hidden entirely for a
            project with zero risks logged AND a viewer who can't manage
            them, same pattern as the Roadmaps block above. -->
-      <div id="riskMatrixBlock" class="info-block" style="margin-top:24px; display:none;">
+      <div id="riskMatrixBlock" class="info-block" style="margin-top:0; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
           <div>
             <h4><span data-i18n="pd.risk.title">Risk Matrix</span></h4>
@@ -405,7 +405,7 @@
            in the same tab inherits the existing sessionStorage session, so
            it works; the user can use the browser's own back button (or the
            app nav) to return to the project. -->
-      <div id="successCasesBlock" class="info-block" style="margin-top:24px; display:none;">
+      <div id="successCasesBlock" class="info-block" style="margin-top:0; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
           <div>
             <h4><span data-i18n="pd.sc.title">Reference Success Cases</span></h4>
@@ -450,7 +450,7 @@
            viewer who can't edit the project (same bar as Edit — owner,
            assigned advisor, or admin), since the editor itself is a
            drafting workspace, not a read-only view. -->
-      <div id="proposalBlock" class="info-block" style="margin-top:24px; display:none;">
+      <div id="proposalBlock" class="info-block" style="margin-top:0; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
           <div>
             <h4><span data-i18n="pd.proposal.title">Investment Proposal</span></h4>
@@ -467,14 +467,14 @@
            or just edited — updateProject() resets status to 'submitted'
            and clears readiness_stage). Analysis is no longer triggered
            automatically on submit; the owner runs it manually here. -->
-      <div id="notAnalyzedBlock" style="margin-top:40px; display:none;">
+      <div id="notAnalyzedBlock" style="margin-top:0; display:none;">
         <div class="analysis-pending">
           <p style="font-size:14.5px;"><span data-i18n="pd.notAnalyzed">This project hasn&rsquo;t been analyzed yet.</span></p>
           <p style="margin-top:8px; font-size:12.5px; color:var(--muted);"><span data-i18n="pd.notAnalyzed.help">Run the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade; whenever you&rsquo;re ready — it usually takes under a minute.</span></p>
         </div>
       </div>
 
-      <div id="pendingBlock" style="margin-top:40px; display:none;">
+      <div id="pendingBlock" style="margin-top:0; display:none;">
         <div class="analysis-pending">
           <div class="spinner"></div>
           <p style="font-size:14.5px;"><span data-i18n="pd.analyzing">Applying the Investment Readiness Index&trade; and Multilateral Finance Navigator&trade;…</span></p>
@@ -482,7 +482,7 @@
         </div>
       </div>
 
-      <div id="resultsBlock" style="margin-top:48px; display:none;">
+      <div id="resultsBlock" style="margin-top:0; display:none;">
         <hr class="rule">
         <div style="margin-top:44px;">
           <span class="eyebrow"><span data-i18n="pd.results.eyebrow">Investment Readiness Index&trade;</span></span>
@@ -526,7 +526,7 @@
         </div>
       </div>
 
-      <div id="errorBlock" style="margin-top:40px; display:none;">
+      <div id="errorBlock" style="margin-top:0; display:none;">
         <div class="analysis-pending" style="border-color:#d99;">
           <p style="font-size:14.5px; color:#a13a3a;" id="errorText"><span data-i18n="pd.error">The analysis couldn't be completed.</span></p>
         </div>
@@ -784,14 +784,14 @@
   function switchProjectTab(tab) {
     if (!TAB_KEYS.includes(tab)) tab = 'overview';
     activeProjectTab = tab;
-    document.querySelectorAll('#projectTabs .md-tab').forEach((btn) => {
+    document.querySelectorAll('#projectTabs .proj-tab').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.tab === tab);
     });
     document.querySelectorAll('.tab-panel').forEach((panel) => {
       panel.classList.toggle('active', panel.dataset.tabPanel === tab);
     });
   }
-  document.querySelectorAll('#projectTabs .md-tab').forEach((btn) => {
+  document.querySelectorAll('#projectTabs .proj-tab').forEach((btn) => {
     btn.addEventListener('click', () => switchProjectTab(btn.dataset.tab));
   });
 
@@ -810,7 +810,7 @@
       proposal: document.getElementById('proposalBlock').style.display !== 'none',
       analysis: true,
     };
-    document.querySelectorAll('#projectTabs .md-tab').forEach((btn) => {
+    document.querySelectorAll('#projectTabs .proj-tab').forEach((btn) => {
       btn.style.display = hasContent[btn.dataset.tab] ? '' : 'none';
     });
     if (!hasContent[activeProjectTab]) {
