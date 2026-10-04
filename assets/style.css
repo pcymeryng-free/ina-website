@@ -1083,20 +1083,33 @@ a.roadmap-row:hover{ border-color:var(--amber); }
    soon as the project record exists (immediately when editing; after
    section 1's "Continue" when creating). See PLATFORM_SETUP.md for the
    full rationale. */
-.wizard-steps{ display:flex; flex-wrap:wrap; gap:0; margin-bottom:32px; border-bottom:1px solid var(--paper-line); }
+/* "Solapas recortadas" look (Pablo, oct 2026) — same folder-tab treatment
+   as app/project.html's .proj-tab/.proj-tabs: each section name is its own
+   bordered block sitting flush on the active panel's top edge, and the
+   active one visually fuses into the panel below (shared white
+   background, no bottom border). The numbered circle + .done state are
+   kept — unlike project.html's tabs, this is still a step-by-step flow, so
+   showing progress (which sections have been visited) is still useful
+   here; a plain folder tab wouldn't carry that. Still fully clickable in
+   any order per canJumpTo() — the folder-tab shape doesn't change that. */
+.wizard-steps{ display:flex; flex-wrap:wrap; gap:6px 6px; margin:0 0 -1px; position:relative; z-index:1; }
 .wizard-step-dot{
   font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.05em;
-  color:var(--muted); padding:0 20px 12px 0; margin-right:20px; border-bottom:2px solid transparent;
+  color:var(--muted); background:var(--paper-2); border:1px solid var(--paper-line);
+  border-radius:10px 10px 0 0; padding:10px 16px 11px; margin:0; display:inline-flex; align-items:center;
   white-space:nowrap; cursor:pointer; transition:color .15s ease;
 }
 .wizard-step-dot .num{
   display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px;
-  border-radius:50%; background:var(--paper-2); color:var(--muted); font-size:10px; margin-right:7px;
-  transition:all .15s ease;
+  border-radius:50%; background:var(--paper); color:var(--muted); font-size:10px; margin-right:7px;
+  transition:all .15s ease; flex:0 0 auto;
 }
 .wizard-step-dot:hover{ color:var(--amber-deep); }
 .wizard-step-dot:hover .num{ background:var(--amber); color:#fff; }
-.wizard-step-dot.active{ color:var(--amber-deep); border-bottom-color:var(--amber); }
+.wizard-step-dot.active{
+  color:var(--amber-deep); background:#fff; border-color:var(--paper-line); border-bottom-color:#fff;
+  position:relative; z-index:2;
+}
 .wizard-step-dot.active .num{ background:var(--amber); color:#fff; }
 /* .done marks a section actually visited and now behind the current one —
    purely a progress checkmark, not a clickability gate (every section name
@@ -1104,7 +1117,10 @@ a.roadmap-row:hover{ border-color:var(--amber); }
 .wizard-step-dot.done{ color:var(--text); }
 .wizard-step-dot.done .num{ background:var(--amber-soft); color:var(--amber-deep); }
 .wizard-panel{ display:none; }
-.wizard-panel.active{ display:block; }
+.wizard-panel.active{
+  display:block; background:#fff; border:1px solid var(--paper-line);
+  border-radius:0 12px 12px 12px; padding:26px 28px;
+}
 /* Tab panel for app/project.html's tabbed redesign (Pablo, oct 2026) — a
    content-switcher pair, same show/hide shape as .wizard-panel above but a
    DISTINCT class on purpose: reusing .wizard-panel itself for non-wizard
