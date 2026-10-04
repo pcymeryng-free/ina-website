@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=25">
+<link rel="stylesheet" href="/assets/style.css?v=26">
 <link rel="stylesheet" href="/assets/app.css?v=21">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/images/pwa/icon-180.png">
@@ -156,6 +156,36 @@
         </div>
       </div>
 
+      <!-- Tabbed layout (Pablo, oct 2026): "cambiar el diseño de proyectos
+           de manera que cada opción del menú esté en una solapa". Each
+           .tab-panel below wraps one previously-stacked section (or a
+           tight group of related ones); .tab-panel/.active is a new rule
+           (assets/style.css) — deliberately NOT reusing .wizard-panel,
+           which caused a real bug earlier this session when its
+           display:none-unless-.active rule was reused for unrelated card
+           styling. Every wrapped block keeps its own pre-existing
+           style.display visibility logic completely unchanged (content
+           presence / viewer permission) — switchProjectTab() only ever
+           toggles the outer .tab-panel wrapper; refreshTabVisibility()
+           (see the script below) hides a tab's chip entirely whenever its
+           wrapped content is currently empty, so clicking a visible chip
+           can never land on a blank panel. -->
+      <div class="md-tabs" id="projectTabs" style="display:flex; flex-wrap:wrap; gap:4px 18px; border-bottom:1px solid var(--paper-line); margin:0 0 24px;">
+        <button type="button" class="md-tab active" data-tab="overview"><span data-i18n="pd.tab.overview">Overview</span></button>
+        <button type="button" class="md-tab" data-tab="attrs"><span data-i18n="pd.tab.attrs">Key Data</span></button>
+        <button type="button" class="md-tab" data-tab="techdata" style="display:none;"><span data-i18n="pd.tab.techdata">Technical Data</span></button>
+        <button type="button" class="md-tab" data-tab="phases" style="display:none;"><span data-i18n="pd.tab.phases">Phases</span></button>
+        <button type="button" class="md-tab" data-tab="fsu" style="display:none;"><span data-i18n="pd.tab.fsu">FSU Scoring</span></button>
+        <button type="button" class="md-tab" data-tab="docs" style="display:none;"><span data-i18n="pd.tab.docs">Documents</span></button>
+        <button type="button" class="md-tab" data-tab="financing"><span data-i18n="pd.tab.financing">Financing</span></button>
+        <button type="button" class="md-tab" data-tab="roadmaps" style="display:none;"><span data-i18n="pd.tab.roadmaps">Roadmaps</span></button>
+        <button type="button" class="md-tab" data-tab="risks" style="display:none;"><span data-i18n="pd.tab.risks">Risk Matrix</span></button>
+        <button type="button" class="md-tab" data-tab="successcases" style="display:none;"><span data-i18n="pd.tab.successcases">Success Cases</span></button>
+        <button type="button" class="md-tab" data-tab="proposal" style="display:none;"><span data-i18n="pd.tab.proposal">Investment Proposal</span></button>
+        <button type="button" class="md-tab" data-tab="analysis"><span data-i18n="pd.tab.analysis">AI Analysis Results</span></button>
+      </div>
+
+      <div class="tab-panel active" data-tab-panel="overview">
       <div id="workflowBlock" class="info-block" style="margin-top:0;">
         <h4><span data-i18n="wf.title">Workflow</span></h4>
         <div class="wf-stepper" id="wfStepper"></div>
@@ -185,7 +215,9 @@
         <div id="promotionAgentHistory" style="display:none; margin-top:14px;"></div>
         <p id="promotionAgentEmpty" style="font-size:13px; color:var(--muted);"><span data-i18n="pa.empty">Todavía no se corrió el agente de promoción para este proyecto.</span></p>
       </div>
+      </div>
 
+      <div class="tab-panel" data-tab-panel="attrs">
       <!-- Project Attributes — every optional attribute the project can
            carry (country/program/generating entity plus the migration_v33/
            v34 fields: beneficiaries, budget, duration, priority, technical
@@ -204,8 +236,35 @@
         <h4><span data-i18n="pd.description">Description</span></h4>
         <p id="pdesc" style="font-size:13.5px; color:var(--muted); white-space:pre-wrap; max-height:130px; overflow-y:auto; padding-right:8px;"></p>
       </div>
+      </div>
 
-      <div id="fsuBlock" style="margin-top:24px; display:none;">
+      <!-- Datos técnicos — read-only view of the guided-template fields
+           for this project's type, the same shared_field_answers pool the
+           "Datos Técnicos" step in new-project.html's wizard writes to and
+           the project PDF export reads. Editing stays in the wizard step;
+           this is just a view. Populated by renderTechDataView() below;
+           hidden entirely (tab chip included, via refreshTabVisibility())
+           when the project's type has no registered template. -->
+      <div class="tab-panel" data-tab-panel="techdata">
+      <div id="techDataViewBlock" class="info-block" style="margin-top:0; display:none;">
+        <h4 id="techDataViewTitle"><span data-i18n="pd.tab.techdata">Technical Data</span></h4>
+        <div class="attrs-grid" id="techDataViewGrid"></div>
+      </div>
+      </div>
+
+      <!-- Fases — read-only list of the project's phases (project_phases),
+           the same rows the project PDF export's "Fases del proyecto"
+           chapter already lists. Editing stays in new-project.html's
+           Phases wizard step. Hidden entirely when the project has none. -->
+      <div class="tab-panel" data-tab-panel="phases">
+      <div id="phasesViewBlock" class="info-block" style="margin-top:0; display:none;">
+        <h4><span data-i18n="pd.tab.phases">Phases</span></h4>
+        <div id="phasesViewList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
+      </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="fsu">
+      <div id="fsuBlock" style="margin-top:0; display:none;">
         <div class="info-block">
           <h4 style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <span data-i18n="fsu.block.title">FSU Scoring &mdash; Res. ENACOM 359/2025</span>
@@ -220,12 +279,16 @@
           </div>
         </div>
       </div>
+      </div>
 
-      <div id="docsBlock" style="margin-top:24px; display:none;">
+      <div class="tab-panel" data-tab-panel="docs">
+      <div id="docsBlock" style="margin-top:0; display:none;">
         <h4 style="font-size:14px;"><span data-i18n="pd.documents">Supporting Documents</span></h4>
         <div id="docsList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
       </div>
+      </div>
 
+      <div class="tab-panel" data-tab-panel="financing">
       <!-- Financing — AI recommendation, FSU, financing Programs and "other
            source" all moved out to their own dedicated screen,
            app/project-financing.html (Pablo, sep 2026: "la gestión de
@@ -254,7 +317,9 @@
           </div>
         </div>
       </div>
+      </div>
 
+      <div class="tab-panel" data-tab-panel="roadmaps">
       <!-- Roadmaps — a regulator-defined checklist of administrative and
            regulatory procedures this project needs to work through, each
            naming the public and/or private entity involved (see
@@ -278,7 +343,9 @@
 
         <p id="roadmapsEmpty" style="font-size:13px; color:var(--muted); margin-top:8px; display:none;"><span data-i18n="pd.roadmaps.empty">No roadmaps started yet for this project.</span></p>
       </div>
+      </div>
 
+      <div class="tab-panel" data-tab-panel="risks">
       <!-- Risk Matrix — a structured risk register (see
            supabase/migration_v41_project_risks.sql), distinct from the
            freeform risk_mitigation text inside the Analysis below. Only
@@ -306,7 +373,9 @@
 
         <p id="riskMatrixEmpty" style="font-size:13px; color:var(--muted); margin-top:8px; display:none;"><span data-i18n="pd.risk.empty">No risks logged yet for this project.</span></p>
       </div>
+      </div>
 
+      <div class="tab-panel" data-tab-panel="successcases">
       <!-- Success Cases (reference library) — Pablo, sep 2026: "para que un
            proyecto nuevo se puede basar en un caso de éxito, o bien, lo
            tome como referencia." See supabase/migration_v59_success_cases.sql
@@ -364,7 +433,9 @@
           </div>
         </div>
       </div>
+      </div>
 
+      <div class="tab-panel" data-tab-panel="proposal">
       <!-- Investment Proposal — the four AI-draftable, user-editable
            narrative chapters (Introduction, Technical Description,
            Benefits, Planning narrative) that feed the separate, longer
@@ -389,7 +460,9 @@
           <a id="manageProposalBtn" href="#" class="btn ghost small" style="flex:0 0 auto;"><span data-i18n="prop.manage">Manage Proposal</span></a>
         </div>
       </div>
+      </div>
 
+      <div class="tab-panel" data-tab-panel="analysis">
       <!-- Shown for a project that's never been analyzed (freshly created,
            or just edited — updateProject() resets status to 'submitted'
            and clears readiness_stage). Analysis is no longer triggered
@@ -458,6 +531,7 @@
           <p style="font-size:14.5px; color:#a13a3a;" id="errorText"><span data-i18n="pd.error">The analysis couldn't be completed.</span></p>
         </div>
       </div>
+      </div>
     </div>
   </div>
 </section>
@@ -468,7 +542,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=86"></script>
+<script src="/assets/i18n.js?v=87"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <!-- pdf-lib: only used by generateProjectPdf() to splice real attached PDF
@@ -624,6 +698,7 @@
       if (currentRoadmaps.length || (currentProfile && INAPlatform.canManageRoadmaps(currentProfile))) renderRoadmaps();
       if (currentRisks.length || (currentProfile && INAPlatform.canManageRisks(currentProfile))) renderRiskMatrix();
       if (allSuccessCasesForPicker.length || currentSuccessCases.length) renderSuccessCases();
+      if (currentProject) { renderTechDataView().catch(() => {}); renderPhasesView().catch(() => {}); }
     });
   });
 
@@ -692,6 +767,131 @@
   // supabase/migration_v59_success_cases.sql.
   let currentSuccessCases = [];
   let allSuccessCasesForPicker = [];
+
+  /* ---------- Tabs (see the .tab-panel markup above) ----------
+     switchProjectTab() only ever toggles which already-rendered panel is
+     visible — every block inside keeps rendering/hiding itself exactly as
+     it always has (clear-and-rebuild render functions, unchanged). This
+     never touches another panel's contents, so switching tabs back and
+     forth is always safe to call, repeatedly, in either direction.
+     refreshTabVisibility() is the piece that keeps a tab's own chip from
+     ever being clickable when its wrapped content is empty today (no
+     data, or the viewer lacks permission) — it reads the same
+     el.style.display state each block's existing render function already
+     set, rather than tracking a second, separate "has content" flag. */
+  const TAB_KEYS = ['overview', 'attrs', 'techdata', 'phases', 'fsu', 'docs', 'financing', 'roadmaps', 'risks', 'successcases', 'proposal', 'analysis'];
+  let activeProjectTab = 'overview';
+  function switchProjectTab(tab) {
+    if (!TAB_KEYS.includes(tab)) tab = 'overview';
+    activeProjectTab = tab;
+    document.querySelectorAll('#projectTabs .md-tab').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    document.querySelectorAll('.tab-panel').forEach((panel) => {
+      panel.classList.toggle('active', panel.dataset.tabPanel === tab);
+    });
+  }
+  document.querySelectorAll('#projectTabs .md-tab').forEach((btn) => {
+    btn.addEventListener('click', () => switchProjectTab(btn.dataset.tab));
+  });
+
+  function refreshTabVisibility() {
+    const hasContent = {
+      overview: true,
+      attrs: true,
+      techdata: document.getElementById('techDataViewBlock').style.display !== 'none',
+      phases: document.getElementById('phasesViewBlock').style.display !== 'none',
+      fsu: document.getElementById('fsuBlock').style.display !== 'none',
+      docs: document.getElementById('docsBlock').style.display !== 'none',
+      financing: true,
+      roadmaps: document.getElementById('roadmapsBlock').style.display !== 'none',
+      risks: document.getElementById('riskMatrixBlock').style.display !== 'none',
+      successcases: document.getElementById('successCasesBlock').style.display !== 'none',
+      proposal: document.getElementById('proposalBlock').style.display !== 'none',
+      analysis: true,
+    };
+    document.querySelectorAll('#projectTabs .md-tab').forEach((btn) => {
+      btn.style.display = hasContent[btn.dataset.tab] ? '' : 'none';
+    });
+    if (!hasContent[activeProjectTab]) {
+      switchProjectTab(TAB_KEYS.find((k) => hasContent[k]) || 'overview');
+    }
+  }
+
+  /* ---------- Datos técnicos (read-only) ----------
+     Mirrors generateProjectPdf()'s "Datos técnicos" chapter (app/project.
+     html's own PDF export) and the data new-project.html's "Datos
+     Técnicos" wizard step writes — same template + shared_field_answers
+     pool, just rendered read-only here instead of editable. */
+  async function renderTechDataView() {
+    const block = document.getElementById('techDataViewBlock');
+    const grid = document.getElementById('techDataViewGrid');
+    const template = INAPlatform.projectTemplateFor(currentProject.project_type);
+    if (!template) { block.style.display = 'none'; grid.innerHTML = ''; return; }
+
+    let answers = {};
+    try { answers = await INAPlatform.getSharedFieldAnswers(currentProject.id); } catch (e) { answers = {}; }
+    const flatFields = INAPlatform.flattenTemplateFields(template);
+    const notesVal = template.notesField ? answers[template.notesField.key] : null;
+    const hasAnyAnswer = flatFields.some((f) => answers[f.key] != null && String(answers[f.key]).trim() !== '') || !!notesVal;
+    if (!hasAnyAnswer) { block.style.display = 'none'; grid.innerHTML = ''; return; }
+
+    const lang = INAPlatform.currentLang();
+    document.getElementById('techDataViewTitle').innerHTML = `<span>${escapeHtml(template.title[lang] || template.title.en)}</span>`;
+    const rows = [];
+    flatFields.forEach((f) => {
+      const raw = answers[f.key];
+      if (raw == null || String(raw).trim() === '') return;
+      let value = raw;
+      if (f.type === 'select' && f.options) {
+        const opt = f.options.find((o) => o.value === raw);
+        if (opt) value = opt.label;
+      }
+      rows.push([f.label, value]);
+    });
+    if (notesVal) {
+      rows.push([template.notesField.label[lang] || template.notesField.label.en, notesVal]);
+    }
+    grid.innerHTML = rows.map(([label, value]) => `
+      <div class="attr-item">
+        <div class="attr-item-label">${escapeHtml(label)}</div>
+        <div class="attr-item-value" style="white-space:pre-wrap;">${escapeHtml(value)}</div>
+      </div>
+    `).join('');
+    block.style.display = 'block';
+  }
+
+  /* ---------- Fases (read-only) ----------
+     Mirrors generateProjectPdf()'s "Fases del proyecto" chapter — same
+     project_phases rows, see migration_v70_project_phases.sql. Editing
+     stays in new-project.html's Phases wizard step. */
+  async function renderPhasesView() {
+    const block = document.getElementById('phasesViewBlock');
+    const list = document.getElementById('phasesViewList');
+    let phases = [];
+    try { phases = await INAPlatform.listProjectPhases(currentProject.id); } catch (e) { phases = []; }
+    if (!phases.length) { block.style.display = 'none'; list.innerHTML = ''; return; }
+
+    const lang = INAPlatform.currentLang();
+    list.innerHTML = phases.map((ph, idx) => {
+      const parts = [];
+      const budget = INAPlatform.formatCurrency(ph.budget_amount);
+      if (budget) parts.push(budget);
+      const budgetUsd = INAPlatform.formatCurrencyUSD(ph.budget_amount_usd);
+      if (budgetUsd) parts.push(budgetUsd);
+      const duration = INAPlatform.formatDuration(ph.duration_value, ph.duration_unit);
+      if (duration) parts.push(duration);
+      return `
+        <div class="info-block" style="margin:0;">
+          <h4 style="font-size:14px;">${idx + 1}. ${escapeHtml(ph.name)}</h4>
+          ${parts.length ? `<p style="font-size:12.5px; color:var(--muted); margin-top:4px;">${escapeHtml(parts.join(' · '))}</p>` : ''}
+          ${ph.scope ? `<p style="font-size:13px; margin-top:8px; white-space:pre-wrap;">${escapeHtml(ph.scope)}</p>` : ''}
+        </div>
+      `;
+    }).join('');
+    block.style.display = 'block';
+  }
+
   function renderProject(p) {
     currentProject = p;
     document.getElementById('crumbName').textContent = p.name;
@@ -2981,6 +3181,7 @@
       const row = await INAPlatform.linkSuccessCaseToProject(projectId, caseId);
       currentSuccessCases.push(row);
       renderSuccessCases();
+      refreshTabVisibility();
     } catch (err) {
       const lang = INAPlatform.currentLang();
       alert((lang === 'es' ? 'No se pudo vincular el caso: ' : "Couldn't link the case: ") + (err.message || err));
@@ -2996,6 +3197,7 @@
       await INAPlatform.unlinkSuccessCaseFromProject(projectId, caseId);
       currentSuccessCases = currentSuccessCases.filter((r) => r.success_case_id !== caseId);
       renderSuccessCases();
+      refreshTabVisibility();
     } catch (err) {
       alert((lang === 'es' ? 'No se pudo quitar el caso: ' : "Couldn't remove the case: ") + (err.message || err));
     }
@@ -3224,6 +3426,9 @@
     renderDocs(docs);
     renderFinancingSummary();
 
+    try { await renderTechDataView(); } catch (e) { /* non-critical — tab just stays hidden */ }
+    try { await renderPhasesView(); } catch (e) { /* non-critical — tab just stays hidden */ }
+
     // Roadmaps — visible to the owner read-only once at least one
     // instance exists; visible to an advisor/admin always (even empty),
     // since only they can start a new instance in the first place. See
@@ -3276,6 +3481,17 @@
     if (currentSuccessCases.length || viewerCanManageSuccessCases) {
       renderSuccessCases();
     }
+
+    // Tabs — every block above has now made its final (initial-load)
+    // visibility decision, so this is the one place that needs to compute
+    // which tab chips to show. A requested ?tab= deep link (see
+    // app/dashboard.html's financing-recommendation badge, or any other
+    // project.html?id=...&tab=<key> link) is applied first; if it names a
+    // tab that turns out to be empty/not-permitted, refreshTabVisibility()
+    // falls back to the first visible one.
+    const requestedTab = new URLSearchParams(location.search).get('tab');
+    if (requestedTab) switchProjectTab(requestedTab);
+    refreshTabVisibility();
 
     if (project.status === 'completed') {
       const analysis = await INAPlatform.getAnalysis(projectId);

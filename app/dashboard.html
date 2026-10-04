@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=25">
+<link rel="stylesheet" href="/assets/style.css?v=26">
 <link rel="stylesheet" href="/assets/app.css?v=21">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/images/pwa/icon-180.png">
@@ -214,7 +214,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=86"></script>
+<script src="/assets/i18n.js?v=87"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="/assets/platform.js?v=105"></script>
@@ -282,8 +282,8 @@
   // summary/summary_en/updated_at) — only present for projects that have
   // generated an AI Financing Recommendation at least once. Populated in
   // init() via INAPlatform.listFinancingRecommendationsForProjects(). See
-  // financingRecoBadgeHtml() below and app/project.html's
-  // financingRecommendationBlock (Pablo, sep 2026: "agregar una nueva
+  // financingRecoBadgeHtml() below and app/project.html's "Financiación"
+  // tab (financingSummaryBlock) (Pablo, sep 2026: "agregar una nueva
   // funcionalidad que permita utilizar IA para elegir la mejor combinación
   // de instrumentos/programas de financiación ... y mostrarlos en el
   // dashboard de proyectos").
@@ -403,7 +403,7 @@
       ? `${items.length} instrumento${items.length === 1 ? '' : 's'} sugerido${items.length === 1 ? '' : 's'}`
       : `${items.length} suggested instrument${items.length === 1 ? '' : 's'}`;
     const title = l === 'es' ? 'Recomendación de financiamiento por IA' : 'AI financing recommendation';
-    return `<span class="score-badge finreco" data-finreco-goto="project.html?id=${p.id}#financingRecommendationBlock" title="${title}">💡 ${text}</span>`;
+    return `<span class="score-badge finreco" data-finreco-goto="project.html?id=${p.id}&tab=financing" title="${title}">💡 ${text}</span>`;
   }
 
   // Click delegation for the [data-finreco-goto] badge(s) inside `root` —
