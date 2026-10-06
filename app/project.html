@@ -178,7 +178,6 @@
         <button type="button" class="proj-tab" data-tab="fsu" style="display:none;"><span data-i18n="pd.tab.fsu">FSU Scoring</span></button>
         <button type="button" class="proj-tab" data-tab="docs" style="display:none;"><span data-i18n="pd.tab.docs">Documents</span></button>
         <button type="button" class="proj-tab" data-tab="financing"><span data-i18n="pd.tab.financing">Financing</span></button>
-        <button type="button" class="proj-tab" data-tab="roadmaps" style="display:none;"><span data-i18n="pd.tab.roadmaps">Roadmaps</span></button>
         <button type="button" class="proj-tab" data-tab="risks" style="display:none;"><span data-i18n="pd.tab.risks">Risk Matrix</span></button>
         <button type="button" class="proj-tab" data-tab="successcases" style="display:none;"><span data-i18n="pd.tab.successcases">Success Cases</span></button>
         <button type="button" class="proj-tab" data-tab="proposal" style="display:none;"><span data-i18n="pd.tab.proposal">Investment Proposal</span></button>
@@ -316,32 +315,6 @@
             <div id="financingCoverageBar" style="height:100%; background:var(--amber); border-radius:100px; transition:width .2s ease;"></div>
           </div>
         </div>
-      </div>
-      </div>
-
-      <div class="tab-panel" data-tab-panel="roadmaps">
-      <!-- Roadmaps — a regulator-defined checklist of administrative and
-           regulatory procedures this project needs to work through, each
-           naming the public and/or private entity involved (see
-           supabase/migration_v27_gestion_instances.sql and
-           app/roadmap-instance.html, where a roadmap_instance is started
-           and worked through step by step). Any advisor/admin can start a
-           new roadmap on this project and advance its steps; the project
-           owner sees the list read-only (canManageRoadmaps() below gates
-           every editable control — the server-side RLS enforces the same
-           bar regardless of what the UI shows). -->
-      <div id="roadmapsBlock" class="info-block" style="margin-top:0; display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
-          <div>
-            <h4><span data-i18n="pd.roadmaps.title">Roadmaps</span></h4>
-            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pd.roadmaps.help">Administrative and regulatory procedures this project needs to work through, one at a time — each run by a specific entity against a specific checklist.</span></p>
-          </div>
-          <a id="newRoadmapInstanceBtn" href="#" class="btn ghost small" style="display:none; flex:0 0 auto;"><span data-i18n="rmi.form.new">New Roadmap</span></a>
-        </div>
-
-        <div id="roadmapInstancesList" style="margin-top:14px; display:flex; flex-direction:column; gap:10px;"></div>
-
-        <p id="roadmapsEmpty" style="font-size:13px; color:var(--muted); margin-top:8px; display:none;"><span data-i18n="pd.roadmaps.empty">No roadmaps started yet for this project.</span></p>
       </div>
       </div>
 
@@ -542,7 +515,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=88"></script>
+<script src="/assets/i18n.js?v=89"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <!-- pdf-lib: only used by generateProjectPdf() to splice real attached PDF
@@ -695,7 +668,6 @@
       if (currentAnalysis) renderAnalysis(currentAnalysis);
       if (currentDocs) renderDocs(currentDocs);
       if (currentProject) renderFinancingSummary();
-      if (currentRoadmaps.length || (currentProfile && INAPlatform.canManageRoadmaps(currentProfile))) renderRoadmaps();
       if (currentRisks.length || (currentProfile && INAPlatform.canManageRisks(currentProfile))) renderRiskMatrix();
       if (allSuccessCasesForPicker.length || currentSuccessCases.length) renderSuccessCases();
       if (currentProject) { renderTechDataView().catch(() => {}); renderPhasesView().catch(() => {}); }
@@ -779,7 +751,7 @@
      data, or the viewer lacks permission) — it reads the same
      el.style.display state each block's existing render function already
      set, rather than tracking a second, separate "has content" flag. */
-  const TAB_KEYS = ['overview', 'attrs', 'techdata', 'phases', 'fsu', 'docs', 'financing', 'roadmaps', 'risks', 'successcases', 'proposal', 'analysis'];
+  const TAB_KEYS = ['overview', 'attrs', 'techdata', 'phases', 'fsu', 'docs', 'financing', 'risks', 'successcases', 'proposal', 'analysis'];
   let activeProjectTab = 'overview';
   function switchProjectTab(tab) {
     if (!TAB_KEYS.includes(tab)) tab = 'overview';
@@ -804,7 +776,6 @@
       fsu: document.getElementById('fsuBlock').style.display !== 'none',
       docs: document.getElementById('docsBlock').style.display !== 'none',
       financing: true,
-      roadmaps: document.getElementById('roadmapsBlock').style.display !== 'none',
       risks: document.getElementById('riskMatrixBlock').style.display !== 'none',
       successcases: document.getElementById('successCasesBlock').style.display !== 'none',
       proposal: document.getElementById('proposalBlock').style.display !== 'none',
@@ -2982,57 +2953,6 @@
     bar.style.background = totalPct > 100 ? '#a13a3a' : (totalPct >= requiredPct ? '#3a8a5c' : 'var(--amber)');
   }
 
-  /* ---------- Roadmaps ---------- */
-  // canManageRoadmaps() is advisor/admin-only (not owner, not even
-  // "assigned advisor only" — ANY advisor/admin can start/advance ANY
-  // project's roadmaps, same "any advisor can act on any X" bar as
-  // take_project(), see supabase/migration_v27_gestion_instances.sql) —
-  // the "New Roadmap" link and every per-instance action are gated on it,
-  // matching the RLS that would reject the write anyway if this were
-  // somehow bypassed. The instance list itself renders in read-only form
-  // (name, entity, progress) for the project owner too — full step-by-step
-  // editing happens on app/roadmap-instance.html.
-
-  function renderRoadmapInstanceRow(g) {
-    const lang = INAPlatform.currentLang();
-    const row = document.createElement('a');
-    row.href = `roadmap-instance.html?id=${g.id}`;
-    row.className = 'roadmap-row';
-    row.style.display = 'block';
-    row.style.textDecoration = 'none';
-    row.style.color = 'inherit';
-    const statusClass = g.status === 'completed' ? 'completed' : g.status === 'abandoned' ? 'blocked' : 'in_progress';
-    row.innerHTML = `
-      <div class="roadmap-row-head">
-        <strong style="font-size:13.5px; flex:1 1 auto;">${g.name}</strong>
-        <span class="status-pill roadmap-status-${statusClass}">${INAPlatform.roadmapInstanceStatusLabel(g.status)}</span>
-      </div>
-      <div class="roadmap-row-meta">
-        <span>${g.performing_entity_name} <span class="type-tag" style="margin-left:4px;">${INAPlatform.entityTypeLabel(g.performing_entity_type)}</span></span>
-      </div>
-    `;
-    return row;
-  }
-
-  function renderRoadmaps() {
-    const canManage = currentProfile && INAPlatform.canManageRoadmaps(currentProfile);
-    const list = document.getElementById('roadmapInstancesList');
-    list.innerHTML = '';
-    currentRoadmaps
-      .slice()
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .forEach((g) => list.appendChild(renderRoadmapInstanceRow(g)));
-
-    document.getElementById('roadmapsEmpty').style.display = currentRoadmaps.length ? 'none' : 'block';
-    const newBtn = document.getElementById('newRoadmapInstanceBtn');
-    if (canManage) {
-      newBtn.style.display = 'inline-flex';
-      newBtn.href = `roadmap-instance.html?project=${projectId}`;
-    } else {
-      newBtn.style.display = 'none';
-    }
-  }
-
   /* Read-only summary card — full add/edit/delete lives on
      app/risk-matrix.html (advisor/admin only). currentRisks is populated
      in init() below, same pattern as currentRoadmaps. */
@@ -3430,20 +3350,16 @@
     try { await renderTechDataView(); } catch (e) { /* non-critical — tab just stays hidden */ }
     try { await renderPhasesView(); } catch (e) { /* non-critical — tab just stays hidden */ }
 
-    // Roadmaps — visible to the owner read-only once at least one
-    // instance exists; visible to an advisor/admin always (even empty),
-    // since only they can start a new instance in the first place. See
-    // canManageRoadmaps() and supabase/migration_v27_gestion_instances.sql.
+    // Roadmaps — no longer a tab on this page (Pablo, oct 2026: "quitar la
+    // [solapa] de Roadmap. Solo debe estar en el menu principal" — managed
+    // from the main Roadmaps nav / app/roadmap-instance.html instead).
+    // Still fetched here, silently, because generateProjectPdf()'s
+    // "Próximos pasos" chapter lists currentRoadmaps' active instances.
     try {
       currentRoadmaps = await INAPlatform.listRoadmapInstances(projectId);
-    } catch (e) { currentRoadmaps = []; /* non-critical — block just shows empty */ }
-    const viewerCanManageRoadmaps = currentProfile && INAPlatform.canManageRoadmaps(currentProfile);
-    if (currentRoadmaps.length || viewerCanManageRoadmaps) {
-      document.getElementById('roadmapsBlock').style.display = 'block';
-      renderRoadmaps();
-    }
+    } catch (e) { currentRoadmaps = []; /* non-critical — PDF section just shows empty */ }
 
-    // Risk Matrix — same visibility rule as Roadmaps above: shown if
+    // Risk Matrix — shown if
     // there's at least one risk logged, or the viewer is an advisor/admin
     // who could log one. See migration_v41_project_risks.sql —
     // project_risks_select_own_or_advisor already lets the owner read
