@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=30">
+<link rel="stylesheet" href="/assets/style.css?v=31">
 <link rel="stylesheet" href="/assets/app.css?v=21">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/images/pwa/icon-180.png">
@@ -143,11 +143,11 @@
            since the project already exists and the URL already carries
            its real ?id=. -->
       <div class="wizard-steps" id="wizardSteps">
-        <span class="wizard-step-dot" data-step-dot="1"><span class="num">1</span><span data-i18n="np.wizard.step1">Project</span></span>
-        <span class="wizard-step-dot" data-step-dot="2"><span class="num">2</span><span data-i18n="np.wizard.stepTechData">Technical Data</span></span>
-        <span class="wizard-step-dot" data-step-dot="3"><span class="num">3</span><span data-i18n="np.wizard.stepPhases">Project phases</span></span>
-        <span class="wizard-step-dot" data-step-dot="4"><span class="num">4</span><span data-i18n="np.wizard.step2">Attached documents</span></span>
-        <span class="wizard-step-dot" data-step-dot="5"><span class="num">5</span><span data-i18n="np.wizard.step3">Financing</span></span>
+        <span class="wizard-step-dot" data-step-dot="1"><span data-i18n="np.wizard.step1">Project</span></span>
+        <span class="wizard-step-dot" data-step-dot="2"><span data-i18n="np.wizard.stepTechData">Technical Data</span></span>
+        <span class="wizard-step-dot" data-step-dot="3"><span data-i18n="np.wizard.stepPhases">Project phases</span></span>
+        <span class="wizard-step-dot" data-step-dot="4"><span data-i18n="np.wizard.step2">Attached documents</span></span>
+        <span class="wizard-step-dot" data-step-dot="5"><span data-i18n="np.wizard.step3">Financing</span></span>
       </div>
 
       <!-- STEP 1 — everything about the project itself that isn't
@@ -1675,21 +1675,20 @@
   //     picked up correctly whenever the user eventually reaches section 5
   //     and submits. ---
   let currentStep = 1;
-  // Which sections have actually been shown at least once — drives the
-  // 'done' checkmark styling only (see CSS); clickability itself is
-  // governed by canJumpTo() below, not by visited state, since the whole
-  // point here is letting the user reach any section directly.
-  const visitedSteps = new Set();
   function goToStep(n) {
     currentStep = n;
-    visitedSteps.add(n);
     document.querySelectorAll('.wizard-panel').forEach((p) => {
       p.classList.toggle('active', Number(p.getAttribute('data-step')) === n);
     });
+    // Clickability is governed by canJumpTo() below, not by visited state
+    // — the whole point here is letting the user reach any section
+    // directly, same as project.html's tabs (no "visited" indicator
+    // there either, since oct 2026's "el menú de solapas debería quedar
+    // igual" — this used to also toggle a 'done' checkmark class; removed
+    // along with the CSS that rendered it).
     document.querySelectorAll('.wizard-step-dot').forEach((d) => {
       const s = Number(d.getAttribute('data-step-dot'));
       d.classList.toggle('active', s === n);
-      d.classList.toggle('done', visitedSteps.has(s) && s < n);
     });
     // Deliberately no scrolling here — switching sections keeps the page
     // exactly where it is; the section indicator itself stays in view.

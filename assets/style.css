@@ -1083,44 +1083,31 @@ a.roadmap-row:hover{ border-color:var(--amber); }
    soon as the project record exists (immediately when editing; after
    section 1's "Continue" when creating). See PLATFORM_SETUP.md for the
    full rationale. */
-/* "Solapas recortadas" look (Pablo, oct 2026) — same folder-tab treatment
-   as app/project.html's .proj-tab/.proj-tabs: each section name is its own
-   bordered block sitting flush on the active panel's top edge, and the
-   active one visually fuses into the panel below (shared white
-   background, no bottom border). Typography/colors now match .proj-tab
-   exactly too (updated oct 2026 — Pablo: "la interfase de edicion [debe
-   ser] similar a la de visualización", the two had drifted apart: mono/
-   uppercase/amber-active here vs. sans/normal-case/navy-active there).
-   The numbered circle + .done state are the one deliberate difference
-   that stays — unlike project.html's freely-ordered tabs, this is still
-   a step-by-step flow, so showing progress (which sections have been
-   visited) is still useful here; a plain folder tab wouldn't carry that.
-   Still fully clickable in any order per canJumpTo() — the folder-tab
+/* "Solapas recortadas" look (Pablo, oct 2026) — ONE shared rule set for
+   app/project.html's .proj-tab/.proj-tabs and app/new-project.html's
+   .wizard-step-dot/.wizard-steps (Pablo: "el menú de solapas debería
+   quedar igual" — these two had drifted apart more than once already
+   when kept as separate-but-matching rules, so they're now literally the
+   same declarations instead of a copy to keep in sync). Each tab is its
+   own bordered block sitting flush on the active panel's top edge, and
+   the active one visually fuses into the panel below (shared white
+   background, no bottom border). The wizard used to also show a
+   numbered circle + "visited" highlight per tab; removed (oct 2026) along
+   with their <span class="num"> markup in new-project.html, since "igual"
+   meant no difference at all, not just matching colors/fonts. Still fully
+   clickable in any order in the wizard, per canJumpTo() — the folder-tab
    shape doesn't change that. */
-.wizard-steps{ display:flex; flex-wrap:wrap; gap:6px 6px; margin:0 0 -1px; position:relative; z-index:1; }
-.wizard-step-dot{
-  font-family:var(--sans); font-size:13px; font-weight:600;
-  color:var(--muted); background:var(--paper-2); border:1px solid var(--paper-line);
-  border-radius:10px 10px 0 0; padding:10px 18px 11px; margin:0; display:inline-flex; align-items:center;
-  white-space:nowrap; cursor:pointer; transition:color .15s ease;
+.proj-tabs, .wizard-steps{ display:flex; flex-wrap:wrap; gap:6px 6px; margin:0 0 -1px; position:relative; z-index:1; }
+.proj-tab, .wizard-step-dot{
+  font-family:var(--sans); font-size:13px; font-weight:600; color:var(--muted);
+  background:var(--paper-2); border:1px solid var(--paper-line);
+  border-radius:10px 10px 0 0; padding:10px 18px 11px; cursor:pointer; margin:0;
 }
-.wizard-step-dot .num{
-  display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px;
-  border-radius:50%; background:var(--paper); color:var(--muted); font-size:10px; margin-right:7px;
-  transition:all .15s ease; flex:0 0 auto;
-}
-.wizard-step-dot:hover{ color:var(--text); }
-.wizard-step-dot:hover .num{ background:var(--amber); color:#fff; }
-.wizard-step-dot.active{
+.proj-tab:hover, .wizard-step-dot:hover{ color:var(--text); }
+.proj-tab.active, .wizard-step-dot.active{
   color:var(--ink); background:#fff; border-color:var(--paper-line); border-bottom-color:#fff;
   position:relative; z-index:2;
 }
-.wizard-step-dot.active .num{ background:var(--amber); color:#fff; }
-/* .done marks a section actually visited and now behind the current one —
-   purely a progress checkmark, not a clickability gate (every section name
-   is clickable per the comment above). */
-.wizard-step-dot.done{ color:var(--text); }
-.wizard-step-dot.done .num{ background:var(--amber-soft); color:var(--amber-deep); }
 .wizard-panel{ display:none; }
 .wizard-panel.active{
   display:block; background:#fff; border:1px solid var(--paper-line);
@@ -1141,25 +1128,6 @@ a.roadmap-row:hover{ border-color:var(--amber); }
 .tab-panel.active{
   display:block; background:#fff; border:1px solid var(--paper-line);
   border-radius:0 12px 12px 12px; padding:26px 28px;
-}
-/* .proj-tabs/.proj-tab — "solapas recortadas": each tab is its own fully-
-   bordered, squared-off block (like a cardstock folder divider), sized to
-   its label, sitting flush on the content panel's top edge. The row sits
-   one pixel below the panel's top border (margin-bottom:-1px) so the
-   active tab's now-white bottom edge erases that border line right where
-   they meet — the classic "fused with the panel below" connected-tab
-   trick. Distinct from .md-tab (app/master-data.html's plain underline
-   tabs) — kept separate so this didn't change that page's look too. */
-.proj-tabs{ display:flex; flex-wrap:wrap; gap:6px 6px; margin:0 0 -1px; position:relative; z-index:1; }
-.proj-tab{
-  font-family:var(--sans); font-size:13px; font-weight:600; color:var(--muted);
-  background:var(--paper-2); border:1px solid var(--paper-line);
-  border-radius:10px 10px 0 0; padding:10px 18px 11px; cursor:pointer; margin:0;
-}
-.proj-tab:hover{ color:var(--text); }
-.proj-tab.active{
-  color:var(--ink); background:#fff; border-color:var(--paper-line); border-bottom-color:#fff;
-  position:relative; z-index:2;
 }
 /* Sub-tabs nested one level inside a .tab-panel — app/project.html's
    Analysis tab (Pablo, oct 2026: "transformar los botones ... en solapas
