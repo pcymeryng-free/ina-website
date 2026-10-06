@@ -72,19 +72,22 @@
 <main class="app-main">
 <section class="tight">
   <div class="wrap">
-    <!-- Shown only when arrived from a project's "Browse Library" button
-         (app/project.html's Success Cases tab, success-cases.html?project=
-         <id>) — this page is otherwise a shared, non-project-scoped
-         library reachable from the main nav, so there's normally nowhere
-         specific to "go back" to. See the ?project= read further down. -->
-    <a href="#" id="backToProjectLink" style="display:none; margin-bottom:12px; font-size:12.5px; color:var(--amber-deep); text-decoration:none;"><span data-i18n="pd.backToProject">Back to project</span></a>
     <div class="platform-header reveal">
       <div>
         <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
         <h1 class="h-section" style="margin-top:14px;"><span data-i18n="sc.title">Success Cases</span></h1>
         <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="sc.lede">Real-world connectivity impact cases a new project can be based on, or take as a reference.</span></p>
       </div>
-      <a href="new-success-case.html" class="btn amber" id="createCaseBtn" style="display:none;"><span data-i18n="sc.form.create">Add Success Case</span></a>
+      <!-- backToProjectLink shown only when arrived from a project's
+           "Browse Library" button (app/project.html's Success Cases tab,
+           success-cases.html?project=<id>) — this page is otherwise a
+           shared, non-project-scoped library reachable from the main nav,
+           so there's normally nowhere specific to "go back" to. See the
+           ?project= read further down. -->
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start;">
+        <a href="#" id="backToProjectLink" class="btn ghost small" style="display:none;"><span data-i18n="pd.backToProject">Back to project</span></a>
+        <a href="new-success-case.html" class="btn amber" id="createCaseBtn" style="display:none;"><span data-i18n="sc.form.create">Add Success Case</span></a>
+      </div>
     </div>
 
     <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>

@@ -75,8 +75,7 @@
 <main class="app-main">
 <section class="tight">
   <div class="wrap">
-    <div class="breadcrumb" style="margin-bottom:8px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><a href="#" id="crumbProject">…</a><span>/</span><span><span data-i18n="pf.title">Financing Management</span></span></div>
-    <a href="#" id="backToProjectLink" style="display:inline-block; margin-bottom:20px; font-size:12.5px; color:var(--amber-deep); text-decoration:none;"><span data-i18n="pd.backToProject">Back to project</span></a>
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><a href="#" id="crumbProject">…</a><span>/</span><span><span data-i18n="pf.title">Financing Management</span></span></div>
     <!-- Pablo, sep 2026: "separar la función de Generate Recomendation de
          los datos ingresados ... El boton de Generate recomendation
          debería estar a la derecha del título Financing Management y su
@@ -85,14 +84,21 @@
          app/financing-recommendation.html screen — generating, selecting
          and applying instruments all happen there now, not inline on this
          "entered data" page. See financingRecommendationBlock below for
-         what's left here: a read-only summary card, no apply/select UI. -->
+         what's left here: a read-only summary card, no apply/select UI.
+         "Volver al proyecto" (oct 2026) sits right next to it in this same
+         button group — a plain text link up near the breadcrumb wasn't
+         visible enough (Pablo: "no veo el boton de volver al proyecto al
+         lado del de save"). -->
     <div class="platform-header">
       <div>
         <span class="eyebrow"><span data-i18n="fw.f6.kicker">Decision Engine</span></span>
         <h1 class="h-section" style="margin-top:14px;"><span data-i18n="pf.title">Financing Management</span></h1>
         <p class="lede" style="margin-top:10px; max-width:680px;"><span data-i18n="pf.help">A task to complete once the project is registered: pick the financing mix — FSU, financing programs, other sources — with AI-assisted recommendations, without exceeding 100% of the budget.</span></p>
       </div>
-      <a href="#" id="financingRecoRunBtn" class="btn amber" style="display:none;"><span data-i18n="finreco.run">Generate recommendation</span></a>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start;">
+        <a href="#" id="backToProjectLink" class="btn ghost small"><span data-i18n="pd.backToProject">Back to project</span></a>
+        <a href="#" id="financingRecoRunBtn" class="btn amber" style="display:none;"><span data-i18n="finreco.run">Generate recommendation</span></a>
+      </div>
     </div>
 
     <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
