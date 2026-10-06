@@ -28,6 +28,19 @@
 # bug ever resurfaces — instead of every single hop re-hitting the
 # origin the way true no-cache did before. Re-verified login.html loads
 # fine (no loop) right before making this change.
+#
+# UPDATE (2026-10-06): max-age lowered 60 -> 20 (Pablo: quería el caché de
+# páginas resuelto "definitivamente" — 60s was leaving real visitors
+# looking at stale tabs/content for close to a minute after a deploy).
+# Confirmed BEFORE this change (live, via a direct HTTP fetch, no local
+# cache involved) that login.html loads normally with no redirect loop —
+# same pre-check the 2026-09-25 change did, repeated here since this
+# touches the same risk. 20s keeps the same safety mechanism (a handful
+# of repeated hits to the same URL, redirect-loop bounces included, still
+# get absorbed instead of each one re-hitting the origin) with a much
+# shorter blast radius than the 60s window if that bug ever resurfaces.
+# MUST re-verify login.html (plain load, no loop) again after this
+# specific change goes live, same as every prior change to this block.
 # ============================================================================
 
 # ----------------------------------------------------------------------------
@@ -51,7 +64,7 @@
 
 <IfModule mod_headers.c>
   <FilesMatch "\.(html|webmanifest)$">
-    Header always set Cache-Control "max-age=60, must-revalidate"
+    Header always set Cache-Control "max-age=20, must-revalidate"
   </FilesMatch>
 </IfModule>
 

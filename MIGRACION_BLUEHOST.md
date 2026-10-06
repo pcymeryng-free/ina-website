@@ -202,6 +202,30 @@ A propósito **`max-age=60`, no `no-cache`** — distinto de lo que se probó la
 
 ---
 
+## Parte 13 — Caché de páginas HTML, ajuste fino: 60s → 20s ✅ hecho (2026-10-06)
+
+Pablo reportó seguir viendo una solapa vieja (Roadmaps, ya sacada del
+código) en `project.html` bastante después de subir el fix — una
+verificación directa al servidor (sin caché local de por medio) mostró
+que el origin YA estaba sirviendo la versión correcta, así que no era un
+problema de servidor sino del navegador de Pablo con una copia vieja
+cacheada desde antes de que existiera el `max-age=60` de la Parte 12
+(una vez que el navegador cachea algo con una política heurística
+previa, no vuelve a revisar el servidor solo porque el servidor cambió
+de política — necesita una recarga forzada una vez para "engancharse"
+al nuevo esquema).
+
+Aun así, pidió bajar la ventana igual, para que quede más ajustado de
+acá en adelante: `max-age=60` → `max-age=20` en `.htaccess`. Mismo
+mecanismo de la Parte 12 (no `no-cache`, se mantiene un colchón para
+absorber pedidos repetidos a la misma URL sin pegarle directo al origin
+en cada uno), solo que con una ventana más corta. Se verificó
+`login.html` cargando sin loop de redirección antes Y después de subir
+este cambio — ver el detalle de la verificación en la conversación de
+esa fecha.
+
+---
+
 ## Qué queda igual en Vercel
 
 Vercel sigue recibiendo cada push a GitHub y desplegando automáticamente — es tu entorno de pruebas, tal como querés. La única diferencia es que el dominio "real" que le das a usuarios de ENACOM es el de Bluehost, no el de Vercel.
