@@ -3919,6 +3919,8 @@ const I18N = {
   "pd.results.eyebrow": { "en": "Investment Readiness Index&trade;", "es": "Investment Readiness Index&trade;" },
   "pd.results.title": { "en": "Framework Analysis Results", "es": "Resultados del Análisis del Framework" },
   "pd.retry": { "en": "Retry Analysis", "es": "Reintentar Análisis" },
+  "pd.selfAssessDetail.eyebrow": { "en": "Self-Assessment", "es": "Autoevaluación" },
+  "pd.selfAssessDetail.title": { "en": "Self-Assessment Detail", "es": "Detalle de la Autoevaluación" },
   "pd.roadmap.eyebrow": { "en": "Gap Roadmap", "es": "Hoja de Ruta de Brechas" },
   "pd.roadmap.title": { "en": "Prioritized Next Steps", "es": "Próximos Pasos Priorizados" },
   "prof.account.email": { "en": "Email", "es": "Email" },

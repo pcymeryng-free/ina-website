@@ -486,6 +486,20 @@
           <div class="dim-grid" id="dimGrid"></div>
         </div>
 
+        <!-- Self-Assessment Detail — only populated/shown when this
+             analysis's source is 'manual' (app/assessment.html): each of
+             the 3 Likert statements per dimension alongside the 1-5 value
+             actually given, not just the rolled-up 0-100 dimension score
+             above. Mirrors generateProjectPdf()'s own "Detalle de la
+             Autoevaluación" chapter — that existed in the PDF already but
+             was never shown on screen (Pablo, oct 2026: "el resultado del
+             self-assesment debería poder verse también"). -->
+        <div id="selfAssessDetailBlock" style="margin-top:56px; display:none;">
+          <span class="eyebrow"><span data-i18n="pd.selfAssessDetail.eyebrow">Self-Assessment</span></span>
+          <h3 class="h-card" style="margin-top:12px;"><span data-i18n="pd.selfAssessDetail.title">Self-Assessment Detail</span></h3>
+          <div id="selfAssessDetailList" style="margin-top:14px; display:flex; flex-direction:column; gap:16px;"></div>
+        </div>
+
         <div style="margin-top:56px;">
           <span class="eyebrow"><span data-i18n="pd.roadmap.eyebrow">Gap Roadmap</span></span>
           <h3 class="h-card" style="margin-top:12px;"><span data-i18n="pd.roadmap.title">Prioritized Next Steps</span></h3>
@@ -515,7 +529,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=89"></script>
+<script src="/assets/i18n.js?v=90"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <!-- pdf-lib: only used by generateProjectPdf() to splice real attached PDF
@@ -1503,6 +1517,11 @@
     // what fixed the "Self-Assessment results show in English even with
     // Spanish selected" issue.
     let data = a;
+    // Captured outside the try block so the "Self-Assessment Detail"
+    // section further down (after dims is known) can use it too — null
+    // whenever this isn't a manual result, or raw_model_output is
+    // malformed/legacy, exactly mirroring the try/catch above.
+    let manualAnswersForDetail = null;
     if (a.source === 'manual' && a.raw_model_output && currentProject) {
       try {
         const answers = JSON.parse(a.raw_model_output);
@@ -1512,6 +1531,7 @@
           { beneficiaryCount: currentProject.beneficiary_count }
         );
         data = Object.assign({}, a, recomputed);
+        manualAnswersForDetail = answers;
       } catch (e) { /* malformed/legacy raw_model_output — fall back to the stored fields */ }
     }
 
@@ -1604,6 +1624,42 @@
       `;
       dimGrid.appendChild(row);
     });
+
+    // Self-Assessment Detail — mirrors generateProjectPdf()'s own
+    // "Detalle de la Autoevaluación" chapter (same assessmentQuestionSet()
+    // + per-dimension score lookup), just rendered on screen instead of
+    // only in the exported PDF.
+    const selfAssessBlock = document.getElementById('selfAssessDetailBlock');
+    if (manualAnswersForDetail && currentProject) {
+      const qset = INAPlatform.assessmentQuestionSet(currentProject.project_type);
+      const list = document.getElementById('selfAssessDetailList');
+      list.innerHTML = qset.map(({ key, questions }) => {
+        const vals = manualAnswersForDetail[key] || [];
+        const dimScore = dims[key] && typeof dims[key].score === 'number' ? dims[key].score : null;
+        const rows = questions.map((q, i) => {
+          const qText = q[lang] || q.en;
+          const val = vals[i] != null ? vals[i] : '–';
+          return `
+            <div style="display:flex; gap:10px; align-items:baseline; font-size:13px; padding:4px 0; border-top:1px solid var(--paper-line);">
+              <span style="font-family:var(--mono); font-size:11px; color:var(--amber-deep); flex:0 0 34px;">${escapeHtml(String(val))}/5</span>
+              <span>${escapeHtml(qText)}</span>
+            </div>
+          `;
+        }).join('');
+        return `
+          <div class="info-block" style="margin:0;">
+            <h4 style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <span>${escapeHtml(INAPlatform.dimensionLabel(key))}</span>
+              ${dimScore != null ? `<span class="fsu-pts">${dimScore} / 100</span>` : ''}
+            </h4>
+            ${rows}
+          </div>
+        `;
+      }).join('');
+      selfAssessBlock.style.display = 'block';
+    } else {
+      selfAssessBlock.style.display = 'none';
+    }
 
     const roadmapList = document.getElementById('roadmapList');
     roadmapList.innerHTML = '';
