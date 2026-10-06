@@ -175,7 +175,6 @@
         <button type="button" class="proj-tab" data-tab="attrs"><span data-i18n="pd.tab.attrs">Key Data</span></button>
         <button type="button" class="proj-tab" data-tab="techdata" style="display:none;"><span data-i18n="pd.tab.techdata">Technical Data</span></button>
         <button type="button" class="proj-tab" data-tab="phases" style="display:none;"><span data-i18n="pd.tab.phases">Phases</span></button>
-        <button type="button" class="proj-tab" data-tab="fsu" style="display:none;"><span data-i18n="pd.tab.fsu">FSU Scoring</span></button>
         <button type="button" class="proj-tab" data-tab="docs" style="display:none;"><span data-i18n="pd.tab.docs">Documents</span></button>
         <button type="button" class="proj-tab" data-tab="financing"><span data-i18n="pd.tab.financing">Financing</span></button>
         <button type="button" class="proj-tab" data-tab="risks" style="display:none;"><span data-i18n="pd.tab.risks">Risk Matrix</span></button>
@@ -259,24 +258,6 @@
       <div id="phasesViewBlock" class="info-block" style="margin-top:0; display:none;">
         <h4><span data-i18n="pd.tab.phases">Phases</span></h4>
         <div id="phasesViewList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
-      </div>
-      </div>
-
-      <div class="tab-panel" data-tab-panel="fsu">
-      <div id="fsuBlock" style="margin-top:0; display:none;">
-        <div class="info-block">
-          <h4 style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-            <span data-i18n="fsu.block.title">FSU Scoring &mdash; Res. ENACOM 359/2025</span>
-            <a href="#" id="fsuBlockEditLink" class="btn ghost small" style="display:none; padding:6px 12px;"><span data-i18n="fsu.block.edit">Edit</span></a>
-          </h4>
-          <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-top:6px;">
-            <div class="score-circle" style="width:74px; height:74px;">
-              <span class="num" id="fsuBlockScore" style="font-size:22px;">–</span>
-              <span class="max" style="font-size:9px;">/ 100</span>
-            </div>
-            <p style="font-size:13px; color:var(--muted); max-width:420px;"><span data-i18n="fsu.block.help">Estimación orientativa del puntaje de selección para el Certificado de Elegibilidad, calculada según la matriz del manual de ENACOM.</span></p>
-          </div>
-        </div>
       </div>
       </div>
 
@@ -436,6 +417,40 @@
       </div>
 
       <div class="tab-panel" data-tab-panel="analysis">
+      <!-- Launcher row (Pablo, oct 2026): "la solapa de AI Analysis
+           debería ser el lugar donde se lanzan los análisis de IA: el del
+           FSU, si corresponde, el de Self Assessment y el de AI Analysis."
+           Each button reuses the exact same gating/href logic as its
+           dropdown-menu twin (fsuLink/assessLink/aiAnalysisBtn, wired in
+           init() and setAiAnalysisBtn() below) — this just adds a 3rd,
+           properly-.btn-styled target to each of those same id arrays, so
+           a project with nothing applicable shows no buttons at all. -->
+      <div id="analysisLauncherRow" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:28px;">
+        <a href="#" id="tabFsuLinkBtn" class="btn ghost small" style="display:none;"><span data-i18n="fsu.cta">FSU Scoring</span></a>
+        <a href="#" id="tabAssessLinkBtn" class="btn ghost small" style="display:none;"><span data-i18n="assess.cta">Self-Assessment</span></a>
+        <button type="button" id="tabAiAnalysisBtn" class="btn amber small" style="display:none;"><span id="tabAiAnalysisBtnLabel" data-i18n="pd.startAnalysis">AI Analysis</span></button>
+      </div>
+
+      <!-- FSU Scoring result — moved here (oct 2026) from its own former
+           tab, so its result sits right under the launcher button above
+           instead of being disconnected from the other two analyses.
+           Content/ids unchanged; only its wrapping tab is gone. -->
+      <div id="fsuBlock" style="margin-top:0; display:none;">
+        <div class="info-block">
+          <h4 style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <span data-i18n="fsu.block.title">FSU Scoring &mdash; Res. ENACOM 359/2025</span>
+            <a href="#" id="fsuBlockEditLink" class="btn ghost small" style="display:none; padding:6px 12px;"><span data-i18n="fsu.block.edit">Edit</span></a>
+          </h4>
+          <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-top:6px;">
+            <div class="score-circle" style="width:74px; height:74px;">
+              <span class="num" id="fsuBlockScore" style="font-size:22px;">–</span>
+              <span class="max" style="font-size:9px;">/ 100</span>
+            </div>
+            <p style="font-size:13px; color:var(--muted); max-width:420px;"><span data-i18n="fsu.block.help">Estimación orientativa del puntaje de selección para el Certificado de Elegibilidad, calculada según la matriz del manual de ENACOM.</span></p>
+          </div>
+        </div>
+      </div>
+
       <!-- Shown for a project that's never been analyzed (freshly created,
            or just edited — updateProject() resets status to 'submitted'
            and clears readiness_stage). Analysis is no longer triggered
@@ -529,7 +544,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=90"></script>
+<script src="/assets/i18n.js?v=91"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <!-- pdf-lib: only used by generateProjectPdf() to splice real attached PDF
@@ -613,11 +628,11 @@
 
   // The Análisis IA control covers all three trigger states (start /
   // retry / disabled-while-analyzing) — see setAiAnalysisBtn() below,
-  // which toggles both the body button and its nav twin's label/class/
-  // disabled state together. A plain listener here is enough since
-  // runAnalysisAndPoll() is a no-op click target only when the button is
-  // actually shown and enabled.
-  ['aiAnalysisBtn', 'navAiAnalysisBtn'].forEach((id) => {
+  // which toggles the body button, its nav twin, AND the Analysis tab's
+  // own launcher button (tabAiAnalysisBtn) together. A plain listener
+  // here is enough since runAnalysisAndPoll() is a no-op click target
+  // only when the button is actually shown and enabled.
+  ['aiAnalysisBtn', 'navAiAnalysisBtn', 'tabAiAnalysisBtn'].forEach((id) => {
     document.getElementById(id).addEventListener('click', () => {
       if (!document.getElementById(id).disabled) runAnalysisAndPoll();
     });
@@ -765,7 +780,7 @@
      data, or the viewer lacks permission) — it reads the same
      el.style.display state each block's existing render function already
      set, rather than tracking a second, separate "has content" flag. */
-  const TAB_KEYS = ['overview', 'attrs', 'techdata', 'phases', 'fsu', 'docs', 'financing', 'risks', 'successcases', 'proposal', 'analysis'];
+  const TAB_KEYS = ['overview', 'attrs', 'techdata', 'phases', 'docs', 'financing', 'risks', 'successcases', 'proposal', 'analysis'];
   let activeProjectTab = 'overview';
   function switchProjectTab(tab) {
     if (!TAB_KEYS.includes(tab)) tab = 'overview';
@@ -787,7 +802,6 @@
       attrs: true,
       techdata: document.getElementById('techDataViewBlock').style.display !== 'none',
       phases: document.getElementById('phasesViewBlock').style.display !== 'none',
-      fsu: document.getElementById('fsuBlock').style.display !== 'none',
       docs: document.getElementById('docsBlock').style.display !== 'none',
       financing: true,
       risks: document.getElementById('riskMatrixBlock').style.display !== 'none',
@@ -1726,13 +1740,19 @@
   // project (and, naturally, for anyone who isn't signed in as the
   // owner/advisor/admin at all).
   function setAiAnalysisBtn(state) {
-    // Drives both the body "Analysis" menu's button and its nav-header
-    // twin (#navAiAnalysisBtn) together — same state, same behavior.
+    // Drives the body "Analysis" menu's button, its nav-header twin
+    // (#navAiAnalysisBtn), AND the Analysis tab's own launcher button
+    // (#tabAiAnalysisBtn) together — same state, same behavior. The 3rd
+    // target isn't a dropdown item like the other two, so it carries its
+    // own className (a real .btn) instead of the 'menu-item' both of them
+    // need — see refreshTabVisibility()'s comment for why this page keeps
+    // a separate tab-local trigger rather than relying on the dropdown.
     const pairs = [
-      ['aiAnalysisBtn', 'aiAnalysisBtnLabel'],
-      ['navAiAnalysisBtn', 'navAiAnalysisBtnLabel'],
+      ['aiAnalysisBtn', 'aiAnalysisBtnLabel', 'menu-item'],
+      ['navAiAnalysisBtn', 'navAiAnalysisBtnLabel', 'menu-item'],
+      ['tabAiAnalysisBtn', 'tabAiAnalysisBtnLabel', 'btn amber small'],
     ];
-    pairs.forEach(([btnId, labelId]) => {
+    pairs.forEach(([btnId, labelId, cls]) => {
       const btn = document.getElementById(btnId);
       if (!canRunAnalysis || state === 'hidden') {
         btn.style.display = 'none';
@@ -1741,7 +1761,7 @@
       const label = document.getElementById(labelId);
       btn.style.display = 'flex';
       btn.disabled = state === 'analyzing';
-      btn.className = 'menu-item';
+      btn.className = cls;
       label.setAttribute('data-i18n', state === 'start' ? 'pd.startAnalysis' : state === 'analyzing' ? 'pd.analyzing.short' : 'pd.retry');
     });
     if (typeof applyLang === 'function') applyLang(INAPlatform.currentLang());
@@ -3272,7 +3292,7 @@
       });
       if (fsuEligible) {
         const fsuHref = `fsu-scoring.html?id=${projectId}`;
-        ['fsuLink', 'navFsuLink'].forEach((id) => {
+        ['fsuLink', 'navFsuLink', 'tabFsuLinkBtn'].forEach((id) => {
           const el = document.getElementById(id);
           el.href = fsuHref;
           el.style.display = 'flex';
@@ -3303,7 +3323,7 @@
     // isAssignedAdvisor block above (see comment there).
     if (isOwner) {
       const assessHref = `assessment.html?id=${projectId}`;
-      ['assessLink', 'navAssessLink'].forEach((id) => {
+      ['assessLink', 'navAssessLink', 'tabAssessLinkBtn'].forEach((id) => {
         const el = document.getElementById(id);
         el.href = assessHref;
         el.style.display = 'flex';
