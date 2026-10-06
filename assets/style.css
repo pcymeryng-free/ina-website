@@ -1087,16 +1087,21 @@ a.roadmap-row:hover{ border-color:var(--amber); }
    as app/project.html's .proj-tab/.proj-tabs: each section name is its own
    bordered block sitting flush on the active panel's top edge, and the
    active one visually fuses into the panel below (shared white
-   background, no bottom border). The numbered circle + .done state are
-   kept — unlike project.html's tabs, this is still a step-by-step flow, so
-   showing progress (which sections have been visited) is still useful
-   here; a plain folder tab wouldn't carry that. Still fully clickable in
-   any order per canJumpTo() — the folder-tab shape doesn't change that. */
+   background, no bottom border). Typography/colors now match .proj-tab
+   exactly too (updated oct 2026 — Pablo: "la interfase de edicion [debe
+   ser] similar a la de visualización", the two had drifted apart: mono/
+   uppercase/amber-active here vs. sans/normal-case/navy-active there).
+   The numbered circle + .done state are the one deliberate difference
+   that stays — unlike project.html's freely-ordered tabs, this is still
+   a step-by-step flow, so showing progress (which sections have been
+   visited) is still useful here; a plain folder tab wouldn't carry that.
+   Still fully clickable in any order per canJumpTo() — the folder-tab
+   shape doesn't change that. */
 .wizard-steps{ display:flex; flex-wrap:wrap; gap:6px 6px; margin:0 0 -1px; position:relative; z-index:1; }
 .wizard-step-dot{
-  font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.05em;
+  font-family:var(--sans); font-size:13px; font-weight:600;
   color:var(--muted); background:var(--paper-2); border:1px solid var(--paper-line);
-  border-radius:10px 10px 0 0; padding:10px 16px 11px; margin:0; display:inline-flex; align-items:center;
+  border-radius:10px 10px 0 0; padding:10px 18px 11px; margin:0; display:inline-flex; align-items:center;
   white-space:nowrap; cursor:pointer; transition:color .15s ease;
 }
 .wizard-step-dot .num{
@@ -1104,10 +1109,10 @@ a.roadmap-row:hover{ border-color:var(--amber); }
   border-radius:50%; background:var(--paper); color:var(--muted); font-size:10px; margin-right:7px;
   transition:all .15s ease; flex:0 0 auto;
 }
-.wizard-step-dot:hover{ color:var(--amber-deep); }
+.wizard-step-dot:hover{ color:var(--text); }
 .wizard-step-dot:hover .num{ background:var(--amber); color:#fff; }
 .wizard-step-dot.active{
-  color:var(--amber-deep); background:#fff; border-color:var(--paper-line); border-bottom-color:#fff;
+  color:var(--ink); background:#fff; border-color:var(--paper-line); border-bottom-color:#fff;
   position:relative; z-index:2;
 }
 .wizard-step-dot.active .num{ background:var(--amber); color:#fff; }
