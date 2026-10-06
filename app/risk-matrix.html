@@ -70,7 +70,8 @@
 <main class="app-main">
 <section class="tight">
   <div class="wrap">
-    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><a href="#" id="crumbProject">…</a><span>/</span><span><span data-i18n="risk.title">Risk Matrix</span></span></div>
+    <div class="breadcrumb" style="margin-bottom:8px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><a href="#" id="crumbProject">…</a><span>/</span><span><span data-i18n="risk.title">Risk Matrix</span></span></div>
+    <a href="#" id="backToProjectLink" style="display:inline-block; margin-bottom:20px; font-size:12.5px; color:var(--amber-deep); text-decoration:none;"><span data-i18n="pd.backToProject">Back to project</span></a>
     <span class="eyebrow"><span data-i18n="risk.kicker">Project Control &amp; Monitoring Framework™ — F7</span></span>
     <h1 class="h-section" style="margin-top:14px;"><span data-i18n="risk.title">Risk Matrix</span></h1>
     <p class="lede" style="margin-top:10px; max-width:640px;"><span data-i18n="risk.lede">A structured risk register for this project — probability &times; impact scoring, mitigation measures and status tracking, separate from the freeform text inside the project's Analysis.</span></p>
@@ -145,7 +146,7 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=87"></script>
+<script src="/assets/i18n.js?v=88"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/assets/platform.js?v=105"></script>
 <script src="/assets/script.js?v=15"></script>
@@ -369,7 +370,8 @@
     const project = await INAPlatform.getProject(projectId);
     const crumb = document.getElementById('crumbProject');
     crumb.textContent = project.name;
-    crumb.href = `project.html?id=${projectId}`;
+    crumb.href = `project.html?id=${projectId}&tab=risks`;
+    document.getElementById('backToProjectLink').href = crumb.href;
 
     // Persistent project nav — see the markup comment near <nav
     // class="app-nav">. Only advisor/admin ever reach this page (owners

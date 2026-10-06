@@ -3781,6 +3781,7 @@ const I18N = {
   "pd.downloadPdf": { "en": "Download PDF", "es": "Descargar PDF" },
   "pd.actions": { "en": "Actions", "es": "Acciones" },
   "pd.close": { "en": "Close", "es": "Cerrar" },
+  "pd.backToProject": { "en": "&larr; Back to project", "es": "&larr; Volver al proyecto" },
   "pd.newProject": { "en": "New Project", "es": "Nuevo Proyecto" },
   "nav.project": { "en": "Project", "es": "Proyecto" },
   "nav.documentation": { "en": "Documentation", "es": "Documentación" },
