@@ -1156,6 +1156,24 @@ a.roadmap-row:hover{ border-color:var(--amber); }
   color:var(--ink); background:#fff; border-color:var(--paper-line); border-bottom-color:#fff;
   position:relative; z-index:2;
 }
+/* Sub-tabs nested one level inside a .tab-panel — app/project.html's
+   Analysis tab (Pablo, oct 2026: "transformar los botones ... en solapas
+   de esa solapa"). A DISTINCT class from .tab-panel on purpose: the
+   top-level switchProjectTab() does an unscoped querySelectorAll('.tab-
+   panel') — reusing that class here would get these nested panels
+   stripped of .active every time an unrelated top-level tab (e.g.
+   "Financing") is clicked, since their data-subtab-panel never matches
+   whatever top-level key was just selected. Visually it's the same
+   folder-tab language (.proj-tab/.proj-tabs are reused as-is for the
+   chips, safe since those selectors are scoped under #projectTabs) but
+   one shade duller (--paper-2, not white) since it nests inside an
+   already-white .tab-panel.active — same "card inside a lighter card"
+   precedent .info-block already uses throughout this page. */
+.subtab-panel{ display:none; }
+.subtab-panel.active{
+  display:block; background:var(--paper-2); border:1px solid var(--paper-line);
+  border-radius:0 10px 10px 10px; padding:18px 20px;
+}
 .wizard-nav{ display:flex; gap:12px; margin-top:30px; align-items:center; }
 .wizard-skip{ font-size:12.5px; color:var(--muted); text-decoration:underline; cursor:pointer; background:none; border:none; padding:0; }
 .template-offer-card{

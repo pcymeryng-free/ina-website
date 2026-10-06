@@ -8307,6 +8307,28 @@ const INAPlatform = {
     return data;
   },
 
+  /* Single-project, full-row sibling of listAnalysesForProjects() below —
+     same "keep the newest row per (project_id, source)" reduction, just
+     for one project and with every column (not the narrow dashboard-grid
+     selection), so app/project.html's Analysis tab can show the latest AI
+     analysis AND the latest self-assessment independently instead of only
+     "whichever ran most recently" (what getAnalysis() above returns).
+     Returns { manual: row|null, ai: row|null }. */
+  async getAnalysesBySource(projectId) {
+    const { data, error } = await supabaseClient
+      .from('framework_analysis')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    const result = { manual: null, ai: null };
+    (data || []).forEach((row) => {
+      const key = row.source === 'manual' ? 'manual' : 'ai';
+      if (!result[key]) result[key] = row; // first hit per source is newest
+    });
+    return result;
+  },
+
   /* Batch version for dashboard.html's project grid — one query for every
      row instead of one per project. Unlike getAnalysis() (which only ever
      returns the single MOST RECENT row regardless of source, matching
