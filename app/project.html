@@ -176,11 +176,11 @@
         <button type="button" class="proj-tab" data-tab="techdata" style="display:none;"><span data-i18n="pd.tab.techdata">Technical Data</span></button>
         <button type="button" class="proj-tab" data-tab="phases" style="display:none;"><span data-i18n="pd.tab.phases">Phases</span></button>
         <button type="button" class="proj-tab" data-tab="docs" style="display:none;"><span data-i18n="pd.tab.docs">Documents</span></button>
-        <button type="button" class="proj-tab" data-tab="financing"><span data-i18n="pd.tab.financing">Financing</span></button>
         <button type="button" class="proj-tab" data-tab="risks" style="display:none;"><span data-i18n="pd.tab.risks">Risk Matrix</span></button>
-        <button type="button" class="proj-tab" data-tab="successcases" style="display:none;"><span data-i18n="pd.tab.successcases">Success Cases</span></button>
-        <button type="button" class="proj-tab" data-tab="proposal" style="display:none;"><span data-i18n="pd.tab.proposal">Investment Proposal</span></button>
         <button type="button" class="proj-tab" data-tab="analysis"><span data-i18n="pd.tab.analysis">Analysis</span></button>
+        <button type="button" class="proj-tab" data-tab="successcases" style="display:none;"><span data-i18n="pd.tab.successcases">Success Cases</span></button>
+        <button type="button" class="proj-tab" data-tab="financing"><span data-i18n="pd.tab.financing">Financing</span></button>
+        <button type="button" class="proj-tab" data-tab="proposal" style="display:none;"><span data-i18n="pd.tab.proposal">Investment Proposal</span></button>
       </div>
 
       <div class="tab-panel active" data-tab-panel="overview">
@@ -268,37 +268,6 @@
       </div>
       </div>
 
-      <div class="tab-panel" data-tab-panel="financing">
-      <!-- Financing — AI recommendation, FSU, financing Programs and "other
-           source" all moved out to their own dedicated screen,
-           app/project-financing.html (Pablo, sep 2026: "la gestión de
-           financiación separarla de la edición del proyecto... agregarla en
-           el menú... como una tarea a realizar una vez dado de alta el
-           proyecto"). This block is just a compact coverage summary +
-           entry point — same split as the Investment Proposal/Risk Matrix
-           blocks below (see proposalBlock). Visible to any viewer (the
-           destination page itself gates editing to owner/assigned advisor/
-           admin); populated by renderFinancingSummary() below. -->
-      <div id="financingSummaryBlock" class="info-block" style="margin-top:0;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
-          <div>
-            <h4><span data-i18n="pf.title">Financing Management</span></h4>
-            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pf.summary.help">AI-assisted recommendation, FSU, financing programs and other sources — manage the full financing mix from its own screen.</span></p>
-          </div>
-          <a id="manageFinancingBtn" href="#" class="btn ghost small" style="flex:0 0 auto;"><span data-i18n="pf.manage">Manage Financing</span></a>
-        </div>
-        <div id="financingCoverage" style="margin-top:14px; padding:12px 16px; border-radius:10px; background:var(--paper-2); display:none;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-            <span id="financingCoverageText" style="font-size:13px; font-weight:600;"></span>
-            <span id="financingCoverageBreakdown" style="font-size:12px; color:var(--muted);"></span>
-          </div>
-          <div style="margin-top:8px; height:6px; background:var(--paper-line); border-radius:100px; overflow:hidden;">
-            <div id="financingCoverageBar" style="height:100%; background:var(--amber); border-radius:100px; transition:width .2s ease;"></div>
-          </div>
-        </div>
-      </div>
-      </div>
-
       <div class="tab-panel" data-tab-panel="risks">
       <!-- Risk Matrix — a structured risk register (see
            supabase/migration_v41_project_risks.sql), distinct from the
@@ -326,93 +295,6 @@
         </div>
 
         <p id="riskMatrixEmpty" style="font-size:13px; color:var(--muted); margin-top:8px; display:none;"><span data-i18n="pd.risk.empty">No risks logged yet for this project.</span></p>
-      </div>
-      </div>
-
-      <div class="tab-panel" data-tab-panel="successcases">
-      <!-- Success Cases (reference library) — Pablo, sep 2026: "para que un
-           proyecto nuevo se puede basar en un caso de éxito, o bien, lo
-           tome como referencia." See supabase/migration_v59_success_cases.sql
-           and app/success-cases.html (the browsable library this project
-           links into). Unlike Financing Programs (which moved to its own
-           app/project-financing.html page), this stays inline — a much
-           lighter add/remove-only interaction with no financing math, so a
-           dedicated page would be overkill. Picker/linking are owner-or-
-           assigned-advisor only (matches project_success_cases RLS); the
-           linked list itself is visible to anyone who can view the
-           project. Hidden entirely (like Roadmaps/Risk Matrix above) only
-           while nothing has loaded yet — always shown once cases exist or
-           the viewer can add one, even with zero links, since "add your
-           first reference case" is itself a useful prompt here.
-
-           "Browse Library" deliberately does NOT open in a new tab
-           (no target="_blank") — Pablo, sep 2026: "si elijo Browse Library
-           va a la pantalla de login". The session is stored in
-           sessionStorage, not localStorage (see the comment above
-           supabaseClient in platform.js — a deliberate sep-2026 choice so
-           closing the browser always forces a fresh sign-in), and
-           sessionStorage is never shared with a newly opened tab even on
-           the same origin. A new tab therefore has no session at all and
-           success-cases.html's requireAuth() bounces it straight to
-           login.html — this looked like a broken link but was really the
-           per-tab session design colliding with target="_blank". Opening
-           in the same tab inherits the existing sessionStorage session, so
-           it works; the user can use the browser's own back button (or the
-           app nav) to return to the project. -->
-      <div id="successCasesBlock" class="info-block" style="margin-top:0; display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
-          <div>
-            <h4><span data-i18n="pd.sc.title">Reference Success Cases</span></h4>
-            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pd.sc.help">Real-world cases this project is based on or takes as a reference.</span></p>
-          </div>
-          <a href="success-cases.html" id="browseLibraryBtn" class="btn ghost small"><span data-i18n="pd.sc.browse">Browse Library</span></a>
-        </div>
-
-        <div id="scLinkedList" class="sc-linked-list" style="margin-top:14px;"></div>
-        <p id="scLinkedEmpty" style="font-size:13px; color:var(--muted); margin-top:8px; display:none;"><span data-i18n="pd.sc.empty">No success cases linked yet.</span></p>
-
-        <div id="scPickerRow" style="margin-top:18px; padding-top:16px; border-top:1px solid var(--paper-line); display:none;">
-          <label style="font-size:12.5px; color:var(--muted); display:block; margin-bottom:8px;"><span data-i18n="pd.sc.pick">Link a success case as reference</span></label>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
-            <div class="ffield" style="flex:0 0 170px;">
-              <select id="scPickerSector"></select>
-            </div>
-            <div class="ffield" style="flex:0 0 170px;">
-              <select id="scPickerCountry"></select>
-            </div>
-            <div class="ffield" style="flex:1 1 260px;">
-              <select id="scPicker"></select>
-            </div>
-            <button type="button" class="btn ghost small" id="addSuccessCaseBtn"><span data-i18n="pd.sc.add">Link</span></button>
-          </div>
-        </div>
-      </div>
-      </div>
-
-      <div class="tab-panel" data-tab-panel="proposal">
-      <!-- Investment Proposal — the four AI-draftable, user-editable
-           narrative chapters (Introduction, Technical Description,
-           Benefits, Planning narrative) that feed the separate, longer
-           "Propuesta de Financiamiento (PDF)" document meant to be
-           presented to financial institutions — see
-           supabase/migration_v50_investment_proposal.sql,
-           api/generate-proposal.js. Drafting, editing, previewing and
-           downloading all happen on their own dedicated screen,
-           app/investment-proposal.html (same split as the Risk Matrix's
-           inline summary + "Manage Risks" link above) — this block is
-           just a compact status card + entry point. Hidden entirely for a
-           viewer who can't edit the project (same bar as Edit — owner,
-           assigned advisor, or admin), since the editor itself is a
-           drafting workspace, not a read-only view. -->
-      <div id="proposalBlock" class="info-block" style="margin-top:0; display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
-          <div>
-            <h4><span data-i18n="pd.proposal.title">Investment Proposal</span></h4>
-            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="prop.summary.help">The formal document to present to financial institutions — draft it with AI, edit, preview and download from its own screen.</span></p>
-            <p id="proposalUpdatedAt" style="font-size:11.5px; color:var(--muted); margin-top:6px; display:none;"></p>
-          </div>
-          <a id="manageProposalBtn" href="#" class="btn ghost small" style="flex:0 0 auto;"><span data-i18n="prop.manage">Manage Proposal</span></a>
-        </div>
       </div>
       </div>
 
@@ -552,6 +434,124 @@
           <p style="font-size:14.5px; color:#a13a3a;" id="errorText"><span data-i18n="pd.error">The analysis couldn't be completed.</span></p>
         </div>
       </div>
+      </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="successcases">
+      <!-- Success Cases (reference library) — Pablo, sep 2026: "para que un
+           proyecto nuevo se puede basar en un caso de éxito, o bien, lo
+           tome como referencia." See supabase/migration_v59_success_cases.sql
+           and app/success-cases.html (the browsable library this project
+           links into). Unlike Financing Programs (which moved to its own
+           app/project-financing.html page), this stays inline — a much
+           lighter add/remove-only interaction with no financing math, so a
+           dedicated page would be overkill. Picker/linking are owner-or-
+           assigned-advisor only (matches project_success_cases RLS); the
+           linked list itself is visible to anyone who can view the
+           project. Hidden entirely (like Roadmaps/Risk Matrix above) only
+           while nothing has loaded yet — always shown once cases exist or
+           the viewer can add one, even with zero links, since "add your
+           first reference case" is itself a useful prompt here.
+
+           "Browse Library" deliberately does NOT open in a new tab
+           (no target="_blank") — Pablo, sep 2026: "si elijo Browse Library
+           va a la pantalla de login". The session is stored in
+           sessionStorage, not localStorage (see the comment above
+           supabaseClient in platform.js — a deliberate sep-2026 choice so
+           closing the browser always forces a fresh sign-in), and
+           sessionStorage is never shared with a newly opened tab even on
+           the same origin. A new tab therefore has no session at all and
+           success-cases.html's requireAuth() bounces it straight to
+           login.html — this looked like a broken link but was really the
+           per-tab session design colliding with target="_blank". Opening
+           in the same tab inherits the existing sessionStorage session, so
+           it works; the user can use the browser's own back button (or the
+           app nav) to return to the project. -->
+      <div id="successCasesBlock" class="info-block" style="margin-top:0; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div>
+            <h4><span data-i18n="pd.sc.title">Reference Success Cases</span></h4>
+            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pd.sc.help">Real-world cases this project is based on or takes as a reference.</span></p>
+          </div>
+          <a href="success-cases.html" id="browseLibraryBtn" class="btn ghost small"><span data-i18n="pd.sc.browse">Browse Library</span></a>
+        </div>
+
+        <div id="scLinkedList" class="sc-linked-list" style="margin-top:14px;"></div>
+        <p id="scLinkedEmpty" style="font-size:13px; color:var(--muted); margin-top:8px; display:none;"><span data-i18n="pd.sc.empty">No success cases linked yet.</span></p>
+
+        <div id="scPickerRow" style="margin-top:18px; padding-top:16px; border-top:1px solid var(--paper-line); display:none;">
+          <label style="font-size:12.5px; color:var(--muted); display:block; margin-bottom:8px;"><span data-i18n="pd.sc.pick">Link a success case as reference</span></label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+            <div class="ffield" style="flex:0 0 170px;">
+              <select id="scPickerSector"></select>
+            </div>
+            <div class="ffield" style="flex:0 0 170px;">
+              <select id="scPickerCountry"></select>
+            </div>
+            <div class="ffield" style="flex:1 1 260px;">
+              <select id="scPicker"></select>
+            </div>
+            <button type="button" class="btn ghost small" id="addSuccessCaseBtn"><span data-i18n="pd.sc.add">Link</span></button>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="financing">
+      <!-- Financing — AI recommendation, FSU, financing Programs and "other
+           source" all moved out to their own dedicated screen,
+           app/project-financing.html (Pablo, sep 2026: "la gestión de
+           financiación separarla de la edición del proyecto... agregarla en
+           el menú... como una tarea a realizar una vez dado de alta el
+           proyecto"). This block is just a compact coverage summary +
+           entry point — same split as the Investment Proposal/Risk Matrix
+           blocks above (see proposalBlock). Visible to any viewer (the
+           destination page itself gates editing to owner/assigned advisor/
+           admin); populated by renderFinancingSummary() below. -->
+      <div id="financingSummaryBlock" class="info-block" style="margin-top:0;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div>
+            <h4><span data-i18n="pf.title">Financing Management</span></h4>
+            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="pf.summary.help">AI-assisted recommendation, FSU, financing programs and other sources — manage the full financing mix from its own screen.</span></p>
+          </div>
+          <a id="manageFinancingBtn" href="#" class="btn ghost small" style="flex:0 0 auto;"><span data-i18n="pf.manage">Manage Financing</span></a>
+        </div>
+        <div id="financingCoverage" style="margin-top:14px; padding:12px 16px; border-radius:10px; background:var(--paper-2); display:none;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <span id="financingCoverageText" style="font-size:13px; font-weight:600;"></span>
+            <span id="financingCoverageBreakdown" style="font-size:12px; color:var(--muted);"></span>
+          </div>
+          <div style="margin-top:8px; height:6px; background:var(--paper-line); border-radius:100px; overflow:hidden;">
+            <div id="financingCoverageBar" style="height:100%; background:var(--amber); border-radius:100px; transition:width .2s ease;"></div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="proposal">
+      <!-- Investment Proposal — the four AI-draftable, user-editable
+           narrative chapters (Introduction, Technical Description,
+           Benefits, Planning narrative) that feed the separate, longer
+           "Propuesta de Financiamiento (PDF)" document meant to be
+           presented to financial institutions — see
+           supabase/migration_v50_investment_proposal.sql,
+           api/generate-proposal.js. Drafting, editing, previewing and
+           downloading all happen on their own dedicated screen,
+           app/investment-proposal.html (same split as the Risk Matrix's
+           inline summary + "Manage Risks" link above) — this block is
+           just a compact status card + entry point. Hidden entirely for a
+           viewer who can't edit the project (same bar as Edit — owner,
+           assigned advisor, or admin), since the editor itself is a
+           drafting workspace, not a read-only view. -->
+      <div id="proposalBlock" class="info-block" style="margin-top:0; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div>
+            <h4><span data-i18n="pd.proposal.title">Investment Proposal</span></h4>
+            <p style="font-size:12.5px; color:var(--muted); margin-top:4px; max-width:600px;"><span data-i18n="prop.summary.help">The formal document to present to financial institutions — draft it with AI, edit, preview and download from its own screen.</span></p>
+            <p id="proposalUpdatedAt" style="font-size:11.5px; color:var(--muted); margin-top:6px; display:none;"></p>
+          </div>
+          <a id="manageProposalBtn" href="#" class="btn ghost small" style="flex:0 0 auto;"><span data-i18n="prop.manage">Manage Proposal</span></a>
+        </div>
       </div>
       </div>
     </div>
@@ -844,7 +844,7 @@
      data, or the viewer lacks permission) — it reads the same
      el.style.display state each block's existing render function already
      set, rather than tracking a second, separate "has content" flag. */
-  const TAB_KEYS = ['overview', 'attrs', 'techdata', 'phases', 'docs', 'financing', 'risks', 'successcases', 'proposal', 'analysis'];
+  const TAB_KEYS = ['overview', 'attrs', 'techdata', 'phases', 'docs', 'risks', 'analysis', 'successcases', 'financing', 'proposal'];
   let activeProjectTab = 'overview';
   function switchProjectTab(tab) {
     if (!TAB_KEYS.includes(tab)) tab = 'overview';
