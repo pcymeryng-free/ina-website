@@ -678,6 +678,14 @@ create table if not exists public.projects (
   program_id uuid references public.programs(id) on delete set null,
   country text not null,
   description text not null,
+  -- English translation, cached once by INAPlatform.ensureEnglishTranslations()
+  -- the first time this project is viewed (or downloaded as a PDF) in
+  -- English — see migration_v72_bilingual_free_text.sql and
+  -- api/translate-project-text.js. Null until then; updateProject() clears
+  -- it back to null on every save so a fresh edit re-translates. Same
+  -- fallback convention as framework_analysis.*_en (migration_v40):
+  -- null always falls back to the Spanish original, never shown empty.
+  description_en text,
   -- Households/beneficiaries reached — the key impact metric for
   -- Universal Service Fund-style submissions (ENACOM's Fondo de Servicio
   -- Universal "carpeta técnica" format has a dedicated section for this).
@@ -725,6 +733,14 @@ create table if not exists public.projects (
   -- assets/platform.js. Purely a convenience cache, never the source of
   -- truth for any individual template's own answers/description.
   shared_field_answers jsonb not null default '{}'::jsonb,
+  -- English translations of shared_field_answers' 'textarea'-type values
+  -- only (the genuinely free-prose ones — 'text'-type fields mix numbers/
+  -- proper nouns with no type-level way to tell them apart, so those are
+  -- never auto-translated) — {field_key: translated_value}, cached once
+  -- per key by INAPlatform.ensureEnglishTranslations(), cleared per-key
+  -- by mergeSharedFieldAnswers() whenever that key's Spanish value
+  -- changes. See migration_v72_bilingual_free_text.sql.
+  shared_field_answers_en jsonb,
   -- Edit-mode concurrency lock — see migration_v31_edit_locks.sql and
   -- acquire_project_edit_lock()/release_project_edit_lock() below.
   edit_locked_by uuid references public.profiles(id) on delete set null,
@@ -755,6 +771,9 @@ create table if not exists public.projects (
   -- households, services) — no closed category list defined in reviewed
   -- regulation.
   fsu_scope text,
+  -- See description_en above — same cache-once/clear-on-save pattern,
+  -- migration_v72_bilingual_free_text.sql.
+  fsu_scope_en text,
   -- % of budget_amount the FSU financing would cover — see
   -- migration_v35_financing_mix.sql. Complements fsu_amount (absolute
   -- amount) and fsu_scope (free-form description) above.
@@ -797,6 +816,9 @@ create table if not exists public.projects (
   -- one to use for the coverage summary.
   other_financing_amount numeric check (other_financing_amount is null or other_financing_amount >= 0),
   other_financing_notes text,
+  -- See description_en above — same cache-once/clear-on-save pattern,
+  -- migration_v72_bilingual_free_text.sql.
+  other_financing_notes_en text,
   -- % of budget_amount that actually NEEDS external financing — e.g. 70 if
   -- the proponent already has 30% confirmed as own capital/equity, so only
   -- the remaining 70% needs to be raised. NULL means "not specified", which
@@ -898,12 +920,16 @@ create index if not exists projects_program_id_idx on public.projects(program_id
 -- computed as the sum of its phases (recomputeProjectTotalsFromPhases()
 -- in assets/platform.js) instead of being entered by hand — a project
 -- with zero phases keeps working exactly as before. Listed by created_at;
--- no separate sort column since reordering isn't needed.
+-- no separate sort column since reordering isn't needed. name_en/scope_en
+-- are the English-translation cache described on projects.description_en
+-- above — migration_v72_bilingual_free_text.sql.
 create table if not exists public.project_phases (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references public.projects(id) on delete cascade,
   name text not null,
+  name_en text,
   scope text,
+  scope_en text,
   budget_amount numeric check (budget_amount is null or budget_amount >= 0),
   budget_amount_usd numeric check (budget_amount_usd is null or budget_amount_usd >= 0),
   duration_value integer check (duration_value is null or duration_value > 0),
@@ -2746,7 +2772,7 @@ create table if not exists public.agent_hints (
   agent_key text primary key check (agent_key in (
     'analyze-project', 'extract-project-data', 'extract-success-case',
     'extract-business-card', 'extract-template-data', 'recommend-financing',
-    'generate-proposal', 'promotion-agent'
+    'generate-proposal', 'promotion-agent', 'translate-project-text'
   )),
   hint_text text not null default '',
   updated_at timestamptz not null default now(),

@@ -150,6 +150,17 @@ function promotionAgentUrl() {
   return '/api/promotion-agent';
 }
 
+/* Same reasoning/hosting split as analyzeProjectUrl() above — see
+   api/translate-project-text.js, ensureEnglishTranslations() below (Pablo,
+   oct 2026: "necesito que se traduzcan todos los textos ingresados
+   manualmente al idioma seleccionado"). */
+function translateProjectTextUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/translate-project-text`;
+  }
+  return '/api/translate-project-text';
+}
+
 /* ---------- Reference data (bilingual) ---------- */
 
 const ROLE_TYPES = [
@@ -5596,7 +5607,14 @@ const INAPlatform = {
   /* Edits an existing project (owner only — enforced by the
      projects_update_own RLS policy, so this silently fails for anyone
      else even if called). Resets status/readiness_stage so the caller can
-     re-trigger analysis against the updated description. */
+     re-trigger analysis against the updated description.
+     Always clears description_en/fsu_scope_en/other_financing_notes_en —
+     this is a full-row rewrite (every Spanish source field is always sent,
+     not a partial patch), so every save invalidates whatever English cache
+     existed, letting ensureEnglishTranslations() re-translate next time
+     the project is viewed in English instead of silently showing stale
+     text next to a just-edited Spanish original. See
+     migration_v72_bilingual_free_text.sql. */
   async updateProject(id, { name, projectType, programId, country, description, beneficiaryCount, generatingEntityName, generatingEntityType, durationValue, durationUnit, priority, technicalCriticality, fsuAmount, fsuAmountUsd, fsuScope, fsuPercentage, budgetAmount, budgetAmountUsd, exchangeRate, exchangeRateDate, complexity, otherFinancingPercentage, otherFinancingAmount, otherFinancingNotes, financingRequiredPercentage }) {
     const { data, error } = await supabaseClient
       .from('projects')
@@ -5606,6 +5624,7 @@ const INAPlatform = {
         program_id: programId || null,
         country,
         description,
+        description_en: null,
         beneficiary_count: beneficiaryCount === '' || beneficiaryCount == null ? null : Number(beneficiaryCount),
         generating_entity_name: generatingEntityName || null,
         generating_entity_type: generatingEntityType || null,
@@ -5616,6 +5635,7 @@ const INAPlatform = {
         fsu_amount: fsuAmount === '' || fsuAmount == null ? null : Number(fsuAmount),
         fsu_amount_usd: fsuAmountUsd === '' || fsuAmountUsd == null ? null : Number(fsuAmountUsd),
         fsu_scope: fsuScope || null,
+        fsu_scope_en: null,
         fsu_percentage: fsuPercentage === '' || fsuPercentage == null ? null : Number(fsuPercentage),
         budget_amount: budgetAmount === '' || budgetAmount == null ? null : Number(budgetAmount),
         budget_amount_usd: budgetAmountUsd === '' || budgetAmountUsd == null ? null : Number(budgetAmountUsd),
@@ -5625,6 +5645,7 @@ const INAPlatform = {
         other_financing_percentage: otherFinancingPercentage === '' || otherFinancingPercentage == null ? null : Number(otherFinancingPercentage),
         other_financing_amount: otherFinancingAmount === '' || otherFinancingAmount == null ? null : Number(otherFinancingAmount),
         other_financing_notes: otherFinancingNotes || null,
+        other_financing_notes_en: null,
         financing_required_percentage: financingRequiredPercentage === '' || financingRequiredPercentage == null ? null : Number(financingRequiredPercentage),
         status: 'submitted',
         readiness_stage: null,
@@ -5656,11 +5677,16 @@ const INAPlatform = {
     const updates = { updated_at: new Date().toISOString() };
     if (fsuAmount !== undefined) updates.fsu_amount = fsuAmount === '' || fsuAmount == null ? null : Number(fsuAmount);
     if (fsuAmountUsd !== undefined) updates.fsu_amount_usd = fsuAmountUsd === '' || fsuAmountUsd == null ? null : Number(fsuAmountUsd);
-    if (fsuScope !== undefined) updates.fsu_scope = fsuScope || null;
+    // *_en: null whenever the matching Spanish source field is part of
+    // this save (same cache-invalidation reasoning as updateProject() —
+    // see migration_v72_bilingual_free_text.sql), only for the keys
+    // actually being written, matching this function's own partial-patch
+    // convention.
+    if (fsuScope !== undefined) { updates.fsu_scope = fsuScope || null; updates.fsu_scope_en = null; }
     if (fsuPercentage !== undefined) updates.fsu_percentage = fsuPercentage === '' || fsuPercentage == null ? null : Number(fsuPercentage);
     if (otherFinancingPercentage !== undefined) updates.other_financing_percentage = otherFinancingPercentage === '' || otherFinancingPercentage == null ? null : Number(otherFinancingPercentage);
     if (otherFinancingAmount !== undefined) updates.other_financing_amount = otherFinancingAmount === '' || otherFinancingAmount == null ? null : Number(otherFinancingAmount);
-    if (otherFinancingNotes !== undefined) updates.other_financing_notes = otherFinancingNotes || null;
+    if (otherFinancingNotes !== undefined) { updates.other_financing_notes = otherFinancingNotes || null; updates.other_financing_notes_en = null; }
     const { data, error } = await supabaseClient
       .from('projects')
       .update(updates)
@@ -5726,12 +5752,17 @@ const INAPlatform = {
     return data;
   },
 
+  // name_en/scope_en always nulled — this is a full-row rewrite (name/scope
+  // are always sent, not a partial patch), same cache-invalidation
+  // reasoning as updateProject() — see migration_v72_bilingual_free_text.sql.
   async updateProjectPhase(id, { projectId, name, scope, budgetAmount, budgetAmountUsd, durationValue, durationUnit }) {
     const { data, error } = await supabaseClient
       .from('project_phases')
       .update({
         name,
+        name_en: null,
         scope: scope || null,
+        scope_en: null,
         budget_amount: budgetAmount === '' || budgetAmount == null ? null : Number(budgetAmount),
         budget_amount_usd: budgetAmountUsd === '' || budgetAmountUsd == null ? null : Number(budgetAmountUsd),
         duration_value: durationValue === '' || durationValue == null ? null : Number(durationValue),
@@ -7205,6 +7236,7 @@ const INAPlatform = {
     { value: 'recommend-financing', en: 'Financing Recommendation', es: 'Recomendación de Financiamiento' },
     { value: 'generate-proposal', en: 'Investment Proposal drafting', es: 'Redacción de Propuesta de Financiamiento' },
     { value: 'promotion-agent', en: 'Promotion Agent', es: 'Agente de Promoción' },
+    { value: 'translate-project-text', en: 'Project text translation', es: 'Traducción de textos de proyecto' },
   ],
 
   async listAgentHints() {
@@ -7297,23 +7329,133 @@ const INAPlatform = {
      that field blank). Best-effort by design: every caller (project-template.
      html's submit handler) wraps this in try/catch and never blocks
      navigation on it — the pool is a convenience cache, not a place any
-     template's own saved answers live. */
+     template's own saved answers live.
+     Also clears each changed key's cached English translation (see
+     ensureEnglishTranslations() below / migration_v72_bilingual_free_text.sql)
+     from shared_field_answers_en, so it re-translates next time the project
+     is viewed in English instead of silently showing a now-stale English
+     value next to the freshly-updated Spanish one. */
   async mergeSharedFieldAnswers(projectId, patch) {
     if (!projectId || !patch) return;
-    const current = await this.getSharedFieldAnswers(projectId).catch(() => ({}));
-    const merged = { ...current };
+    const { data: row, error: fetchError } = await supabaseClient
+      .from('projects')
+      .select('shared_field_answers, shared_field_answers_en')
+      .eq('id', projectId)
+      .maybeSingle();
+    if (fetchError) throw fetchError;
+    const merged = { ...((row && row.shared_field_answers) || {}) };
+    const mergedEn = { ...((row && row.shared_field_answers_en) || {}) };
     Object.keys(patch).forEach((key) => {
       const value = patch[key];
       if (value !== undefined && value !== null && String(value).trim() !== '') {
         merged[key] = value;
+        delete mergedEn[key];
       }
     });
     const { error } = await supabaseClient
       .from('projects')
-      .update({ shared_field_answers: merged })
+      .update({ shared_field_answers: merged, shared_field_answers_en: mergedEn })
       .eq('id', projectId);
     if (error) throw error;
     return merged;
+  },
+
+  /* ---------- English translation cache (migration_v72_bilingual_free_text.sql) ----------
+     Pablo, oct 2026: "necesito que se traduzcan todos los textos
+     ingresados manualmente al idioma seleccionado. No quiero que en un
+     reporte o en pantalla haya mezcla de idiomas." Round 1: app/project.html
+     (every tab) + its "Download PDF" export — same "translate once, cache
+     the result" pattern framework_analysis's *_en columns already use
+     (see localizeAnalysis() above), just for manually-typed free text
+     instead of AI-generated analysis prose.
+
+     No-ops instantly in Spanish (the stored original never needs this).
+     In English, fetches this project's phases + registered Datos Técnicos
+     template, finds every in-scope source field that has real text but no
+     cached _en twin yet, translates the whole batch in ONE call to
+     /api/translate-project-text, and writes the results back — AND mutates
+     `project`/the phases it just fetched in place, so the current render
+     pass can use the fresh values immediately without an extra reload.
+     Best-effort throughout: any failure (network, auth, model) is caught
+     and logged, leaving every field to fall back to its Spanish original —
+     same resilience spirit as localizeAnalysis()'s own `_en || original`.
+     Only `'textarea'`-type Datos Técnicos fields are translated — `'text'`
+     fields mix numbers/proper nouns/short phrases with no type-level way
+     to tell them apart, so those are left exactly as entered. */
+  async ensureEnglishTranslations(projectId, project) {
+    if (!projectId || !project || currentLang() !== 'en') return;
+
+    let phases = [];
+    try { phases = await this.listProjectPhases(projectId); } catch (e) { phases = []; }
+
+    const template = this.projectTemplateFor(project.project_type);
+    const answers = project.shared_field_answers || {};
+    const answersEn = project.shared_field_answers_en || {};
+    const textareaKeys = [];
+    if (template) {
+      const fieldsToCheck = [];
+      template.sections.forEach((section) => fieldsToCheck.push(...section.fields));
+      if (template.notesField) fieldsToCheck.push(Object.assign({ type: 'textarea' }, template.notesField));
+      fieldsToCheck.forEach((f) => {
+        if (f.type === 'textarea' && answers[f.key] && !answersEn[f.key]) {
+          textareaKeys.push(f.key);
+        }
+      });
+    }
+
+    const pending = [];
+    if (project.description && !project.description_en) pending.push({ key: 'description', text: project.description });
+    if (project.fsu_scope && !project.fsu_scope_en) pending.push({ key: 'fsu_scope', text: project.fsu_scope });
+    if (project.other_financing_notes && !project.other_financing_notes_en) pending.push({ key: 'other_financing_notes', text: project.other_financing_notes });
+    phases.forEach((ph) => {
+      if (ph.name && !ph.name_en) pending.push({ key: `phase_${ph.id}_name`, text: ph.name });
+      if (ph.scope && !ph.scope_en) pending.push({ key: `phase_${ph.id}_scope`, text: ph.scope });
+    });
+    textareaKeys.forEach((key) => pending.push({ key: `answer_${key}`, text: answers[key] }));
+
+    if (!pending.length) return;
+
+    let translations;
+    try {
+      const session = await this.getSession();
+      if (!session) return;
+      const res = await fetch(translateProjectTextUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ texts: pending }),
+      });
+      if (!res.ok) throw new Error(`translate-project-text ${res.status}`);
+      const json = await res.json();
+      translations = json.translations || {};
+    } catch (e) {
+      console.error('[ensureEnglishTranslations]', e);
+      return;
+    }
+
+    const projectPatch = {};
+    if (translations.description) { project.description_en = translations.description; projectPatch.description_en = translations.description; }
+    if (translations.fsu_scope) { project.fsu_scope_en = translations.fsu_scope; projectPatch.fsu_scope_en = translations.fsu_scope; }
+    if (translations.other_financing_notes) { project.other_financing_notes_en = translations.other_financing_notes; projectPatch.other_financing_notes_en = translations.other_financing_notes; }
+    if (textareaKeys.length) {
+      const newAnswersEn = { ...answersEn };
+      textareaKeys.forEach((key) => {
+        if (translations[`answer_${key}`]) newAnswersEn[key] = translations[`answer_${key}`];
+      });
+      project.shared_field_answers_en = newAnswersEn;
+      projectPatch.shared_field_answers_en = newAnswersEn;
+    }
+    if (Object.keys(projectPatch).length) {
+      try { await supabaseClient.from('projects').update(projectPatch).eq('id', projectId); } catch (e) { /* best-effort cache write — translation still shown this session even if the save fails */ }
+    }
+
+    await Promise.all(phases.map(async (ph) => {
+      const patch = {};
+      if (translations[`phase_${ph.id}_name`]) { ph.name_en = translations[`phase_${ph.id}_name`]; patch.name_en = translations[`phase_${ph.id}_name`]; }
+      if (translations[`phase_${ph.id}_scope`]) { ph.scope_en = translations[`phase_${ph.id}_scope`]; patch.scope_en = translations[`phase_${ph.id}_scope`]; }
+      if (Object.keys(patch).length) {
+        try { await supabaseClient.from('project_phases').update(patch).eq('id', ph.id); } catch (e) { /* best-effort */ }
+      }
+    }));
   },
 
   /* Calls /api/extract-template-data.js for exactly the given fields (each

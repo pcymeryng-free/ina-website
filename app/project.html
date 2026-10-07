@@ -572,7 +572,7 @@
      another PDF's existing pages — see the "Anexos" section of that
      function). Everything else in the report still uses jsPDF alone. -->
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="/assets/platform.js?v=106"></script>
+<script src="/assets/platform.js?v=107"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
 (function () {
@@ -710,8 +710,13 @@
   // later, but harmless) makes this handler correct regardless of that
   // ordering.
   document.querySelectorAll('.lang-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       document.documentElement.setAttribute('lang', btn.getAttribute('data-lang'));
+      // Translate-once-and-cache — the common path (Spanish loads by
+      // default) switches to English mid-visit right here, so this is
+      // where most translation actually happens in practice, not init().
+      // No-ops instantly back in Spanish. See the matching call in init().
+      if (currentProject) { try { await INAPlatform.ensureEnglishTranslations(projectId, currentProject); } catch (e) { /* non-critical */ } }
       if (currentProject) renderProject(currentProject);
       if (currentProject) renderWorkflowActionsMenu(currentProject);
       // Re-renders whichever Analysis sub-tab is currently on screen
@@ -895,6 +900,12 @@
     if (!hasAnyAnswer) { block.style.display = 'none'; grid.innerHTML = ''; return; }
 
     const lang = INAPlatform.currentLang();
+    // Only 'textarea' answers get an English cache (migration_v72_bilingual_free_text.sql
+    // — 'text' fields mix numbers/proper nouns with no way to tell them
+    // apart automatically, so those always show exactly as entered).
+    // 'select' values are already bilingual via flattenTemplateFields()
+    // above (f.options' labels), nothing to translate there either.
+    const answersEn = currentProject.shared_field_answers_en || {};
     document.getElementById('techDataViewTitle').innerHTML = `<span>${escapeHtml(template.title[lang] || template.title.en)}</span>`;
     const rows = [];
     flatFields.forEach((f) => {
@@ -904,11 +915,15 @@
       if (f.type === 'select' && f.options) {
         const opt = f.options.find((o) => o.value === raw);
         if (opt) value = opt.label;
+      } else if (f.type === 'textarea' && lang === 'en' && answersEn[f.key]) {
+        value = answersEn[f.key];
       }
       rows.push([f.label, value]);
     });
     if (notesVal) {
-      rows.push([template.notesField.label[lang] || template.notesField.label.en, notesVal]);
+      const notesLabel = template.notesField.label[lang] || template.notesField.label.en;
+      const notesValue = (lang === 'en' && answersEn[template.notesField.key]) ? answersEn[template.notesField.key] : notesVal;
+      rows.push([notesLabel, notesValue]);
     }
     grid.innerHTML = rows.map(([label, value]) => `
       <div class="attr-item">
@@ -939,15 +954,30 @@
       if (budgetUsd) parts.push(budgetUsd);
       const duration = INAPlatform.formatDuration(ph.duration_value, ph.duration_unit);
       if (duration) parts.push(duration);
+      const name = te(ph, 'name', lang);
+      const scope = te(ph, 'scope', lang);
       return `
         <div class="info-block" style="margin:0;">
-          <h4 style="font-size:14px;">${idx + 1}. ${escapeHtml(ph.name)}</h4>
+          <h4 style="font-size:14px;">${idx + 1}. ${escapeHtml(name)}</h4>
           ${parts.length ? `<p style="font-size:12.5px; color:var(--muted); margin-top:4px;">${escapeHtml(parts.join(' · '))}</p>` : ''}
-          ${ph.scope ? `<p style="font-size:13px; margin-top:8px; white-space:pre-wrap;">${escapeHtml(ph.scope)}</p>` : ''}
+          ${scope ? `<p style="font-size:13px; margin-top:8px; white-space:pre-wrap;">${escapeHtml(scope)}</p>` : ''}
         </div>
       `;
     }).join('');
     block.style.display = 'block';
+  }
+
+  // "Translate or original" — reads obj[key + '_en'] when viewing in
+  // English and it's been cached (INAPlatform.ensureEnglishTranslations()),
+  // falling back to obj[key] (the Spanish source, always present)
+  // otherwise. Same `_en || original` convention INAPlatform.localizeAnalysis()
+  // already uses for framework_analysis — see migration_v72_bilingual_free_text.sql.
+  // Used both on-screen (renderProject()/renderPhasesView()/renderTechDataView())
+  // and inside generateProjectPdf() — each call site passes its own
+  // already-current `lang` value.
+  function te(obj, key, lang) {
+    if (!obj) return null;
+    return lang === 'en' ? (obj[key + '_en'] || obj[key]) : obj[key];
   }
 
   function renderProject(p) {
@@ -966,7 +996,7 @@
     // Project Attributes grid below (renderAttrs()) instead of being
     // squeezed into this single line, so nothing gets truncated or missed.
     document.getElementById('pmeta').textContent = INAPlatform.countryLabel(p.country) + programText + entityText;
-    document.getElementById('pdesc').textContent = p.description;
+    document.getElementById('pdesc').textContent = te(p, 'description', lang);
     renderAttrs(p);
 
     // FSU/other-financing direct fields, and the Financing Programs list,
@@ -1971,6 +2001,15 @@
     };
     __mark('start');
 
+    // Translate-once-and-cache (Pablo, oct 2026: "no quiero que en un
+    // reporte... haya mezcla de idiomas") — ensures description/phases/
+    // Datos Técnicos textarea answers are translated BEFORE any chapter
+    // below reads them, so a direct "Download PDF" in English produces a
+    // fully translated document even without having lingered on screen
+    // first. No-ops instantly in Spanish. Same call as init()/.lang-btn.
+    try { await INAPlatform.ensureEnglishTranslations(projectId, currentProject); } catch (e) { /* non-critical — falls back to Spanish everywhere */ }
+    __mark('after ensureEnglishTranslations()');
+
     // ---- Anexos is opt-in: ask once, up front, whether to append the
     // project's attached documents (full content, not just names) as a
     // final chapter. Declining keeps the report to the platform's own
@@ -2340,7 +2379,7 @@
     y += 8;
 
     h2(lang === 'es' ? 'Descripción del proyecto' : 'Project description');
-    bodyText(currentProject.description);
+    bodyText(te(currentProject, 'description', lang));
 
     // Anexos (real attachment content, not just file names) is now built
     // as its own chapter at the very end of the document — see the
@@ -2358,6 +2397,10 @@
       if (techTemplate) {
         let techAnswers = {};
         try { techAnswers = await INAPlatform.getSharedFieldAnswers(currentProject.id); } catch (e) { /* non-critical — chapter just ends up empty */ }
+        // Already freshly written by ensureEnglishTranslations() above —
+        // 'textarea' answers only (see that function's own comment for why
+        // 'text'/'select' fields are excluded).
+        const techAnswersEn = currentProject.shared_field_answers_en || {};
         const flatFields = INAPlatform.flattenTemplateFields(techTemplate);
         const notesVal = techTemplate.notesField ? techAnswers[techTemplate.notesField.key] : null;
         const hasAnyAnswer = flatFields.some((f) => techAnswers[f.key] != null && String(techAnswers[f.key]).trim() !== '') || !!notesVal;
@@ -2370,6 +2413,8 @@
             if (f.type === 'select' && f.options) {
               const opt = f.options.find((o) => o.value === raw);
               if (opt) value = opt.label;
+            } else if (f.type === 'textarea' && lang === 'en' && techAnswersEn[f.key]) {
+              value = techAnswersEn[f.key];
             }
             if (f.type === 'textarea') {
               h3(f.label);
@@ -2380,7 +2425,8 @@
           });
           if (notesVal) {
             h3(techTemplate.notesField.label[lang] || techTemplate.notesField.label.en);
-            bodyText(notesVal);
+            const notesValTranslated = (lang === 'en' && techAnswersEn[techTemplate.notesField.key]) ? techAnswersEn[techTemplate.notesField.key] : notesVal;
+            bodyText(notesValTranslated);
           }
           y += 8;
         }
@@ -2397,11 +2443,12 @@
       if (phases && phases.length) {
         h2(lang === 'es' ? 'Fases del proyecto' : 'Project phases');
         phases.forEach((ph, idx) => {
-          h3(`${idx + 1}. ${ph.name}`);
+          h3(`${idx + 1}. ${te(ph, 'name', lang)}`);
           attrRow(lang === 'es' ? 'Presupuesto' : 'Budget', INAPlatform.formatCurrency(ph.budget_amount));
           attrRow(lang === 'es' ? 'Presupuesto (USD)' : 'Budget (USD)', INAPlatform.formatCurrencyUSD(ph.budget_amount_usd));
           attrRow(lang === 'es' ? 'Duración' : 'Duration', INAPlatform.formatDuration(ph.duration_value, ph.duration_unit));
-          if (ph.scope) bodyText(ph.scope);
+          const phScope = te(ph, 'scope', lang);
+          if (phScope) bodyText(phScope);
           y += 4;
         });
       }
@@ -2434,7 +2481,7 @@
           attrRow(lang === 'es' ? '% del presupuesto' : '% of budget', fsuPct > 0 ? `${fsuPct}%` : null);
           attrRow(lang === 'es' ? 'Monto' : 'Amount', INAPlatform.formatCurrency(currentProject.fsu_amount));
           attrRow(lang === 'es' ? 'Monto (USD)' : 'Amount (USD)', INAPlatform.formatCurrencyUSD(currentProject.fsu_amount_usd));
-          attrRow(lang === 'es' ? 'Alcance' : 'Scope', currentProject.fsu_scope);
+          attrRow(lang === 'es' ? 'Alcance' : 'Scope', te(currentProject, 'fsu_scope', lang));
           const fsuProgramNames = programShares.filter((s) => s.isFsu).map((s) => INAPlatform.programDisplayName({ name: s.name, name_en: s.nameEn }, lang));
           if (fsuProgramNames.length) {
             attrRow(lang === 'es' ? 'Línea FSU aplicada' : 'Applied FSU line', fsuProgramNames.join(', '));
@@ -2453,7 +2500,7 @@
           h3(lang === 'es' ? 'Otra fuente' : 'Other source');
           attrRow(lang === 'es' ? '% del presupuesto' : '% of budget', otherPct > 0 ? `${otherPct}%` : null);
           attrRow(lang === 'es' ? 'Monto' : 'Amount', INAPlatform.formatCurrency(currentProject.other_financing_amount));
-          attrRow(lang === 'es' ? 'Notas' : 'Notes', currentProject.other_financing_notes);
+          attrRow(lang === 'es' ? 'Notas' : 'Notes', te(currentProject, 'other_financing_notes', lang));
           y += 4;
         }
 
@@ -3633,6 +3680,14 @@
     document.getElementById('manageFinancingBtn').href = `project-financing.html?id=${projectId}`;
     document.getElementById('navFinancingLink').href = `project-financing.html?id=${projectId}`;
     document.getElementById('browseLibraryBtn').href = `success-cases.html?project=${projectId}`;
+
+    // Translate-once-and-cache (Pablo, oct 2026: "no quiero que... haya
+    // mezcla de idiomas") — BEFORE renderProject() below, so the very
+    // first paint in English already shows translated text instead of a
+    // Spanish-then-English flash once the cache fills in. No-ops instantly
+    // in Spanish. Mutates `project` in place with any newly-cached *_en
+    // values — see INAPlatform.ensureEnglishTranslations().
+    try { await INAPlatform.ensureEnglishTranslations(projectId, project); } catch (e) { /* non-critical — falls back to Spanish everywhere */ }
 
     renderProject(project);
     renderWorkflowActionsMenu(project);
