@@ -161,6 +161,17 @@ function translateProjectTextUrl() {
   return '/api/translate-project-text';
 }
 
+/* Same reasoning/hosting split as analyzeProjectUrl() above — see
+   api/create-user.js, adminCreateUser() below (Pablo, oct 2026: "permitir
+   al usuario admin la posibilidad de dar de alta usuarios en la
+   plataforma"). */
+function createUserUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/create-user`;
+  }
+  return '/api/create-user';
+}
+
 /* ---------- Reference data (bilingual) ---------- */
 
 const ROLE_TYPES = [
@@ -5370,6 +5381,34 @@ const INAPlatform = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  /* Admin-initiated user creation (app/admin.html's "+ Nuevo Usuario"
+     form) — can't reuse signUp() above, which always authenticates the
+     CALLING browser as the new user; this instead hits api/create-user.js
+     (Supabase Admin API, service-role key), which emails the new user an
+     invite link (app/accept-invite.html) to set their own password. The
+     server re-verifies the caller is actually authorized to manage users
+     (never trust a client flag for that), so this can safely be called by
+     anyone — the API just 403s if they're not. */
+  async adminCreateUser({ email, fullName, organization, roleType }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(createUserUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ email, fullName, organization, roleType }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (data && data.error === 'email_already_registered') {
+        const dupErr = new Error('Email already registered.');
+        dupErr.code = 'email_already_registered';
+        throw dupErr;
+      }
+      throw new Error((data && (data.error || data.detail)) || `Request failed (${res.status})`);
+    }
+    return data.user;
   },
 
   /* ---------- Configurable roles (app/roles.html) ----------
