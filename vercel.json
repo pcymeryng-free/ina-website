@@ -22,6 +22,7 @@
     { "source": "/extract-project-data", "destination": "/api/extract-project-data" },
     { "source": "/promotion-agent", "destination": "/api/promotion-agent" },
     { "source": "/translate-project-text", "destination": "/api/translate-project-text" },
-    { "source": "/create-user", "destination": "/api/create-user" }
+    { "source": "/create-user", "destination": "/api/create-user" },
+    { "source": "/set-user-disabled", "destination": "/api/set-user-disabled" }
   ]
 }

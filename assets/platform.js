@@ -172,6 +172,19 @@ function createUserUrl() {
   return '/api/create-user';
 }
 
+/* Same reasoning/hosting split as createUserUrl() above — see
+   api/set-user-disabled.js, setUserDisabled() below. Deactivates (not
+   deletes) a user: profiles.id/projects.user_id/etc. all cascade-delete
+   from auth.users, so a real delete of anyone who ever created a project
+   would wipe that project and everything under it — see that file's
+   header for the full reasoning. */
+function setUserDisabledUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/set-user-disabled`;
+  }
+  return '/api/set-user-disabled';
+}
+
 /* ---------- Reference data (bilingual) ---------- */
 
 const ROLE_TYPES = [
@@ -5409,6 +5422,23 @@ const INAPlatform = {
       throw new Error((data && (data.error || data.detail)) || `Request failed (${res.status})`);
     }
     return data.user;
+  },
+
+  /* Deactivates (disabled:true) or reactivates (disabled:false) a user —
+     app/admin.html's per-row "Deshabilitar"/"Habilitar" action. Hits
+     api/set-user-disabled.js (Supabase Admin API ban_duration), never a
+     real delete — see that file's header for why. */
+  async setUserDisabled(userId, disabled) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(setUserDisabledUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ userId, disabled }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((data && (data.error || data.detail)) || `Request failed (${res.status})`);
+    return data;
   },
 
   /* ---------- Configurable roles (app/roles.html) ----------

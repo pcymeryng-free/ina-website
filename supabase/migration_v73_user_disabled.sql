@@ -1,0 +1,26 @@
+-- ============================================================================
+-- migration_v73_user_disabled.sql
+--
+-- QUÉ AGREGA
+-- Pablo pidió poder "eliminar" un usuario desde app/admin.html. Un borrado
+-- real es imposible de hacer con seguridad en este esquema: profiles.id
+-- tiene "on delete cascade" desde auth.users, y projects.user_id/
+-- programs.user_id/contracts.user_id/roadmap_templates.user_id (y todo lo
+-- que depende de un project_id: riesgos, roadmaps, documentos, análisis...)
+-- tienen a su vez "on delete cascade" desde profiles.id. Borrar la cuenta
+-- de alguien que alguna vez creó un proyecto borraría ese proyecto entero
+-- y todo lo que cuelga de él. Confirmado con Pablo: el comportamiento real
+-- que necesita es DESHABILITAR, no borrar — bloquear el acceso
+-- conservando el perfil y todos sus datos intactos, de forma reversible.
+--
+-- Este booleano es solo para que la UI (admin.html) pueda mostrar/filtrar
+-- el estado sin necesitar una llamada con service-role por usuario — el
+-- bloqueo real de acceso lo hace api/set-user-disabled.js usando el propio
+-- mecanismo de ban de Supabase (ban_duration en el Admin API de GoTrue),
+-- no este flag. No requiere cambios de RLS en ninguna otra tabla: los
+-- datos de un usuario deshabilitado siguen visibles para advisors/admins
+-- exactamente igual que antes, esto solo afecta si esa persona puede
+-- iniciar sesión.
+-- ============================================================================
+
+alter table public.profiles add column if not exists disabled boolean not null default false;
