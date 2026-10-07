@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/style.css?v=32">
+<link rel="stylesheet" href="/assets/style.css?v=33">
 <link rel="stylesheet" href="/assets/app.css?v=21">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/images/pwa/icon-180.png">
@@ -136,7 +136,7 @@
 </footer>
 <script src="/assets/i18n.js?v=93"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=109"></script>
+<script src="/assets/platform.js?v=110"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
 (function () {
@@ -272,6 +272,44 @@
     }
   }
 
+  // Record-type labels for the has_owned_records error — e.g. "2 proyecto(s)".
+  const OWNED_RECORD_LABELS = {
+    projects: { es: 'proyecto(s)', en: 'project(s)' },
+    programs: { es: 'programa(s)', en: 'program(s)' },
+    contracts: { es: 'contrato(s)', en: 'contract(s)' },
+    roadmap_templates: { es: 'plantilla(s) de roadmap', en: 'roadmap template(s)' },
+  };
+  function ownedRecordsMessage(counts, lang) {
+    const parts = Object.keys(OWNED_RECORD_LABELS)
+      .filter((key) => counts[key])
+      .map((key) => `${counts[key]} ${OWNED_RECORD_LABELS[key][lang]}`);
+    const list = parts.join(', ');
+    return lang === 'es'
+      ? `No se puede eliminar: el usuario tiene ${list}. Reasigná o eliminá esos registros primero.`
+      : `Can't delete: this user still has ${list}. Reassign or delete those records first.`;
+  }
+
+  async function handleDeleteUser(btn, user) {
+    const lang = INAPlatform.currentLang();
+    const confirmMsg = lang === 'es'
+      ? `¿ELIMINAR DEFINITIVAMENTE a ${user.full_name || user.email}? Esta acción no se puede deshacer.`
+      : `PERMANENTLY DELETE ${user.full_name || user.email}? This action cannot be undone.`;
+    if (!confirm(confirmMsg)) return;
+    btn.disabled = true;
+    try {
+      await INAPlatform.adminDeleteUser(user.id);
+      allUsers = allUsers.filter((u) => u.id !== user.id);
+      renderList();
+    } catch (err) {
+      if (err.code === 'has_owned_records') {
+        alert(ownedRecordsMessage(err.counts, lang));
+      } else {
+        alert(err.message || (lang === 'es' ? 'No se pudo eliminar el usuario.' : "Couldn't delete the user."));
+      }
+      btn.disabled = false;
+    }
+  }
+
   function renderList() {
     const list = document.getElementById('userList');
     const users = filteredUsers();
@@ -352,6 +390,7 @@
       dateCell.textContent = fmtDate(u.created_at);
 
       const actionCell = document.createElement('div');
+      actionCell.className = 'uactions';
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
       toggleBtn.className = 'btn ghost small utoggle-btn';
@@ -364,6 +403,17 @@
         : '';
       toggleBtn.addEventListener('click', () => handleDisabledToggle(toggleBtn, u));
       actionCell.appendChild(toggleBtn);
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'btn ghost small utoggle-btn';
+      deleteBtn.textContent = rowLang === 'es' ? 'Eliminar' : 'Delete';
+      deleteBtn.disabled = isSelf;
+      deleteBtn.title = isSelf
+        ? (rowLang === 'es' ? 'No podés eliminar tu propia cuenta.' : "You can't delete your own account.")
+        : '';
+      deleteBtn.addEventListener('click', () => handleDeleteUser(deleteBtn, u));
+      actionCell.appendChild(deleteBtn);
 
       row.appendChild(who);
       row.appendChild(org);

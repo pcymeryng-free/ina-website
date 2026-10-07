@@ -185,6 +185,17 @@ function setUserDisabledUrl() {
   return '/api/set-user-disabled';
 }
 
+/* Same reasoning/hosting split as setUserDisabledUrl() above — see
+   api/delete-user.js, adminDeleteUser() below. A real, permanent delete
+   (unlike setUserDisabled()), only allowed server-side when the target
+   owns zero projects/programs/contracts/roadmap_templates. */
+function deleteUserUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/delete-user`;
+  }
+  return '/api/delete-user';
+}
+
 /* ---------- Reference data (bilingual) ---------- */
 
 const ROLE_TYPES = [
@@ -5439,6 +5450,32 @@ const INAPlatform = {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error((data && (data.error || data.detail)) || `Request failed (${res.status})`);
     return data;
+  },
+
+  /* Permanently deletes a user — app/admin.html's per-row "Eliminar"
+     action. Hits api/delete-user.js, which refuses (409, has_owned_records)
+     if the target still owns any project/program/contract/roadmap
+     template — see that file's header for why. Unlike setUserDisabled(),
+     this is irreversible. */
+  async adminDeleteUser(userId) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(deleteUserUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ userId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (data && data.error === 'has_owned_records') {
+        const err = new Error('User still owns records.');
+        err.code = 'has_owned_records';
+        err.counts = data.counts || {};
+        throw err;
+      }
+      throw new Error((data && (data.error || data.detail)) || `Request failed (${res.status})`);
+    }
+    return true;
   },
 
   /* ---------- Configurable roles (app/roles.html) ----------

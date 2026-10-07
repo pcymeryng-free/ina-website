@@ -880,6 +880,7 @@ form.advisory .full{ grid-column: 1 / -1; }
 .user-row .urole-select:focus{ outline:none; border-color:var(--amber); }
 .user-row .urole-select:disabled{ background:var(--paper-2); color:var(--muted); cursor:not-allowed; }
 .user-row .userdate{ font-size:12px; color:var(--muted); font-family:var(--mono); }
+.user-row .uactions{ display:flex; flex-direction:column; gap:6px; }
 .user-row .utoggle-btn{ width:100%; justify-content:center; }
 @media (max-width:820px){
   .user-row{ grid-template-columns:1fr; gap:10px; }
