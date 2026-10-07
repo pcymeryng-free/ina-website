@@ -2284,10 +2284,13 @@
     // whole document is built — so this just advances y past it; the
     // "Índice" heading and entries are painted back onto page 1 near the
     // very end of the function, once tocEntries is complete. Sized for up
-    // to ~12 chapters (18pt heading + ~16.5pt per row) — Datos principales,
+    // to ~14 chapters (18pt heading + ~16.5pt per row) — Datos principales,
     // Datos técnicos, Fases, Descripción, Financiación, Estado actual,
-    // Próximos pasos, Resultados IA, FSU, Riesgos, Anexos is 11 at most
-    // today, so this leaves one spare row.
+    // Próximos pasos, Resultados de Análisis IA, Resultados de
+    // Autoevaluación, FSU, Riesgos, Anexos is 12 at most today (oct 2026:
+    // AI Analysis and Self-Assessment are now separate chapters, each
+    // shown independently when performed — see "incluir todos los
+    // análisis realizados" below), so this leaves a couple spare rows.
     const tocPageNum = pageNum;
     const tocY = y;
     doc.setFont('helvetica', 'bold');
@@ -2295,7 +2298,7 @@
     doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
     doc.text(lang === 'es' ? 'Índice' : 'Contents', MARGIN, y);
     y += 24;
-    y += 12 * 16.5 + 10;
+    y += 14 * 16.5 + 10;
 
     // ============================================================
     // 1. Datos principales — every scalar project attribute, as a
@@ -2489,32 +2492,42 @@
       }
     }
 
-    // ---- Localized analysis result, computed once here (rather than
-    // inline further down) so both "Próximos pasos" (gap_roadmap) and
-    // "Resultados de Análisis IA" below can read from the same object,
-    // matching the order Pablo asked for: Estado actual → Próximos pasos
-    // → Resultados de Análisis IA → FSU → Riesgos. ----
-    let analysisData = null;
-    let manualAnswers = null;
-    if (currentAnalysis) {
-      let data = currentAnalysis;
-      if (currentAnalysis.source === 'manual' && currentAnalysis.raw_model_output) {
+    // ---- Localized analysis results, computed once here (rather than
+    // inline further down) — AI Analysis and Self-Assessment are each
+    // localized independently now (Pablo, oct 2026: "incluir todos los
+    // análisis realizados" — a project can have both, and this report
+    // used to only ever show whichever currentAnalysis preferred,
+    // silently dropping the other one entirely). currentAnalysis itself
+    // stays untouched — other consumers (checkPromotionRequirementsBeforePromote)
+    // still want "the one preferred analysis", just not this report. ----
+    function localizeForPdf(row) {
+      if (!row) return { data: null, manualAnswers: null };
+      let data = row;
+      let manualAnswers = null;
+      if (row.source === 'manual' && row.raw_model_output) {
         try {
-          manualAnswers = JSON.parse(currentAnalysis.raw_model_output);
+          manualAnswers = JSON.parse(row.raw_model_output);
           const recomputed = INAPlatform.computeManualAssessment(
             currentProject.project_type,
             manualAnswers,
             { beneficiaryCount: currentProject.beneficiary_count }
           );
-          data = Object.assign({}, currentAnalysis, recomputed);
-        } catch (e) { /* fall back to the stored fields */ }
+          data = Object.assign({}, row, recomputed);
+        } catch (e) { manualAnswers = null; /* fall back to the stored fields */ }
       }
       // Same bilingual fallback as renderAnalysis() — see
       // migration_v40_bilingual_analysis.sql and
       // INAPlatform.localizeAnalysis(). No-op for a manual result (already
       // recomputed in the right language above).
-      analysisData = INAPlatform.localizeAnalysis(data, lang);
+      return { data: INAPlatform.localizeAnalysis(data, lang), manualAnswers };
     }
+    const aiPdfResult = localizeForPdf(latestAiAnalysis);
+    const selfAssessPdfResult = localizeForPdf(latestManualAnalysis);
+    // "Próximos pasos" below still shows ONE blended next-steps list
+    // (AI-preferred, same spirit as before) rather than two — the ask was
+    // about not losing either analysis's own score/detail, not about
+    // duplicating gap-roadmap entries project-wide.
+    const analysisData = aiPdfResult.data || selfAssessPdfResult.data;
 
     // ============================================================
     // 5. Próximos pasos — the gap roadmap's priority actions (from the
@@ -2552,14 +2565,28 @@
     }
 
     // ============================================================
-    // 6. Resultados de Análisis IA — Investment Readiness Index™ score,
-    // dimension breakdown, optional self-assessment detail, and the
-    // Multilateral Finance Navigator™ recommendations. gap_roadmap moved
-    // to "Próximos pasos" above, so it isn't repeated here.
+    // 6. Resultados de Análisis IA / Resultados de Autoevaluación —
+    // Investment Readiness Index™ score, dimension breakdown, and the
+    // Multilateral Finance Navigator™ recommendations, for EACH analysis
+    // actually performed on this project (Pablo, oct 2026: "incluir todos
+    // los análisis realizados" — previously only whichever one
+    // currentAnalysis preferred ever made it into this report, silently
+    // dropping the other if both existed). Self-Assessment also gets its
+    // own question-by-question detail (each of the 3 Likert statements
+    // per dimension + the 1-5 value actually given) — same "respuestas
+    // del usuario y luego el resultado" shape FSU's own chapter below
+    // already uses for its 7 criteria. gap_roadmap moved to "Próximos
+    // pasos" above, so it isn't repeated here.
     // ============================================================
-    h2(lang === 'es' ? 'Resultados de Análisis IA' : 'AI Analysis Results');
-    if (analysisData) {
-      const data = analysisData;
+    function renderAnalysisResultChapter(title, result, includeManualDetail) {
+      h2(title);
+      const data = result.data;
+      if (!data) {
+        bodyText(lang === 'es'
+          ? 'Este proyecto todavía no fue analizado con el Investment Readiness Index™.'
+          : "This project hasn't been analyzed with the Investment Readiness Index™ yet.");
+        return;
+      }
       h3('Investment Readiness Index™');
       // h3()'s own line-height isn't enough clearance for the much larger
       // 20pt score number right below it — without this extra gap the two
@@ -2595,15 +2622,14 @@
       });
       y += 8;
 
-      // ---- Self-Assessment item detail — only when the analysis came from
-      // the manual questionnaire (app/assessment.html): shows each of the
-      // 3 Likert statements per dimension alongside the 1-5 value the user
-      // actually gave it, not just the rolled-up dimension score above. ----
-      if (manualAnswers) {
+      // ---- Self-Assessment item detail — each of the 3 Likert statements
+      // per dimension alongside the 1-5 value the user actually gave it,
+      // not just the rolled-up dimension score above. ----
+      if (includeManualDetail && result.manualAnswers) {
         h3(lang === 'es' ? 'Detalle de la Autoevaluación' : 'Self-Assessment Detail');
         const qset = INAPlatform.assessmentQuestionSet(currentProject.project_type);
         qset.forEach(({ key, questions }) => {
-          const vals = manualAnswers[key] || [];
+          const vals = result.manualAnswers[key] || [];
           const dimScore = dims[key] && typeof dims[key].score === 'number' ? dims[key].score : null;
           h3(`${INAPlatform.dimensionLabel(key)}${dimScore != null ? '  —  ' + dimScore + '/100' : ''}`);
           questions.forEach((q, i) => {
@@ -2625,10 +2651,19 @@
         y += 13;
         bodyText(item.rationale);
       });
+    }
+
+    if (aiPdfResult.data || selfAssessPdfResult.data) {
+      if (aiPdfResult.data) {
+        renderAnalysisResultChapter(lang === 'es' ? 'Resultados de Análisis IA' : 'AI Analysis Results', aiPdfResult, false);
+      }
+      if (selfAssessPdfResult.data) {
+        renderAnalysisResultChapter(lang === 'es' ? 'Resultados de Autoevaluación' : 'Self-Assessment Results', selfAssessPdfResult, true);
+      }
     } else {
-      bodyText(lang === 'es'
-        ? 'Este proyecto todavía no fue analizado con el Investment Readiness Index™.'
-        : "This project hasn't been analyzed with the Investment Readiness Index™ yet.");
+      // Neither analysis has ever run — one chapter with the same
+      // "not analyzed yet" placeholder this report always showed.
+      renderAnalysisResultChapter(lang === 'es' ? 'Resultados de Análisis IA' : 'AI Analysis Results', aiPdfResult, false);
     }
 
     // ============================================================
