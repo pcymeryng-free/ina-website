@@ -1327,17 +1327,7 @@
   // project-template.html's own runAutofill() — never overwrites
   // something already typed, whether that came from the person or from a
   // previous autofill run.
-  //
-  // Factored out of the "Autocompletar" button's click listener (Pablo,
-  // oct 2026: "una vez que se detecta el tipo de proyecto se debería
-  // correr automáticamente el agente que carga el template... dejando la
-  // posibilidad de correrlo luego en forma manual") so step1NextBtn below
-  // can also fire this automatically right after creating a brand-new
-  // project from PDF-detected attributes, while the button itself keeps
-  // working exactly as before for a manual re-run. Manages its own
-  // button-disabled state and status note internally, so every caller can
-  // just fire-and-forget it.
-  async function runTechDataAutofill() {
+  document.getElementById('techDataAutofillBtn').addEventListener('click', async () => {
     if (!activeProjectId || !techDataTemplate) return;
     const btn = document.getElementById('techDataAutofillBtn');
     const note = document.getElementById('techDataAutofillNote');
@@ -1375,8 +1365,7 @@
     } finally {
       btn.disabled = false;
     }
-  }
-  document.getElementById('techDataAutofillBtn').addEventListener('click', runTechDataAutofill);
+  });
 
   // "Fill using this program's template" — a second, independent template
   // entry point (see PROGRAM_TEMPLATES in assets/platform.js): shown only
@@ -1797,7 +1786,6 @@
       // Each file's own chosen category (set in the staged list above the
       // wizard, defaulting to "other") carries through here instead of
       // always being "other" (oct 2026).
-      const didAttachAutofillDocs = pendingAutofillFiles.length > 0;
       if (pendingAutofillFiles.length) {
         for (const { file, category } of pendingAutofillFiles) {
           try {
@@ -1839,21 +1827,6 @@
       }
       noteEl.textContent = '';
       goToStep(2);
-      // Pablo, oct 2026: "una vez que se detecta el tipo de proyecto se
-      // debería correr automáticamente el agente que carga el template
-      // por tipo de proyecto con los datos técnicos, dejando la
-      // posibilidad de correrlo luego en forma manual." Fires the same
-      // autofill the "Autocompletar" button on Step 2 triggers manually
-      // (runTechDataAutofill(), defined above), using the document(s) just
-      // attached — not awaited, so "Continue" stays responsive; the
-      // function manages its own button-disabled state and status note,
-      // so it's safe to just fire-and-forget here. Only runs when this
-      // project's type actually resolved to a guided template AND at
-      // least one document was just attached — otherwise there's nothing
-      // for the agent to read, same guard the button itself already has.
-      if (didAttachAutofillDocs && techDataTemplate) {
-        runTechDataAutofill();
-      }
     } catch (err) {
       noteEl.textContent = err.message || (lang === 'es' ? 'Algo salió mal.' : 'Something went wrong.');
     } finally {
