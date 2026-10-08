@@ -204,6 +204,45 @@
     return entry ? entry[INAPlatform.currentLang()] : logType;
   }
 
+  // Pablo: "necesito que el visualizador del log de debug sea más claro.
+  // Pasarlo a texto para que se pueda entender." Renders the row as plain
+  // labeled text sections instead of one raw JSON.stringify() blob —
+  // free-text fields (prompts/responses) show with their real line breaks
+  // intact rather than escaped \n's, and only genuinely structured data
+  // (payload/response objects, the raw usage object) stays as formatted
+  // JSON, each under its own clear heading.
+  function formatDebugDetail(row) {
+    const l = INAPlatform.currentLang();
+    const d = row.details || {};
+    const lines = [];
+    const heading = (es, en) => lines.push('', `=== ${l === 'es' ? es : en} ===`);
+    const field = (labelEs, labelEn, value) => { if (value !== undefined && value !== null && value !== '') lines.push(`${l === 'es' ? labelEs : labelEn}: ${value}`); };
+
+    if (row.log_type === 'ai_agent') {
+      field('Agente', 'Agent', row.agent_key);
+      field('Versión', 'Version', row.agent_version);
+      field('Proveedor', 'Provider', row.provider);
+      field('Modelo', 'Model', row.model);
+      field('Duración', 'Duration', row.duration_ms != null ? `${row.duration_ms} ms` : null);
+      if (row.prompt_tokens != null || row.completion_tokens != null || row.total_tokens != null) {
+        field('Tokens (prompt / respuesta / total)', 'Tokens (prompt / completion / total)',
+          `${row.prompt_tokens ?? '–'} / ${row.completion_tokens ?? '–'} / ${row.total_tokens ?? '–'}`);
+      }
+      if (d.systemPrompt) { heading('PROMPT DEL SISTEMA', 'SYSTEM PROMPT'); lines.push(d.systemPrompt); }
+      if (d.userContent) { heading('CONTENIDO ENVIADO', 'USER CONTENT'); lines.push(d.userContent); }
+      if (d.rawResponse) { heading('RESPUESTA DEL MODELO', 'MODEL RESPONSE'); lines.push(d.rawResponse); }
+      if (d.usage) { heading('USO (datos crudos del proveedor)', 'USAGE (raw provider data)'); lines.push(JSON.stringify(d.usage, null, 2)); }
+    } else {
+      field('Tabla', 'Table', row.table_name);
+      field('Operación', 'Operation', row.operation);
+      field('Status HTTP', 'HTTP status', d.status);
+      if (d.payload !== undefined) { heading('DATOS ENVIADOS', 'PAYLOAD SENT'); lines.push(JSON.stringify(d.payload, null, 2)); }
+      if (d.response !== undefined) { heading('RESPUESTA', 'RESPONSE'); lines.push(JSON.stringify(d.response, null, 2)); }
+    }
+
+    return lines.join('\n').trim() || (l === 'es' ? '(sin detalle)' : '(no detail)');
+  }
+
   let allUsers = [];
   let tableNames = [];
   let agentKeys = [];
@@ -308,7 +347,7 @@
     if (!btn) return;
     const row = rowsSoFar[Number(btn.dataset.idx)];
     if (!row) return;
-    document.getElementById('detailContent').textContent = JSON.stringify(row.details, null, 2);
+    document.getElementById('detailContent').textContent = formatDebugDetail(row);
     document.getElementById('detailOverlay').style.display = 'flex';
   });
   document.getElementById('closeDetailBtn').addEventListener('click', () => {
