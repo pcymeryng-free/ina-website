@@ -29,11 +29,114 @@ const SUPABASE_ANON_KEY_CLEAN = (INA_PLATFORM_CONFIG.SUPABASE_ANON_KEY || '').tr
 // time — and since sessionStorage is never shared across tabs/devices to
 // begin with, each access point (a second PC, a second tab, a phone) is
 // independent of the others by construction, nothing else to change there.
+// global.fetch below intercepts every request this client makes — the
+// single choke point used to capture DB writes for the admin-only debug
+// mode (migration_v74_debug_mode.sql, app/debug-log.html). See
+// maybeLogDebugWrite()'s own comment for why this, rather than
+// hand-instrumenting every create/update/delete helper in this file.
 const supabaseClient = (SUPABASE_URL_CLEAN !== 'YOUR_SUPABASE_URL' && SUPABASE_URL_CLEAN && window.supabase)
   ? window.supabase.createClient(SUPABASE_URL_CLEAN, SUPABASE_ANON_KEY_CLEAN, {
       auth: { storage: window.sessionStorage },
+      global: {
+        fetch: async (url, options) => {
+          const res = await fetch(url, options);
+          maybeLogDebugWrite(url, options, res);
+          return res;
+        },
+      },
     })
   : null;
+
+/* ---------- Admin-only debug mode (migration_v74_debug_mode.sql) ----------
+   Pablo: "agregar un modo debug que solo lo puede setear el admin y que
+   cuando está seteado guarda en un log información de detalle como los
+   sql que se aplican a la base de datos [...]". There's no raw SQL
+   anywhere in this client — it's 100% PostgREST via supabase-js — and
+   hand-instrumenting every create/update/delete helper in this file would
+   be a huge, easy-to-miss surface. Instead this wraps the single fetch
+   choke point every request already goes through (global.fetch above),
+   which catches every write automatically, present and future, with zero
+   changes needed at any individual call site. */
+
+// Cached per page load (same style as getCachedNetworkInfo() below) —
+// checking app_settings on every single write would double its latency
+// for no reason; one flag read per page is enough for a toggle meant to
+// be flipped between debugging sessions, not mid-action.
+let _debugModeCache = null;
+function isDebugModeOn() {
+  if (!_debugModeCache) {
+    _debugModeCache = (!SUPABASE_URL_CLEAN ? Promise.resolve(false) : fetch(
+      `${SUPABASE_URL_CLEAN}/rest/v1/app_settings?select=debug_mode&limit=1`,
+      { headers: { apikey: SUPABASE_ANON_KEY_CLEAN } }
+    )
+      .then((res) => (res.ok ? res.json() : []))
+      .then((rows) => !!(rows[0] && rows[0].debug_mode))
+      .catch(() => false));
+  }
+  return _debugModeCache;
+}
+
+// Plain fetch() POST, deliberately NOT through supabaseClient.from() —
+// going through the wrapped client here would recursively trigger
+// maybeLogDebugWrite() on the log write itself. Reads the session
+// directly off the raw auth client rather than via INAPlatform.getSession()
+// since this is a module-level helper, not an INAPlatform method (no
+// `this`). Swallows every error — a failed debug log write must never
+// break the real action it's recording, same discipline as logActivity().
+async function writeDebugLog(fields) {
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    const session = data && data.session;
+    if (!session) return;
+    await fetch(`${SUPABASE_URL_CLEAN}/rest/v1/debug_log`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY_CLEAN,
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ user_id: session.user.id, ...fields }),
+    });
+  } catch (e) { /* swallow — see comment above */ }
+}
+
+// Only acts on an actual write (POST/PATCH/DELETE) to a /rest/v1/<table>
+// path — never GET/select (out of scope per Pablo's own call: reads are
+// far higher-volume and lower diagnostic value), and never /auth/v1/...
+// (not a DB write). Skips debug_log/app_settings themselves so the
+// logger never logs itself. res.clone() lets this read the response body
+// for logging without disturbing the real caller's own (separate) read of
+// the original `res` — Response bodies can only be consumed once.
+function maybeLogDebugWrite(url, options, res) {
+  try {
+    const method = ((options && options.method) || 'GET').toUpperCase();
+    if (method !== 'POST' && method !== 'PATCH' && method !== 'DELETE') return;
+    const urlStr = String(url);
+    const match = urlStr.match(/\/rest\/v1\/([^?]+)/);
+    if (!match) return;
+    const table = match[1];
+    if (table === 'debug_log' || table === 'app_settings') return;
+    isDebugModeOn().then((on) => {
+      if (!on) return;
+      let payload = null;
+      try { payload = options && options.body ? JSON.parse(options.body) : null; } catch (e) { /* non-JSON body */ }
+      const prefer = (options && options.headers && (options.headers.Prefer || options.headers.prefer)) || '';
+      const operation = method === 'DELETE' ? 'delete'
+        : method === 'PATCH' ? 'update'
+          : /resolution=/.test(prefer) ? 'upsert' : 'insert';
+      res.clone().text().then((bodyText) => {
+        let response = null;
+        try { response = bodyText ? JSON.parse(bodyText) : null; } catch (e) { response = bodyText; }
+        writeDebugLog({
+          log_type: 'db_write',
+          table_name: table,
+          operation,
+          details: { payload, status: res.status, response },
+        });
+      }).catch(() => {});
+    }).catch(() => {});
+  } catch (e) { /* swallow — see writeDebugLog()'s comment */ }
+}
 
 /* ---------- Network info for the activity log (see whoami.php) ----------
    Fetched at most once per page load (cached in this module-level
@@ -5346,6 +5449,60 @@ const INAPlatform = {
       .not('entity_type', 'is', null);
     if (error) throw error;
     return Array.from(new Set(data.map((r) => r.entity_type))).sort();
+  },
+
+  /* ---------- Admin-only debug mode (app/debug-log.html, migration_v74) ----------
+     The flag itself is a single app_settings row — RLS lets anyone SELECT
+     it (every page/session needs a cheap way to check it, see
+     isDebugModeOn() above) but only an admin can UPDATE it
+     (app_settings_update_admin policy); this client call is just
+     convenience, RLS is the real enforcement, same bar as every other
+     admin-only write in this file. */
+  async getDebugMode() {
+    const { data, error } = await supabaseClient.from('app_settings').select('debug_mode').eq('id', true).single();
+    if (error) throw error;
+    return !!(data && data.debug_mode);
+  },
+  async setDebugMode(on) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { error } = await supabaseClient
+      .from('app_settings')
+      .update({ debug_mode: !!on, updated_at: new Date().toISOString(), updated_by: session.user.id })
+      .eq('id', true);
+    if (error) throw error;
+  },
+  /* Same shape as listActivityLog() above — see that function's comments
+     for the userId===null convention. logType/agentKey/tableName filter
+     on debug_log's own discriminator columns. */
+  async listDebugLog({ logType, agentKey, tableName, userId, dateFrom, dateTo, limit = 50, offset = 0 } = {}) {
+    let query = supabaseClient
+      .from('debug_log')
+      .select('*, profiles(full_name, email)', { count: 'exact' })
+      .order('occurred_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (logType) query = query.eq('log_type', logType);
+    if (agentKey) query = query.eq('agent_key', agentKey);
+    if (tableName) query = query.eq('table_name', tableName);
+    if (userId === null) query = query.is('user_id', null);
+    else if (userId) query = query.eq('user_id', userId);
+    if (dateFrom) query = query.gte('occurred_at', dateFrom);
+    if (dateTo) query = query.lte('occurred_at', dateTo);
+    const { data, error, count } = await query;
+    if (error) throw error;
+    return { rows: data, total: count };
+  },
+  /* Distinct table_name/agent_key values actually present in the log, for
+     the filter dropdowns — same reasoning as listActivityLogEntityTypes(). */
+  async listDebugLogTableNames() {
+    const { data, error } = await supabaseClient.from('debug_log').select('table_name').not('table_name', 'is', null);
+    if (error) throw error;
+    return Array.from(new Set(data.map((r) => r.table_name))).sort();
+  },
+  async listDebugLogAgentKeys() {
+    const { data, error } = await supabaseClient.from('debug_log').select('agent_key').not('agent_key', 'is', null);
+    if (error) throw error;
+    return Array.from(new Set(data.map((r) => r.agent_key))).sort();
   },
 
   /* Changes another user's platform role. Deliberately does nothing to

@@ -167,6 +167,41 @@ function hintsSuffix(text) {
   return text && text.trim() ? `\n\nADDITIONAL GUIDANCE FROM INA:\n${text.trim()}` : '';
 }
 
+// Admin-only debug mode (migration_v74_debug_mode.sql / app/debug-log.html)
+// — see api/extract-project-data.js's matching comment for the full
+// rationale; duplicated here per this codebase's usual convention (no
+// shared module bundling between these standalone Vercel functions).
+const AGENT_VERSION = '1.0';
+async function isDebugModeOn({ supabaseUrl, anonKey }) {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/app_settings?select=debug_mode&limit=1`, { headers: { apikey: anonKey } });
+    if (!res.ok) return false;
+    const rows = await res.json();
+    return !!(rows[0] && rows[0].debug_mode);
+  } catch (e) { return false; }
+}
+async function logDebugAgentCall({ supabaseUrl, serviceKey, userId, agentKey, provider, model, durationMs, usage, systemPrompt, userContent, rawResponse }) {
+  try {
+    await fetch(`${supabaseUrl}/rest/v1/debug_log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+      body: JSON.stringify({
+        log_type: 'ai_agent',
+        user_id: userId,
+        agent_key: agentKey,
+        agent_version: AGENT_VERSION,
+        provider,
+        model,
+        duration_ms: durationMs,
+        prompt_tokens: (usage && (usage.prompt_tokens ?? usage.input_tokens ?? usage.inputTokens)) ?? null,
+        completion_tokens: (usage && (usage.completion_tokens ?? usage.output_tokens ?? usage.outputTokens)) ?? null,
+        total_tokens: (usage && (usage.total_tokens ?? usage.totalTokens ?? (((usage.input_tokens ?? usage.inputTokens) || 0) + ((usage.output_tokens ?? usage.outputTokens) || 0)))) ?? null,
+        details: { systemPrompt, userContent, usage, rawResponse },
+      }),
+    });
+  } catch (e) { /* swallow — see api/extract-project-data.js's matching comment */ }
+}
+
 function cleanField(v) {
   if (v === null || v === undefined) return null;
   const s = String(v).trim();
@@ -250,6 +285,7 @@ async function handler(req, res) {
   try {
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
+    const debugOn = await isDebugModeOn({ supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
 
     const extraHints = await getAgentHint('extract-business-card', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
     const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + hintsSuffix(extraHints);
@@ -260,6 +296,9 @@ async function handler(req, res) {
     }
 
     let rawText;
+    const _debugStart = Date.now();
+    let _debugModel = null;
+    let _debugUsage = null;
     if (provider === 'groq') {
       // OpenAI-compatible chat completions shape — image_url content block
       // with a data: URL, per Groq's vision docs (console.groq.com/docs/vision).
@@ -315,6 +354,8 @@ async function handler(req, res) {
       }
       const groqData = await groqRes.json();
       rawText = (groqData.choices && groqData.choices[0] && groqData.choices[0].message && groqData.choices[0].message.content) || '';
+      _debugModel = GROQ_VISION_MODEL || GROQ_VISION_MODEL_DEFAULT;
+      _debugUsage = groqData.usage;
     } else {
       const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -344,6 +385,20 @@ async function handler(req, res) {
       }
       const anthropicData = await anthropicRes.json();
       rawText = (anthropicData.content || []).map((b) => (b.type === 'text' ? b.text : '')).join('');
+      _debugModel = CLAUDE_MODEL || 'claude-sonnet-5';
+      _debugUsage = anthropicData.usage;
+    }
+
+    if (debugOn) {
+      // No real text prompt here (image-only input) — note that an image
+      // was sent rather than logging its base64 bytes, same bloat-
+      // avoidance reasoning as api/analyze-project.js's matching comment.
+      await logDebugAgentCall({
+        supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY, userId: user.id,
+        agentKey: 'extract-business-card', provider, model: _debugModel,
+        durationMs: Date.now() - _debugStart, usage: _debugUsage,
+        systemPrompt: SYSTEM_PROMPT, userContent: `(business card image attached, mediaType: ${mediaType})`, rawResponse: rawText,
+      });
     }
 
     let parsed;

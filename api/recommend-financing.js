@@ -251,6 +251,41 @@ function hintsSuffix(text) {
   return text && text.trim() ? `\n\nADDITIONAL GUIDANCE FROM INA:\n${text.trim()}` : '';
 }
 
+// Admin-only debug mode (migration_v74_debug_mode.sql / app/debug-log.html)
+// — see api/extract-project-data.js's matching comment for the full
+// rationale; duplicated here per this codebase's usual convention (no
+// shared module bundling between these standalone Vercel functions).
+const AGENT_VERSION = '1.0';
+async function isDebugModeOn({ supabaseUrl, anonKey }) {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/app_settings?select=debug_mode&limit=1`, { headers: { apikey: anonKey } });
+    if (!res.ok) return false;
+    const rows = await res.json();
+    return !!(rows[0] && rows[0].debug_mode);
+  } catch (e) { return false; }
+}
+async function logDebugAgentCall({ supabaseUrl, serviceKey, userId, agentKey, provider, model, durationMs, usage, systemPrompt, userContent, rawResponse }) {
+  try {
+    await fetch(`${supabaseUrl}/rest/v1/debug_log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+      body: JSON.stringify({
+        log_type: 'ai_agent',
+        user_id: userId,
+        agent_key: agentKey,
+        agent_version: AGENT_VERSION,
+        provider,
+        model,
+        duration_ms: durationMs,
+        prompt_tokens: (usage && (usage.prompt_tokens ?? usage.input_tokens ?? usage.inputTokens)) ?? null,
+        completion_tokens: (usage && (usage.completion_tokens ?? usage.output_tokens ?? usage.outputTokens)) ?? null,
+        total_tokens: (usage && (usage.total_tokens ?? usage.totalTokens ?? (((usage.input_tokens ?? usage.inputTokens) || 0) + ((usage.output_tokens ?? usage.outputTokens) || 0)))) ?? null,
+        details: { systemPrompt, userContent, usage, rawResponse },
+      }),
+    });
+  } catch (e) { /* swallow — see api/extract-project-data.js's matching comment */ }
+}
+
 function buildSystemPrompt() {
   return `You are a financing-structuring advisor for INA (International Network Advisors), helping ENACOM Argentina and digital-infrastructure project sponsors pick the best combination of financing instruments for a specific project.
 
@@ -369,6 +404,7 @@ async function handler(req, res) {
     const extraHints = await getAgentHint('recommend-financing', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
+    const debugOn = await isDebugModeOn({ supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
 
     const projects = await supabaseRest(`/projects?id=eq.${projectId}&select=*`, {
       serviceKey: SUPABASE_SERVICE_ROLE_KEY,
@@ -431,6 +467,9 @@ async function handler(req, res) {
     const userContent = `PROJECT PROFILE (JSON):\n${JSON.stringify(projectProfile)}\n\nPROGRAMS CATALOG (JSON):\n${JSON.stringify(catalog)}`;
 
     let rawText;
+    const _debugStart = Date.now();
+    let _debugModel = null;
+    let _debugUsage = null;
     if (provider === 'bedrock-mock') {
       // Simulated result — no model call — same spirit as
       // api/analyze-project.js's bedrock-mock branch: every piece of
@@ -465,6 +504,8 @@ async function handler(req, res) {
       }
       const groqData = await groqRes.json();
       rawText = (groqData.choices && groqData.choices[0] && groqData.choices[0].message && groqData.choices[0].message.content) || '';
+      _debugModel = GROQ_MODEL || GROQ_MODEL_DEFAULT;
+      _debugUsage = groqData.usage;
     } else if (provider === 'local') {
       const localRes = await fetch(`${(LOCAL_LLM_BASE_URL || LOCAL_LLM_BASE_URL_DEFAULT).replace(/\/$/, '')}/chat/completions`, {
         method: 'POST',
@@ -489,6 +530,8 @@ async function handler(req, res) {
       }
       const localData = await localRes.json();
       rawText = (localData.choices && localData.choices[0] && localData.choices[0].message && localData.choices[0].message.content) || '';
+      _debugModel = LOCAL_LLM_MODEL;
+      _debugUsage = localData.usage;
     } else if (provider === 'bedrock') {
       try {
         const { BedrockRuntimeClient, ConverseCommand } = require('@aws-sdk/client-bedrock-runtime');
@@ -504,6 +547,8 @@ async function handler(req, res) {
         }));
         const outputContent = (bedrockRes.output && bedrockRes.output.message && bedrockRes.output.message.content) || [];
         rawText = outputContent.map((b) => b.text || '').join('');
+        _debugModel = BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT;
+        _debugUsage = bedrockRes.usage;
       } catch (bedrockErr) {
         console.error('[recommend-financing] Bedrock request failed:', bedrockErr);
         return json(res, 502, {
@@ -534,6 +579,17 @@ async function handler(req, res) {
       }
       const anthropicData = await anthropicRes.json();
       rawText = (anthropicData.content || []).map((b) => (b.type === 'text' ? b.text : '')).join('');
+      _debugModel = CLAUDE_MODEL || 'claude-sonnet-5';
+      _debugUsage = anthropicData.usage;
+    }
+
+    if (debugOn) {
+      await logDebugAgentCall({
+        supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY, userId: user.id,
+        agentKey: 'recommend-financing', provider, model: _debugModel,
+        durationMs: Date.now() - _debugStart, usage: _debugUsage,
+        systemPrompt, userContent, rawResponse: rawText,
+      });
     }
 
     let parsed;

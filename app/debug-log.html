@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title data-i18n-en="Activity Log — INA Platform" data-i18n-es="Registro de Actividad — Plataforma INA">Activity Log — INA Platform</title>
-<meta name="description" data-i18n-attr="content" data-i18n-en="Site visits and in-platform activity, for administrators." data-i18n-es="Visitas al sitio y actividad dentro de la plataforma, para administradores." content="Site visits and in-platform activity, for administrators.">
+<title data-i18n-en="Debug Log — INA Platform" data-i18n-es="Log de Depuraci&oacute;n — Plataforma INA">Debug Log — INA Platform</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="Detailed diagnostic log of database writes and AI agent calls, for administrators." data-i18n-es="Log de diagn&oacute;stico detallado de escrituras a la base y llamadas a agentes de IA, para administradores." content="Detailed diagnostic log of database writes and AI agent calls, for administrators.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -53,8 +53,8 @@
           <a href="promotion-requirements.html" id="promotionRequirementsMenuItem" class="menu-item" style="display:none;"><span data-i18n="pr.nav">Promotion Requirements</span></a>
           <a href="contracts.html" id="contractsMenuItem" class="menu-item" style="display:none;"><span data-i18n="contracts.nav">Contracts</span></a>
           <a href="ai-hints.html" id="aiHintsMenuItem" class="menu-item" style="display:none;"><span data-i18n="aihints.nav">AI Hints</span></a>
-          <a href="activity-log.html" id="activityLogMenuItem" class="menu-item active" style="display:none;"><span data-i18n="activitylog.nav">Activity Log</span></a>
-          <a href="debug-log.html" id="debugLogMenuItem" class="menu-item" style="display:none;"><span data-i18n="debuglog.nav">Debug Log</span></a>
+          <a href="activity-log.html" id="activityLogMenuItem" class="menu-item" style="display:none;"><span data-i18n="activitylog.nav">Activity Log</span></a>
+          <a href="debug-log.html" id="debugLogMenuItem" class="menu-item active" style="display:none;"><span data-i18n="debuglog.nav">Debug Log</span></a>
         </div>
       </div>
     </nav>
@@ -73,36 +73,54 @@
 <main class="app-main">
 <section class="tight">
   <div class="wrap">
-    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span><span data-i18n="activitylog.nav">Activity Log</span></span></div>
+    <div class="breadcrumb" style="margin-bottom:20px;"><a href="dashboard.html"><span data-i18n="dash.title">Your Projects</span></a><span>/</span><span><span data-i18n="debuglog.nav">Debug Log</span></span></div>
     <span class="eyebrow"><span data-i18n="auth.eyebrow">INA Platform</span></span>
-    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="activitylog.title">Activity Log</span></h1>
-    <p class="lede" style="margin-top:10px; max-width:680px;"><span data-i18n="activitylog.lede">Public-site visits and in-platform activity — page views, sign-ins and every create/update/delete on the platform's main entities. Visible to administrators only.</span></p>
+    <h1 class="h-section" style="margin-top:14px;"><span data-i18n="debuglog.title">Debug Log</span></h1>
+    <p class="lede" style="margin-top:10px; max-width:700px;"><span data-i18n="debuglog.lede">Detailed diagnostic log — database writes and AI agent calls (full prompts, model, duration, tokens) — recorded only while debug mode is on. Visible to administrators only.</span></p>
 
     <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
 
-    <div id="logBody" style="display:none; margin-top:32px;">
-      <div class="filter-bar">
+    <div id="logBody" style="display:none; margin-top:28px;">
+      <!-- Debug mode toggle — the only thing that controls whether any new
+           rows get written at all (see assets/platform.js's isDebugModeOn()
+           and every api/*.js agent's matching copy). Heavy by design (full
+           prompts/payloads, platform-wide) — meant to be switched on
+           briefly while reproducing a specific issue, not left on, hence
+           the confirm() on enabling it. -->
+      <div class="info-block" style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+        <div>
+          <h4 style="margin:0;"><span data-i18n="debuglog.toggle.title">Debug mode</span></h4>
+          <p id="debugModeStatus" style="font-size:12.5px; color:var(--muted); margin-top:4px;"></p>
+        </div>
+        <button type="button" class="btn amber" id="debugModeToggleBtn"></button>
+      </div>
+
+      <div class="filter-bar" style="margin-top:24px;">
         <div class="ffield">
-          <label for="alfEvent"><span data-i18n="activitylog.filter.event">Event</span></label>
-          <select id="alfEvent"></select>
+          <label for="dlfType"><span data-i18n="debuglog.filter.type">Type</span></label>
+          <select id="dlfType"></select>
         </div>
         <div class="ffield">
-          <label for="alfEntity"><span data-i18n="activitylog.filter.entity">Entity</span></label>
-          <select id="alfEntity"></select>
+          <label for="dlfTable"><span data-i18n="debuglog.filter.table">Table</span></label>
+          <select id="dlfTable"></select>
         </div>
         <div class="ffield">
-          <label for="alfUser"><span data-i18n="activitylog.filter.user">User</span></label>
-          <select id="alfUser"></select>
+          <label for="dlfAgent"><span data-i18n="debuglog.filter.agent">Agent</span></label>
+          <select id="dlfAgent"></select>
         </div>
         <div class="ffield">
-          <label for="alfFrom"><span data-i18n="activitylog.filter.from">From</span></label>
-          <input type="date" id="alfFrom">
+          <label for="dlfUser"><span data-i18n="activitylog.filter.user">User</span></label>
+          <select id="dlfUser"></select>
         </div>
         <div class="ffield">
-          <label for="alfTo"><span data-i18n="activitylog.filter.to">To</span></label>
-          <input type="date" id="alfTo">
+          <label for="dlfFrom"><span data-i18n="activitylog.filter.from">From</span></label>
+          <input type="date" id="dlfFrom">
         </div>
-        <button type="button" class="fclear" id="alfClear"><span data-i18n="dash.filter.clear">Clear filters</span></button>
+        <div class="ffield">
+          <label for="dlfTo"><span data-i18n="activitylog.filter.to">To</span></label>
+          <input type="date" id="dlfTo">
+        </div>
+        <button type="button" class="fclear" id="dlfClear"><span data-i18n="dash.filter.clear">Clear filters</span></button>
       </div>
       <p class="filter-count" id="logFilterCount"></p>
 
@@ -112,15 +130,17 @@
             <tr>
               <th><span data-i18n="activitylog.col.when">When</span></th>
               <th><span data-i18n="activitylog.col.who">Who</span></th>
-              <th><span data-i18n="activitylog.col.event">Event</span></th>
-              <th><span data-i18n="activitylog.col.entity">Entity</span></th>
-              <th><span data-i18n="activitylog.col.path">Page</span></th>
-              <th><span data-i18n="activitylog.col.location">IP / Country</span></th>
+              <th><span data-i18n="debuglog.col.type">Type</span></th>
+              <th><span data-i18n="debuglog.col.target">Table / Agent</span></th>
+              <th><span data-i18n="debuglog.col.model">Model</span></th>
+              <th><span data-i18n="debuglog.col.duration">Duration</span></th>
+              <th><span data-i18n="debuglog.col.tokens">Tokens</span></th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="logTableBody"></tbody>
         </table>
-        <p id="logEmpty" style="display:none; color:var(--muted); font-size:13.5px; padding:20px 0;"><span data-i18n="activitylog.empty">No activity matches these filters.</span></p>
+        <p id="logEmpty" style="display:none; color:var(--muted); font-size:13.5px; padding:20px 0;"><span data-i18n="debuglog.empty">No log entries match these filters.</span></p>
       </div>
 
       <div style="text-align:center; margin-top:24px;">
@@ -130,6 +150,18 @@
   </div>
 </section>
 </main>
+
+<!-- ===== Detail overlay ===== -->
+<div class="risk-form-overlay" id="detailOverlay" style="display:none;">
+  <div class="risk-form-panel" style="max-width:720px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+      <h3 style="margin:0;"><span data-i18n="debuglog.detail.title">Detail</span></h3>
+      <button type="button" class="btn ghost small" id="closeDetailBtn">&times;</button>
+    </div>
+    <pre id="detailContent" style="max-height:60vh; overflow:auto; font-size:12px; white-space:pre-wrap; word-break:break-word; background:var(--paper-2); padding:14px; border-radius:8px;"></pre>
+  </div>
+</div>
+
 <footer class="app-footer">
   <div class="app-footer-inner">
     <span>&copy; 2026 INA Platform</span>
@@ -163,77 +195,65 @@
     });
   }
 
-  const EVENT_LABELS = {
-    page_view: { en: 'Page view', es: 'Vista de página' },
-    login: { en: 'Login', es: 'Inicio de sesión' },
-    logout: { en: 'Logout', es: 'Cierre de sesión' },
-    create: { en: 'Create', es: 'Alta' },
-    update: { en: 'Update', es: 'Cambio' },
-    delete: { en: 'Delete', es: 'Baja' },
+  const TYPE_LABELS = {
+    db_write: { en: 'DB write', es: 'Escritura DB' },
+    ai_agent: { en: 'AI agent', es: 'Agente IA' },
   };
-  function eventLabel(eventType) {
-    const l = INAPlatform.currentLang();
-    const entry = EVENT_LABELS[eventType];
-    return entry ? entry[l] : eventType;
+  function typeLabel(logType) {
+    const entry = TYPE_LABELS[logType];
+    return entry ? entry[INAPlatform.currentLang()] : logType;
   }
-  // Reuses the existing .status-pill color variants (style.css) instead of
-  // introducing new ones — 'completed' (dark/amber) for create, 'analyzing'
-  // (amber-soft) for update, 'error' (red) for delete, 'submitted' (muted)
-  // for everything else.
-  const EVENT_BADGE_CLASS = {
-    create: 'completed', update: 'analyzing', delete: 'error',
-    login: 'submitted', logout: 'submitted', page_view: 'submitted',
-  };
 
   let allUsers = [];
-  let entityTypes = [];
+  let tableNames = [];
+  let agentKeys = [];
   let offset = 0;
-  const PAGE_SIZE = 100;
+  const PAGE_SIZE = 50;
   let lastTotal = 0;
   let rowsSoFar = [];
+  let debugModeOn = false;
 
-  const alfEvent = document.getElementById('alfEvent');
-  const alfEntity = document.getElementById('alfEntity');
-  const alfUser = document.getElementById('alfUser');
-  const alfFrom = document.getElementById('alfFrom');
-  const alfTo = document.getElementById('alfTo');
+  const dlfType = document.getElementById('dlfType');
+  const dlfTable = document.getElementById('dlfTable');
+  const dlfAgent = document.getElementById('dlfAgent');
+  const dlfUser = document.getElementById('dlfUser');
+  const dlfFrom = document.getElementById('dlfFrom');
+  const dlfTo = document.getElementById('dlfTo');
 
   function populateFilters() {
     const l = INAPlatform.currentLang();
     const allLabel = l === 'es' ? 'Todos' : 'All';
 
-    alfEvent.innerHTML = `<option value="">${allLabel}</option>` +
-      Object.keys(EVENT_LABELS).map((k) => `<option value="${k}">${EVENT_LABELS[k][l]}</option>`).join('');
+    const prevType = dlfType.value;
+    dlfType.innerHTML = `<option value="">${allLabel}</option>` +
+      Object.keys(TYPE_LABELS).map((k) => `<option value="${k}">${TYPE_LABELS[k][l]}</option>`).join('');
+    if (prevType) dlfType.value = prevType;
 
-    const prevEntity = alfEntity.value;
-    alfEntity.innerHTML = `<option value="">${allLabel}</option>` +
-      entityTypes.map((t) => `<option value="${t}">${t}</option>`).join('');
-    if (entityTypes.includes(prevEntity)) alfEntity.value = prevEntity;
+    const prevTable = dlfTable.value;
+    dlfTable.innerHTML = `<option value="">${allLabel}</option>` +
+      tableNames.map((t) => `<option value="${t}">${t}</option>`).join('');
+    if (tableNames.includes(prevTable)) dlfTable.value = prevTable;
 
-    const prevUser = alfUser.value;
-    const anonLabel = l === 'es' ? 'Anónimo (sitio público)' : 'Anonymous (public site)';
-    alfUser.innerHTML = `<option value="">${allLabel}</option><option value="__anon__">${anonLabel}</option>` +
+    const prevAgent = dlfAgent.value;
+    dlfAgent.innerHTML = `<option value="">${allLabel}</option>` +
+      agentKeys.map((a) => `<option value="${a}">${a}</option>`).join('');
+    if (agentKeys.includes(prevAgent)) dlfAgent.value = prevAgent;
+
+    const prevUser = dlfUser.value;
+    dlfUser.innerHTML = `<option value="">${allLabel}</option>` +
       allUsers.map((u) => `<option value="${u.id}">${escapeHtml(u.full_name || u.email)}</option>`).join('');
-    if (prevUser) alfUser.value = prevUser;
+    if (prevUser) dlfUser.value = prevUser;
   }
 
   function currentFilters() {
-    const userVal = alfUser.value;
     return {
-      eventType: alfEvent.value || undefined,
-      // '__anon__' → null (INAPlatform.listActivityLog() treats a literal
-      // null as "IS NULL", i.e. anonymous public-site rows — vs.
-      // undefined, which means "don't filter by user at all").
-      entityType: alfEntity.value || undefined,
-      userId: userVal === '__anon__' ? null : (userVal || undefined),
-      dateFrom: alfFrom.value ? new Date(alfFrom.value + 'T00:00:00').toISOString() : undefined,
-      dateTo: alfTo.value ? new Date(alfTo.value + 'T23:59:59').toISOString() : undefined,
+      logType: dlfType.value || undefined,
+      tableName: dlfTable.value || undefined,
+      agentKey: dlfAgent.value || undefined,
+      userId: dlfUser.value || undefined,
+      dateFrom: dlfFrom.value ? new Date(dlfFrom.value + 'T00:00:00').toISOString() : undefined,
+      dateTo: dlfTo.value ? new Date(dlfTo.value + 'T23:59:59').toISOString() : undefined,
     };
-  }
-
-  function badgeHtml(eventType) {
-    const cls = EVENT_BADGE_CLASS[eventType] || 'submitted';
-    return `<span class="status-pill ${cls}">${eventLabel(eventType)}</span>`;
   }
 
   function renderRows(newRows) {
@@ -254,52 +274,105 @@
     wrap.style.display = 'table';
     empty.style.display = 'none';
     countEl.textContent = l === 'es'
-      ? `${rowsSoFar.length} de ${lastTotal} evento${lastTotal === 1 ? '' : 's'}`
-      : `${rowsSoFar.length} of ${lastTotal} event${lastTotal === 1 ? '' : 's'}`;
+      ? `${rowsSoFar.length} de ${lastTotal} entrada${lastTotal === 1 ? '' : 's'}`
+      : `${rowsSoFar.length} of ${lastTotal} entr${lastTotal === 1 ? 'y' : 'ies'}`;
 
-    tbody.innerHTML += newRows.map((r) => {
+    tbody.innerHTML += newRows.map((r, i) => {
+      const idx = rowsSoFar.indexOf(r);
       const who = r.profiles
         ? `<span class="mini-avatar" style="margin-right:6px;">${escapeHtml(initials(r.profiles.full_name))}</span>${escapeHtml(r.profiles.full_name || r.profiles.email) || '—'}`
-        : `<span style="color:var(--muted);">${l === 'es' ? 'Anónimo' : 'Anonymous'}</span>`;
-      const entity = r.entity_type
-        ? `${escapeHtml(r.entity_type)}${r.entity_label ? ': ' + escapeHtml(r.entity_label) : ''}`
         : '—';
-      const loc = [r.ip_address, r.country].filter(Boolean).map(escapeHtml).join(' · ') || '—';
-      return `<tr>
+      const target = r.log_type === 'ai_agent'
+        ? escapeHtml(r.agent_key || '—')
+        : `${escapeHtml(r.table_name || '—')}${r.operation ? ' · ' + escapeHtml(r.operation) : ''}`;
+      const tokens = r.log_type === 'ai_agent' && (r.prompt_tokens != null || r.completion_tokens != null || r.total_tokens != null)
+        ? `${r.prompt_tokens ?? '–'} / ${r.completion_tokens ?? '–'} / ${r.total_tokens ?? '–'}`
+        : '—';
+      return `<tr class="risk-row">
         <td style="white-space:nowrap;">${fmtDateTime(r.occurred_at)}</td>
         <td>${who}</td>
-        <td>${badgeHtml(r.event_type)}</td>
-        <td>${entity}</td>
-        <td style="font-family:var(--mono); font-size:11.5px; color:var(--muted);">${escapeHtml(r.path) || '—'}</td>
-        <td style="font-family:var(--mono); font-size:11.5px; color:var(--muted);">${loc}</td>
+        <td>${typeLabel(r.log_type)}</td>
+        <td style="font-family:var(--mono); font-size:11.5px;">${target}</td>
+        <td style="font-size:11.5px; color:var(--muted);">${escapeHtml(r.model) || '—'}</td>
+        <td style="white-space:nowrap;">${r.duration_ms != null ? r.duration_ms + ' ms' : '—'}</td>
+        <td style="font-family:var(--mono); font-size:11px; color:var(--muted); white-space:nowrap;">${tokens}</td>
+        <td><button type="button" class="btn ghost small view-detail-btn" data-idx="${idx}">${l === 'es' ? 'Ver detalle' : 'View detail'}</button></td>
       </tr>`;
     }).join('');
 
     document.getElementById('loadMoreBtn').style.display = rowsSoFar.length < lastTotal ? 'inline-block' : 'none';
   }
 
+  document.getElementById('logTableBody').addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-detail-btn');
+    if (!btn) return;
+    const row = rowsSoFar[Number(btn.dataset.idx)];
+    if (!row) return;
+    document.getElementById('detailContent').textContent = JSON.stringify(row.details, null, 2);
+    document.getElementById('detailOverlay').style.display = 'flex';
+  });
+  document.getElementById('closeDetailBtn').addEventListener('click', () => {
+    document.getElementById('detailOverlay').style.display = 'none';
+  });
+  document.getElementById('detailOverlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+  });
+
   async function loadPage(reset) {
     if (reset) { offset = 0; rowsSoFar = []; document.getElementById('logTableBody').innerHTML = ''; }
     const f = currentFilters();
-    const result = await INAPlatform.listActivityLog({ ...f, limit: PAGE_SIZE, offset });
+    const result = await INAPlatform.listDebugLog({ ...f, limit: PAGE_SIZE, offset });
     lastTotal = result.total || 0;
     rowsSoFar = rowsSoFar.concat(result.rows);
     offset += result.rows.length;
     renderRows(result.rows);
   }
 
-  [alfEvent, alfEntity, alfUser, alfFrom, alfTo].forEach((el) => {
+  [dlfType, dlfTable, dlfAgent, dlfUser, dlfFrom, dlfTo].forEach((el) => {
     el.addEventListener('change', () => loadPage(true));
   });
-  document.getElementById('alfClear').addEventListener('click', () => {
-    alfEvent.value = ''; alfEntity.value = ''; alfUser.value = ''; alfFrom.value = ''; alfTo.value = '';
+  document.getElementById('dlfClear').addEventListener('click', () => {
+    dlfType.value = ''; dlfTable.value = ''; dlfAgent.value = ''; dlfUser.value = ''; dlfFrom.value = ''; dlfTo.value = '';
     loadPage(true);
   });
   document.getElementById('loadMoreBtn').addEventListener('click', () => loadPage(false));
 
+  function renderDebugModeToggle() {
+    const l = INAPlatform.currentLang();
+    const statusEl = document.getElementById('debugModeStatus');
+    const btn = document.getElementById('debugModeToggleBtn');
+    statusEl.textContent = debugModeOn
+      ? (l === 'es' ? 'Activo — se está registrando toda la actividad de la plataforma.' : 'On — logging every write/agent call platform-wide.')
+      : (l === 'es' ? 'Inactivo.' : 'Off.');
+    btn.textContent = debugModeOn ? (l === 'es' ? 'Desactivar' : 'Turn off') : (l === 'es' ? 'Activar' : 'Turn on');
+  }
+
+  document.getElementById('debugModeToggleBtn').addEventListener('click', async () => {
+    const l = INAPlatform.currentLang();
+    const next = !debugModeOn;
+    const confirmMsg = next
+      ? (l === 'es'
+          ? 'Activar el modo debug registra prompts completos, pagos y escrituras de TODA la plataforma mientras esté activo. Es una herramienta pesada — pensada para activarla brevemente mientras reproducís un problema, no para dejarla encendida. ¿Continuar?'
+          : "Turning on debug mode logs full prompts/payloads and writes for the WHOLE platform while it's active. This is a heavy tool — meant to be on briefly while reproducing an issue, not left on. Continue?")
+      : (l === 'es' ? '¿Desactivar el modo debug?' : 'Turn off debug mode?');
+    if (!confirm(confirmMsg)) return;
+    const btn = document.getElementById('debugModeToggleBtn');
+    btn.disabled = true;
+    try {
+      await INAPlatform.setDebugMode(next);
+      debugModeOn = next;
+      renderDebugModeToggle();
+    } catch (err) {
+      alert(err.message || (l === 'es' ? 'No se pudo actualizar el modo debug.' : "Couldn't update debug mode."));
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   document.querySelectorAll('.lang-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       populateFilters();
+      renderDebugModeToggle();
       document.getElementById('logTableBody').innerHTML = '';
       renderRows(rowsSoFar);
     });
@@ -333,11 +406,14 @@
       if (INAPlatform.canViewRoadmaps(profile)) document.getElementById('roadmapsNavLink').style.display = 'inline';
     } catch (e) { /* non-critical */ }
 
-    [allUsers, entityTypes] = await Promise.all([
+    [allUsers, tableNames, agentKeys, debugModeOn] = await Promise.all([
       INAPlatform.listAllProfiles(),
-      INAPlatform.listActivityLogEntityTypes(),
+      INAPlatform.listDebugLogTableNames(),
+      INAPlatform.listDebugLogAgentKeys(),
+      INAPlatform.getDebugMode(),
     ]);
     populateFilters();
+    renderDebugModeToggle();
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('logBody').style.display = 'block';

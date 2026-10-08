@@ -251,6 +251,50 @@ function hintsSuffix(text) {
   return text && text.trim() ? `\n\nADDITIONAL GUIDANCE FROM INA:\n${text.trim()}` : '';
 }
 
+// Admin-only debug mode (migration_v74_debug_mode.sql / app/debug-log.html)
+// — Pablo: "guarda en un log [...] los prompts que se envían a los
+// agentes de IA, cuál es la versión de dichos agentes, el tiempo de
+// ejecución, los tokens [...] y cualquier información que provea el
+// modelo." Checked once per request so every agent file only pays for
+// this when it's actually on. AGENT_VERSION is a hook to bump by hand
+// whenever this file's prompt changes meaningfully — every agent starts
+// at the same value, there's no other versioning scheme today.
+const AGENT_VERSION = '1.0';
+async function isDebugModeOn({ supabaseUrl, anonKey }) {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/app_settings?select=debug_mode&limit=1`, { headers: { apikey: anonKey } });
+    if (!res.ok) return false;
+    const rows = await res.json();
+    return !!(rows[0] && rows[0].debug_mode);
+  } catch (e) { return false; }
+}
+// Service-role (bypasses RLS — a server-side write, no calling user's own
+// session to scope it to). Awaited by the handler so the row is actually
+// written before the function's execution context can be frozen post-
+// response, but never lets a logging failure break the real agent
+// response — same discipline as getAgentHint() above.
+async function logDebugAgentCall({ supabaseUrl, serviceKey, userId, agentKey, provider, model, durationMs, usage, systemPrompt, userContent, rawResponse }) {
+  try {
+    await fetch(`${supabaseUrl}/rest/v1/debug_log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+      body: JSON.stringify({
+        log_type: 'ai_agent',
+        user_id: userId,
+        agent_key: agentKey,
+        agent_version: AGENT_VERSION,
+        provider,
+        model,
+        duration_ms: durationMs,
+        prompt_tokens: (usage && (usage.prompt_tokens ?? usage.input_tokens ?? usage.inputTokens)) ?? null,
+        completion_tokens: (usage && (usage.completion_tokens ?? usage.output_tokens ?? usage.outputTokens)) ?? null,
+        total_tokens: (usage && (usage.total_tokens ?? usage.totalTokens ?? (((usage.input_tokens ?? usage.inputTokens) || 0) + ((usage.output_tokens ?? usage.outputTokens) || 0)))) ?? null,
+        details: { systemPrompt, userContent, usage, rawResponse },
+      }),
+    });
+  } catch (e) { /* swallow — see comment above */ }
+}
+
 function buildSystemPrompt(fieldsSpec) {
   return `You are a form-filling assistant for INA (International Network Advisors)'s project intake platform. You will be given the text of one or more documents describing a proposed digital-infrastructure/connectivity project (a technical folder, terms of reference, project brief, feasibility study, etc.) and a list of form fields that need values to help create a new project record. Your goal is to extract as much real, stated information as the documents actually contain — leave nothing on the table, but never invent anything that isn't there.
 
@@ -405,6 +449,7 @@ async function handler(req, res) {
     const extraHints = await getAgentHint('extract-project-data', { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
     const user = await verifyUser(accessToken, { supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
+    const debugOn = await isDebugModeOn({ supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
 
     // Security-critical: SUPABASE_SERVICE_ROLE_KEY bypasses Storage RLS
     // entirely, so this check is the ONLY thing standing between an
@@ -503,6 +548,9 @@ async function handler(req, res) {
     // otherwise get cut off mid-JSON for a rich/detailed document, same
     // failure mode fixed in api/analyze-project.js's own max_tokens bump.
     let rawText;
+    const _debugStart = Date.now();
+    let _debugModel = null;
+    let _debugUsage = null;
     if (provider === 'groq') {
       const groqRes = await fetchGroqWithRetry({
         model: GROQ_MODEL || GROQ_MODEL_DEFAULT,
@@ -520,6 +568,8 @@ async function handler(req, res) {
       }
       const groqData = await groqRes.json();
       rawText = (groqData.choices && groqData.choices[0] && groqData.choices[0].message && groqData.choices[0].message.content) || '';
+      _debugModel = GROQ_MODEL || GROQ_MODEL_DEFAULT;
+      _debugUsage = groqData.usage;
     } else if (provider === 'local') {
       const localRes = await fetch(`${(LOCAL_LLM_BASE_URL || LOCAL_LLM_BASE_URL_DEFAULT).replace(/\/$/, '')}/chat/completions`, {
         method: 'POST',
@@ -544,6 +594,8 @@ async function handler(req, res) {
       }
       const localData = await localRes.json();
       rawText = (localData.choices && localData.choices[0] && localData.choices[0].message && localData.choices[0].message.content) || '';
+      _debugModel = LOCAL_LLM_MODEL;
+      _debugUsage = localData.usage;
     } else if (provider === 'bedrock') {
       try {
         const { BedrockRuntimeClient, ConverseCommand } = require('@aws-sdk/client-bedrock-runtime');
@@ -559,6 +611,8 @@ async function handler(req, res) {
         }));
         const outputContent = (bedrockRes.output && bedrockRes.output.message && bedrockRes.output.message.content) || [];
         rawText = outputContent.map((b) => b.text || '').join('');
+        _debugModel = BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT;
+        _debugUsage = bedrockRes.usage;
       } catch (bedrockErr) {
         console.error('[extract-project-data] Bedrock request failed:', bedrockErr);
         return json(res, 502, {
@@ -589,6 +643,17 @@ async function handler(req, res) {
       }
       const anthropicData = await anthropicRes.json();
       rawText = (anthropicData.content || []).map((b) => (b.type === 'text' ? b.text : '')).join('');
+      _debugModel = CLAUDE_MODEL || 'claude-sonnet-5';
+      _debugUsage = anthropicData.usage;
+    }
+
+    if (debugOn) {
+      await logDebugAgentCall({
+        supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY, userId: user.id,
+        agentKey: 'extract-project-data', provider, model: _debugModel,
+        durationMs: Date.now() - _debugStart, usage: _debugUsage,
+        systemPrompt, userContent, rawResponse: rawText,
+      });
     }
 
     let parsed;
