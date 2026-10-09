@@ -287,7 +287,7 @@ async function logDebugAgentCall({ supabaseUrl, serviceKey, userId, agentKey, pr
 }
 
 function buildSystemPrompt() {
-  return `You are a financing-structuring advisor for INA (International Network Advisors), helping ENACOM Argentina and digital-infrastructure project sponsors pick the best combination of financing instruments for a specific project.
+  return `You are a financing-structuring advisor for INA (International Network Advisors), an independent consultancy — not affiliated with ENACOM or any other financing entity in the catalog below — helping the entity sponsoring this digital-infrastructure project pick the best combination of financing instruments for it.
 
 You will be given: (1) a project's profile (type, country, budget, stage, financing already secured, etc.), and (2) the full catalog of financing/preparation Programs currently registered on the platform (multilateral development banks like BID and DFC, Argentina's own Fondo de Servicio Universal lines like TASU/FATIC/CIP/Emergencias/Red Mayorista Neutral, USTDA preparation grants, capital markets debt, etc.).
 
@@ -334,6 +334,31 @@ Respond with ONLY a single valid JSON object — no markdown code fences, no com
   "summary_es": "<spanish>",
   "summary_en": "<english>"
 }`;
+}
+
+// Upsert by project_id: check for an existing row, then PATCH or POST —
+// simpler and just as safe as PostgREST's on_conflict header given this is
+// a single, low-frequency write per call (no concurrent-write race to
+// worry about beyond what the unique(project_id) constraint already
+// guards against). Shared by both the normal generate-and-save path and
+// the save-only path below (Pablo, oct 2026: "si salgo sin guardar debería
+// preguntarme si deseo guardar o no la recomendación" — generating no
+// longer auto-persists; this is only reached once the user actually
+// confirms the save, from either path).
+async function upsertFinancingRecommendation(projectId, payload, { supabaseUrl, serviceKey }) {
+  const existing = await supabaseRest(`/financing_recommendations?project_id=eq.${projectId}&select=id`, {
+    serviceKey, supabaseUrl,
+  });
+  if (existing && existing[0]) {
+    const rows = await supabaseRest(`/financing_recommendations?id=eq.${existing[0].id}`, {
+      method: 'PATCH', body: payload, serviceKey, supabaseUrl,
+    });
+    return rows && rows[0];
+  }
+  const rows = await supabaseRest(`/financing_recommendations`, {
+    method: 'POST', body: payload, serviceKey, supabaseUrl,
+  });
+  return rows && rows[0];
 }
 
 async function handler(req, res) {
@@ -429,6 +454,31 @@ async function handler(req, res) {
     const isOwner = project.user_id === user.id;
     const isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === user.id;
     if (!isOwner && !isAssignedAdvisor && !isAdminCaller) return json(res, 403, { error: 'Not your project' });
+
+    // Save-only mode: persists an already-generated (unsaved) recommendation
+    // the client is holding in memory — no model call at all. Used when the
+    // user explicitly confirms "save" for a freshly-regenerated preview
+    // (INAPlatform.saveFinancingRecommendation() in assets/platform.js) —
+    // see financing-recommendation.html's unsaved-preview flow. Trusts the
+    // echoed-back shape (it's exactly what THIS same endpoint handed back
+    // moments earlier for the caller's own project) beyond basic length
+    // coercion — not a security boundary beyond the ownership check above,
+    // same as every other field this platform lets an owner/advisor edit.
+    if (body && body.save && typeof body.save === 'object') {
+      const s = body.save;
+      const payload = {
+        project_id: projectId,
+        user_id: user.id,
+        recommended: Array.isArray(s.recommended) ? s.recommended.slice(0, MAX_RECOMMENDED) : [],
+        recommended_en: Array.isArray(s.recommended_en) ? s.recommended_en.slice(0, MAX_RECOMMENDED) : [],
+        summary: s.summary ? String(s.summary).slice(0, 2000) : null,
+        summary_en: s.summary_en ? String(s.summary_en).slice(0, 2000) : null,
+        raw_model_output: s.raw_model_output ? String(s.raw_model_output).slice(0, 8000) : null,
+        updated_at: new Date().toISOString(),
+      };
+      const saved = await upsertFinancingRecommendation(projectId, payload, { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
+      return json(res, 200, { ok: true, recommendation: saved, saved: true });
+    }
 
     // Full catalog of financing/preparation Programs — program_role='financing'
     // excludes umbrella Iniciativas (see programs.program_role in
@@ -662,15 +712,12 @@ async function handler(req, res) {
     const summaryEs = String(parsed.summary_es || '').slice(0, 2000) || null;
     const summaryEn = String(parsed.summary_en || parsed.summary_es || '').slice(0, 2000) || null;
 
-    // Upsert by project_id: check for an existing row, then PATCH or POST —
-    // simpler and just as safe as PostgREST's on_conflict header given this
-    // is a single, low-frequency write per call (no concurrent-write race
-    // to worry about beyond what the unique(project_id) constraint already
-    // guards against).
-    const existing = await supabaseRest(`/financing_recommendations?project_id=eq.${projectId}&select=id`, {
-      serviceKey: SUPABASE_SERVICE_ROLE_KEY,
-      supabaseUrl: SUPABASE_URL,
-    });
+    // Deliberately NOT persisted here anymore (Pablo, oct 2026 — see the
+    // save-only branch above's comment): this is a PREVIEW the caller
+    // holds in memory and explicitly confirms via a follow-up {save: ...}
+    // call to this same endpoint. Shaped identically to a saved row (minus
+    // id/created_at) so financing-recommendation.html's rendering code
+    // doesn't need to care whether it's looking at a preview or a saved one.
     const payload = {
       project_id: projectId,
       user_id: user.id,
@@ -681,26 +728,8 @@ async function handler(req, res) {
       raw_model_output: rawText.slice(0, 8000),
       updated_at: new Date().toISOString(),
     };
-    let saved;
-    if (existing && existing[0]) {
-      const rows = await supabaseRest(`/financing_recommendations?id=eq.${existing[0].id}`, {
-        method: 'PATCH',
-        body: payload,
-        serviceKey: SUPABASE_SERVICE_ROLE_KEY,
-        supabaseUrl: SUPABASE_URL,
-      });
-      saved = rows && rows[0];
-    } else {
-      const rows = await supabaseRest(`/financing_recommendations`, {
-        method: 'POST',
-        body: payload,
-        serviceKey: SUPABASE_SERVICE_ROLE_KEY,
-        supabaseUrl: SUPABASE_URL,
-      });
-      saved = rows && rows[0];
-    }
 
-    return json(res, 200, { ok: true, recommendation: saved });
+    return json(res, 200, { ok: true, recommendation: payload, saved: false });
   } catch (err) {
     console.error('[recommend-financing] unhandled error:', err);
     return json(res, 500, { error: 'Recommendation failed', detail: String((err && err.message) || err) });

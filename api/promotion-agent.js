@@ -234,7 +234,7 @@ async function logDebugAgentCall({ supabaseUrl, serviceKey, userId, agentKey, pr
 }
 
 function buildSystemPrompt() {
-  return `You are a project-structuring reviewer for INA (International Network Advisors), helping ENACOM Argentina's advisors decide whether a digital-infrastructure project is genuinely ready to be promoted to its next readiness stage (Concept Stage → Early Structuring → Advanced Structuring → Investment Ready).
+  return `You are a project-structuring reviewer for INA (International Network Advisors), an independent consultancy helping INA's own advisors decide whether a digital-infrastructure project is genuinely ready to be promoted to its next readiness stage (Concept Stage → Early Structuring → Advanced Structuring → Investment Ready).
 
 You will be given the project's profile, its latest framework analysis score, its attached document categories, its financing coverage, its risk matrix, and the list of deterministic requirement checks that ALREADY failed (if any) according to the platform's configured thresholds.
 

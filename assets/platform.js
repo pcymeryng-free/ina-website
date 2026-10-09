@@ -8825,9 +8825,14 @@ const INAPlatform = {
      every re-run, same convention as FSU Scoring), unlike AI Analysis'
      append-only history. See migration_v55_financing_recommendations.sql. */
 
-  /* Triggers a (re-)run and returns the saved row. No keepalive — this is a
-     normal awaited button click on project.html, not a fire-and-forget
-     right before navigating away (unlike requestAnalysis()). */
+  /* Triggers a (re-)run and returns the result — a PREVIEW, not yet saved
+     (Pablo, oct 2026: "si salgo sin guardar debería preguntarme si deseo
+     guardar o no la recomendación"). Shaped exactly like a saved row
+     (minus id/created_at), so financing-recommendation.html can render it
+     identically either way; it's only persisted once the caller explicitly
+     confirms via saveFinancingRecommendation() below. No keepalive — this
+     is a normal awaited button click, not a fire-and-forget right before
+     navigating away (unlike requestAnalysis()). */
   async requestFinancingRecommendation(projectId) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
@@ -8846,6 +8851,32 @@ const INAPlatform = {
       // of silently dropped.
       console.error('[requestFinancingRecommendation] failed:', body.error, body.detail || body.raw || '');
       throw new Error(body.error || 'Financing recommendation request failed.');
+    }
+    return body.recommendation;
+  },
+
+  /* Persists a recommendation previously returned by
+     requestFinancingRecommendation() — the explicit "yes, save it" step
+     (first-time generation saves immediately with nothing at risk;
+     regenerating over an existing saved one holds it as a pending preview
+     until this is called, or discards it if the user says no). Same
+     endpoint, no model call — see api/recommend-financing.js's save-only
+     branch. */
+  async saveFinancingRecommendation(projectId, recommendation) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(recommendFinancingUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ projectId, save: recommendation }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('[saveFinancingRecommendation] failed:', body.error, body.detail || body.raw || '');
+      throw new Error(body.error || 'Could not save the recommendation.');
     }
     return body.recommendation;
   },

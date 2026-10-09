@@ -261,7 +261,7 @@
 </footer>
 <script src="/assets/i18n.js?v=94"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=111"></script>
+<script src="/assets/platform.js?v=112"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
 (function () {
@@ -670,6 +670,20 @@
     const lang = INAPlatform.currentLang();
     const emptyEl = document.getElementById('financingRecoEmpty');
     const resultEl = document.getElementById('financingRecoResult');
+    // Pablo, oct 2026: "la próxima vez que entro debería mostrar en el
+    // botón Regenerate Recommendation" — once a recommendation has been
+    // saved for this project, the button should say so instead of always
+    // reading "Generate" regardless of state. Overrides the static
+    // data-i18n text on every call (including the lang-switch listener
+    // below), so it always reflects the real state, not what was in the
+    // dictionary at page-load time.
+    const runBtnLabel = document.getElementById('financingRecoRunBtn').querySelector('span');
+    if (runBtnLabel) {
+      // Same I18N-lookup pattern as app/roles.html's t() helper — see its
+      // comment for why this is "I18N" directly, not "window.I18N".
+      const key = currentFinancingReco ? 'finreco.runAgain' : 'finreco.run';
+      runBtnLabel.textContent = (I18N[key] && I18N[key][lang]) || runBtnLabel.textContent;
+    }
     if (!currentFinancingReco) {
       emptyEl.style.display = 'block';
       resultEl.style.display = 'none';
