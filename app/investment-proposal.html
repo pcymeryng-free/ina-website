@@ -414,10 +414,15 @@
       doc.setFontSize(12);
       doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
       doc.text(text, MARGIN, y);
+      // Measured against the text actually drawn above (same font/size
+      // still active) rather than a fixed width — a flat 30pt line didn't
+      // reach the end of any subtitle longer than a couple of words,
+      // which read as the underline not really belonging to it.
+      const textWidth = doc.getTextWidth(text);
       y += 6;
       doc.setDrawColor(AMBER[0], AMBER[1], AMBER[2]);
       doc.setLineWidth(0.6);
-      doc.line(MARGIN, y, MARGIN + 30, y);
+      doc.line(MARGIN, y, MARGIN + textWidth, y);
       y += 12;
     }
 
