@@ -399,13 +399,26 @@
     }
 
     function h3(text) {
+      // Pablo, oct 2026: subtitles inside a chapter (e.g. "Recomendación"
+      // vs "Financiación elegida" in the Financial Chapter) "no parecen
+      // subtítulos" — too close in size/weight to body text and ran
+      // straight into whatever came right before them, with no visual
+      // break. Bigger font, breathing room BEFORE (not just after), and a
+      // short amber accent underline (a smaller echo of h2()'s own
+      // full-width chapter rule) now make every subtitle in this document
+      // read as a clear section break, not just bolder text.
       text = sanitizeText(text);
-      ensureSpace(18);
+      ensureSpace(32);
+      y += 8;
       doc.setFont('times', 'bold');
-      doc.setFontSize(10.5);
+      doc.setFontSize(12);
       doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
       doc.text(text, MARGIN, y);
-      y += 13;
+      y += 6;
+      doc.setDrawColor(AMBER[0], AMBER[1], AMBER[2]);
+      doc.setLineWidth(0.6);
+      doc.line(MARGIN, y, MARGIN + 30, y);
+      y += 12;
     }
 
     function bodyText(text) {
@@ -459,7 +472,15 @@
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
       doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-      doc.text(label, MARGIN, y);
+      // Safety net against the label itself overflowing into the value
+      // column — a long label (e.g. the old "Fondo del Servicio Universal
+      // (FSU) — % del presupuesto") used to visually overlap the value
+      // ("45%") drawn right after it at a fixed offset. Measuring the
+      // label at THIS row's own font (set above — same reasoning as the
+      // comment on the value measurement below) and keeping only what
+      // fits truncates it at a word boundary instead of overlapping.
+      const labelLines = doc.splitTextToSize(label, ATTR_LABEL_W - 10);
+      doc.text(labelLines[0], MARGIN, y);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9.5);
       doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
@@ -814,10 +835,14 @@
         y += 4;
       }
 
-      // ---- (b) Recomendaciones de la plataforma con su scoring ----
+      // ---- (b) Recomendación de la plataforma con su scoring — named to
+      // clearly contrast with "Financiación elegida" right below (Pablo,
+      // oct 2026: "separar mejor la recomendación de la financiación con
+      // la financiación elegida") — this is what the AI suggests, the
+      // next subtitle is what was actually chosen/applied. ----
       const recoItems = currentFinancingReco ? ((lang === 'es' ? currentFinancingReco.recommended : currentFinancingReco.recommended_en) || []) : [];
       if (recoItems.length) {
-        h3(lang === 'es' ? 'Recomendaciones de la plataforma' : 'Platform recommendations');
+        h3(lang === 'es' ? 'Recomendación' : 'Recommendation');
         const recoSummary = (lang === 'es' ? currentFinancingReco.summary : currentFinancingReco.summary_en) || '';
         bodyText(lang === 'es'
           ? 'Combinación de instrumentos/programas de financiación sugerida por IA a partir del perfil del proyecto, el financiamiento ya asegurado y el catálogo de programas registrados en la plataforma.'
@@ -852,13 +877,23 @@
         y += 4;
       }
 
-      // ---- (c) Programas elegidos con sus porcentajes ----
-      h3(lang === 'es' ? 'Programas elegidos' : 'Chosen programs');
+      // ---- (c) Financiación elegida, con sus porcentajes — what's
+      // actually applied to the project, as opposed to "Recomendación"
+      // above (the AI's suggestion, which may differ from what was
+      // ultimately chosen). ----
+      h3(lang === 'es' ? 'Financiación elegida' : 'Chosen financing');
       if (!hasAnyFinancing) {
         bodyText(lang === 'es' ? 'Este proyecto todavía no tiene financiamiento cargado.' : 'This project has no financing loaded yet.');
       } else {
         if (fsuPct > 0 || currentProject.fsu_amount != null || currentProject.fsu_amount_usd != null) {
-          attrRow(lang === 'es' ? 'Fondo del Servicio Universal (FSU) — % del presupuesto' : 'Universal Service Fund (FSU) — % of budget', fsuPct > 0 ? `${fsuPct}%` : null);
+          // Short label, matching the two FSU rows right below it (and
+          // project.html's own PDF, which avoids this same column by
+          // putting the fund's full name in its own heading instead of
+          // inside the row label) — the full "Fondo del Servicio
+          // Universal (FSU) — % del presupuesto" text used to overflow
+          // attrRow()'s fixed 150pt label column and visually run into
+          // the value ("45%") drawn right after it.
+          attrRow(lang === 'es' ? 'FSU — % del presupuesto' : 'FSU — % of budget', fsuPct > 0 ? `${fsuPct}%` : null);
           attrRow(lang === 'es' ? 'FSU — Monto' : 'FSU — Amount', INAPlatform.formatCurrency(currentProject.fsu_amount));
           attrRow(lang === 'es' ? 'FSU — Monto (USD)' : 'FSU — Amount (USD)', INAPlatform.formatCurrencyUSD(currentProject.fsu_amount_usd));
         }
