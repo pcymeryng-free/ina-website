@@ -3695,54 +3695,57 @@
     renderDocs(docs);
     renderFinancingSummary();
 
-    try { await renderTechDataView(); } catch (e) { /* non-critical — tab just stays hidden */ }
-    try { await renderPhasesView(); } catch (e) { /* non-critical — tab just stays hidden */ }
-
-    // Roadmaps — no longer a tab on this page (Pablo, oct 2026: "quitar la
-    // [solapa] de Roadmap. Solo debe estar en el menu principal" — managed
-    // from the main Roadmaps nav / app/roadmap-instance.html instead).
-    // Still fetched here, silently, because generateProjectPdf()'s
-    // "Próximos pasos" chapter lists currentRoadmaps' active instances.
-    try {
-      currentRoadmaps = await INAPlatform.listRoadmapInstances(projectId);
-    } catch (e) { currentRoadmaps = []; /* non-critical — PDF section just shows empty */ }
-
-    // Risk Matrix — shown if
-    // there's at least one risk logged, or the viewer is an advisor/admin
-    // who could log one. See migration_v41_project_risks.sql —
-    // project_risks_select_own_or_advisor already lets the owner read
-    // their own project's risks, so this call succeeds either way.
-    try {
-      currentRisks = await INAPlatform.listProjectRisks(projectId);
-    } catch (e) { currentRisks = []; /* non-critical — block just shows empty */ }
+    // Everything below only feeds the conditional tab chips (Technical
+    // Data, Phases, Documents, Risk Matrix, Success Cases) that
+    // refreshTabVisibility() reveals at the end — none of these fetches
+    // depend on each other or on one another's result, so run them
+    // together instead of one round-trip at a time (Pablo, oct 2026: "se
+    // tarda mucho... muestra primero algunas y despues muestra todas").
+    // Same per-fetch fallback as before (a non-critical failure just
+    // leaves that block/data empty) — Promise.all is safe here because
+    // each promise already swallows its own error via .catch().
     const viewerCanManageRisks = currentProfile && INAPlatform.canManageRisks(currentProfile);
+    const viewerCanManageSuccessCases = isOwner || isAssignedAdvisor;
+    const [, , roadmaps, risks, promotionRuns, successCases, successCasesLibrary] = await Promise.all([
+      renderTechDataView().catch((e) => { /* non-critical — tab just stays hidden */ }),
+      renderPhasesView().catch((e) => { /* non-critical — tab just stays hidden */ }),
+      // Roadmaps — no longer a tab on this page (Pablo, oct 2026: "quitar la
+      // [solapa] de Roadmap. Solo debe estar en el menu principal" — managed
+      // from the main Roadmaps nav / app/roadmap-instance.html instead).
+      // Still fetched here, silently, because generateProjectPdf()'s
+      // "Próximos pasos" chapter lists currentRoadmaps' active instances.
+      INAPlatform.listRoadmapInstances(projectId).catch((e) => []), /* non-critical — PDF section just shows empty */
+      // Risk Matrix — shown if there's at least one risk logged, or the
+      // viewer is an advisor/admin who could log one. See
+      // migration_v41_project_risks.sql — project_risks_select_own_or_advisor
+      // already lets the owner read their own project's risks, so this
+      // call succeeds either way.
+      INAPlatform.listProjectRisks(projectId).catch((e) => []), /* non-critical — block just shows empty */
+      // Promotion Agent — shown whenever there's a next stage to promote to
+      // (so an advisor/admin can run it) or there's already run history to
+      // show (any viewer, since the RLS select policy mirrors
+      // project_workflow_events' own-project-or-advisor visibility). See
+      // migration_v65_promotion_requirements.sql and api/promotion-agent.js.
+      INAPlatform.getPromotionAgentRuns(projectId).catch((e) => []), /* non-critical — block just shows empty */
+      INAPlatform.listProjectSuccessCases(projectId).catch((e) => []), /* non-critical — block just shows empty */
+      // Only the owner/assigned advisor can actually link a case, so only
+      // they pay for fetching the full library up front — a read-only
+      // viewer just sees whatever's already linked, no picker to populate.
+      viewerCanManageSuccessCases
+        ? INAPlatform.listSuccessCases().catch((e) => []) /* non-critical — picker stays empty */
+        : Promise.resolve([]),
+    ]);
+    currentRoadmaps = roadmaps;
+    currentRisks = risks;
+    currentPromotionAgentRuns = promotionRuns;
+    currentSuccessCases = successCases;
+    if (viewerCanManageSuccessCases) allSuccessCasesForPicker = successCasesLibrary;
+
     if (currentRisks.length || viewerCanManageRisks) {
       document.getElementById('riskMatrixBlock').style.display = 'block';
       renderRiskMatrix();
     }
-
-    // Promotion Agent — shown whenever there's a next stage to promote to
-    // (so an advisor/admin can run it) or there's already run history to
-    // show (any viewer, since the RLS select policy mirrors
-    // project_workflow_events' own-project-or-advisor visibility). See
-    // migration_v65_promotion_requirements.sql and api/promotion-agent.js.
-    try {
-      currentPromotionAgentRuns = await INAPlatform.getPromotionAgentRuns(projectId);
-    } catch (e) { currentPromotionAgentRuns = []; /* non-critical — block just shows empty */ }
     renderPromotionAgentBlock(project);
-
-    try {
-      currentSuccessCases = await INAPlatform.listProjectSuccessCases(projectId);
-    } catch (e) { currentSuccessCases = []; /* non-critical — block just shows empty */ }
-    const viewerCanManageSuccessCases = isOwner || isAssignedAdvisor;
-    if (viewerCanManageSuccessCases) {
-      // Only the owner/assigned advisor can actually link a case, so only
-      // they pay for fetching the full library up front — a read-only
-      // viewer just sees whatever's already linked, no picker to populate.
-      try {
-        allSuccessCasesForPicker = await INAPlatform.listSuccessCases();
-      } catch (e) { allSuccessCasesForPicker = []; /* non-critical — picker stays empty */ }
-    }
     if (currentSuccessCases.length || viewerCanManageSuccessCases) {
       renderSuccessCases();
     }
