@@ -831,6 +831,7 @@ const DATACENTER_TEMPLATE = {
         },
         {
           key: 'escala_potencia', type: 'select',
+          required: true,
           label: { en: 'Project scale (total power)', es: 'Escala del proyecto (potencia total)' },
           options: [
             { value: 'lt_1mw', en: '< 1 MW (Edge/Micro)', es: '< 1 MW (Edge/Micro)' },
@@ -911,6 +912,7 @@ const DATACENTER_TEMPLATE = {
         },
         {
           key: 'tenencia', type: 'select',
+          required: true,
           label: { en: 'Land tenure', es: 'Tenencia' },
           options: [
             { value: 'propiedad', en: 'Owned', es: 'Propiedad' },
@@ -934,16 +936,19 @@ const DATACENTER_TEMPLATE = {
       fields: [
         {
           key: 'potencia_total', type: 'text',
+          required: true,
           label: { en: 'Planned total power', es: 'Potencia total planificada' },
           placeholder: { en: 'e.g. 40 MW', es: 'ej. 40 MW' },
         },
         {
           key: 'densidad_rack', type: 'text',
+          required: true,
           label: { en: 'Power density per rack', es: 'Densidad de energía por rack' },
           placeholder: { en: 'e.g. 80 kW/rack', es: 'ej. 80 kW/rack' },
         },
         {
           key: 'redundancia_energetica', type: 'select',
+          required: true,
           label: { en: 'Power redundancy', es: 'Redundancia energética' },
           options: [
             { value: 'n', en: 'N (no redundancy)', es: 'N (sin redundancia)' },
@@ -987,6 +992,7 @@ const DATACENTER_TEMPLATE = {
       fields: [
         {
           key: 'tipo_refrigeracion', type: 'select',
+          required: true,
           label: { en: 'Cooling type', es: 'Tipo de refrigeración' },
           options: [
             { value: 'aire_forzado', en: 'Forced air (CRAC/CRAH)', es: 'Aire forzado (CRAC/CRAH)' },
@@ -996,6 +1002,7 @@ const DATACENTER_TEMPLATE = {
         },
         {
           key: 'pue_objetivo', type: 'text',
+          required: true,
           label: { en: 'Target PUE', es: 'PUE objetivo declarado' },
           placeholder: { en: 'e.g. 1.25 (industry reference: traditional 1.4–2.0, new-build AI 1.1–1.3)', es: 'ej. 1.25 (referencia: tradicional 1.4–2.0, IA nueva instalación 1.1–1.3)' },
         },
@@ -1096,6 +1103,7 @@ const DATACENTER_TEMPLATE = {
       fields: [
         {
           key: 'nivel_tier', type: 'select',
+          required: true,
           label: { en: 'Tier level (Uptime Institute)', es: 'Nivel Tier (Uptime Institute)' },
           options: [
             { value: 'tier_1', en: 'Tier I', es: 'Tier I' },
@@ -1118,6 +1126,7 @@ const DATACENTER_TEMPLATE = {
       fields: [
         {
           key: 'licencia_tic', type: 'select',
+          required: true,
           label: { en: 'TIC license (Law 27,078)', es: 'Licencia TIC (Ley 27.078)' },
           options: [
             { value: 'vigente', en: 'In force', es: 'Vigente' },
@@ -1182,6 +1191,7 @@ const DATACENTER_TEMPLATE = {
       fields: [
         {
           key: 'etapa_propuesta', type: 'select',
+          required: true,
           label: { en: 'Proposal stage', es: 'Etapa de la propuesta' },
           options: [
             { value: 'piloto', en: 'Pilot', es: 'Piloto' },
@@ -1191,6 +1201,7 @@ const DATACENTER_TEMPLATE = {
         },
         {
           key: 'fuente_financiamiento_buscada', type: 'select',
+          required: true,
           label: { en: 'Financing sought', es: 'Fuente de financiamiento buscada' },
           options: [
             { value: 'capital_propio', en: 'Own capital', es: 'Capital propio' },
@@ -1203,6 +1214,7 @@ const DATACENTER_TEMPLATE = {
         },
         {
           key: 'capex_total', type: 'text',
+          required: true,
           label: { en: 'Total CAPEX (and per MW/node, if known)', es: 'CAPEX total (y por MW/nodo, si se conoce)' },
           placeholder: { en: 'Reference: traditional USD 5–10M/MW, AI USD 15–30M/MW', es: 'Referencia: tradicional USD 5–10M/MW, IA USD 15–30M/MW' },
         },
@@ -1359,6 +1371,7 @@ const SUBMARINE_CABLE_TEMPLATE = {
         },
         {
           key: 'tipo_iniciativa', type: 'select',
+          required: true,
           label: { en: 'Type of initiative', es: 'Tipo de iniciativa' },
           options: [
             { value: 'nuevo_cable', en: 'New submarine cable', es: 'Nuevo cable submarino' },
@@ -1384,6 +1397,7 @@ const SUBMARINE_CABLE_TEMPLATE = {
         },
         {
           key: 'nivel_madurez', type: 'select',
+          required: true,
           label: { en: 'Current maturity level', es: 'Nivel de madurez actual' },
           options: [
             { value: 'idea', en: 'Idea', es: 'Idea' },
@@ -1423,6 +1437,7 @@ const SUBMARINE_CABLE_TEMPLATE = {
         },
         {
           key: 'longitud_km', type: 'text',
+          required: true,
           label: { en: 'Estimated total length (km)', es: 'Longitud total estimada (km)' },
         },
         {
@@ -1435,6 +1450,7 @@ const SUBMARINE_CABLE_TEMPLATE = {
         },
         {
           key: 'capacidad_diseno', type: 'text',
+          required: true,
           label: { en: 'Design capacity (Tbps)', es: 'Capacidad de diseño (Tbps)' },
         },
         {
@@ -1449,6 +1465,7 @@ const SUBMARINE_CABLE_TEMPLATE = {
         },
         {
           key: 'etapa_proyecto', type: 'select',
+          required: true,
           label: { en: 'Project stage', es: 'Etapa del proyecto' },
           options: [
             { value: 'estudio_ruta', en: 'Route survey', es: 'Estudio de ruta' },
@@ -1584,41 +1601,49 @@ const SUBMARINE_CABLE_TEMPLATE = {
       fields: [
         {
           key: 'irr_regulatorio', type: 'textarea',
+          required: true,
           label: { en: '1. Legal & regulatory clarity', es: '1. Claridad legal y regulatoria' },
           placeholder: { en: 'ENACOM license status, landing/cabotage authorization, applicable Universal Service framework, known regulatory restrictions', es: 'Estado de la licencia de ENACOM, autorización de landing/cabotaje, marco de servicio universal aplicable, restricciones regulatorias identificadas' },
         },
         {
           key: 'irr_diseno_tecnico', type: 'textarea',
+          required: true,
           label: { en: '2. Technical design maturity', es: '2. Madurez del diseño técnico' },
           placeholder: { en: 'Marine route survey, seabed environmental study, detailed engineering, preselected system vendor, multi-hazard route assessment (climate, seismic, geopolitical, human activity)', es: 'Estudio de ruta marina, estudio ambiental de fondo marino, ingeniería de detalle disponible, proveedor de sistema submarino preseleccionado, evaluación multiamenaza de la ruta (clima, sísmica, geopolítica, actividad humana)' },
         },
         {
           key: 'irr_modelo_financiero', type: 'textarea',
+          required: true,
           label: { en: '3. Financial model robustness', es: '3. Robustez del modelo financiero' },
           placeholder: { en: 'CAPEX/OPEX, revenue model (IRU, colocation, dark fiber leasing), payback horizon / estimated IRR', es: 'CAPEX/OPEX, modelo de ingresos (IRU, colocation, leasing de fibra oscura), horizonte de repago / TIR estimada' },
         },
         {
           key: 'irr_capacidad_sponsor', type: 'textarea',
+          required: true,
           label: { en: '4. Sponsor capacity', es: '4. Capacidad del sponsor' },
           placeholder: { en: 'Prior sponsor experience, in-house technical execution capacity, sponsor financial strength', es: 'Experiencia previa del sponsor, capacidad de ejecución técnica propia, solidez financiera del sponsor' },
         },
         {
           key: 'irr_demanda_mercado', type: 'textarea',
+          required: true,
           label: { en: '5. Market demand evidence', es: '5. Evidencia de demanda de mercado' },
           placeholder: { en: 'Operators/ISPs with confirmed interest, signed or negotiating IRU contracts, 5–10 year capacity demand projection', es: 'Operadores/ISPs con interés confirmado, contratos IRU firmados o en negociación, proyección de demanda de capacidad (5–10 años)' },
         },
         {
           key: 'irr_ambiental_social', type: 'textarea',
+          required: true,
           label: { en: '6. Environmental & social readiness', es: '6. Preparación ambiental y social' },
           placeholder: { en: 'Environmental impact assessment status, consultation with coastal/fishing communities, facility environmental management plan, climate/seismic/tsunami hazard vulnerability assessment for the route and landing site', es: 'Estado de la evaluación de impacto ambiental, consulta con comunidades costeras/pesca, plan de gestión ambiental de la instalación, evaluación de vulnerabilidad ante riesgos climáticos/sísmicos/tsunami de la ruta y del punto de aterrizaje' },
         },
         {
           key: 'irr_riesgos', type: 'textarea',
+          required: true,
           label: { en: '7. Risk mitigation coverage', es: '7. Cobertura de mitigación de riesgos' },
           placeholder: { en: 'Critical risks identified and mitigation plan per risk (see the 10-category risk matrix in the notes below)', es: 'Riesgos críticos identificados y plan de mitigación por riesgo (ver matriz de riesgos de 10 categorías en las notas más abajo)' },
         },
         {
           key: 'irr_gobernanza', type: 'textarea',
+          required: true,
           label: { en: '8. Governance & reporting', es: '8. Gobernanza y reporting' },
           placeholder: { en: 'Steering committee constituted, designated PMO, reporting mechanism to ENACOM/stakeholders', es: 'Comité directivo/steering committee constituido, PMO designada, mecanismo de reporte a ENACOM/stakeholders' },
         },
@@ -1630,6 +1655,7 @@ const SUBMARINE_CABLE_TEMPLATE = {
       fields: [
         {
           key: 'licencia_enacom', type: 'select',
+          required: true,
           label: { en: 'ENACOM Telecommunications Services license', es: 'Licencia de Servicios de Telecomunicaciones (ENACOM)' },
           options: [
             { value: 'vigente', en: 'In force', es: 'Vigente' },
@@ -1696,6 +1722,7 @@ const SUBMARINE_CABLE_TEMPLATE = {
       fields: [
         {
           key: 'capex_total', type: 'text',
+          required: true,
           label: { en: 'Total CAPEX (USD)', es: 'CAPEX total (USD)' },
         },
         {
@@ -1704,6 +1731,7 @@ const SUBMARINE_CABLE_TEMPLATE = {
         },
         {
           key: 'fuente_financiamiento_buscada', type: 'select',
+          required: true,
           label: { en: 'Financing sources under evaluation', es: 'Fuentes de financiamiento en evaluación' },
           options: [
             { value: 'multilateral', en: 'Multilateral (IDB, CAF, World Bank, FONPLATA)', es: 'Multilateral (BID, CAF, Banco Mundial, FONPLATA)' },
@@ -1837,6 +1865,7 @@ const WHOLESALE_NEUTRAL_NETWORK_TEMPLATE = {
         },
         {
           key: 'registro_tic', type: 'select',
+          required: true,
           label: { en: 'Enabling TIC registration', es: 'Registro TIC habilitante' },
           options: [
             { value: 'scm', en: 'Mobile Communications Services (SCM)', es: 'Servicios de Comunicaciones Móviles (SCM)' },
@@ -1847,6 +1876,7 @@ const WHOLESALE_NEUTRAL_NETWORK_TEMPLATE = {
         },
         {
           key: 'antiguedad_prestacion_servicio', type: 'select',
+          required: true,
           label: { en: 'Track record providing the service', es: 'Antigüedad de prestación efectiva del servicio' },
           options: [
             { value: 'dos_anios_o_mas', en: '2 years or more (eligibility requirement)', es: '2 años o más (requisito de elegibilidad)' },
@@ -1875,6 +1905,7 @@ const WHOLESALE_NEUTRAL_NETWORK_TEMPLATE = {
       fields: [
         {
           key: 'rubro_financiamiento', type: 'select',
+          required: true,
           label: { en: 'Funding destination (Program Sec. V)', es: 'Destino del financiamiento (Programa, Sec. V)' },
           options: [
             { value: 'refefo_transporte_mayorista', en: 'ReFeFO / other wholesale transport network deployment or expansion', es: 'Despliegue/extensión/ampliación de la ReFeFO u otras redes de transporte mayorista' },
@@ -1919,6 +1950,7 @@ const WHOLESALE_NEUTRAL_NETWORK_TEMPLATE = {
         },
         {
           key: 'tipo_zona', type: 'select',
+          required: true,
           label: { en: 'Zone type', es: 'Tipo de zona' },
           options: [
             { value: 'desatendida_sin_cobertura', en: 'Underserved, no coverage', es: 'Desatendida, sin cobertura' },
@@ -1943,6 +1975,7 @@ const WHOLESALE_NEUTRAL_NETWORK_TEMPLATE = {
       fields: [
         {
           key: 'topologia_dimensionamiento', type: 'textarea',
+          required: true,
           label: { en: 'Topology, dimensioning & scalability', es: 'Topología, dimensionamiento y escalabilidad' },
           placeholder: { en: 'Explicitly weighed under evaluation criterion VII.3 (technical viability & operational sustainability)', es: 'Ponderado explícitamente en el criterio de evaluación VII.3 (viabilidad técnica y sostenibilidad operativa)' },
         },
@@ -1953,6 +1986,7 @@ const WHOLESALE_NEUTRAL_NETWORK_TEMPLATE = {
         },
         {
           key: 'interconexion_refefo', type: 'select',
+          required: true,
           label: { en: 'Interconnection with REFEFO', es: 'Interconexión con la REFEFO' },
           options: [
             { value: 'conectado', en: 'Connected / secured', es: 'Conectado / asegurada' },
@@ -1992,6 +2026,7 @@ const WHOLESALE_NEUTRAL_NETWORK_TEMPLATE = {
       fields: [
         {
           key: 'modelo_neutralidad', type: 'select',
+          required: true,
           label: { en: 'Neutrality model', es: 'Modelo de neutralidad' },
           options: [
             { value: 'acceso_abierto_multioperador', en: 'Open, multi-operator access (priority criterion)', es: 'Acceso abierto multioperador (criterio prioritario)' },
@@ -2046,6 +2081,7 @@ const WHOLESALE_NEUTRAL_NETWORK_TEMPLATE = {
         },
         {
           key: 'porcentaje_financiamiento_solicitado', type: 'text',
+          required: true,
           label: { en: 'Financing percentage requested', es: 'Porcentaje de financiamiento solicitado' },
         },
         {
@@ -2092,6 +2128,7 @@ const WHOLESALE_NEUTRAL_NETWORK_TEMPLATE = {
       fields: [
         {
           key: 'licencia_tic_vigente', type: 'select',
+          required: true,
           label: { en: 'TIC license status', es: 'Licencia TIC' },
           options: [
             { value: 'vigente', en: 'In force', es: 'Vigente' },
@@ -2181,11 +2218,13 @@ const EARLY_WARNING_TEMPLATE = {
       fields: [
         {
           key: 'riesgos_cubiertos', type: 'textarea',
+          required: true,
           label: { en: 'Hazard types covered', es: 'Tipos de riesgo cubiertos' },
           placeholder: { en: 'e.g. earthquake, tsunami, severe storm, hurricane/cyclone, flood, volcanic eruption, wildfire, other', es: 'p. ej. sismo, tsunami, tormenta severa, huracán/ciclón, inundación, erupción volcánica, incendio forestal, otros' },
         },
         {
           key: 'zona_geografica_cobertura', type: 'text',
+          required: true,
           label: { en: 'Geographic coverage area', es: 'Zona geográfica de cobertura' },
         },
         {
@@ -2212,6 +2251,7 @@ const EARLY_WARNING_TEMPLATE = {
       fields: [
         {
           key: 'canal_difusion_principal', type: 'select',
+          required: true,
           label: { en: 'Primary dissemination channel', es: 'Canal de difusión principal' },
           options: [
             { value: 'cell_broadcast', en: 'Cell Broadcast (SMS-CB / WEA-style)', es: 'Cell Broadcast (SMS-CB / estilo WEA)' },
@@ -2232,6 +2272,7 @@ const EARLY_WARNING_TEMPLATE = {
         },
         {
           key: 'operadores_moviles_involucrados', type: 'textarea',
+          required: true,
           label: { en: 'Mobile operators expected to participate', es: 'Operadores móviles que se prevé que participen' },
         },
         {
@@ -2255,6 +2296,7 @@ const EARLY_WARNING_TEMPLATE = {
       fields: [
         {
           key: 'arquitectura_propuesta', type: 'textarea',
+          required: true,
           label: { en: 'Proposed system architecture', es: 'Arquitectura de sistema propuesta' },
           placeholder: { en: 'Alert origination gateway, Cell Broadcast Center (CBC), integration with each operator\'s Cell Broadcast Entity (CBE), etc.', es: 'Gateway de origen de la alerta, Cell Broadcast Center (CBC), integración con la Cell Broadcast Entity (CBE) de cada operador, etc.' },
         },
@@ -2284,6 +2326,7 @@ const EARLY_WARNING_TEMPLATE = {
         },
         {
           key: 'autorizacion_espectro', type: 'select',
+          required: true,
           label: { en: 'Spectrum authorization', es: 'Autorización de espectro' },
           options: [
             { value: 'aplica_asegurada', en: 'Applicable, secured', es: 'Aplica, asegurada' },
@@ -2298,6 +2341,7 @@ const EARLY_WARNING_TEMPLATE = {
         },
         {
           key: 'responsable_operacion_sistema', type: 'text',
+          required: true,
           label: { en: 'Entity responsible for ongoing operation/maintenance', es: 'Entidad responsable de la operación/mantenimiento continuo' },
         },
       ],
@@ -2316,6 +2360,7 @@ const EARLY_WARNING_TEMPLATE = {
         },
         {
           key: 'modelo_sostenibilidad', type: 'textarea',
+          required: true,
           label: { en: 'Financial/operational sustainability model post-implementation', es: 'Modelo de sostenibilidad financiera/operativa post-implementación' },
         },
       ],
@@ -4540,6 +4585,8 @@ function flattenTemplateFields(template, lang) {
         key: field.key,
         label: field.label[L] || field.label.en,
         type: field.type,
+        required: !!field.required,
+        section: section.title[L] || section.title.en,
         options: field.type === 'select'
           ? (field.options || []).map((o) => ({ value: o.value, label: o[L] || o.en }))
           : undefined,
@@ -4547,6 +4594,25 @@ function flattenTemplateFields(template, lang) {
     });
   });
   return out;
+}
+
+/* Which of a template's `required: true` fields (see PROJECT_TEMPLATES —
+   right now only a hand-picked subset per template: the fields that most
+   directly drive investment readiness/eligibility for that project type,
+   e.g. PUE/Tier/CAPEX for a datacenter or the Investment Readiness Index™
+   evidence-by-dimension block for a submarine cable) are still unanswered
+   in `answers` (same flat {fieldKey: value} shape flattenTemplateFields()
+   and compileTemplateAnswers() use). Same "empty" definition
+   renderTechDataView() (app/project.html) already uses for a filled
+   answer: null/undefined or a blank/whitespace-only string. Returns
+   flattened field objects (key/label/section), in template order, so a
+   caller can list them grouped by section without re-deriving anything. */
+function missingRequiredTemplateFields(template, answers, lang) {
+  if (!template) return [];
+  const a = answers || {};
+  return flattenTemplateFields(template, lang).filter((f) =>
+    f.required && (a[f.key] == null || String(a[f.key]).trim() === '')
+  );
 }
 
 /* ---------- Framework-derived status (dashboard grid + filters) ----------
@@ -7576,6 +7642,7 @@ const INAPlatform = {
      from and writes to, so the same fact only has to be entered once. */
 
   flattenTemplateFields(template) { return flattenTemplateFields(template, currentLang()); },
+  missingRequiredTemplateFields(template, answers) { return missingRequiredTemplateFields(template, answers, currentLang()); },
 
   async getSharedFieldAnswers(projectId) {
     const { data, error } = await supabaseClient

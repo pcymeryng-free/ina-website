@@ -316,6 +316,13 @@
         <div id="techDataTemplateHeader" style="display:none;">
           <h3 id="techDataTitle" style="margin:0 0 6px; font-size:16px;"></h3>
           <p id="techDataIntro" style="font-size:13px; color:var(--muted); margin:0 0 18px;"></p>
+          <!-- Kept in sync by renderMissingRequiredBanner() below — on every
+               full field render (type change, autofill) and on every single
+               field edit, manual or via the autocomplete button, so it
+               reflects what's still missing regardless of how a field got
+               filled. Mirrors app/project.html's read-only "Technical Data"
+               tab, which shows the same list once the project exists. -->
+          <div id="techDataMissingRequired" style="display:none; margin-bottom:18px;"></div>
           <div style="display:flex; gap:10px; align-items:center; margin-bottom:22px; flex-wrap:wrap;">
             <button type="button" class="btn ghost small" id="techDataAutofillBtn"><span data-i18n="pt.autofill">Autocomplete from documents</span></button>
           </div>
@@ -1298,6 +1305,34 @@
     } else {
       notesWrap.style.display = 'none';
     }
+    renderMissingRequiredBanner();
+  }
+
+  // Same `required: true` subset of PROJECT_TEMPLATES (assets/platform.js)
+  // app/project.html's read-only Technical Data tab checks — surfaced here
+  // too so it updates live while the data is actually being entered,
+  // whether that's manual typing or the "Autocomplete from documents" (AI
+  // agent) button above. Re-run after every full fields render AND after
+  // every single field's own `change` (below) — a full renderTechDataFields()
+  // on each keystroke-triggered change would be wasteful and would also
+  // reset any field element mid-edit.
+  function renderMissingRequiredBanner() {
+    const box = document.getElementById('techDataMissingRequired');
+    if (!techDataTemplate) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    const missing = INAPlatform.missingRequiredTemplateFields(techDataTemplate, techDataAnswers);
+    if (!missing.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    const heading = lang === 'es'
+      ? `Faltan ${missing.length} campo${missing.length === 1 ? '' : 's'} clave para avanzar de etapa`
+      : `${missing.length} key field${missing.length === 1 ? '' : 's'} missing to advance this project`;
+    box.innerHTML = `
+      <div class="advisor-banner" style="align-items:flex-start; flex-direction:column; gap:6px;">
+        <strong style="font-size:13px;">⚠ ${escapeHtml(heading)}</strong>
+        <ul style="margin:4px 0 0; padding-left:20px; columns:2; column-gap:24px;">
+          ${missing.map((f) => `<li style="font-size:12.5px; break-inside:avoid;">${escapeHtml(f.label)} <span style="color:var(--muted);">— ${escapeHtml(f.section)}</span></li>`).join('')}
+        </ul>
+      </div>
+    `;
+    box.style.display = 'block';
   }
 
   // Persists every field as you go, straight into shared_field_answers —
@@ -1311,12 +1346,14 @@
     const key = e.target.dataset.field;
     if (!key || !activeProjectId) return;
     techDataAnswers[key] = e.target.value;
+    renderMissingRequiredBanner();
     try { await INAPlatform.mergeSharedFieldAnswers(activeProjectId, { [key]: e.target.value }); } catch (err) { /* non-critical */ }
   });
   document.getElementById('techDataNotes').addEventListener('change', async (e) => {
     if (!techDataTemplate || !techDataTemplate.notesField || !activeProjectId) return;
     const key = techDataTemplate.notesField.key;
     techDataAnswers[key] = e.target.value;
+    renderMissingRequiredBanner();
     try { await INAPlatform.mergeSharedFieldAnswers(activeProjectId, { [key]: e.target.value }); } catch (err) { /* non-critical */ }
   });
 
@@ -1993,6 +2030,15 @@
     }
 
     restoreTemplateDraftIfAny();
+
+    // Deep link into a specific section when editing — e.g.
+    // project.html?id=...'s "Technical Data" tab links back here with
+    // ?step=2 for its "missing required fields" banner's Fill-in button.
+    // Only meaningful once activeProjectId is set (canJumpTo()'s rule), so
+    // this is a no-op in create mode (?step on a fresh form is ignored —
+    // section 1 always has to come first there to create the record).
+    const requestedStep = Number(params.get('step'));
+    if (requestedStep >= 1 && requestedStep <= 5 && canJumpTo(requestedStep)) goToStep(requestedStep);
   }
   init();
 

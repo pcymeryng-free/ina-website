@@ -246,6 +246,16 @@
       <div class="tab-panel" data-tab-panel="techdata">
       <div id="techDataViewBlock" class="info-block" style="margin-top:0; display:none;">
         <h4 id="techDataViewTitle"><span data-i18n="pd.tab.techdata">Technical Data</span></h4>
+        <!-- Populated by renderTechDataView() below, from
+             INAPlatform.missingRequiredTemplateFields() — the subset of
+             this project type's template fields flagged `required: true`
+             (see PROJECT_TEMPLATES in assets/platform.js) that are still
+             blank. Shown whenever any are missing, including before the
+             template has a single answer yet (manual entry or the AI
+             agent's extraction both write into the same
+             shared_field_answers pool this reads from) — that's the case
+             where surfacing it matters most. -->
+        <div id="techDataMissingRequired" style="display:none; margin-bottom:18px;"></div>
         <div class="attrs-grid" id="techDataViewGrid"></div>
       </div>
       </div>
@@ -889,17 +899,42 @@
   async function renderTechDataView() {
     const block = document.getElementById('techDataViewBlock');
     const grid = document.getElementById('techDataViewGrid');
+    const missingBox = document.getElementById('techDataMissingRequired');
     const template = INAPlatform.projectTemplateFor(currentProject.project_type);
-    if (!template) { block.style.display = 'none'; grid.innerHTML = ''; return; }
+    if (!template) { block.style.display = 'none'; grid.innerHTML = ''; missingBox.style.display = 'none'; return; }
 
     let answers = {};
     try { answers = await INAPlatform.getSharedFieldAnswers(currentProject.id); } catch (e) { answers = {}; }
     const flatFields = INAPlatform.flattenTemplateFields(template);
     const notesVal = template.notesField ? answers[template.notesField.key] : null;
     const hasAnyAnswer = flatFields.some((f) => answers[f.key] != null && String(answers[f.key]).trim() !== '') || !!notesVal;
-    if (!hasAnyAnswer) { block.style.display = 'none'; grid.innerHTML = ''; return; }
+    const missingRequired = INAPlatform.missingRequiredTemplateFields(template, answers);
+    if (!hasAnyAnswer && !missingRequired.length) { block.style.display = 'none'; grid.innerHTML = ''; missingBox.style.display = 'none'; return; }
 
     const lang = INAPlatform.currentLang();
+    if (missingRequired.length) {
+      const heading = lang === 'es'
+        ? `Faltan ${missingRequired.length} campo${missingRequired.length === 1 ? '' : 's'} clave para avanzar de etapa`
+        : `${missingRequired.length} key field${missingRequired.length === 1 ? '' : 's'} missing to advance this project`;
+      const canEditTechData = isOwner || isAssignedAdvisor;
+      const editHref = `new-project.html?id=${projectId}&step=2`;
+      missingBox.innerHTML = `
+        <div class="advisor-banner" style="align-items:flex-start; flex-direction:column; gap:6px;">
+          <div style="display:flex; align-items:center; gap:10px; width:100%; flex-wrap:wrap;">
+            <strong style="font-size:13px;">⚠ ${escapeHtml(heading)}</strong>
+            ${canEditTechData ? `<a href="${editHref}" class="btn ghost small" style="margin-left:auto;">${lang === 'es' ? 'Completar' : 'Fill in'}</a>` : ''}
+          </div>
+          <ul style="margin:4px 0 0; padding-left:20px; columns:2; column-gap:24px;">
+            ${missingRequired.map((f) => `<li style="font-size:12.5px; break-inside:avoid;">${escapeHtml(f.label)} <span style="color:var(--muted);">— ${escapeHtml(f.section)}</span></li>`).join('')}
+          </ul>
+        </div>
+      `;
+      missingBox.style.display = 'block';
+    } else {
+      missingBox.innerHTML = '';
+      missingBox.style.display = 'none';
+    }
+    if (!hasAnyAnswer) { grid.innerHTML = ''; block.style.display = 'block'; return; }
     // Only 'textarea' answers get an English cache (migration_v72_bilingual_free_text.sql
     // — 'text' fields mix numbers/proper nouns with no way to tell them
     // apart automatically, so those always show exactly as entered).
