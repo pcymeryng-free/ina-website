@@ -41,6 +41,24 @@
   #contactsPrintView .p-table th{ background:#eee; text-transform:uppercase; letter-spacing:.03em; font-size:8.5px; }
   #contactsPrintView .p-table tr{ page-break-inside:avoid; }
 }
+
+/* Actions column, pinned to the right edge of each table's horizontal
+   scroll area (the overflow-x:auto wrappers below). Contacts needs
+   ~1180px of table while the content column caps at ~1116px, so the Edit
+   button fell outside the clipped area at EVERY viewport width, not just
+   on a narrow screen — reaching it meant scrolling to the bottom of 196
+   rows to find the wrapper's scrollbar first. Pinning keeps it in view at
+   any scroll position. Rows pass underneath it, so the cell needs its own
+   opaque background; the row line is painted as an inset shadow because
+   border-collapse drops a sticky cell's own border in WebKit. */
+.md-actions{
+  position:sticky; right:0; z-index:1;
+  white-space:nowrap; text-align:right;
+  background:var(--paper);
+  box-shadow: inset 1px 0 0 var(--paper-line), inset 0 -1px 0 var(--paper-line);
+}
+.md-actions .btn + .btn{ margin-left:6px; }
+.risk-table tr.risk-row:hover td.md-actions{ background:var(--paper-2); }
 </style>
 </head>
 <body class="app-body">
@@ -164,8 +182,7 @@
                 <th data-i18n="md.contacts.col.phone">Phone</th>
                 <th data-i18n="md.contacts.col.addedby">Added by</th>
                 <th data-i18n="md.contacts.col.dateadded">Date Added</th>
-                <th></th>
-                <th></th>
+                <th class="md-actions"></th>
               </tr>
             </thead>
             <tbody id="contactsTableBody"></tbody>
@@ -216,7 +233,7 @@
                 <th data-i18n="md.companies.col.website">Website</th>
                 <th data-i18n="md.contacts.col.addedby">Added by</th>
                 <th data-i18n="md.contacts.col.dateadded">Date Added</th>
-                <th></th>
+                <th class="md-actions"></th>
               </tr>
             </thead>
             <tbody id="companiesTableBody"></tbody>
@@ -238,7 +255,7 @@
                 <th data-i18n="md.products.col.name">Name</th>
                 <th data-i18n="md.products.col.company">Company</th>
                 <th data-i18n="md.products.col.category">Category</th>
-                <th></th>
+                <th class="md-actions"></th>
               </tr>
             </thead>
             <tbody id="productsTableBody"></tbody>
@@ -284,7 +301,7 @@
                 <th data-i18n="md.agencies.col.country">Country</th>
                 <th data-i18n="md.contacts.col.addedby">Added by</th>
                 <th data-i18n="md.contacts.col.dateadded">Date Added</th>
-                <th></th>
+                <th class="md-actions"></th>
               </tr>
             </thead>
             <tbody id="agenciesTableBody"></tbody>
@@ -1103,8 +1120,7 @@
           <td>${escapeHtml(c.phone) || '—'}</td>
           <td>${escapeHtml(addedBy)}</td>
           <td>${dateAdded}</td>
-          <td>${c.business_card_path ? `<button type="button" class="btn ghost small view-card-btn" data-id="${c.id}" title="${cardTitle}">📇</button>` : ''}</td>
-          <td><button type="button" class="btn ghost small edit-contact-btn" data-id="${c.id}"><span data-i18n="risk.edit">Edit</span></button></td>
+          <td class="md-actions">${c.business_card_path ? `<button type="button" class="btn ghost small view-card-btn" data-id="${c.id}" title="${cardTitle}">📇</button>` : ''}<button type="button" class="btn ghost small edit-contact-btn" data-id="${c.id}"><span data-i18n="risk.edit">Edit</span></button></td>
         </tr>`;
     }).join('');
     tbody.querySelectorAll('.edit-contact-btn').forEach((btn) => btn.addEventListener('click', () => openContactForm(btn.dataset.id)));
@@ -1357,7 +1373,7 @@
         <td>${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(c.website)}</a>` : (escapeHtml(c.website) || '—')}</td>
         <td>${escapeHtml(addedBy)}</td>
         <td>${dateAdded}</td>
-        <td><button type="button" class="btn ghost small edit-company-btn" data-id="${c.id}"><span data-i18n="risk.edit">Edit</span></button></td>
+        <td class="md-actions"><button type="button" class="btn ghost small edit-company-btn" data-id="${c.id}"><span data-i18n="risk.edit">Edit</span></button></td>
       </tr>`;
     }).join('');
     tbody.querySelectorAll('.edit-company-btn').forEach((btn) => btn.addEventListener('click', () => openCompanyForm(btn.dataset.id)));
@@ -1458,7 +1474,7 @@
         <td>${escapeHtml(p.name)}</td>
         <td>${escapeHtml(p.companies && p.companies.name) || '—'}</td>
         <td>${escapeHtml(p.category) || '—'}</td>
-        <td><button type="button" class="btn ghost small edit-product-btn" data-id="${p.id}"><span data-i18n="risk.edit">Edit</span></button></td>
+        <td class="md-actions"><button type="button" class="btn ghost small edit-product-btn" data-id="${p.id}"><span data-i18n="risk.edit">Edit</span></button></td>
       </tr>`).join('');
     tbody.querySelectorAll('.edit-product-btn').forEach((btn) => btn.addEventListener('click', () => openProductForm(btn.dataset.id)));
   }
@@ -1626,7 +1642,7 @@
         <td>${escapeHtml(a.country) || '—'}</td>
         <td>${escapeHtml(addedBy)}</td>
         <td>${dateAdded}</td>
-        <td><button type="button" class="btn ghost small edit-agency-btn" data-id="${a.id}"><span data-i18n="risk.edit">Edit</span></button></td>
+        <td class="md-actions"><button type="button" class="btn ghost small edit-agency-btn" data-id="${a.id}"><span data-i18n="risk.edit">Edit</span></button></td>
       </tr>`;
     }).join('');
     tbody.querySelectorAll('.edit-agency-btn').forEach((btn) => btn.addEventListener('click', () => openAgencyForm(btn.dataset.id)));
