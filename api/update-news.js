@@ -59,8 +59,15 @@ const CANDIDATE_WINDOW_DAYS = 3;
 // Hard cap on how many candidates go INTO the model call (prompt-size/cost
 // guard — see MAX_DESC_CHARS_PER_PROGRAM's identical reasoning in
 // api/recommend-financing.js), and on how many curated items it may KEEP.
-const MAX_CANDIDATES = 70;
-const MAX_KEPT = 30;
+// Kept deliberately small: Groq's free "on_demand" tier (the production
+// LLM_PROVIDER as of oct 2026) caps a single request at 8000 tokens/minute
+// — a first run at 70 candidates × up to 500-char snippets came out to
+// ~9300 requested tokens and 502'd outright ("Request too large... Limit
+// 8000, Requested 9343"). 45 candidates × a 200-char snippet (see
+// fetchFeed() below) comes out to roughly half that, with headroom for a
+// heavier news day.
+const MAX_CANDIDATES = 45;
+const MAX_KEPT = 25;
 const MODEL_MAX_TOKENS = 6000;
 const FEED_FETCH_TIMEOUT_MS = 10000;
 
@@ -125,7 +132,7 @@ async function fetchFeed(feed, parser) {
       title: (item.title || '').trim(),
       link: (item.link || '').trim(),
       publishedAt: item.isoDate || item.pubDate || null,
-      snippet: (item.contentSnippet || item.content || item.summary || '').trim().slice(0, 500),
+      snippet: (item.contentSnippet || item.content || item.summary || '').trim().slice(0, 200),
       sourceName: feed.sourceName,
       scope: feed.scope,
     })).filter((item) => item.title && item.link);
