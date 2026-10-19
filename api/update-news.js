@@ -67,8 +67,15 @@ const CANDIDATE_WINDOW_DAYS = 3;
 // fetchFeed() below) comes out to roughly half that, with headroom for a
 // heavier news day.
 const MAX_CANDIDATES = 45;
-const MAX_KEPT = 25;
-const MODEL_MAX_TOKENS = 6000;
+// Second production run got past the input-size limit above but then got
+// truncated mid-completion ("Could not parse curation output", raw ended
+// mid-word) — Groq's 8000 TPM budget covers prompt + completion together,
+// so asking for up to 25 verbose bilingual items plus a 6000-token
+// completion ceiling could still blow past it even with a small prompt.
+// Fewer items and a tighter completion cap keep the whole request
+// comfortably inside the budget.
+const MAX_KEPT = 15;
+const MODEL_MAX_TOKENS = 3000;
 const FEED_FETCH_TIMEOUT_MS = 10000;
 
 // Argentina-market feeds, then international — `scope` is the default
@@ -206,7 +213,7 @@ Your task: select ONLY the items genuinely relevant to the telecommunications / 
 
 For each item you keep, write:
 - title_es / title_en: a clear, concise headline (can closely follow the original title, translated/tightened as needed — not necessarily a verbatim translation).
-- summary_es / summary_en: 1-2 sentences capturing what happened and why it matters to this sector, not a generic restatement of the headline.
+- summary_es / summary_en: ONE concise sentence capturing what happened and why it matters to this sector, not a generic restatement of the headline. Keep it short — this is a feed item, not an article.
 - category: a short tag, one of: "Regulación", "Infraestructura", "Financiamiento", "Satelital", "Datacenters/IA", "5G/Espectro", "Cable submarino", "M&A", "Otro".
 - country_scope: "argentina" or "international" — normally just echo the item's given default scope, but override it if the content is clearly about the other one (e.g. an international outlet reporting specifically on an ENACOM decision is "argentina").
 
