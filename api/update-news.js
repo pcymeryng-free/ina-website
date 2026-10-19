@@ -46,18 +46,19 @@
 
 const Parser = require('rss-parser');
 
-// Deliberately NOT 'openai/gpt-oss-120b' (every other endpoint's Groq
-// default) — that's a reasoning model, and its hidden chain-of-thought
-// counts against the same max_tokens budget as the visible answer. Third
-// production run (MODEL_MAX_TOKENS=3000) came back with a genuinely empty
-// message.content: reasoning alone consumed the whole budget, leaving
-// nothing for the actual JSON. Curating/translating/categorizing a list
-// of short news items doesn't need that reasoning depth — a fast,
-// non-reasoning model has no hidden-thinking tax at all, so the full
-// token budget goes straight to the answer. Only applies to this file;
-// GROQ_MODEL (if ever set) stays the shared default for every other
-// endpoint, deliberately not read here.
-const GROQ_MODEL_DEFAULT = 'llama-3.1-8b-instant';
+// Third production run (MODEL_MAX_TOKENS=3000, model 'openai/gpt-oss-120b'
+// — every other endpoint's Groq default) came back with a genuinely empty
+// message.content: that's a reasoning model, its hidden chain-of-thought
+// counts against the same max_tokens budget as the visible answer, and at
+// 3000 tokens reasoning alone consumed the whole budget. A fast
+// non-reasoning model (llama-3.1-8b-instant) would have sidestepped this
+// entirely, but it's no longer in this account's Groq catalog
+// ("model_not_found") — so this uses the smaller sibling in the same
+// family instead, paired with reasoning_effort: 'low' below to keep its
+// hidden-thinking cost small on purpose rather than hoping it's naturally
+// short. Only applies to this file; GROQ_MODEL (if ever set) stays the
+// shared default for every other endpoint, deliberately not read here.
+const GROQ_MODEL_DEFAULT = 'openai/gpt-oss-20b';
 const BEDROCK_MODEL_DEFAULT = 'meta.llama3-3-70b-instruct-v1:0';
 const BEDROCK_REGION_DEFAULT = 'us-east-1';
 const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
@@ -78,12 +79,12 @@ const CANDIDATE_WINDOW_DAYS = 3;
 // fetchFeed() below) comes out to roughly half that, with headroom for a
 // heavier news day.
 const MAX_CANDIDATES = 45;
-// A non-reasoning model (see GROQ_MODEL_DEFAULT above) writes its answer
-// directly with no hidden-thinking tax, so 3000 tokens is comfortable
-// headroom for up to 15 short bilingual items — not a tight limit like
-// MAX_CANDIDATES above, just a sane ceiling.
+// With reasoning_effort: 'low' (see the Groq request below) keeping the
+// hidden-thinking cost small, 4000 tokens is comfortable headroom for up
+// to 15 short bilingual items — not a tight limit like MAX_CANDIDATES
+// above, just a sane ceiling.
 const MAX_KEPT = 15;
-const MODEL_MAX_TOKENS = 3000;
+const MODEL_MAX_TOKENS = 4000;
 const FEED_FETCH_TIMEOUT_MS = 10000;
 
 // Argentina-market feeds, then international — `scope` is the default
@@ -371,6 +372,13 @@ async function handler(req, res) {
         model: GROQ_MODEL_DEFAULT,
         max_tokens: MODEL_MAX_TOKENS,
         temperature: 0,
+        // gpt-oss models support dialing down hidden reasoning depth
+        // directly — 'low' is plenty for a filter/translate/categorize
+        // task like this one, and leaves far more of max_tokens available
+        // for the actual answer than letting it reason at its default
+        // effort (see GROQ_MODEL_DEFAULT's comment above for what
+        // happened without this).
+        reasoning_effort: 'low',
         messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userContent }],
       }, { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` });
       if (!groqRes.ok) {
