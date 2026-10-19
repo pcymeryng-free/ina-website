@@ -63,6 +63,7 @@ const recommendFinancingHandler = require('./api/recommend-financing');
 const extractSuccessCaseHandler = require('./api/extract-success-case');
 const extractProjectDataHandler = require('./api/extract-project-data');
 const promotionAgentHandler = require('./api/promotion-agent');
+const updateNewsHandler = require('./api/update-news');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5050;
@@ -98,6 +99,12 @@ app.post('/api/recommend-financing', recommendFinancingHandler);
 app.post('/api/extract-success-case', extractSuccessCaseHandler);
 app.post('/api/extract-project-data', extractProjectDataHandler);
 app.post('/api/promotion-agent', promotionAgentHandler);
+// Cron-triggered in production (see vercel.json's "crons" + CRON_SECRET),
+// not called from any page — GET matches how Vercel Cron actually invokes
+// it; POST is just for a manual local test, e.g.:
+//   curl -X POST http://localhost:5050/api/update-news -H "Authorization: Bearer $CRON_SECRET"
+app.get('/api/update-news', updateNewsHandler);
+app.post('/api/update-news', updateNewsHandler);
 
 // A handful of the same top-level redirects vercel.json defines in
 // production, so old-style bookmarks/links behave the same locally.

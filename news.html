@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-en="Market News — International Network Advisors" data-i18n-es="Noticias del Mercado — International Network Advisors">Market News — International Network Advisors</title>
+<meta name="description" data-i18n-attr="content" data-i18n-en="A daily, AI-curated feed of Argentina and international telecommunications/digital-infrastructure news." data-i18n-es="Un feed diario, curado por IA, de noticias de telecomunicaciones e infraestructura digital de Argentina e internacionales." content="A daily, AI-curated feed of Argentina and international telecommunications/digital-infrastructure news.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=7">
+<style>
+/* Page-scoped — same pattern as app/dashboard.html's #dashPrintView inline
+   block (see that file's comment): small enough, and specific enough to
+   this one page, that it doesn't belong in the shared stylesheet. */
+.news-daygroup{ margin-bottom:40px; }
+.news-daylabel{
+  font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--amber-deep); padding-bottom:8px; margin-bottom:18px; border-bottom:2px solid var(--ink);
+}
+.news-item{ padding:22px 0; border-bottom:1px solid var(--paper-line); display:grid; grid-template-columns:140px 1fr; gap:24px; }
+.news-item:last-child{ border-bottom:none; }
+.news-item-meta{ font-family:var(--mono); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+.news-item-meta .scope-tag{ display:inline-block; margin-top:8px; padding:3px 8px; border:1px solid var(--paper-line); color:var(--text); }
+.news-item h3{ font-size:19px; margin:0 0 8px; }
+.news-item p{ color:var(--muted); font-size:14.5px; max-width:640px; }
+.news-item a.source-link{ font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--amber-deep); display:inline-block; margin-top:10px; }
+.news-scope-filter{ display:flex; gap:8px; margin-bottom:36px; flex-wrap:wrap; }
+.news-scope-filter button{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.04em; text-transform:uppercase;
+  padding:8px 16px; border:1px solid var(--paper-line); background:var(--paper); color:var(--muted); cursor:pointer;
+}
+.news-scope-filter button.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+#newsStatus{ text-align:center; padding:28px 0; color:var(--muted); font-size:13px; }
+@media (max-width:640px){
+  .news-item{ grid-template-columns:1fr; gap:6px; }
+}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand">
+      <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+      <span class="word"><b>INA</b><span><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+    </a>
+    <nav class="links">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="news.html" class="current"><span data-i18n="nav.news">News</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a>
+    </nav>
+    <div class="lang-switch" aria-label="Language">
+      <button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button>
+    </div>
+    <a href="contact.html" class="btn amber"><span data-i18n="nav.cta">Request Advisory</span></a>
+    <button class="navToggle" aria-label="Toggle menu" id="navToggle">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" style="display:none; border-top:1px solid var(--paper-line); background:var(--paper);">
+    <div class="wrap" style="display:flex; flex-direction:column; padding:18px 32px; gap:16px;">
+      <a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a><a href="advisory-board.html"><span data-i18n="nav.board">Advisory Board</span></a><a href="framework.html"><span data-i18n="nav.framework">Framework</span></a><a href="services.html"><span data-i18n="nav.services">Services</span></a><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a><a href="finance.html"><span data-i18n="nav.finance">Multilateral Finance</span></a><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a><a href="news.html"><span data-i18n="nav.news">News</span></a><a href="platform.html"><span data-i18n="nav.platform">Platform</span></a><a href="contact.html"><span data-i18n="nav.contact">Contact</span></a>
+      <div class="lang-switch" style="margin-top:6px;"><button class="lang-btn" data-lang="en">EN</button><span>/</span><button class="lang-btn" data-lang="es">ES</button></div>
+    </div>
+  </div>
+</header>
+<section class="page-hero">
+  <div class="wrap">
+    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span><span data-i18n="crumb.news">News</span></span></div>
+    <span class="eyebrow on-dark"><span data-i18n="news.hero.eyebrow">Market News</span></span>
+    <h1 class="h-page"><span data-i18n="news.hero.title">The telecom market, every day.</span></h1>
+    <p class="lede"><span data-i18n="news.hero.lede">A daily, AI-curated feed of relevant telecommunications and digital-infrastructure news — Argentina and international — automatically filtered and summarized from dozens of sources each morning.</span></p>
+  </div>
+</section>
+<div class="service-detail" style="padding:48px 0;">
+  <div class="wrap" style="max-width:860px;">
+    <div class="news-scope-filter" id="newsScopeFilter">
+      <button type="button" class="active" data-scope=""><span data-i18n="news.scope.all">All</span></button>
+      <button type="button" data-scope="argentina"><span data-i18n="news.scope.argentina">Argentina</span></button>
+      <button type="button" data-scope="international"><span data-i18n="news.scope.international">International</span></button>
+    </div>
+    <div id="newsFeed"></div>
+    <div id="newsStatus"></div>
+    <div id="newsSentinel"></div>
+  </div>
+</div>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="brand" style="color:var(--text-on-dark);">
+          <svg class="logo-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 23 16 9 25 23M7 23H25" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".55"/><circle cx="7" cy="23" r="2.6" fill="var(--amber)"/><circle cx="16" cy="9" r="2.6" fill="var(--amber)"/><circle cx="25" cy="23" r="2.6" fill="var(--amber)"/></svg>
+          <span class="word" style="color:var(--text-on-dark);"><b>INA</b><span style="color:var(--muted-on-dark);"><span data-i18n="brand.tagline">International Network Advisors</span></span></span>
+        </span>
+        <p style="margin-top:18px; font-size:13.5px; max-width:280px;"><span data-i18n="footer.tagline">Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.</span></p>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.platform">Platform</span></h5>
+        <ul><li><a href="why-ina.html"><span data-i18n="nav.why">Why INA</span></a></li><li><a href="framework.html"><span data-i18n="footer.frameworks">Frameworks&trade;</span></a></li><li><a href="services.html"><span data-i18n="nav.services">Services</span></a></li><li><a href="industries.html"><span data-i18n="nav.industries">Industries</span></a></li><li><a href="advisory-board.html"><span data-i18n="footer.board">Advisory Board</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.resources">Resources</span></h5>
+        <ul><li><a href="knowledge.html"><span data-i18n="nav.knowledge">Knowledge</span></a></li><li><a href="insights.html"><span data-i18n="nav.insights">Insights</span></a></li><li><a href="news.html"><span data-i18n="nav.news">News</span></a></li><li><a href="finance.html"><span data-i18n="footer.finance">Multilateral Finance</span></a></li><li><a href="platform.html"><span data-i18n="footer.roadmap">Platform Roadmap</span></a></li></ul>
+      </div>
+      <div>
+        <h5><span data-i18n="footer.h.connect">Connect</span></h5>
+        <ul><li><a href="contact.html"><span data-i18n="footer.contact">Contact</span></a></li><li><a href="contact.html"><span data-i18n="footer.request">Request Advisory</span></a></li><li><a href="contact.html"><span data-i18n="footer.profile">Company Profile</span></a></li><li><a href="https://www.linkedin.com/company/146709347" target="_blank" rel="noopener">LinkedIn</a></li></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span><span data-i18n="footer.rights">&copy; 2026 International Network Advisors (INA). All rights reserved.</span></span>
+      <span><span data-i18n="footer.tag2">Digital Infrastructure Intelligence</span></span>
+    </div>
+  </div>
+</footer>
+<script src="assets/i18n.js?v=14"></script>
+<script src="assets/script.js?v=15"></script>
+<script>
+(function () {
+  // Same anon key/URL as assets/platform.js (the app's own Supabase
+  // client) — duplicated here rather than loading that whole multi-
+  // thousand-line, auth-flow-oriented file just to read two constants for
+  // a public, read-only feed. It's meant to be public: Row Level Security
+  // (market_news_public_read, see supabase/migration_v75_market_news.sql)
+  // is what actually protects write access, not secrecy of this key.
+  const SUPABASE_URL = 'https://lyyuxoltyyckfppfjbyn.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5eXV4b2x0eXlja2ZwcGZqYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1MDYyNzIsImV4cCI6MjA5OTA4MjI3Mn0.2Ggj03wA2GILf-26PhDT4ZQx2g9ePI8u1WBLwMN774s';
+
+  const PAGE_SIZE = 20;
+  const feedEl = document.getElementById('newsFeed');
+  const statusEl = document.getElementById('newsStatus');
+  const sentinel = document.getElementById('newsSentinel');
+
+  let offset = 0;
+  let scope = '';
+  let loading = false;
+  let reachedEnd = false;
+  // Every row ever fetched this page view, kept around so switching
+  // language re-renders instantly from memory instead of re-fetching.
+  const allRows = [];
+  // Which <date, scope-filter> this page's rendered groups currently
+  // reflect — rebuilt wholesale on a language switch or scope change.
+  let renderedDates = [];
+
+  function lang() {
+    return document.documentElement.getAttribute('lang') === 'es' ? 'es' : 'en';
+  }
+
+  function dayLabel(dateStr) {
+    const l = lang();
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const yestStr = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
+    if (dateStr === todayStr) return (window.I18N && I18N['news.today'] && I18N['news.today'][l]) || 'Today';
+    if (dateStr === yestStr) return (window.I18N && I18N['news.yesterday'] && I18N['news.yesterday'][l]) || 'Yesterday';
+    const d = new Date(`${dateStr}T12:00:00`);
+    return d.toLocaleDateString(l === 'es' ? 'es-AR' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function scopeLabel(countryScope) {
+    const l = lang();
+    const key = countryScope === 'argentina' ? 'news.scope.argentina' : 'news.scope.international';
+    return (window.I18N && I18N[key] && I18N[key][l]) || (countryScope === 'argentina' ? 'Argentina' : 'International');
+  }
+
+  function renderAll() {
+    const l = lang();
+    feedEl.innerHTML = '';
+    if (!allRows.length) {
+      statusEl.textContent = (window.I18N && I18N['news.empty'] && I18N['news.empty'][l]) || '';
+      return;
+    }
+    let currentDate = null;
+    let listEl = null;
+    allRows.forEach((row) => {
+      if (row.published_date !== currentDate) {
+        currentDate = row.published_date;
+        const group = document.createElement('div');
+        group.className = 'news-daygroup';
+        const label = document.createElement('div');
+        label.className = 'news-daylabel';
+        label.textContent = dayLabel(currentDate);
+        group.appendChild(label);
+        listEl = document.createElement('div');
+        group.appendChild(listEl);
+        feedEl.appendChild(group);
+      }
+      const title = l === 'es' ? row.title : (row.title_en || row.title);
+      const summary = l === 'es' ? row.summary : (row.summary_en || row.summary);
+      const item = document.createElement('div');
+      item.className = 'news-item';
+      item.innerHTML = `
+        <div class="news-item-meta">
+          ${row.category ? escapeHtml(row.category) : ''}
+          <div class="scope-tag">${escapeHtml(scopeLabel(row.country_scope))}</div>
+        </div>
+        <div>
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(summary)}</p>
+          <a class="source-link" href="${encodeURI(row.source_url)}" target="_blank" rel="noopener noreferrer">${(window.I18N && I18N['news.readOriginal'] && I18N['news.readOriginal'][l]) || 'Read at'} ${escapeHtml(row.source_name)} &rarr;</a>
+        </div>
+      `;
+      listEl.appendChild(item);
+    });
+    statusEl.textContent = reachedEnd ? ((window.I18N && I18N['news.endOfFeed'] && I18N['news.endOfFeed'][l]) || '') : '';
+  }
+
+  async function loadMore() {
+    if (loading || reachedEnd) return;
+    loading = true;
+    const l = lang();
+    statusEl.textContent = (window.I18N && I18N['news.loading'] && I18N['news.loading'][l]) || 'Loading…';
+    try {
+      const params = new URLSearchParams({
+        select: 'id,published_date,title,title_en,summary,summary_en,source_name,source_url,country_scope,category,created_at',
+        order: 'published_date.desc,created_at.desc',
+        limit: String(PAGE_SIZE),
+        offset: String(offset),
+      });
+      if (scope) params.set('country_scope', `eq.${scope}`);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/market_news?${params.toString()}`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const rows = await res.json();
+      offset += rows.length;
+      if (rows.length < PAGE_SIZE) reachedEnd = true;
+      allRows.push(...rows);
+      renderAll();
+    } catch (e) {
+      statusEl.textContent = (window.I18N && I18N['news.loadError'] && I18N['news.loadError'][l]) || "Couldn't load the news feed right now.";
+    } finally {
+      loading = false;
+    }
+  }
+
+  function resetAndLoad() {
+    offset = 0;
+    reachedEnd = false;
+    allRows.length = 0;
+    feedEl.innerHTML = '';
+    statusEl.textContent = '';
+    loadMore();
+  }
+
+  document.getElementById('newsScopeFilter').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-scope]');
+    if (!btn) return;
+    document.querySelectorAll('#newsScopeFilter button').forEach((b) => b.classList.toggle('active', b === btn));
+    scope = btn.getAttribute('data-scope');
+    resetAndLoad();
+  });
+
+  // Re-render already-fetched rows (no new request) whenever the language
+  // toggle is used — in addition to, not instead of, assets/i18n.js's own
+  // click listener on the same buttons (applyLang() there only walks
+  // [data-i18n] elements, which this dynamically-built feed never carries).
+  document.querySelectorAll('.lang-btn').forEach((b) => {
+    b.addEventListener('click', () => renderAll());
+  });
+
+  new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) loadMore();
+  }, { rootMargin: '400px' }).observe(sentinel);
+
+  loadMore();
+})();
+</script>
+</body>
+</html>

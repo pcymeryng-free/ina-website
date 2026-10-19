@@ -12,6 +12,9 @@
     { "source": "/app/programs.html", "destination": "/app/initiatives.html", "permanent": true },
     { "source": "/app", "destination": "/app/index.html", "permanent": false }
   ],
+  "crons": [
+    { "path": "/api/update-news", "schedule": "0 9 * * *" }
+  ],
   "rewrites": [
     { "source": "/analyze-project", "destination": "/api/analyze-project" },
     { "source": "/extract-template-data", "destination": "/api/extract-template-data" },

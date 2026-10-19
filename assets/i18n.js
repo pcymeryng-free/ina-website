@@ -40,6 +40,66 @@ const I18N = {
     "en": "Insights",
     "es": "Insights"
   },
+  "nav.news": {
+    "en": "News",
+    "es": "Noticias"
+  },
+  "crumb.news": {
+    "en": "News",
+    "es": "Noticias"
+  },
+  "news.hero.eyebrow": {
+    "en": "Market News",
+    "es": "Noticias del Mercado"
+  },
+  "news.hero.title": {
+    "en": "The telecom market, every day.",
+    "es": "El mercado de las telecomunicaciones, todos los días."
+  },
+  "news.hero.lede": {
+    "en": "A daily, AI-curated feed of relevant telecommunications and digital-infrastructure news — Argentina and international — automatically filtered and summarized from dozens of sources each morning.",
+    "es": "Un feed diario, curado por IA, de noticias relevantes de telecomunicaciones e infraestructura digital — Argentina e internacional — filtradas y resumidas automáticamente cada mañana a partir de decenas de fuentes."
+  },
+  "news.scope.all": {
+    "en": "All",
+    "es": "Todas"
+  },
+  "news.scope.argentina": {
+    "en": "Argentina",
+    "es": "Argentina"
+  },
+  "news.scope.international": {
+    "en": "International",
+    "es": "Internacional"
+  },
+  "news.today": {
+    "en": "Today",
+    "es": "Hoy"
+  },
+  "news.yesterday": {
+    "en": "Yesterday",
+    "es": "Ayer"
+  },
+  "news.loading": {
+    "en": "Loading more news…",
+    "es": "Cargando más noticias…"
+  },
+  "news.empty": {
+    "en": "No news yet — check back tomorrow morning.",
+    "es": "Todavía no hay noticias — volvé a pasar mañana a la mañana."
+  },
+  "news.endOfFeed": {
+    "en": "That's everything — check back tomorrow for more.",
+    "es": "Eso es todo — volvé mañana para ver más."
+  },
+  "news.loadError": {
+    "en": "Couldn't load the news feed right now.",
+    "es": "No se pudo cargar el feed de noticias en este momento."
+  },
+  "news.readOriginal": {
+    "en": "Read at",
+    "es": "Leer en"
+  },
   "footer.tagline": {
     "en": "Digital Infrastructure Intelligence for governments, development banks, investors and technology companies.",
     "es": "Inteligencia en infraestructura digital para gobiernos, bancos de desarrollo, inversores y empresas tecnológicas."
