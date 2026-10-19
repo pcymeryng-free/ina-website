@@ -107,7 +107,18 @@ const FEEDS = [
   // TeleSemana is pan-Latin-American trade press (its own first production
   // run carried a story about European operators), not Argentina-specific
   // — "latam" is the better default scope for it than "argentina".
-  { url: 'https://www.telesemana.com/feed/', sourceName: 'TeleSemana', scope: 'latam' },
+  // scope: null — unlike every other feed here, TeleSemana's own content is
+  // genuinely mixed (pan-regional trade press that also carries plenty of
+  // Europe/Asia/US stories), so giving the model a default scope just
+  // became a lazy-echo trap: the first latam-quota run tagged EVERY
+  // TeleSemana item "latam", including ones about Qatar, Korea and
+  // European operators, because that was the path of least resistance.
+  // No default forces it to read each item's actual content instead (see
+  // buildSystemPrompt() below). quotaScope stays 'latam' — that's still
+  // used at the CANDIDATE-selection stage (pickWithScopeQuotas()) so this
+  // feed's items keep getting a reserved shot at being seen by the model
+  // at all; it's only the per-item scope HINT that's dropped.
+  { url: 'https://www.telesemana.com/feed/', sourceName: 'TeleSemana', scope: null, quotaScope: 'latam' },
   { url: 'https://www.iprofesional.com/rss/tecnologia', sourceName: 'iProfesional - Tecnología', scope: 'argentina' },
   // General-interest tech, not telecom-specific — included anyway because
   // it's a high-volume, reliable Argentina feed and the AI filter step
@@ -165,6 +176,7 @@ async function fetchFeed(feed, parser) {
       snippet: (item.contentSnippet || item.content || item.summary || '').trim().slice(0, 200),
       sourceName: feed.sourceName,
       scope: feed.scope,
+      quotaScope: feed.quotaScope || feed.scope,
     })).filter((item) => item.title && item.link);
   } catch (e) {
     console.warn(`[update-news] feed failed, skipping (${feed.sourceName}):`, e && e.message ? e.message : e);
@@ -183,7 +195,7 @@ async function fetchFeed(feed, parser) {
 // than being silently dropped.
 function pickWithScopeQuotas(sortedCandidates, quotas, total) {
   const byScope = { argentina: [], latam: [], international: [] };
-  sortedCandidates.forEach((it) => { (byScope[it.scope] || byScope.international).push(it); });
+  sortedCandidates.forEach((it) => { (byScope[it.quotaScope] || byScope.international).push(it); });
   const picked = [];
   const pickedLinks = new Set();
   Object.keys(quotas).forEach((scope) => {
@@ -260,7 +272,7 @@ async function logDebugAgentCall({ supabaseUrl, serviceKey, provider, model, dur
 }
 
 function buildSystemPrompt() {
-  return `You are a news curator for INA (International Network Advisors), a digital-infrastructure advisory firm. You will be given a JSON array of recent candidate news items (title, link, source, a short snippet, and a default scope of "argentina", "latam" or "international"), pulled automatically from RSS feeds — many will be irrelevant noise (unrelated consumer tech, gadget reviews, generic business news with no telecom/infrastructure angle).
+  return `You are a news curator for INA (International Network Advisors), a digital-infrastructure advisory firm. You will be given a JSON array of recent candidate news items (title, link, source, a short snippet, and a "scope" field that is either "argentina", "latam", "international", or null), pulled automatically from RSS feeds — many will be irrelevant noise (unrelated consumer tech, gadget reviews, generic business news with no telecom/infrastructure angle).
 
 Your task: select ONLY the items genuinely relevant to the telecommunications / digital-infrastructure sector — spectrum and regulatory decisions, fiber/mobile/5G network deployment, submarine cables, datacenters and AI infrastructure, satellite connectivity, universal-service/public funding programs, infrastructure financing and M&A, major operator or equipment-vendor news. When in doubt, lean toward excluding rather than keeping — a shorter, genuinely relevant list is better than a padded one. The candidate list was already built to reserve room for Argentina and Latin America items specifically (see how each one is scoped below) — don't defeat that by dropping every Argentina/LatAm candidate just because an international one reads as more globally significant; relevance to THIS sector is the bar, not global importance.
 
@@ -268,7 +280,7 @@ For each item you keep, write:
 - title_es / title_en: a clear, concise headline (can closely follow the original title, translated/tightened as needed — not necessarily a verbatim translation).
 - summary_es / summary_en: ONE concise sentence capturing what happened and why it matters to this sector, not a generic restatement of the headline. Keep it short — this is a feed item, not an article.
 - category: a short tag, one of: "Regulación", "Infraestructura", "Financiamiento", "Satelital", "Datacenters/IA", "5G/Espectro", "Cable submarino", "M&A", "Otro".
-- country_scope: "argentina", "latam" or "international" — normally just echo the item's given default scope, but override it if the content is clearly about a different one of the three (e.g. an international outlet reporting specifically on an ENACOM decision is "argentina"; a Brazil- or Mexico-specific story from a pan-regional source is "latam", not "argentina"). "latam" means Latin America EXCLUDING Argentina; "international" means the rest of the world.
+- country_scope: "argentina", "latam" or "international", based on what the story is actually ABOUT (which country/region it covers), never on which outlet published it. When a candidate's "scope" field is non-null, that's a hint from the source feed, not a default to echo automatically — still verify it against the actual content and override it if the story is clearly about a different one of the three (e.g. an international outlet reporting specifically on an ENACOM decision is "argentina"; a Brazil- or Mexico-specific story is "latam", not "argentina"; a story from a Latin American outlet that's actually about Europe, Asia or the US is "international", not "latam"). When "scope" is null, there is NO hint at all — the source covers a genuine mix of regions, so you must determine country_scope purely from the story's own content. "latam" means Latin America EXCLUDING Argentina; "international" means the rest of the world.
 
 Keep at most ${MAX_KEPT} items, ordered by relevance/importance (most important first). Respond with ONLY a single valid JSON object — no markdown code fences, no commentary — in this exact shape:
 {
@@ -408,7 +420,7 @@ async function handler(req, res) {
           summary_es: '[SIMULADO] Resumen de ejemplo, sin llamada a un modelo real.',
           summary_en: '[SIMULATED] Example summary, no real model call made.',
           category: 'Otro',
-          country_scope: it.scope,
+          country_scope: it.scope || it.quotaScope,
         })),
       });
     } else if (provider === 'groq') {
@@ -536,7 +548,11 @@ async function handler(req, res) {
       const candidate = it && candidatesByLink.get(it.link);
       if (!candidate || usedLinks.has(it.link)) return;
       usedLinks.add(it.link);
-      const scope = ['argentina', 'latam', 'international'].includes(it.country_scope) ? it.country_scope : candidate.scope;
+      // Falls back to quotaScope (never null, unlike candidate.scope — see
+      // FEEDS' TeleSemana entry) if the model ever omits/mis-shapes
+      // country_scope, so this can never produce a null here and violate
+      // market_news' NOT NULL/check constraint on insert.
+      const scope = ['argentina', 'latam', 'international'].includes(it.country_scope) ? it.country_scope : candidate.quotaScope;
       rows.push({
         published_date: publishedDate,
         title: String(it.title_es || candidate.title).slice(0, 300),
