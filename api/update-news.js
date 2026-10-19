@@ -14,7 +14,7 @@
  *      it's already been seen on an earlier run).
  *   3. Ask the configured LLM provider to keep only what's genuinely
  *      relevant to the sector, and write a bilingual (ES/EN) title +
- *      1-2 sentence summary + category for each kept item — same filter
+ *      one-sentence summary + category for each kept item — same filter
  *      step Pablo asked for, rather than dumping the raw feeds as-is.
  *   4. Insert the result into public.market_news with the SERVICE ROLE key
  *      (see supabase/migration_v75_market_news.sql — that table has no
@@ -46,7 +46,18 @@
 
 const Parser = require('rss-parser');
 
-const GROQ_MODEL_DEFAULT = 'openai/gpt-oss-120b';
+// Deliberately NOT 'openai/gpt-oss-120b' (every other endpoint's Groq
+// default) — that's a reasoning model, and its hidden chain-of-thought
+// counts against the same max_tokens budget as the visible answer. Third
+// production run (MODEL_MAX_TOKENS=3000) came back with a genuinely empty
+// message.content: reasoning alone consumed the whole budget, leaving
+// nothing for the actual JSON. Curating/translating/categorizing a list
+// of short news items doesn't need that reasoning depth — a fast,
+// non-reasoning model has no hidden-thinking tax at all, so the full
+// token budget goes straight to the answer. Only applies to this file;
+// GROQ_MODEL (if ever set) stays the shared default for every other
+// endpoint, deliberately not read here.
+const GROQ_MODEL_DEFAULT = 'llama-3.1-8b-instant';
 const BEDROCK_MODEL_DEFAULT = 'meta.llama3-3-70b-instruct-v1:0';
 const BEDROCK_REGION_DEFAULT = 'us-east-1';
 const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
@@ -67,13 +78,10 @@ const CANDIDATE_WINDOW_DAYS = 3;
 // fetchFeed() below) comes out to roughly half that, with headroom for a
 // heavier news day.
 const MAX_CANDIDATES = 45;
-// Second production run got past the input-size limit above but then got
-// truncated mid-completion ("Could not parse curation output", raw ended
-// mid-word) — Groq's 8000 TPM budget covers prompt + completion together,
-// so asking for up to 25 verbose bilingual items plus a 6000-token
-// completion ceiling could still blow past it even with a small prompt.
-// Fewer items and a tighter completion cap keep the whole request
-// comfortably inside the budget.
+// A non-reasoning model (see GROQ_MODEL_DEFAULT above) writes its answer
+// directly with no hidden-thinking tax, so 3000 tokens is comfortable
+// headroom for up to 15 short bilingual items — not a tight limit like
+// MAX_CANDIDATES above, just a sane ceiling.
 const MAX_KEPT = 15;
 const MODEL_MAX_TOKENS = 3000;
 const FEED_FETCH_TIMEOUT_MS = 10000;
@@ -360,7 +368,7 @@ async function handler(req, res) {
       });
     } else if (provider === 'groq') {
       const groqRes = await fetchGroqWithRetry({
-        model: GROQ_MODEL || GROQ_MODEL_DEFAULT,
+        model: GROQ_MODEL_DEFAULT,
         max_tokens: MODEL_MAX_TOKENS,
         temperature: 0,
         messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userContent }],
@@ -372,7 +380,7 @@ async function handler(req, res) {
       }
       const groqData = await groqRes.json();
       rawText = (groqData.choices && groqData.choices[0] && groqData.choices[0].message && groqData.choices[0].message.content) || '';
-      _debugModel = GROQ_MODEL || GROQ_MODEL_DEFAULT;
+      _debugModel = GROQ_MODEL_DEFAULT;
       _debugUsage = groqData.usage;
     } else if (provider === 'local') {
       const localRes = await fetch(`${(LOCAL_LLM_BASE_URL || LOCAL_LLM_BASE_URL_DEFAULT).replace(/\/$/, '')}/chat/completions`, {
