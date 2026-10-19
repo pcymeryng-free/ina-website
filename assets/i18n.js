@@ -68,6 +68,10 @@ const I18N = {
     "en": "Argentina",
     "es": "Argentina"
   },
+  "news.scope.latam": {
+    "en": "Latin America",
+    "es": "Latinoamérica"
+  },
   "news.scope.international": {
     "en": "International",
     "es": "Internacional"

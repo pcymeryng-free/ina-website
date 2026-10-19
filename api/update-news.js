@@ -79,6 +79,17 @@ const CANDIDATE_WINDOW_DAYS = 3;
 // fetchFeed() below) comes out to roughly half that, with headroom for a
 // heavier news day.
 const MAX_CANDIDATES = 45;
+// Reserved slots per scope within MAX_CANDIDATES (Pablo, oct 2026:
+// "reserva un cupo minimo por region privilegiando Argentina, luego
+// latinoamerica y luego el resto") — see pickWithScopeQuotas() below for
+// why a plain recency-sorted global slice isn't enough: the first
+// production run's 45 candidates ended up ALL international (Light
+// Reading alone publishes far more often than the 3 Argentina/LatAm
+// feeds combined), so every one of the 8 kept items was international —
+// nothing Argentina/LatAm even reached the model to be considered. Sums
+// to MAX_CANDIDATES exactly, but doesn't have to (see the "leftover
+// slots" fallback below).
+const SCOPE_QUOTAS = { argentina: 20, latam: 15, international: 10 };
 // With reasoning_effort: 'low' (see the Groq request below) keeping the
 // hidden-thinking cost small, 4000 tokens is comfortable headroom for up
 // to 15 short bilingual items — not a tight limit like MAX_CANDIDATES
@@ -93,7 +104,10 @@ const FEED_FETCH_TIMEOUT_MS = 10000;
 // that's actually about the other scope (e.g. an international outlet
 // covering an ENACOM decision).
 const FEEDS = [
-  { url: 'https://www.telesemana.com/feed/', sourceName: 'TeleSemana', scope: 'argentina' },
+  // TeleSemana is pan-Latin-American trade press (its own first production
+  // run carried a story about European operators), not Argentina-specific
+  // — "latam" is the better default scope for it than "argentina".
+  { url: 'https://www.telesemana.com/feed/', sourceName: 'TeleSemana', scope: 'latam' },
   { url: 'https://www.iprofesional.com/rss/tecnologia', sourceName: 'iProfesional - Tecnología', scope: 'argentina' },
   // General-interest tech, not telecom-specific — included anyway because
   // it's a high-volume, reliable Argentina feed and the AI filter step
@@ -160,6 +174,36 @@ async function fetchFeed(feed, parser) {
   }
 }
 
+// Reserves SCOPE_QUOTAS[scope] slots for each scope (out of `sortedCandidates`,
+// already most-recent-first), then fills any still-empty slots — a scope
+// short of its own quota, or quotas not summing to `total` — from whoever
+// is left over, most-recent-first regardless of scope. An item whose
+// scope isn't one of the known keys (shouldn't happen, FEEDS only ever
+// sets one of the three) falls back to the 'international' bucket rather
+// than being silently dropped.
+function pickWithScopeQuotas(sortedCandidates, quotas, total) {
+  const byScope = { argentina: [], latam: [], international: [] };
+  sortedCandidates.forEach((it) => { (byScope[it.scope] || byScope.international).push(it); });
+  const picked = [];
+  const pickedLinks = new Set();
+  Object.keys(quotas).forEach((scope) => {
+    (byScope[scope] || []).slice(0, quotas[scope]).forEach((it) => {
+      picked.push(it);
+      pickedLinks.add(it.link);
+    });
+  });
+  if (picked.length < total) {
+    for (const it of sortedCandidates) {
+      if (picked.length >= total) break;
+      if (!pickedLinks.has(it.link)) {
+        picked.push(it);
+        pickedLinks.add(it.link);
+      }
+    }
+  }
+  return picked.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0)).slice(0, total);
+}
+
 async function supabaseRest(path, { method = 'GET', body, serviceKey, supabaseUrl, extraHeaders } = {}) {
   const res = await fetch(`${supabaseUrl}/rest/v1${path}`, {
     method,
@@ -216,20 +260,20 @@ async function logDebugAgentCall({ supabaseUrl, serviceKey, provider, model, dur
 }
 
 function buildSystemPrompt() {
-  return `You are a news curator for INA (International Network Advisors), a digital-infrastructure advisory firm. You will be given a JSON array of recent candidate news items (title, link, source, a short snippet, and a default scope of "argentina" or "international"), pulled automatically from RSS feeds — many will be irrelevant noise (unrelated consumer tech, gadget reviews, generic business news with no telecom/infrastructure angle).
+  return `You are a news curator for INA (International Network Advisors), a digital-infrastructure advisory firm. You will be given a JSON array of recent candidate news items (title, link, source, a short snippet, and a default scope of "argentina", "latam" or "international"), pulled automatically from RSS feeds — many will be irrelevant noise (unrelated consumer tech, gadget reviews, generic business news with no telecom/infrastructure angle).
 
-Your task: select ONLY the items genuinely relevant to the telecommunications / digital-infrastructure sector — spectrum and regulatory decisions, fiber/mobile/5G network deployment, submarine cables, datacenters and AI infrastructure, satellite connectivity, universal-service/public funding programs, infrastructure financing and M&A, major operator or equipment-vendor news. When in doubt, lean toward excluding rather than keeping — a shorter, genuinely relevant list is better than a padded one.
+Your task: select ONLY the items genuinely relevant to the telecommunications / digital-infrastructure sector — spectrum and regulatory decisions, fiber/mobile/5G network deployment, submarine cables, datacenters and AI infrastructure, satellite connectivity, universal-service/public funding programs, infrastructure financing and M&A, major operator or equipment-vendor news. When in doubt, lean toward excluding rather than keeping — a shorter, genuinely relevant list is better than a padded one. The candidate list was already built to reserve room for Argentina and Latin America items specifically (see how each one is scoped below) — don't defeat that by dropping every Argentina/LatAm candidate just because an international one reads as more globally significant; relevance to THIS sector is the bar, not global importance.
 
 For each item you keep, write:
 - title_es / title_en: a clear, concise headline (can closely follow the original title, translated/tightened as needed — not necessarily a verbatim translation).
 - summary_es / summary_en: ONE concise sentence capturing what happened and why it matters to this sector, not a generic restatement of the headline. Keep it short — this is a feed item, not an article.
 - category: a short tag, one of: "Regulación", "Infraestructura", "Financiamiento", "Satelital", "Datacenters/IA", "5G/Espectro", "Cable submarino", "M&A", "Otro".
-- country_scope: "argentina" or "international" — normally just echo the item's given default scope, but override it if the content is clearly about the other one (e.g. an international outlet reporting specifically on an ENACOM decision is "argentina").
+- country_scope: "argentina", "latam" or "international" — normally just echo the item's given default scope, but override it if the content is clearly about a different one of the three (e.g. an international outlet reporting specifically on an ENACOM decision is "argentina"; a Brazil- or Mexico-specific story from a pan-regional source is "latam", not "argentina"). "latam" means Latin America EXCLUDING Argentina; "international" means the rest of the world.
 
 Keep at most ${MAX_KEPT} items, ordered by relevance/importance (most important first). Respond with ONLY a single valid JSON object — no markdown code fences, no commentary — in this exact shape:
 {
   "items": [
-    { "link": "<exact link from the candidate list>", "title_es": "...", "title_en": "...", "summary_es": "...", "summary_en": "...", "category": "...", "country_scope": "argentina" | "international" }
+    { "link": "<exact link from the candidate list>", "title_es": "...", "title_en": "...", "summary_es": "...", "summary_en": "...", "category": "...", "country_scope": "argentina" | "latam" | "international" }
   ]
 }`;
 }
@@ -334,7 +378,7 @@ async function handler(req, res) {
         seen.add(it.link);
         candidates.push(it);
       });
-    const capped = candidates.slice(0, MAX_CANDIDATES);
+    const capped = pickWithScopeQuotas(candidates, SCOPE_QUOTAS, MAX_CANDIDATES);
 
     if (!capped.length) {
       return json(res, 200, { ok: true, feeds: FEEDS.length, candidates: 0, inserted: 0, message: 'Nothing new to curate.' });
@@ -492,7 +536,7 @@ async function handler(req, res) {
       const candidate = it && candidatesByLink.get(it.link);
       if (!candidate || usedLinks.has(it.link)) return;
       usedLinks.add(it.link);
-      const scope = (it.country_scope === 'argentina' || it.country_scope === 'international') ? it.country_scope : candidate.scope;
+      const scope = ['argentina', 'latam', 'international'].includes(it.country_scope) ? it.country_scope : candidate.scope;
       rows.push({
         published_date: publishedDate,
         title: String(it.title_es || candidate.title).slice(0, 300),

@@ -75,6 +75,7 @@
     <div class="news-scope-filter" id="newsScopeFilter">
       <button type="button" class="active" data-scope=""><span data-i18n="news.scope.all">All</span></button>
       <button type="button" data-scope="argentina"><span data-i18n="news.scope.argentina">Argentina</span></button>
+      <button type="button" data-scope="latam"><span data-i18n="news.scope.latam">Latin America</span></button>
       <button type="button" data-scope="international"><span data-i18n="news.scope.international">International</span></button>
     </div>
     <div id="newsFeed"></div>
@@ -161,8 +162,9 @@
 
   function scopeLabel(countryScope) {
     const l = lang();
-    const key = countryScope === 'argentina' ? 'news.scope.argentina' : 'news.scope.international';
-    return (window.I18N && I18N[key] && I18N[key][l]) || (countryScope === 'argentina' ? 'Argentina' : 'International');
+    const key = countryScope === 'argentina' ? 'news.scope.argentina' : countryScope === 'latam' ? 'news.scope.latam' : 'news.scope.international';
+    const fallback = countryScope === 'argentina' ? 'Argentina' : countryScope === 'latam' ? 'Latin America' : 'International';
+    return (window.I18N && I18N[key] && I18N[key][l]) || fallback;
   }
 
   function renderAll() {
@@ -257,8 +259,23 @@
   // toggle is used — in addition to, not instead of, assets/i18n.js's own
   // click listener on the same buttons (applyLang() there only walks
   // [data-i18n] elements, which this dynamically-built feed never carries).
-  document.querySelectorAll('.lang-btn').forEach((b) => {
-    b.addEventListener('click', () => renderAll());
+  // MUST be registered inside DOMContentLoaded, same as assets/i18n.js's
+  // own listener (it adds its click handlers from a DOMContentLoaded
+  // callback too) — registering this one synchronously at parse time, as
+  // a prior version of this script did, attached it to each button BEFORE
+  // i18n.js's own handler, so on a real click this listener ran first and
+  // read `document.documentElement.lang` a click behind (the OLD
+  // language, since applyLang() hadn't updated the attribute yet) — the
+  // feed's language always looked stuck/broken one toggle late. Since
+  // assets/i18n.js's <script> tag runs (and registers its
+  // DOMContentLoaded listener) before this one, wrapping this in
+  // DOMContentLoaded too guarantees its listener registers second, so on
+  // a real click it also FIRES second — after applyLang() has already
+  // updated the attribute this reads.
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.lang-btn').forEach((b) => {
+      b.addEventListener('click', () => renderAll());
+    });
   });
 
   new IntersectionObserver((entries) => {
