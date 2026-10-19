@@ -103,22 +103,25 @@ const FEED_FETCH_TIMEOUT_MS = 10000;
 // is told it may override it (buildSystemPrompt() below) for the rare item
 // that's actually about the other scope (e.g. an international outlet
 // covering an ENACOM decision).
+// TeleSemana and DPL News are both pan-Latin-American trade press, not
+// Argentina-specific, and both occasionally carry a global story (first
+// production run: TeleSemana items about Qatar, Korea, European
+// operators; DPL News' own current feed has 1 Europe story out of 10).
+// scope: null on both — unlike every other feed here — so there's no
+// default for the model to lazily echo (see buildSystemPrompt() below):
+// the first latam-quota run tagged EVERY TeleSemana item "latam" just
+// because that was the path of least resistance, before this was null.
+// quotaScope stays 'latam' on both — that's still used at the
+// CANDIDATE-selection stage (pickWithScopeQuotas()) so these feeds' items
+// keep a reserved shot at being seen by the model at all; it's only the
+// per-item scope HINT that's dropped.
 const FEEDS = [
-  // TeleSemana is pan-Latin-American trade press (its own first production
-  // run carried a story about European operators), not Argentina-specific
-  // — "latam" is the better default scope for it than "argentina".
-  // scope: null — unlike every other feed here, TeleSemana's own content is
-  // genuinely mixed (pan-regional trade press that also carries plenty of
-  // Europe/Asia/US stories), so giving the model a default scope just
-  // became a lazy-echo trap: the first latam-quota run tagged EVERY
-  // TeleSemana item "latam", including ones about Qatar, Korea and
-  // European operators, because that was the path of least resistance.
-  // No default forces it to read each item's actual content instead (see
-  // buildSystemPrompt() below). quotaScope stays 'latam' — that's still
-  // used at the CANDIDATE-selection stage (pickWithScopeQuotas()) so this
-  // feed's items keep getting a reserved shot at being seen by the model
-  // at all; it's only the per-item scope HINT that's dropped.
   { url: 'https://www.telesemana.com/feed/', sourceName: 'TeleSemana', scope: null, quotaScope: 'latam' },
+  // Genuinely strong LatAm regional focus (checked its current feed: 9 of
+  // 10 items were Paraguay/Bolivia-Chile/Honduras/Colombia/Venezuela
+  // regulatory & telecom news) — the best single source of real Argentina-
+  // adjacent LatAm coverage in this list.
+  { url: 'https://dplnews.com/feed/', sourceName: 'DPL News', scope: null, quotaScope: 'latam' },
   { url: 'https://www.iprofesional.com/rss/tecnologia', sourceName: 'iProfesional - Tecnología', scope: 'argentina' },
   // General-interest tech, not telecom-specific — included anyway because
   // it's a high-volume, reliable Argentina feed and the AI filter step
