@@ -42,11 +42,13 @@
  * SAME LLM_PROVIDER switch and per-provider credentials every other AI
  * endpoint already uses — see api/analyze-project.js's file header for
  * what each one does. Also, only if the newsletter is ever turned on via
- * app/admin.html: RESEND_API_KEY (an API key from resend.com — their free
- * tier covers this easily) and NEWSLETTER_FROM_EMAIL (a "from" address on
- * a domain verified in that Resend account, e.g. "INA Platform
- * <newsletter@international-network-advisors.com>"). Missing either one
- * just skips sending for that day (see maybeSendNewsletter()) — it never
+ * app/admin.html: SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASSWORD — a
+ * mailbox INA already controls (e.g. info@inaai.co via Bluehost/cPanel
+ * mail, mail.inaai.co:465), not a third-party email API — plus optionally
+ * NEWSLETTER_FROM_EMAIL for a nicer "From" display name (defaults to
+ * SMTP_USER, e.g. "INA Platform <info@inaai.co>"). Missing any of the
+ * SMTP_* vars just skips sending for that day (see maybeSendNewsletter())
+ * — it never
  * fails the cron run itself.
  *
  * FEEDS below is a first pass, not a verified-forever list — RSS feed
@@ -423,33 +425,41 @@ function buildNewsletterPdf(rows, dateStr, lang) {
   });
 }
 
-async function sendNewsletterEmail({ pdfBuffer, dateStr, recipientEmail, fromEmail, resendApiKey }) {
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendApiKey}` },
-    body: JSON.stringify({
-      from: fromEmail,
-      to: [recipientEmail],
-      subject: `INA Platform — Noticias del Mercado — ${dateStr}`,
-      html: `<p>Adjunto, el newsletter de noticias de telecomunicaciones curadas del ${dateStr}.</p><p style="color:#6b7280;font-size:12px;">INA Platform — <a href="https://international-network-advisors.com/news.html">international-network-advisors.com/news.html</a></p>`,
-      attachments: [{ filename: `ina-noticias-${dateStr}.pdf`, content: pdfBuffer.toString('base64') }],
-    }),
+// Plain SMTP via nodemailer — Pablo (oct 2026): "no se puede implementar
+// el envio de newsletter sin necesidad de usar el resend?" — rather than
+// a third-party transactional-email API/account, this sends straight
+// through a mailbox INA already controls (info@inaai.co, cPanel/Bluehost
+// mail — see SMTP_HOST's default below). One transporter per call rather
+// than a module-level singleton: this function fires at most once a day
+// (the cron path) plus the rare manual trigger, so the connection-setup
+// cost is irrelevant and a fresh transporter avoids holding an SMTP
+// connection open across invocations in a serverless environment where
+// each one may run in a different, short-lived instance anyway.
+async function sendNewsletterEmail({ pdfBuffer, dateStr, recipientEmail, fromEmail, smtp }) {
+  const nodemailer = require('nodemailer');
+  const transporter = nodemailer.createTransport({
+    host: smtp.host,
+    port: smtp.port,
+    secure: smtp.port === 465, // 465 = implicit TLS; 587 and others use STARTTLS instead
+    auth: { user: smtp.user, pass: smtp.password },
   });
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    throw new Error(`Resend request failed (status ${res.status}): ${errText}`);
-  }
-  return res.json();
+  await transporter.sendMail({
+    from: fromEmail,
+    to: recipientEmail,
+    subject: `INA Platform — Noticias del Mercado — ${dateStr}`,
+    html: `<p>Adjunto, el newsletter de noticias de telecomunicaciones curadas del ${dateStr}.</p><p style="color:#6b7280;font-size:12px;">INA Platform — <a href="https://international-network-advisors.com/news.html">international-network-advisors.com/news.html</a></p>`,
+    attachments: [{ filename: `ina-noticias-${dateStr}.pdf`, content: pdfBuffer }],
+  });
 }
 
 // Best-effort, non-critical — wrapped so any failure here (missing config,
-// Resend down, etc.) never fails the cron's own response. Always queries
-// ALL of today's rows fresh (not just whatever this run itself inserted),
-// so it still sends something sensible even on the "nothing new to
-// curate" early-return path, as long as earlier runs today already
-// populated some rows.
+// the mail server being unreachable, etc.) never fails the cron's own
+// response. Always queries ALL of today's rows fresh (not just whatever
+// this run itself inserted), so it still sends something sensible even
+// on the "nothing new to curate" early-return path, as long as earlier
+// runs today already populated some rows.
 async function maybeSendNewsletter(dateStr, { supabaseUrl, serviceKey }) {
-  const { RESEND_API_KEY, NEWSLETTER_FROM_EMAIL } = process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, NEWSLETTER_FROM_EMAIL } = process.env;
   try {
     const settingsRows = await supabaseRest('/app_settings?select=newsletter_enabled,newsletter_recipient_email&id=eq.true', {
       serviceKey, supabaseUrl,
@@ -458,16 +468,17 @@ async function maybeSendNewsletter(dateStr, { supabaseUrl, serviceKey }) {
     if (!settings.newsletter_enabled || !settings.newsletter_recipient_email) {
       return { sent: false, reason: 'disabled_or_unconfigured' };
     }
-    if (!RESEND_API_KEY || !NEWSLETTER_FROM_EMAIL) {
-      console.warn('[update-news] newsletter is enabled but RESEND_API_KEY/NEWSLETTER_FROM_EMAIL is not set');
-      return { sent: false, reason: 'missing_resend_config' };
+    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASSWORD) {
+      console.warn('[update-news] newsletter is enabled but SMTP_HOST/SMTP_USER/SMTP_PASSWORD is not set');
+      return { sent: false, reason: 'missing_smtp_config' };
     }
     const rows = await fetchNewsRowsForDate(dateStr, { supabaseUrl, serviceKey });
     if (!rows.length) return { sent: false, reason: 'no_rows_for_date' };
     const pdfBuffer = await buildNewsletterPdf(rows, dateStr, 'es');
     await sendNewsletterEmail({
       pdfBuffer, dateStr, recipientEmail: settings.newsletter_recipient_email,
-      fromEmail: NEWSLETTER_FROM_EMAIL, resendApiKey: RESEND_API_KEY,
+      fromEmail: NEWSLETTER_FROM_EMAIL || SMTP_USER,
+      smtp: { host: SMTP_HOST, port: Number(SMTP_PORT) || 465, user: SMTP_USER, password: SMTP_PASSWORD },
     });
     return { sent: true, recipient: settings.newsletter_recipient_email, items: rows.length };
   } catch (e) {
