@@ -5312,6 +5312,24 @@ const INAPlatform = {
     return data;
   },
 
+  /* ---------- Newsletter opt-in (app/profile.html, migration_v78) ----------
+     Self-service, default-off (receives_newsletter defaults to false) —
+     separate from app_settings.newsletter_enabled/recipient_email
+     (getNewsletterSettings()/setNewsletterSettings() above), which stays
+     the admin's own single address + master on/off switch. Covered by
+     the same profiles_update_own RLS policy as updateProfile() above, no
+     admin privilege needed — a user can only ever set this on their own
+     row (.eq('id', session.user.id)). */
+  async setNewsletterOptIn(receivesNewsletter) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ receives_newsletter: !!receivesNewsletter })
+      .eq('id', session.user.id);
+    if (error) throw error;
+  },
+
   /* ---------- Manual self-assessment (app/assessment.html) ----------
      Scores the questionnaire client-side (computeManualAssessment above)
      and writes it as a framework_analysis row tagged source='manual'

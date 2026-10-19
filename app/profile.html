@@ -110,6 +110,16 @@
       </div>
 
       <div class="info-block" style="margin-top:28px;">
+        <h4><span data-i18n="prof.newsletter.title">Email Preferences</span></h4>
+        <p style="font-size:13.5px; color:var(--muted); margin-top:8px;"><span data-i18n="prof.newsletter.lede">Get the day's curated telecom market news as a PDF, by email, every morning.</span></p>
+        <label style="display:flex; align-items:center; gap:10px; margin-top:16px; font-size:14px;">
+          <input type="checkbox" id="newsletterOptInCheckbox">
+          <span data-i18n="prof.newsletter.optin">Email me the daily news PDF</span>
+        </label>
+        <p id="newsletterOptInNote" class="contact-note" style="margin-top:10px;"></p>
+      </div>
+
+      <div class="info-block" style="margin-top:28px;">
         <h4><span data-i18n="sec.mfa.title">Two-Factor Authentication</span></h4>
         <p style="font-size:13.5px; color:var(--muted); margin-top:8px;"><span data-i18n="sec.mfa.lede">Add a 6-digit code from an authenticator app as a second step when signing in, on top of your password.</span></p>
 
@@ -167,9 +177,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=96"></script>
+<script src="/assets/i18n.js?v=97"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=113"></script>
+<script src="/assets/platform.js?v=114"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
 (function () {
@@ -217,6 +227,22 @@
       note.textContent = err.message || 'Something went wrong.';
     } finally {
       submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('newsletterOptInCheckbox').addEventListener('change', async (e) => {
+    const checkbox = e.target;
+    const noteEl = document.getElementById('newsletterOptInNote');
+    const l = INAPlatform.currentLang();
+    checkbox.disabled = true;
+    try {
+      await INAPlatform.setNewsletterOptIn(checkbox.checked);
+      noteEl.textContent = l === 'es' ? 'Guardado.' : 'Saved.';
+    } catch (err) {
+      checkbox.checked = !checkbox.checked; // revert the UI to match what's actually saved
+      noteEl.textContent = (l === 'es' ? 'No se pudo guardar: ' : "Couldn't save: ") + (err.message || err);
+    } finally {
+      checkbox.disabled = false;
     }
   });
 
@@ -351,6 +377,7 @@
     document.getElementById('fullName').value = profile.full_name || '';
     document.getElementById('organization').value = profile.organization || '';
     document.getElementById('roleType').value = profile.role_type || '';
+    document.getElementById('newsletterOptInCheckbox').checked = !!profile.receives_newsletter;
 
     document.getElementById('acctEmail').textContent = session.user.email || '';
     const rolePill = document.getElementById('acctRolePill');

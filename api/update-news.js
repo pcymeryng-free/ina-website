@@ -435,7 +435,12 @@ function buildNewsletterPdf(rows, dateStr, lang) {
 // cost is irrelevant and a fresh transporter avoids holding an SMTP
 // connection open across invocations in a serverless environment where
 // each one may run in a different, short-lived instance anyway.
-async function sendNewsletterEmail({ pdfBuffer, dateStr, recipientEmail, fromEmail, smtp }) {
+// `to` is the sending mailbox itself, not any real recipient — every
+// actual recipient (the admin's configured address, plus every opted-in
+// user) goes in `bcc` instead, so none of them sees anyone else's email
+// address (these are individual platform users' personal addresses, not
+// a shared distribution list people signed up for knowing it's shared).
+async function sendNewsletterEmail({ pdfBuffer, dateStr, recipients, fromEmail, smtp }) {
   const nodemailer = require('nodemailer');
   const transporter = nodemailer.createTransport({
     host: smtp.host,
@@ -445,7 +450,8 @@ async function sendNewsletterEmail({ pdfBuffer, dateStr, recipientEmail, fromEma
   });
   await transporter.sendMail({
     from: fromEmail,
-    to: recipientEmail,
+    to: fromEmail,
+    bcc: recipients,
     subject: `INA Platform — Noticias del Mercado — ${dateStr}`,
     html: `<p>Adjunto, el newsletter de noticias de telecomunicaciones curadas del ${dateStr}.</p><p style="color:#6b7280;font-size:12px;">INA Platform — <a href="https://international-network-advisors.com/news.html">international-network-advisors.com/news.html</a></p>`,
     attachments: [{ filename: `ina-noticias-${dateStr}.pdf`, content: pdfBuffer }],
@@ -458,6 +464,16 @@ async function sendNewsletterEmail({ pdfBuffer, dateStr, recipientEmail, fromEma
 // this run itself inserted), so it still sends something sensible even
 // on the "nothing new to curate" early-return path, as long as earlier
 // runs today already populated some rows.
+//
+// Recipients are the union of two independent things (Pablo, oct 2026,
+// adding the second on top of the first): app_settings.
+// newsletter_recipient_email — the admin's one configured address,
+// gated on newsletter_enabled acting as a master on/off switch for the
+// whole send — and every profiles row with receives_newsletter = true
+// (migration_v78), each user's own self-service opt-in on
+// app/profile.html, default off. Turning newsletter_enabled off silences
+// BOTH, even if users have opted in — it's the kill switch; the per-user
+// toggle only ever ADDS recipients on top of whatever that switch allows.
 async function maybeSendNewsletter(dateStr, { supabaseUrl, serviceKey }) {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, NEWSLETTER_FROM_EMAIL } = process.env;
   try {
@@ -465,9 +481,18 @@ async function maybeSendNewsletter(dateStr, { supabaseUrl, serviceKey }) {
       serviceKey, supabaseUrl,
     });
     const settings = (settingsRows && settingsRows[0]) || {};
-    if (!settings.newsletter_enabled || !settings.newsletter_recipient_email) {
-      return { sent: false, reason: 'disabled_or_unconfigured' };
+    if (!settings.newsletter_enabled) {
+      return { sent: false, reason: 'disabled' };
     }
+
+    const optedInRows = await supabaseRest('/profiles?select=email&receives_newsletter=eq.true', { serviceKey, supabaseUrl });
+    const optedInEmails = (optedInRows || []).map((r) => r.email).filter(Boolean);
+    const recipients = Array.from(new Set([
+      ...(settings.newsletter_recipient_email ? [settings.newsletter_recipient_email] : []),
+      ...optedInEmails,
+    ]));
+    if (!recipients.length) return { sent: false, reason: 'no_recipients' };
+
     if (!SMTP_HOST || !SMTP_USER || !SMTP_PASSWORD) {
       // Names which specific var(s) are missing — the generic "newsletter
       // is enabled but SMTP_* is not set" warning alone wasn't enough to
@@ -482,11 +507,11 @@ async function maybeSendNewsletter(dateStr, { supabaseUrl, serviceKey }) {
     if (!rows.length) return { sent: false, reason: 'no_rows_for_date' };
     const pdfBuffer = await buildNewsletterPdf(rows, dateStr, 'es');
     await sendNewsletterEmail({
-      pdfBuffer, dateStr, recipientEmail: settings.newsletter_recipient_email,
+      pdfBuffer, dateStr, recipients,
       fromEmail: NEWSLETTER_FROM_EMAIL || SMTP_USER,
       smtp: { host: SMTP_HOST, port: Number(SMTP_PORT) || 465, user: SMTP_USER, password: SMTP_PASSWORD },
     });
-    return { sent: true, recipient: settings.newsletter_recipient_email, items: rows.length };
+    return { sent: true, recipients: recipients.length, items: rows.length };
   } catch (e) {
     console.error('[update-news] maybeSendNewsletter failed:', e);
     return { sent: false, reason: 'error', detail: String((e && e.message) || e) };
