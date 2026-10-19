@@ -5518,6 +5518,40 @@ const INAPlatform = {
       .eq('id', true);
     if (error) throw error;
   },
+
+  /* ---------- Daily news PDF newsletter (app/admin.html, migration_v77) ----------
+     Same app_settings singleton row / RLS bar as debug_mode above — anyone
+     can read it, only an admin can write it. api/update-news.js reads
+     these two columns after each day's curation run to decide whether to
+     email the PDF newsletter it always builds for news.html's own
+     "Download PDF" button (that part needs no flag at all — it's a public
+     read of already-public data). */
+  async getNewsletterSettings() {
+    const { data, error } = await supabaseClient
+      .from('app_settings')
+      .select('newsletter_enabled, newsletter_recipient_email')
+      .eq('id', true)
+      .single();
+    if (error) throw error;
+    return {
+      enabled: !!(data && data.newsletter_enabled),
+      recipientEmail: (data && data.newsletter_recipient_email) || '',
+    };
+  },
+  async setNewsletterSettings({ enabled, recipientEmail }) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { error } = await supabaseClient
+      .from('app_settings')
+      .update({
+        newsletter_enabled: !!enabled,
+        newsletter_recipient_email: (recipientEmail || '').trim() || null,
+        updated_at: new Date().toISOString(),
+        updated_by: session.user.id,
+      })
+      .eq('id', true);
+    if (error) throw error;
+  },
   /* Same shape as listActivityLog() above — see that function's comments
      for the userId===null convention. logType/agentKey/tableName filter
      on debug_log's own discriminator columns. */

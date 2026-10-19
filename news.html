@@ -17,7 +17,10 @@
 .news-daylabel{
   font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
   color:var(--amber-deep); padding-bottom:8px; margin-bottom:18px; border-bottom:2px solid var(--ink);
+  display:flex; justify-content:space-between; align-items:baseline; gap:12px;
 }
+.news-day-pdf-link{ color:var(--muted); text-decoration:none; letter-spacing:.04em; }
+.news-day-pdf-link:hover{ color:var(--amber-deep); }
 .news-item{ padding:22px 0; border-bottom:1px solid var(--paper-line); display:grid; grid-template-columns:140px 1fr; gap:24px; }
 .news-item:last-child{ border-bottom:none; }
 .news-item-meta{ font-family:var(--mono); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
@@ -72,11 +75,14 @@
 </section>
 <div class="service-detail" style="padding:48px 0;">
   <div class="wrap" style="max-width:860px;">
-    <div class="news-scope-filter" id="newsScopeFilter">
-      <button type="button" class="active" data-scope=""><span data-i18n="news.scope.all">All</span></button>
-      <button type="button" data-scope="argentina"><span data-i18n="news.scope.argentina">Argentina</span></button>
-      <button type="button" data-scope="latam"><span data-i18n="news.scope.latam">Latin America</span></button>
-      <button type="button" data-scope="international"><span data-i18n="news.scope.international">International</span></button>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:36px;">
+      <div class="news-scope-filter" id="newsScopeFilter" style="margin-bottom:0;">
+        <button type="button" class="active" data-scope=""><span data-i18n="news.scope.all">All</span></button>
+        <button type="button" data-scope="argentina"><span data-i18n="news.scope.argentina">Argentina</span></button>
+        <button type="button" data-scope="latam"><span data-i18n="news.scope.latam">Latin America</span></button>
+        <button type="button" data-scope="international"><span data-i18n="news.scope.international">International</span></button>
+      </div>
+      <a href="#" class="btn ghost small" id="downloadTodayPdfBtn"><span data-i18n="news.downloadToday">Download Today's PDF</span></a>
     </div>
     <div id="newsFeed"></div>
     <div id="newsStatus"></div>
@@ -145,15 +151,38 @@
     return document.documentElement.getAttribute('lang') === 'es' ? 'es' : 'en';
   }
 
+  // Matches argentinaDateString() in api/update-news.js — published_date
+  // is written in Argentina local time, so "today"/"yesterday" below (and
+  // the PDF download links' default date) need to agree with that, not
+  // with the visitor's own timezone or a plain UTC slice.
+  function argentinaDateStr(date) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(date);
+    const get = (type) => parts.find((p) => p.type === type).value;
+    return `${get('year')}-${get('month')}-${get('day')}`;
+  }
+  function argentinaTodayStr() { return argentinaDateStr(new Date()); }
+
   function dayLabel(dateStr) {
     const l = lang();
-    const today = new Date();
-    const todayStr = today.toISOString().slice(0, 10);
-    const yestStr = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
+    const todayStr = argentinaTodayStr();
+    const yestStr = argentinaDateStr(new Date(Date.now() - 86400000));
     if (dateStr === todayStr) return (window.I18N && I18N['news.today'] && I18N['news.today'][l]) || 'Today';
     if (dateStr === yestStr) return (window.I18N && I18N['news.yesterday'] && I18N['news.yesterday'][l]) || 'Yesterday';
     const d = new Date(`${dateStr}T12:00:00`);
     return d.toLocaleDateString(l === 'es' ? 'es-AR' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  // Same production-hostname split every other api/*.js call in this
+  // codebase uses (see assets/platform.js's analyzeProjectUrl() and
+  // friends) — duplicated here rather than loading that file (see the
+  // SUPABASE_URL/ANON_KEY comment above for why).
+  const PRODUCTION_HOSTNAMES = ['international-network-advisors.com', 'www.international-network-advisors.com'];
+  const PRODUCTION_API_ORIGIN = 'https://api.international-network-advisors.com';
+  function newsPdfUrl(dateStr) {
+    const base = PRODUCTION_HOSTNAMES.includes(location.hostname) ? `${PRODUCTION_API_ORIGIN}/api/update-news` : '/api/update-news';
+    return `${base}?download=pdf&date=${encodeURIComponent(dateStr)}&lang=${lang()}`;
   }
 
   function escapeHtml(s) {
@@ -183,7 +212,7 @@
         group.className = 'news-daygroup';
         const label = document.createElement('div');
         label.className = 'news-daylabel';
-        label.textContent = dayLabel(currentDate);
+        label.innerHTML = `<span>${escapeHtml(dayLabel(currentDate))}</span><a href="${newsPdfUrl(currentDate)}" class="news-day-pdf-link">PDF &darr;</a>`;
         group.appendChild(label);
         listEl = document.createElement('div');
         group.appendChild(listEl);
@@ -272,11 +301,15 @@
   // DOMContentLoaded too guarantees its listener registers second, so on
   // a real click it also FIRES second — after applyLang() has already
   // updated the attribute this reads.
+  function updateDownloadTodayBtn() {
+    document.getElementById('downloadTodayPdfBtn').href = newsPdfUrl(argentinaTodayStr());
+  }
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.lang-btn').forEach((b) => {
-      b.addEventListener('click', () => renderAll());
+      b.addEventListener('click', () => { renderAll(); updateDownloadTodayBtn(); });
     });
   });
+  updateDownloadTodayBtn();
 
   new IntersectionObserver((entries) => {
     if (entries[0].isIntersecting) loadMore();

@@ -100,6 +100,10 @@ const I18N = {
     "en": "Couldn't load the news feed right now.",
     "es": "No se pudo cargar el feed de noticias en este momento."
   },
+  "news.downloadToday": {
+    "en": "Download Today's PDF",
+    "es": "Descargar PDF de Hoy"
+  },
   "news.readOriginal": {
     "en": "Read at",
     "es": "Leer en"
@@ -3474,6 +3478,11 @@ const I18N = {
   "admin.nu.platformRole": { "en": "Platform role", "es": "Rol en la plataforma" },
   "admin.nu.submit": { "en": "Send Invite", "es": "Enviar Invitación" },
   "admin.title": { "en": "User Management", "es": "Gestión de Usuarios" },
+  "admin.newsletter.title": { "en": "Daily news PDF newsletter", "es": "Newsletter diario de noticias (PDF)" },
+  "admin.newsletter.lede": { "en": "Email the day's curated news (news.html) as a PDF every morning, after it's generated.", "es": "Enviar por mail las noticias curadas del día (news.html) como PDF cada mañana, después de generarse." },
+  "admin.newsletter.email": { "en": "Recipient email", "es": "Email de destino" },
+  "admin.newsletter.enable": { "en": "Send daily", "es": "Enviar a diario" },
+  "admin.newsletter.save": { "en": "Save", "es": "Guardar" },
   "app.backToSite": { "en": "&larr; INA website", "es": "&larr; Sitio de INA" },
   "app.footer.site": { "en": "INA website", "es": "Sitio de INA" },
   "app.logo.label": { "en": "Platform", "es": "Plataforma" },

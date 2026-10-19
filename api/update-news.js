@@ -19,6 +19,14 @@
  *   4. Insert the result into public.market_news with the SERVICE ROLE key
  *      (see supabase/migration_v75_market_news.sql — that table has no
  *      anon/authenticated write policy at all, only public read).
+ *   5. If app_settings.newsletter_enabled is on (migration_v77 /
+ *      app/admin.html), email a PDF of today's news to the configured
+ *      recipient via Resend — see maybeSendNewsletter() below.
+ *
+ * This file also serves GET /api/update-news?download=pdf[&date=YYYY-MM-DD]
+ * [&lang=es|en] — news.html's "Download PDF" button. That branch is public
+ * (checked before the CRON_SECRET check below) since it's just a PDF of
+ * the same public data news.html already shows anyone.
  *
  * Auth: a single shared secret, NOT a per-user Supabase session (there's no
  * user initiating this — it's cron-triggered). Vercel automatically sends
@@ -33,7 +41,13 @@
  * SUPABASE_ANON_KEY (for the debug-mode check only), CRON_SECRET, plus the
  * SAME LLM_PROVIDER switch and per-provider credentials every other AI
  * endpoint already uses — see api/analyze-project.js's file header for
- * what each one does.
+ * what each one does. Also, only if the newsletter is ever turned on via
+ * app/admin.html: RESEND_API_KEY (an API key from resend.com — their free
+ * tier covers this easily) and NEWSLETTER_FROM_EMAIL (a "from" address on
+ * a domain verified in that Resend account, e.g. "INA Platform
+ * <newsletter@international-network-advisors.com>"). Missing either one
+ * just skips sending for that day (see maybeSendNewsletter()) — it never
+ * fails the cron run itself.
  *
  * FEEDS below is a first pass, not a verified-forever list — RSS feed
  * paths do move when a publisher redesigns its site. A feed that starts
@@ -309,10 +323,197 @@ async function fetchGroqWithRetry(body, headers) {
   });
 }
 
+/* ---------- Daily PDF newsletter (Pablo, oct 2026: "las novedades...
+   descargar en un newsletter en pdf en forma diaria y que se puda
+   configurar para que se envien por mail") ----------
+   Two independent entry points share the same PDF builder:
+   - GET /api/update-news?download=pdf[&date=YYYY-MM-DD][&lang=es|en] —
+     news.html's "Download PDF" button. Public, no CRON_SECRET needed
+     (same public data news.html already shows anyone); see the branch at
+     the top of handler() below, BEFORE the auth check.
+   - The cron path, after each day's curation run: if app_settings.
+     newsletter_enabled is on and a recipient is configured
+     (migration_v77_newsletter_settings.sql / app/admin.html), emails the
+     same PDF for TODAY to that address via Resend's API. Non-critical —
+     a failure here never fails the cron's own response, same as every
+     other "best-effort" step in this file. */
+
+const SCOPE_LABELS = {
+  argentina: { es: 'Argentina', en: 'Argentina' },
+  latam: { es: 'Latinoamérica', en: 'Latin America' },
+  international: { es: 'Internacional', en: 'International' },
+};
+
+async function fetchNewsRowsForDate(dateStr, { supabaseUrl, serviceKey }) {
+  const rows = await supabaseRest(
+    `/market_news?select=title,title_en,summary,summary_en,source_name,source_url,country_scope,category,created_at&published_date=eq.${dateStr}&order=country_scope.asc,created_at.asc`,
+    { serviceKey, supabaseUrl }
+  );
+  return rows || [];
+}
+
+// pdfkit's default fonts (Helvetica etc.) use WinAnsiEncoding, which only
+// covers Windows-1252 — it has no glyph for the narrow no-break space
+// (U+202F) the model sometimes emits as a thousands separator (e.g. "5,1
+// 202fM$"), and silently renders it as a stray "/" instead of a space.
+// Normalizing every exotic space variant to a plain ASCII one before any
+// doc.text() call below is cheap insurance against that whole class of
+// character, not just the one that was actually seen.
+function sanitizeForPdf(s) {
+  return String(s == null ? '' : s).replace(/[  -​  　﻿]/g, ' ');
+}
+
+function buildNewsletterPdf(rows, dateStr, lang) {
+  // Lazily required (same convention as the @aws-sdk/client-bedrock-runtime
+  // import elsewhere in this codebase) — this is the only function in the
+  // whole file that needs it, so there's no reason to pay its require()
+  // cost on every invocation, including the far more frequent cron path
+  // when nobody asked for a PDF at all.
+  const PDFDocument = require('pdfkit');
+  const L = lang === 'en' ? 'en' : 'es';
+  const title = L === 'es' ? `Noticias del Mercado — ${dateStr}` : `Market News — ${dateStr}`;
+  const subtitle = L === 'es'
+    ? 'INA Platform — curado por IA a partir de fuentes de telecomunicaciones de Argentina e internacionales'
+    : 'INA Platform — AI-curated from Argentina and international telecom sources';
+
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 54, size: 'A4' });
+    const chunks = [];
+    doc.on('data', (c) => chunks.push(c));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    doc.fontSize(20).fillColor('#0B1526').text(title, { align: 'left' });
+    doc.moveDown(0.2);
+    doc.fontSize(10).fillColor('#6b7280').text(subtitle);
+    doc.moveDown(1);
+
+    if (!rows.length) {
+      doc.fontSize(12).fillColor('#0B1526').text(
+        L === 'es' ? 'No hubo noticias curadas para este día.' : 'No curated news for this day.'
+      );
+      doc.end();
+      return;
+    }
+
+    let currentScope = null;
+    rows.forEach((row) => {
+      if (row.country_scope !== currentScope) {
+        currentScope = row.country_scope;
+        doc.moveDown(0.6);
+        const label = (SCOPE_LABELS[currentScope] && SCOPE_LABELS[currentScope][L]) || currentScope;
+        doc.fontSize(13).fillColor('#B8752E').text(label.toUpperCase(), { underline: false });
+        doc.moveTo(doc.x, doc.y + 2).lineTo(doc.page.width - doc.page.margins.right, doc.y + 2).strokeColor('#D6D3C7').stroke();
+        doc.moveDown(0.4);
+      }
+      const itemTitle = sanitizeForPdf(L === 'es' ? row.title : (row.title_en || row.title));
+      const itemSummary = sanitizeForPdf(L === 'es' ? row.summary : (row.summary_en || row.summary));
+      doc.fontSize(12).fillColor('#0B1526').text(itemTitle, { continued: false });
+      if (itemSummary) {
+        doc.fontSize(10).fillColor('#374151').text(itemSummary);
+      }
+      doc.fontSize(8.5).fillColor('#9CA3AF').text(
+        sanitizeForPdf(`${row.source_name}${row.category ? ' · ' + row.category : ''} · ${row.source_url}`),
+        { link: row.source_url }
+      );
+      doc.moveDown(0.6);
+    });
+
+    doc.end();
+  });
+}
+
+async function sendNewsletterEmail({ pdfBuffer, dateStr, recipientEmail, fromEmail, resendApiKey }) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendApiKey}` },
+    body: JSON.stringify({
+      from: fromEmail,
+      to: [recipientEmail],
+      subject: `INA Platform — Noticias del Mercado — ${dateStr}`,
+      html: `<p>Adjunto, el newsletter de noticias de telecomunicaciones curadas del ${dateStr}.</p><p style="color:#6b7280;font-size:12px;">INA Platform — <a href="https://international-network-advisors.com/news.html">international-network-advisors.com/news.html</a></p>`,
+      attachments: [{ filename: `ina-noticias-${dateStr}.pdf`, content: pdfBuffer.toString('base64') }],
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`Resend request failed (status ${res.status}): ${errText}`);
+  }
+  return res.json();
+}
+
+// Best-effort, non-critical — wrapped so any failure here (missing config,
+// Resend down, etc.) never fails the cron's own response. Always queries
+// ALL of today's rows fresh (not just whatever this run itself inserted),
+// so it still sends something sensible even on the "nothing new to
+// curate" early-return path, as long as earlier runs today already
+// populated some rows.
+async function maybeSendNewsletter(dateStr, { supabaseUrl, serviceKey }) {
+  const { RESEND_API_KEY, NEWSLETTER_FROM_EMAIL } = process.env;
+  try {
+    const settingsRows = await supabaseRest('/app_settings?select=newsletter_enabled,newsletter_recipient_email&id=eq.true', {
+      serviceKey, supabaseUrl,
+    });
+    const settings = (settingsRows && settingsRows[0]) || {};
+    if (!settings.newsletter_enabled || !settings.newsletter_recipient_email) {
+      return { sent: false, reason: 'disabled_or_unconfigured' };
+    }
+    if (!RESEND_API_KEY || !NEWSLETTER_FROM_EMAIL) {
+      console.warn('[update-news] newsletter is enabled but RESEND_API_KEY/NEWSLETTER_FROM_EMAIL is not set');
+      return { sent: false, reason: 'missing_resend_config' };
+    }
+    const rows = await fetchNewsRowsForDate(dateStr, { supabaseUrl, serviceKey });
+    if (!rows.length) return { sent: false, reason: 'no_rows_for_date' };
+    const pdfBuffer = await buildNewsletterPdf(rows, dateStr, 'es');
+    await sendNewsletterEmail({
+      pdfBuffer, dateStr, recipientEmail: settings.newsletter_recipient_email,
+      fromEmail: NEWSLETTER_FROM_EMAIL, resendApiKey: RESEND_API_KEY,
+    });
+    return { sent: true, recipient: settings.newsletter_recipient_email, items: rows.length };
+  } catch (e) {
+    console.error('[update-news] maybeSendNewsletter failed:', e);
+    return { sent: false, reason: 'error', detail: String((e && e.message) || e) };
+  }
+}
+
+// GET /api/update-news?download=pdf[&date=YYYY-MM-DD][&lang=es|en] —
+// public, no secret required (mirrors news.html's own public, anonymous
+// read of the same table). Uses the service role key purely because
+// that's the key already configured for this file's Supabase REST calls
+// — market_news is public-read via RLS either way (migration_v75), so
+// this isn't bypassing any access control that matters.
+async function handleDownloadPdf(req, res, { supabaseUrl, serviceKey }) {
+  const dateStr = (req.query && req.query.date) || argentinaTodayDate();
+  const lang = req.query && req.query.lang === 'en' ? 'en' : 'es';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return json(res, 400, { error: 'date must be YYYY-MM-DD' });
+  }
+  try {
+    const rows = await fetchNewsRowsForDate(dateStr, { supabaseUrl, serviceKey });
+    const pdfBuffer = await buildNewsletterPdf(rows, dateStr, lang);
+    res.status(200);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="ina-noticias-${dateStr}.pdf"`);
+    res.end(pdfBuffer);
+  } catch (e) {
+    console.error('[update-news] handleDownloadPdf failed:', e);
+    return json(res, 500, { error: 'Could not generate PDF', detail: String((e && e.message) || e) });
+  }
+}
+
 async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
   if (req.method !== 'GET' && req.method !== 'POST') {
     return json(res, 405, { error: 'Method not allowed' });
+  }
+
+  // Public PDF download — checked before any auth, same public read as
+  // news.html itself. Only needs Supabase, not an LLM provider, so it's
+  // handled before the provider/secret checks below even run.
+  if (req.method === 'GET' && req.query && req.query.download === 'pdf') {
+    const { SUPABASE_URL: dlUrl, SUPABASE_SERVICE_ROLE_KEY: dlKey } = process.env;
+    if (!dlUrl || !dlKey) return json(res, 500, { error: 'Server misconfigured: missing SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY.' });
+    return handleDownloadPdf(req, res, { supabaseUrl: dlUrl, serviceKey: dlKey });
   }
 
   const authHeader = req.headers.authorization || '';
@@ -396,7 +597,8 @@ async function handler(req, res) {
     const capped = pickWithScopeQuotas(candidates, SCOPE_QUOTAS, MAX_CANDIDATES);
 
     if (!capped.length) {
-      return json(res, 200, { ok: true, feeds: FEEDS.length, candidates: 0, inserted: 0, message: 'Nothing new to curate.' });
+      const newsletter = await maybeSendNewsletter(argentinaTodayDate(), { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
+      return json(res, 200, { ok: true, feeds: FEEDS.length, candidates: 0, inserted: 0, message: 'Nothing new to curate.', newsletter });
     }
 
     const candidatesByLink = new Map(capped.map((it) => [it.link, it]));
@@ -576,6 +778,8 @@ async function handler(req, res) {
       }) || [];
     }
 
+    const newsletter = await maybeSendNewsletter(publishedDate, { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
+
     return json(res, 200, {
       ok: true,
       feeds: FEEDS.length,
@@ -583,6 +787,7 @@ async function handler(req, res) {
       kept: rows.length,
       inserted: inserted.length,
       published_date: publishedDate,
+      newsletter,
     });
   } catch (err) {
     console.error('[update-news] unhandled error:', err);

@@ -81,6 +81,30 @@
     <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
 
     <div id="adminBody" style="display:none; margin-top:32px;">
+      <!-- Daily news PDF newsletter (migration_v77) — admin-only (RLS
+           only lets an admin write app_settings, see assets/platform.js's
+           setNewsletterSettings()), hidden entirely for a non-admin
+           advisor who can otherwise manage users on this page. The PDF
+           itself (news.html's "Download PDF" button) needs no toggle at
+           all — this only controls whether api/update-news.js ALSO emails
+           it after each day's curation run. -->
+      <div class="info-block" id="newsletterSettingsBlock" style="display:none; margin-bottom:24px;">
+        <h4 style="margin:0 0 4px;"><span data-i18n="admin.newsletter.title">Daily news PDF newsletter</span></h4>
+        <p style="font-size:12.5px; color:var(--muted); margin:0 0 16px;"><span data-i18n="admin.newsletter.lede">Email the day's curated news (news.html) as a PDF every morning, after it's generated.</span></p>
+        <div style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+          <div class="ffield" style="flex:1 1 280px;">
+            <label for="newsletterRecipientEmail"><span data-i18n="admin.newsletter.email">Recipient email</span></label>
+            <input type="email" id="newsletterRecipientEmail" placeholder="nombre@dominio.com">
+          </div>
+          <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; padding-bottom:9px;">
+            <input type="checkbox" id="newsletterEnabledCheckbox">
+            <span data-i18n="admin.newsletter.enable">Send daily</span>
+          </label>
+          <button type="button" class="btn amber small" id="newsletterSaveBtn" style="margin-bottom:1px;"><span data-i18n="admin.newsletter.save">Save</span></button>
+        </div>
+        <p id="newsletterSaveNote" style="font-size:12.5px; color:var(--muted); margin-top:10px;"></p>
+      </div>
+
       <div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
         <button type="button" class="btn amber small" id="newUserBtn"><span data-i18n="admin.newUser">+ Nuevo Usuario</span></button>
       </div>
@@ -464,6 +488,28 @@
     newUserOverlay.style.display = 'none';
     newUserForm.reset();
   }
+  document.getElementById('newsletterSaveBtn').addEventListener('click', async () => {
+    const lang = INAPlatform.currentLang();
+    const btn = document.getElementById('newsletterSaveBtn');
+    const note = document.getElementById('newsletterSaveNote');
+    const email = document.getElementById('newsletterRecipientEmail').value.trim();
+    const enabled = document.getElementById('newsletterEnabledCheckbox').checked;
+    if (enabled && !email) {
+      note.textContent = lang === 'es' ? 'Ingresá un email para poder activar el envío.' : 'Enter an email address to turn sending on.';
+      return;
+    }
+    btn.disabled = true;
+    note.textContent = lang === 'es' ? 'Guardando…' : 'Saving…';
+    try {
+      await INAPlatform.setNewsletterSettings({ enabled, recipientEmail: email });
+      note.textContent = lang === 'es' ? 'Guardado.' : 'Saved.';
+    } catch (err) {
+      note.textContent = (lang === 'es' ? 'No se pudo guardar: ' : "Couldn't save: ") + (err.message || err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   document.getElementById('newUserBtn').addEventListener('click', openNewUserForm);
   document.getElementById('closeNewUserForm').addEventListener('click', closeNewUserForm);
   newUserOverlay.addEventListener('click', (e) => { if (e.target === newUserOverlay) closeNewUserForm(); });
@@ -537,6 +583,14 @@
       if (INAPlatform.isAdvisor(profile) || INAPlatform.isAdmin(profile)) document.getElementById('contractsMenuItem').style.display = 'flex';
       if (INAPlatform.isAdmin(profile)) document.getElementById('aiHintsMenuItem').style.display = 'flex';
       if (INAPlatform.isAdmin(profile)) document.getElementById('promotionRequirementsMenuItem').style.display = 'flex';
+      if (INAPlatform.isAdmin(profile)) {
+        document.getElementById('newsletterSettingsBlock').style.display = 'block';
+        try {
+          const settings = await INAPlatform.getNewsletterSettings();
+          document.getElementById('newsletterRecipientEmail').value = settings.recipientEmail;
+          document.getElementById('newsletterEnabledCheckbox').checked = settings.enabled;
+        } catch (e) { /* non-critical — fields just stay blank/unchecked */ }
+      }
       if (INAPlatform.canManageMasterData(profile)) document.getElementById('masterDataNavMenu').style.display = 'flex';
       INAPlatform.initDropdownMenus(document.querySelector('.app-nav'));
       INAPlatform.initMobileNav();
