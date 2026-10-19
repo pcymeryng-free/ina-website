@@ -265,38 +265,18 @@ function translateProjectTextUrl() {
 }
 
 /* Same reasoning/hosting split as analyzeProjectUrl() above — see
-   api/create-user.js, adminCreateUser() below (Pablo, oct 2026: "permitir
-   al usuario admin la posibilidad de dar de alta usuarios en la
-   plataforma"). */
-function createUserUrl() {
+   api/manage-user.js, adminCreateUser()/setUserDisabled()/adminDeleteUser()
+   below. One endpoint for all three admin user-management actions
+   (dispatched by `action` in the POST body) — they used to be three
+   separate files (api/create-user.js, api/set-user-disabled.js,
+   api/delete-user.js) until the Vercel Hobby plan's 12-Serverless-
+   Function-per-deployment cap forced a merge (Pablo, oct 2026 — adding
+   api/update-news.js as a 13th function broke every deploy). */
+function manageUserUrl() {
   if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
-    return `${PRODUCTION_API_ORIGIN}/create-user`;
+    return `${PRODUCTION_API_ORIGIN}/manage-user`;
   }
-  return '/api/create-user';
-}
-
-/* Same reasoning/hosting split as createUserUrl() above — see
-   api/set-user-disabled.js, setUserDisabled() below. Deactivates (not
-   deletes) a user: profiles.id/projects.user_id/etc. all cascade-delete
-   from auth.users, so a real delete of anyone who ever created a project
-   would wipe that project and everything under it — see that file's
-   header for the full reasoning. */
-function setUserDisabledUrl() {
-  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
-    return `${PRODUCTION_API_ORIGIN}/set-user-disabled`;
-  }
-  return '/api/set-user-disabled';
-}
-
-/* Same reasoning/hosting split as setUserDisabledUrl() above — see
-   api/delete-user.js, adminDeleteUser() below. A real, permanent delete
-   (unlike setUserDisabled()), only allowed server-side when the target
-   owns zero projects/programs/contracts/roadmap_templates. */
-function deleteUserUrl() {
-  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
-    return `${PRODUCTION_API_ORIGIN}/delete-user`;
-  }
-  return '/api/delete-user';
+  return '/api/manage-user';
 }
 
 /* ---------- Reference data (bilingual) ---------- */
@@ -5641,10 +5621,10 @@ const INAPlatform = {
   async adminCreateUser({ email, fullName, organization, roleType }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
-    const res = await fetch(createUserUrl(), {
+    const res = await fetch(manageUserUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ email, fullName, organization, roleType }),
+      body: JSON.stringify({ action: 'create', email, fullName, organization, roleType }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -5665,10 +5645,10 @@ const INAPlatform = {
   async setUserDisabled(userId, disabled) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
-    const res = await fetch(setUserDisabledUrl(), {
+    const res = await fetch(manageUserUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ userId, disabled }),
+      body: JSON.stringify({ action: 'disable', userId, disabled }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error((data && (data.error || data.detail)) || `Request failed (${res.status})`);
@@ -5683,10 +5663,10 @@ const INAPlatform = {
   async adminDeleteUser(userId) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
-    const res = await fetch(deleteUserUrl(), {
+    const res = await fetch(manageUserUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ action: 'delete', userId }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
