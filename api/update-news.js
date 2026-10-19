@@ -469,8 +469,14 @@ async function maybeSendNewsletter(dateStr, { supabaseUrl, serviceKey }) {
       return { sent: false, reason: 'disabled_or_unconfigured' };
     }
     if (!SMTP_HOST || !SMTP_USER || !SMTP_PASSWORD) {
-      console.warn('[update-news] newsletter is enabled but SMTP_HOST/SMTP_USER/SMTP_PASSWORD is not set');
-      return { sent: false, reason: 'missing_smtp_config' };
+      // Names which specific var(s) are missing — the generic "newsletter
+      // is enabled but SMTP_* is not set" warning alone wasn't enough to
+      // tell, from the outside, whether a Vercel env var save genuinely
+      // hadn't reached this deployment's environment yet or one of the
+      // three was simply never set to begin with.
+      const missing = [!SMTP_HOST && 'SMTP_HOST', !SMTP_USER && 'SMTP_USER', !SMTP_PASSWORD && 'SMTP_PASSWORD'].filter(Boolean);
+      console.warn(`[update-news] newsletter is enabled but missing env var(s): ${missing.join(', ')}`);
+      return { sent: false, reason: 'missing_smtp_config', missing };
     }
     const rows = await fetchNewsRowsForDate(dateStr, { supabaseUrl, serviceKey });
     if (!rows.length) return { sent: false, reason: 'no_rows_for_date' };
