@@ -4063,6 +4063,7 @@ const I18N = {
   "prof.newsletter.title": { "en": "Email Preferences", "es": "Preferencias de Email" },
   "prof.newsletter.lede": { "en": "Get the day's curated telecom market news as a PDF, by email, every morning.", "es": "Recibí las noticias del mercado de telecomunicaciones del día, curadas, en PDF por email, cada mañana." },
   "prof.newsletter.optin": { "en": "Email me the daily news PDF", "es": "Enviarme el PDF diario de noticias" },
+  "prof.newsletter.language": { "en": "Newsletter language", "es": "Idioma del newsletter" },
   "sec.mfa.title": { "en": "Two-Factor Authentication", "es": "Verificación en Dos Pasos" },
   "sec.pw.submit": { "en": "Update Password", "es": "Actualizar Contraseña" },
   "sec.pw.title": { "en": "Change Password", "es": "Cambiar Contraseña" },

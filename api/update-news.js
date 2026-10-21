@@ -604,7 +604,21 @@ function buildNewsletterPdf(rows, dateStr, lang) {
 // user) goes in `bcc` instead, so none of them sees anyone else's email
 // address (these are individual platform users' personal addresses, not
 // a shared distribution list people signed up for knowing it's shared).
-async function sendNewsletterEmail({ pdfBuffer, dateStr, recipients, fromEmail, smtp }) {
+const NEWSLETTER_EMAIL_TEXT = {
+  es: {
+    subject: (d) => `INA Platform — Noticias del Mercado — ${d}`,
+    body: (d) => `Adjunto, el newsletter de noticias de telecomunicaciones curadas del ${d}.`,
+    filename: (d) => `ina-noticias-${d}.pdf`,
+  },
+  en: {
+    subject: (d) => `INA Platform — Market News — ${d}`,
+    body: (d) => `Attached is the curated telecom market news newsletter for ${d}.`,
+    filename: (d) => `ina-news-${d}.pdf`,
+  },
+};
+
+async function sendNewsletterEmail({ pdfBuffer, dateStr, recipients, fromEmail, smtp, lang }) {
+  const text = NEWSLETTER_EMAIL_TEXT[lang === 'en' ? 'en' : 'es'];
   const nodemailer = require('nodemailer');
   const transporter = nodemailer.createTransport({
     host: smtp.host,
@@ -616,9 +630,9 @@ async function sendNewsletterEmail({ pdfBuffer, dateStr, recipients, fromEmail, 
     from: fromEmail,
     to: fromEmail,
     bcc: recipients,
-    subject: `INA Platform — Noticias del Mercado — ${dateStr}`,
-    html: `<p>Adjunto, el newsletter de noticias de telecomunicaciones curadas del ${dateStr}.</p><p style="color:#6b7280;font-size:12px;">INA Platform — <a href="https://international-network-advisors.com/news.html">international-network-advisors.com/news.html</a></p>`,
-    attachments: [{ filename: `ina-noticias-${dateStr}.pdf`, content: pdfBuffer }],
+    subject: text.subject(dateStr),
+    html: `<p>${text.body(dateStr)}</p><p style="color:#6b7280;font-size:12px;">INA Platform — <a href="https://international-network-advisors.com/news.html">international-network-advisors.com/news.html</a></p>`,
+    attachments: [{ filename: text.filename(dateStr), content: pdfBuffer }],
   });
 }
 
@@ -649,13 +663,40 @@ async function maybeSendNewsletter(dateStr, { supabaseUrl, serviceKey }) {
       return { sent: false, reason: 'disabled' };
     }
 
-    const optedInRows = await supabaseRest('/profiles?select=email&receives_newsletter=eq.true', { serviceKey, supabaseUrl });
-    const optedInEmails = (optedInRows || []).map((r) => r.email).filter(Boolean);
-    const recipients = Array.from(new Set([
-      ...(settings.newsletter_recipient_email ? [settings.newsletter_recipient_email] : []),
-      ...optedInEmails,
-    ]));
-    if (!recipients.length) return { sent: false, reason: 'no_recipients' };
+    // Each recipient's language (migration_v79's profiles.newsletter_language).
+    // Falls back to everyone-in-Spanish if that column doesn't exist yet
+    // (migration not run), so the newsletter keeps going out exactly as it
+    // did before rather than failing outright.
+    let optedInRows;
+    try {
+      optedInRows = await supabaseRest('/profiles?select=email,newsletter_language&receives_newsletter=eq.true', { serviceKey, supabaseUrl });
+    } catch (e) {
+      console.warn('[update-news] newsletter_language unavailable (migration_v79 not run?), sending everyone Spanish:', e.message);
+      optedInRows = await supabaseRest('/profiles?select=email&receives_newsletter=eq.true', { serviceKey, supabaseUrl });
+    }
+    // Keyed by lowercased email so the admin address and an opted-in
+    // profile with the same email count once. The admin address has no
+    // language setting of its own: if it also belongs to a profile, that
+    // profile's language wins; otherwise Spanish. Looked up across all
+    // profiles, not just opted-in ones, so the admin's own profile choice
+    // applies even if they never ticked the opt-in themselves.
+    const langByEmail = new Map();
+    (optedInRows || []).forEach((r) => {
+      if (r.email) langByEmail.set(r.email.toLowerCase(), { email: r.email, lang: r.newsletter_language === 'en' ? 'en' : 'es' });
+    });
+    const adminEmail = settings.newsletter_recipient_email;
+    if (adminEmail && !langByEmail.has(adminEmail.toLowerCase())) {
+      let adminLang = 'es';
+      try {
+        const adminProfile = await supabaseRest(`/profiles?select=newsletter_language&email=eq.${encodeURIComponent(adminEmail.toLowerCase())}&limit=1`, { serviceKey, supabaseUrl });
+        if (adminProfile && adminProfile[0] && adminProfile[0].newsletter_language === 'en') adminLang = 'en';
+      } catch (e) { /* column missing (migration_v79 not run) — Spanish */ }
+      langByEmail.set(adminEmail.toLowerCase(), { email: adminEmail, lang: adminLang });
+    }
+    const recipientsByLang = { es: [], en: [] };
+    langByEmail.forEach(({ email, lang }) => recipientsByLang[lang].push(email));
+    const totalRecipients = recipientsByLang.es.length + recipientsByLang.en.length;
+    if (!totalRecipients) return { sent: false, reason: 'no_recipients' };
 
     if (!SMTP_HOST || !SMTP_USER || !SMTP_PASSWORD) {
       // Names which specific var(s) are missing — the generic "newsletter
@@ -669,13 +710,19 @@ async function maybeSendNewsletter(dateStr, { supabaseUrl, serviceKey }) {
     }
     const rows = await fetchNewsRowsForDate(dateStr, { supabaseUrl, serviceKey });
     if (!rows.length) return { sent: false, reason: 'no_rows_for_date' };
-    const pdfBuffer = await buildNewsletterPdf(rows, dateStr, 'es');
-    await sendNewsletterEmail({
-      pdfBuffer, dateStr, recipients,
-      fromEmail: NEWSLETTER_FROM_EMAIL || SMTP_USER,
-      smtp: { host: SMTP_HOST, port: Number(SMTP_PORT) || 465, user: SMTP_USER, password: SMTP_PASSWORD },
-    });
-    return { sent: true, recipients: recipients.length, items: rows.length };
+    // One PDF + one email per language actually in use.
+    const sentByLang = {};
+    for (const lang of ['es', 'en']) {
+      if (!recipientsByLang[lang].length) continue;
+      const pdfBuffer = await buildNewsletterPdf(rows, dateStr, lang);
+      await sendNewsletterEmail({
+        pdfBuffer, dateStr, lang, recipients: recipientsByLang[lang],
+        fromEmail: NEWSLETTER_FROM_EMAIL || SMTP_USER,
+        smtp: { host: SMTP_HOST, port: Number(SMTP_PORT) || 465, user: SMTP_USER, password: SMTP_PASSWORD },
+      });
+      sentByLang[lang] = recipientsByLang[lang].length;
+    }
+    return { sent: true, recipients: totalRecipients, by_language: sentByLang, items: rows.length };
   } catch (e) {
     console.error('[update-news] maybeSendNewsletter failed:', e);
     return { sent: false, reason: 'error', detail: String((e && e.message) || e) };

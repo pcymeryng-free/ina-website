@@ -5330,6 +5330,18 @@ const INAPlatform = {
     if (error) throw error;
   },
 
+  /* Newsletter language ('es' | 'en', migration_v79) — same self-service
+     pattern as setNewsletterOptIn() above. */
+  async setNewsletterLanguage(language) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ newsletter_language: language === 'en' ? 'en' : 'es' })
+      .eq('id', session.user.id);
+    if (error) throw error;
+  },
+
   /* ---------- Manual self-assessment (app/assessment.html) ----------
      Scores the questionnaire client-side (computeManualAssessment above)
      and writes it as a framework_analysis row tagged source='manual'
