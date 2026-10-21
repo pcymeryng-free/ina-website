@@ -105,7 +105,12 @@ const MAX_CANDIDATES = 45;
 // nothing Argentina/LatAm even reached the model to be considered. Sums
 // to MAX_CANDIDATES exactly, but doesn't have to (see the "leftover
 // slots" fallback below).
-const SCOPE_QUOTAS = { argentina: 20, latam: 15, international: 10 };
+// Rebalanced to 15/12/18 (Pablo, oct 2026) once FEEDS grew to ~15
+// international sources (telecom trade press + general AI outlets): 10
+// slots split across that many feeds left most of them with nothing.
+// Argentina still gets its reserved block first; any slots it can't fill
+// flow to the leftover fallback like before.
+const SCOPE_QUOTAS = { argentina: 15, latam: 12, international: 18 };
 // With reasoning_effort: 'low' (see the Groq request below) keeping the
 // hidden-thinking cost small, 4000 tokens is comfortable headroom for up
 // to 15 short bilingual items — not a tight limit like MAX_CANDIDATES
@@ -144,9 +149,38 @@ const FEEDS = [
   // (buildSystemPrompt() below) is exactly what's supposed to pick the
   // genuinely relevant handful out of everything else.
   { url: 'https://www.infobae.com/arc/outboundfeeds/rss/category/tecno/?outputType=xml', sourceName: 'Infobae - Tecno', scope: 'argentina' },
+  // Pan-LatAm mobile/digital-services trade press (mostly Mexico, Brazil,
+  // Colombia) — same scope: null treatment as TeleSemana/DPL News above.
+  { url: 'https://mobiletime.la/feed', sourceName: 'Mobile Time Latinoamérica', scope: null, quotaScope: 'latam' },
   { url: 'https://www.lightreading.com/rss.xml', sourceName: 'Light Reading', scope: 'international' },
   { url: 'https://www.capacitymedia.com/rss', sourceName: 'Capacity Media', scope: 'international' },
   { url: 'https://www.rcrwireless.com/feed', sourceName: 'RCR Wireless News', scope: 'international' },
+  // Its <title> wraps the headline in an <a> tag and its pubDate isn't
+  // RFC 822 ("Oct 21, 2026 8:16am") — see plainText()/parsePubDate().
+  { url: 'https://www.fierce-network.com/rss/xml', sourceName: 'Fierce Network', scope: 'international' },
+  { url: 'https://www.mobileworldlive.com/feed/', sourceName: 'Mobile World Live', scope: 'international' },
+  { url: 'https://www.totaltele.com/feed', sourceName: 'Total Telecom', scope: 'international' },
+  // Low volume (roughly one post a week) — mostly submarine cable analysis.
+  { url: 'https://resources.telegeography.com/rss.xml', sourceName: 'TeleGeography', scope: 'international' },
+  { url: 'https://www.datacenterdynamics.com/en/rss/', sourceName: 'Data Center Dynamics', scope: 'international' },
+  { url: 'https://www.itu.int/hub/feed/', sourceName: 'ITU News', scope: 'international' },
+  { url: 'https://www.policytracker.com/feed/', sourceName: 'PolicyTracker', scope: 'international' },
+  // General AI / technology outlets (Pablo, oct 2026) — buildSystemPrompt()
+  // keeps only significant AI industry/regulatory news from these, not
+  // product reviews or consumer tech.
+  { url: 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml', sourceName: 'The Verge - AI', scope: 'international' },
+  { url: 'https://techcrunch.com/category/artificial-intelligence/feed/', sourceName: 'TechCrunch - AI', scope: 'international' },
+  { url: 'https://feeds.bloomberg.com/technology/news.rss', sourceName: 'Bloomberg Technology', scope: 'international' },
+  { url: 'https://www.technologyreview.com/feed/', sourceName: 'MIT Technology Review', scope: 'international' },
+  { url: 'https://feeds.arstechnica.com/arstechnica/technology-lab', sourceName: 'Ars Technica', scope: 'international' },
+  { url: 'https://www.wired.com/feed/tag/ai/latest/rss', sourceName: 'Wired - AI', scope: 'international' },
+  // Paywalled — the feed itself is public, but readers following the link
+  // may hit a subscription wall.
+  { url: 'https://www.theinformation.com/feed', sourceName: 'The Information', scope: 'international' },
+  // Checked and NOT added (oct 2026): Convergencia Latina (no RSS feed),
+  // BNamericas (feed returns 403), ENACOM and Boletín Oficial (no usable
+  // RSS), Telecompaper (malformed XML), VentureBeat (429s automated
+  // requests), Reuters (no public RSS since 2020).
 ];
 
 function json(res, status, body) {
@@ -177,6 +211,31 @@ function sanitizeXmlEntities(xml) {
   return xml.replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)/g, '&amp;');
 }
 
+// rss-parser hands back an object instead of a string when an element
+// contains markup (Fierce Network's <title><a href=…>Headline</a></title>
+// comes out as { a: [{ _: 'Headline', $: { href } }] }) — flattens that
+// back to its text content, ignoring attributes ($).
+function plainText(value) {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.map(plainText).join(' ');
+  if (typeof value === 'object') {
+    return Object.entries(value).filter(([k]) => k !== '$').map(([, v]) => plainText(v)).join(' ');
+  }
+  return String(value);
+}
+
+// rss-parser only fills isoDate for dates Date can already parse; Fierce
+// Network's "Oct 21, 2026 8:16am" isn't one until the am/pm is spaced out.
+// Anything still unparseable is passed through as-is (the window filter
+// keeps unparseable dates rather than dropping them).
+function parsePubDate(item) {
+  if (item.isoDate) return item.isoDate;
+  if (!item.pubDate) return null;
+  const t = new Date(String(item.pubDate).replace(/(\d)\s*(am|pm)$/i, '$1 $2'));
+  return Number.isNaN(t.getTime()) ? item.pubDate : t.toISOString();
+}
+
 async function fetchFeed(feed, parser) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FEED_FETCH_TIMEOUT_MS);
@@ -189,10 +248,10 @@ async function fetchFeed(feed, parser) {
     const xml = await res.text();
     const parsed = await parser.parseString(sanitizeXmlEntities(xml));
     return (parsed.items || []).map((item) => ({
-      title: (item.title || '').trim(),
-      link: (item.link || '').trim(),
-      publishedAt: item.isoDate || item.pubDate || null,
-      snippet: (item.contentSnippet || item.content || item.summary || '').trim().slice(0, 200),
+      title: plainText(item.title).replace(/\s+/g, ' ').trim(),
+      link: plainText(item.link).trim(),
+      publishedAt: parsePubDate(item),
+      snippet: plainText(item.contentSnippet || item.content || item.summary).trim().slice(0, 200),
       sourceName: feed.sourceName,
       scope: feed.scope,
       quotaScope: feed.quotaScope || feed.scope,
@@ -212,13 +271,33 @@ async function fetchFeed(feed, parser) {
 // scope isn't one of the known keys (shouldn't happen, FEEDS only ever
 // sets one of the three) falls back to the 'international' bucket rather
 // than being silently dropped.
+//
+// Within a scope, slots are filled round-robin across sources (each
+// source's most recent item first, then each one's second, …) rather than
+// by pure recency — otherwise high-volume outlets (TechCrunch, Wired,
+// Bloomberg publish dozens of items a day) take every slot and the
+// low-volume telecom trade press never reaches the model.
+function interleaveBySource(items) {
+  const bySource = new Map();
+  items.forEach((it) => {
+    if (!bySource.has(it.sourceName)) bySource.set(it.sourceName, []);
+    bySource.get(it.sourceName).push(it);
+  });
+  const queues = [...bySource.values()];
+  const out = [];
+  for (let i = 0; out.length < items.length; i += 1) {
+    queues.forEach((q) => { if (q[i]) out.push(q[i]); });
+  }
+  return out;
+}
+
 function pickWithScopeQuotas(sortedCandidates, quotas, total) {
   const byScope = { argentina: [], latam: [], international: [] };
   sortedCandidates.forEach((it) => { (byScope[it.quotaScope] || byScope.international).push(it); });
   const picked = [];
   const pickedLinks = new Set();
   Object.keys(quotas).forEach((scope) => {
-    (byScope[scope] || []).slice(0, quotas[scope]).forEach((it) => {
+    interleaveBySource(byScope[scope] || []).slice(0, quotas[scope]).forEach((it) => {
       picked.push(it);
       pickedLinks.add(it.link);
     });
@@ -293,12 +372,12 @@ async function logDebugAgentCall({ supabaseUrl, serviceKey, provider, model, dur
 function buildSystemPrompt() {
   return `You are a news curator for INA (International Network Advisors), a digital-infrastructure advisory firm. You will be given a JSON array of recent candidate news items (title, link, source, a short snippet, and a "scope" field that is either "argentina", "latam", "international", or null), pulled automatically from RSS feeds — many will be irrelevant noise (unrelated consumer tech, gadget reviews, generic business news with no telecom/infrastructure angle).
 
-Your task: select ONLY the items genuinely relevant to the telecommunications / digital-infrastructure sector — spectrum and regulatory decisions, fiber/mobile/5G network deployment, submarine cables, datacenters and AI infrastructure, satellite connectivity, universal-service/public funding programs, infrastructure financing and M&A, major operator or equipment-vendor news. When in doubt, lean toward excluding rather than keeping — a shorter, genuinely relevant list is better than a padded one. The candidate list was already built to reserve room for Argentina and Latin America items specifically (see how each one is scoped below) — don't defeat that by dropping every Argentina/LatAm candidate just because an international one reads as more globally significant; relevance to THIS sector is the bar, not global importance.
+Your task: select ONLY the items genuinely relevant to the telecommunications / digital-infrastructure sector — spectrum and regulatory decisions, fiber/mobile/5G network deployment, submarine cables, datacenters and AI infrastructure, satellite connectivity, universal-service/public funding programs, infrastructure financing and M&A, major operator or equipment-vendor news. Also keep significant artificial-intelligence industry news even without an infrastructure angle — major model or product launches from leading AI companies, AI business deals and funding rounds, AI regulation and policy, and AI geopolitics (chips, export controls) — but NOT consumer gadget reviews, how-to pieces, opinion columns or minor app features. When in doubt, lean toward excluding rather than keeping — a shorter, genuinely relevant list is better than a padded one. The candidate list was already built to reserve room for Argentina and Latin America items specifically (see how each one is scoped below) — don't defeat that by dropping every Argentina/LatAm candidate just because an international one reads as more globally significant; relevance to THIS sector is the bar, not global importance.
 
 For each item you keep, write:
 - title_es / title_en: a clear, concise headline (can closely follow the original title, translated/tightened as needed — not necessarily a verbatim translation).
 - summary_es / summary_en: ONE concise sentence capturing what happened and why it matters to this sector, not a generic restatement of the headline. Keep it short — this is a feed item, not an article.
-- category: a short tag, one of: "Regulación", "Infraestructura", "Financiamiento", "Satelital", "Datacenters/IA", "5G/Espectro", "Cable submarino", "M&A", "Otro".
+- category: a short tag, one of: "Regulación", "Infraestructura", "Financiamiento", "Satelital", "Datacenters/IA", "IA", "5G/Espectro", "Cable submarino", "M&A", "Otro". Use "Datacenters/IA" for AI infrastructure (datacenters, compute, power) and "IA" for the rest of the AI industry/policy news.
 - country_scope: "argentina", "latam" or "international", based on what the story is actually ABOUT (which country/region it covers), never on which outlet published it. When a candidate's "scope" field is non-null, that's a hint from the source feed, not a default to echo automatically — still verify it against the actual content and override it if the story is clearly about a different one of the three (e.g. an international outlet reporting specifically on an ENACOM decision is "argentina"; a Brazil- or Mexico-specific story is "latam", not "argentina"; a story from a Latin American outlet that's actually about Europe, Asia or the US is "international", not "latam"). When "scope" is null, there is NO hint at all — the source covers a genuine mix of regions, so you must determine country_scope purely from the story's own content. "latam" means Latin America EXCLUDING Argentina; "international" means the rest of the world.
 
 Keep at most ${MAX_KEPT} items, ordered by relevance/importance (most important first). Respond with ONLY a single valid JSON object — no markdown code fences, no commentary — in this exact shape:
