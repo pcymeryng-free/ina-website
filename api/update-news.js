@@ -74,7 +74,15 @@ const Parser = require('rss-parser');
 // hidden-thinking cost small on purpose rather than hoping it's naturally
 // short. Only applies to this file; GROQ_MODEL (if ever set) stays the
 // shared default for every other endpoint, deliberately not read here.
-const GROQ_MODEL_DEFAULT = 'openai/gpt-oss-20b';
+//
+// Back to 'openai/gpt-oss-120b' (oct 2026), still with reasoning_effort:
+// 'low' — that's what fixes the empty-content problem above, not the
+// smaller model. Side-by-side dry runs against the same candidates after
+// the feed expansion: 20b's picks swung from 3 to 12 items run to run,
+// let consumer-advice pieces through and mangled links; 120b gave nearly
+// identical, clean picks on repeated runs (~400-800 reasoning tokens,
+// well inside MODEL_MAX_TOKENS).
+const GROQ_MODEL_DEFAULT = 'openai/gpt-oss-120b';
 const BEDROCK_MODEL_DEFAULT = 'meta.llama3-3-70b-instruct-v1:0';
 const BEDROCK_REGION_DEFAULT = 'us-east-1';
 const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
@@ -91,10 +99,11 @@ const CANDIDATE_WINDOW_DAYS = 3;
 // LLM_PROVIDER as of oct 2026) caps a single request at 8000 tokens/minute
 // — a first run at 70 candidates × up to 500-char snippets came out to
 // ~9300 requested tokens and 502'd outright ("Request too large... Limit
-// 8000, Requested 9343"). 45 candidates × a 200-char snippet (see
-// fetchFeed() below) comes out to roughly half that, with headroom for a
-// heavier news day.
-const MAX_CANDIDATES = 45;
+// 8000, Requested 9343"). Cut again to 38 candidates × a 150-char
+// snippet (see fetchFeed() below) after the prompt grew (AI criteria,
+// exclusions, already_published headlines): 45 × 200 chars with gpt-oss-
+// 120b came in at "Requested 8086" on a busy news day and 413'd.
+const MAX_CANDIDATES = 38;
 // Reserved slots per scope within MAX_CANDIDATES (Pablo, oct 2026:
 // "reserva un cupo minimo por region privilegiando Argentina, luego
 // latinoamerica y luego el resto") — see pickWithScopeQuotas() below for
@@ -110,7 +119,8 @@ const MAX_CANDIDATES = 45;
 // slots split across that many feeds left most of them with nothing.
 // Argentina still gets its reserved block first; any slots it can't fill
 // flow to the leftover fallback like before.
-const SCOPE_QUOTAS = { argentina: 15, latam: 12, international: 18 };
+// Scaled down to 12/10/16 with MAX_CANDIDATES above, same proportions.
+const SCOPE_QUOTAS = { argentina: 12, latam: 10, international: 16 };
 // With reasoning_effort: 'low' (see the Groq request below) keeping the
 // hidden-thinking cost small, 4000 tokens is comfortable headroom for up
 // to 15 short bilingual items — not a tight limit like MAX_CANDIDATES
@@ -236,6 +246,19 @@ function parsePubDate(item) {
   return Number.isNaN(t.getTime()) ? item.pubDate : t.toISOString();
 }
 
+// The model sometimes echoes a candidate's link back slightly altered —
+// dropping "www.", the protocol or a trailing slash (seen in testing with
+// Fierce Network, Mobile World Live and DPL News links) — which used to
+// make an otherwise good pick silently fail the exact-match lookup below.
+// Only used as a lookup key: what gets stored is always the candidate's
+// own original link.
+function normalizeLink(link) {
+  return String(link).trim().toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/+$/, '');
+}
+
 async function fetchFeed(feed, parser) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FEED_FETCH_TIMEOUT_MS);
@@ -251,7 +274,7 @@ async function fetchFeed(feed, parser) {
       title: plainText(item.title).replace(/\s+/g, ' ').trim(),
       link: plainText(item.link).trim(),
       publishedAt: parsePubDate(item),
-      snippet: plainText(item.contentSnippet || item.content || item.summary).trim().slice(0, 200),
+      snippet: plainText(item.contentSnippet || item.content || item.summary).trim().slice(0, 150),
       sourceName: feed.sourceName,
       scope: feed.scope,
       quotaScope: feed.quotaScope || feed.scope,
@@ -370,15 +393,20 @@ async function logDebugAgentCall({ supabaseUrl, serviceKey, provider, model, dur
 }
 
 function buildSystemPrompt() {
-  return `You are a news curator for INA (International Network Advisors), a digital-infrastructure advisory firm. You will be given a JSON array of recent candidate news items (title, link, source, a short snippet, and a "scope" field that is either "argentina", "latam", "international", or null), pulled automatically from RSS feeds — many will be irrelevant noise (unrelated consumer tech, gadget reviews, generic business news with no telecom/infrastructure angle).
+  return `You are a news curator for INA (International Network Advisors), a digital-infrastructure advisory firm. You will be given a JSON object with two fields: "candidates", an array of recent news items (title, link, source, a short snippet, and a "scope" field that is either "argentina", "latam", "international", or null) pulled automatically from RSS feeds — many will be irrelevant noise (unrelated consumer tech, gadget reviews, generic business news with no telecom/infrastructure angle) — and "already_published", the English headlines already in the feed from today and yesterday.
 
-Your task: select ONLY the items genuinely relevant to the telecommunications / digital-infrastructure sector — spectrum and regulatory decisions, fiber/mobile/5G network deployment, submarine cables, datacenters and AI infrastructure, satellite connectivity, universal-service/public funding programs, infrastructure financing and M&A, major operator or equipment-vendor news. Also keep significant artificial-intelligence industry news even without an infrastructure angle — major model or product launches from leading AI companies, AI business deals and funding rounds, AI regulation and policy, and AI geopolitics (chips, export controls) — but NOT consumer gadget reviews, how-to pieces, opinion columns or minor app features. When in doubt, lean toward excluding rather than keeping — a shorter, genuinely relevant list is better than a padded one. The candidate list was already built to reserve room for Argentina and Latin America items specifically (see how each one is scoped below) — don't defeat that by dropping every Argentina/LatAm candidate just because an international one reads as more globally significant; relevance to THIS sector is the bar, not global importance.
+Your task: select ONLY the items genuinely relevant to the telecommunications / digital-infrastructure sector — spectrum and regulatory decisions, fiber/mobile/5G network deployment, submarine cables, datacenters and AI infrastructure, satellite connectivity, universal-service/public funding programs, infrastructure financing and M&A, major operator or equipment-vendor news. Also keep significant artificial-intelligence industry news even without an infrastructure angle — major model or product launches from leading AI companies, AI business deals and funding rounds, AI regulation and policy, and AI geopolitics (chips, export controls) — but NOT consumer gadget reviews, how-to pieces, opinion columns or minor app features. When in doubt, lean toward excluding rather than keeping — a shorter, genuinely relevant list is better than a padded one. The candidate list was already built to reserve room for Argentina and Latin America items specifically (see how each one is scoped below) — don't defeat that by dropping every Argentina/LatAm candidate just because an international one reads as more globally significant; relevance to THIS sector is the bar, not global importance. Reserved room is not an obligation, though: never keep a weak or off-topic item just so a region has something.
+
+Always exclude, from every source and region: consumer advice and how-to pieces ("how to…", tips, tricks), shopping guides and deals, career or productivity advice (including "how to use AI at work" pieces), product reviews, opinion columns, and minor app or social-media feature updates.
+
+Duplicates: when several candidates cover the same story or event (e.g. the same partnership, deal or regulatory decision reported by different outlets), keep only the single most informative one. Also skip any candidate that covers the same story as a headline in "already_published", even if the wording differs.
 
 For each item you keep, write:
 - title_es / title_en: a clear, concise headline (can closely follow the original title, translated/tightened as needed — not necessarily a verbatim translation).
 - summary_es / summary_en: ONE concise sentence capturing what happened and why it matters to this sector, not a generic restatement of the headline. Keep it short — this is a feed item, not an article.
+- Money amounts: write them the way a native newspaper would in each language — Spanish "US$750 millones", "US$1.200 millones"; English "$750 million", "$1.2 billion". Never write constructions like "750 000 miles de dólares".
 - category: a short tag, one of: "Regulación", "Infraestructura", "Financiamiento", "Satelital", "Datacenters/IA", "IA", "5G/Espectro", "Cable submarino", "M&A", "Otro". Use "Datacenters/IA" for AI infrastructure (datacenters, compute, power) and "IA" for the rest of the AI industry/policy news.
-- country_scope: "argentina", "latam" or "international", based on what the story is actually ABOUT (which country/region it covers), never on which outlet published it. When a candidate's "scope" field is non-null, that's a hint from the source feed, not a default to echo automatically — still verify it against the actual content and override it if the story is clearly about a different one of the three (e.g. an international outlet reporting specifically on an ENACOM decision is "argentina"; a Brazil- or Mexico-specific story is "latam", not "argentina"; a story from a Latin American outlet that's actually about Europe, Asia or the US is "international", not "latam"). When "scope" is null, there is NO hint at all — the source covers a genuine mix of regions, so you must determine country_scope purely from the story's own content. "latam" means Latin America EXCLUDING Argentina; "international" means the rest of the world.
+- country_scope: "argentina", "latam" or "international", based on what the story is actually ABOUT (which country/region it covers), never on which outlet published it. When a candidate's "scope" field is non-null, that's a hint from the source feed, not a default to echo automatically — still verify it against the actual content and override it if the story is clearly about a different one of the three (e.g. an international outlet reporting specifically on an ENACOM decision is "argentina"; a Brazil- or Mexico-specific story is "latam", not "argentina"; a story from a Latin American outlet that's actually about Europe, Asia or the US is "international", not "latam" — e.g. TeleSemana reporting on Ericsson and Singtel in Singapore is "international"). When "scope" is null, there is NO hint at all — the source covers a genuine mix of regions, so you must determine country_scope purely from the story's own content. "latam" means Latin America EXCLUDING Argentina; "international" means the rest of the world.
 
 Keep at most ${MAX_KEPT} items, ordered by relevance/importance (most important first). Respond with ONLY a single valid JSON object — no markdown code fences, no commentary — in this exact shape:
 {
@@ -697,7 +725,7 @@ async function handler(req, res) {
     // could appear in a URL) is needlessly fragile compared to just
     // fetching a bounded recent window and checking membership in JS.
     const dedupCutoff = argentinaDateString(new Date(Date.now() - (CANDIDATE_WINDOW_DAYS + 7) * 24 * 60 * 60 * 1000));
-    const existingRows = await supabaseRest(`/market_news?select=source_url&published_date=gte.${dedupCutoff}`, {
+    const existingRows = await supabaseRest(`/market_news?select=source_url,title_en,published_date&published_date=gte.${dedupCutoff}`, {
       serviceKey: SUPABASE_SERVICE_ROLE_KEY, supabaseUrl: SUPABASE_URL,
     });
     const existingLinks = new Set((existingRows || []).map((r) => r.source_url));
@@ -722,11 +750,23 @@ async function handler(req, res) {
       return json(res, 200, { ok: true, feeds: FEEDS.length, candidates: 0, inserted: 0, message: 'Nothing new to curate.', newsletter });
     }
 
-    const candidatesByLink = new Map(capped.map((it) => [it.link, it]));
+    const candidatesByLink = new Map(capped.map((it) => [normalizeLink(it.link), it]));
     const systemPrompt = buildSystemPrompt();
-    const userContent = JSON.stringify(capped.map((it) => ({
-      link: it.link, title: it.title, source: it.sourceName, scope: it.scope, snippet: it.snippet,
-    })));
+    // Headlines already stored for today/yesterday, so the model can skip a
+    // candidate that's the same story from a different outlet (link dedup
+    // above only catches the exact same URL) — first manual run after the
+    // feed expansion re-added a Singtel/Ericsson story the morning cron had
+    // already published from Light Reading, this time via TeleSemana.
+    const recentTitlesCutoff = argentinaDateString(new Date(Date.now() - 24 * 60 * 60 * 1000));
+    const alreadyPublished = (existingRows || [])
+      .filter((r) => r.published_date >= recentTitlesCutoff && r.title_en)
+      .map((r) => r.title_en);
+    const userContent = JSON.stringify({
+      already_published: alreadyPublished,
+      candidates: capped.map((it) => ({
+        link: it.link, title: it.title, source: it.sourceName, scope: it.scope, snippet: it.snippet,
+      })),
+    });
 
     let rawText;
     const _debugStart = Date.now();
@@ -871,9 +911,9 @@ async function handler(req, res) {
     const rows = [];
     const usedLinks = new Set();
     rawItems.slice(0, MAX_KEPT).forEach((it) => {
-      const candidate = it && candidatesByLink.get(it.link);
-      if (!candidate || usedLinks.has(it.link)) return;
-      usedLinks.add(it.link);
+      const candidate = it && typeof it.link === 'string' && candidatesByLink.get(normalizeLink(it.link));
+      if (!candidate || usedLinks.has(candidate.link)) return;
+      usedLinks.add(candidate.link);
       // Falls back to quotaScope (never null, unlike candidate.scope — see
       // FEEDS' TeleSemana entry) if the model ever omits/mis-shapes
       // country_scope, so this can never produce a null here and violate
