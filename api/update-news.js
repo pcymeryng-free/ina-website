@@ -259,6 +259,63 @@ function normalizeLink(link) {
     .replace(/\/+$/, '');
 }
 
+// Code-level backstop for "same story, different outlet": the prompt asks
+// the model to skip those, but even gpt-oss-120b sometimes doesn't (it
+// re-added a Chile rain story the morning run had already published from
+// another outlet). Compares the model-written titles of each kept item —
+// Spanish against Spanish, English against English, so wording is
+// comparable — with recently stored rows and with items already kept in
+// this run. Keywords are accent-stripped, stopwords dropped and cut to
+// their first 5 letters (a cheap stem: "reforzar"/"refuerzos" → "refor").
+// A language "matches" when at least half of the shorter title's keywords
+// are shared AND at least 3 of them; it's a duplicate when both languages
+// match, or one matches strongly (4+ shared, 60%+). Requiring both (or a
+// strong one) matters because short Spanish titles inflate the ratio on
+// shared vendor/tech names alone — Nokia+SoftBank vs Nokia+Nvidia AI-RAN
+// is 0.60 in Spanish but 0.43 in English, and they're different stories.
+// Tuned against oct 2026 production rows: catches "Europe's telcos eye
+// joint satellite spectrum bid…" vs "European Telcos Consider Joint Bid
+// for Satellite Spectrum", Singtel/Ericsson, Bolivia–Chile fiber and
+// ASIET/GASA repeats.
+const TITLE_STOPWORDS = new Set((
+  'a al ante con de del el en entre la las lo los para por que se su sus un una y o e u es sobre tras hacia segun como mas '
+  + 'the an and or of to in on for with at by from as is are be its it this that after over into '
+  + 'nuevo nueva nuevos nuevas new says dice afirma'
+).split(' '));
+const DUPLICATE_TITLE_MATCH = { minShared: 3, minRatio: 0.5 };
+const DUPLICATE_TITLE_STRONG_MATCH = { minShared: 4, minRatio: 0.6 };
+
+function titleKeywords(title) {
+  return new Set(String(title || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').split(' ')
+    .filter((w) => w.length > 2 && !TITLE_STOPWORDS.has(w))
+    .map((w) => w.slice(0, 5)));
+}
+
+function titleOverlap(a, b) {
+  const ka = titleKeywords(a);
+  const kb = titleKeywords(b);
+  const smaller = Math.min(ka.size, kb.size);
+  let shared = 0;
+  ka.forEach((w) => { if (kb.has(w)) shared += 1; });
+  return { shared, ratio: smaller ? shared / smaller : 0 };
+}
+
+function meets(overlap, { minShared, minRatio }) {
+  return overlap.shared >= minShared && overlap.ratio >= minRatio;
+}
+
+function isSameStory(a, b) {
+  const es = titleOverlap(a.title, b.title);
+  const en = titleOverlap(a.title_en, b.title_en);
+  return (meets(es, DUPLICATE_TITLE_MATCH) && meets(en, DUPLICATE_TITLE_MATCH))
+    || meets(es, DUPLICATE_TITLE_STRONG_MATCH) || meets(en, DUPLICATE_TITLE_STRONG_MATCH);
+}
+
+function isDuplicateStory(row, others) {
+  return others.some((o) => isSameStory(row, o));
+}
+
 async function fetchFeed(feed, parser) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FEED_FETCH_TIMEOUT_MS);
@@ -725,7 +782,7 @@ async function handler(req, res) {
     // could appear in a URL) is needlessly fragile compared to just
     // fetching a bounded recent window and checking membership in JS.
     const dedupCutoff = argentinaDateString(new Date(Date.now() - (CANDIDATE_WINDOW_DAYS + 7) * 24 * 60 * 60 * 1000));
-    const existingRows = await supabaseRest(`/market_news?select=source_url,title_en,published_date&published_date=gte.${dedupCutoff}`, {
+    const existingRows = await supabaseRest(`/market_news?select=source_url,title,title_en,published_date&published_date=gte.${dedupCutoff}`, {
       serviceKey: SUPABASE_SERVICE_ROLE_KEY, supabaseUrl: SUPABASE_URL,
     });
     const existingLinks = new Set((existingRows || []).map((r) => r.source_url));
@@ -909,6 +966,11 @@ async function handler(req, res) {
     const publishedDate = argentinaTodayDate();
     const rawItems = Array.isArray(parsed.items) ? parsed.items : [];
     const rows = [];
+    // Same window as candidate items themselves — older stories can
+    // legitimately get a follow-up worth publishing.
+    const titleDedupCutoff = argentinaDateString(new Date(Date.now() - CANDIDATE_WINDOW_DAYS * 24 * 60 * 60 * 1000));
+    const recentStoredRows = (existingRows || []).filter((r) => r.published_date >= titleDedupCutoff);
+    const skippedDuplicates = [];
     const usedLinks = new Set();
     rawItems.slice(0, MAX_KEPT).forEach((it) => {
       const candidate = it && typeof it.link === 'string' && candidatesByLink.get(normalizeLink(it.link));
@@ -919,7 +981,7 @@ async function handler(req, res) {
       // country_scope, so this can never produce a null here and violate
       // market_news' NOT NULL/check constraint on insert.
       const scope = ['argentina', 'latam', 'international'].includes(it.country_scope) ? it.country_scope : candidate.quotaScope;
-      rows.push({
+      const row = {
         published_date: publishedDate,
         title: String(it.title_es || candidate.title).slice(0, 300),
         title_en: String(it.title_en || it.title_es || candidate.title).slice(0, 300),
@@ -929,8 +991,18 @@ async function handler(req, res) {
         source_url: candidate.link,
         country_scope: scope,
         category: it.category ? String(it.category).slice(0, 60) : null,
-      });
+      };
+      // rawItems is ordered most-important-first, so when two kept items in
+      // this run are the same story, the model's higher-ranked one wins.
+      if (isDuplicateStory(row, recentStoredRows) || isDuplicateStory(row, rows)) {
+        skippedDuplicates.push(row.title_en);
+        return;
+      }
+      rows.push(row);
     });
+    if (skippedDuplicates.length) {
+      console.log(`[update-news] skipped ${skippedDuplicates.length} same-story duplicate(s):`, skippedDuplicates);
+    }
 
     let inserted = [];
     if (rows.length) {
@@ -946,6 +1018,7 @@ async function handler(req, res) {
       feeds: FEEDS.length,
       candidates: capped.length,
       kept: rows.length,
+      skipped_duplicates: skippedDuplicates.length,
       inserted: inserted.length,
       published_date: publishedDate,
       newsletter,
