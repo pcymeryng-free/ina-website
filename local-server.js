@@ -63,6 +63,7 @@ const recommendFinancingHandler = require('./api/recommend-financing');
 const extractSuccessCaseHandler = require('./api/extract-success-case');
 const extractProjectDataHandler = require('./api/extract-project-data');
 const promotionAgentHandler = require('./api/promotion-agent');
+const suggestRisksHandler = require('./api/suggest-risks');
 const updateNewsHandler = require('./api/update-news');
 
 const app = express();
@@ -99,6 +100,7 @@ app.post('/api/recommend-financing', recommendFinancingHandler);
 app.post('/api/extract-success-case', extractSuccessCaseHandler);
 app.post('/api/extract-project-data', extractProjectDataHandler);
 app.post('/api/promotion-agent', promotionAgentHandler);
+app.post('/api/suggest-risks', suggestRisksHandler);
 // Cron-triggered in production (see vercel.json's "crons" + CRON_SECRET),
 // not called from any page — GET matches how Vercel Cron actually invokes
 // it; POST is just for a manual local test, e.g.:

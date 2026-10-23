@@ -88,8 +88,12 @@
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
         <h3 style="margin:0;"><span data-i18n="risk.list.title">Identified Risks</span></h3>
-        <button type="button" class="btn amber small" id="newRiskBtn"><span data-i18n="risk.new">+ New Risk</span></button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+          <button type="button" class="btn ghost small" id="suggestRisksBtn"><span data-i18n="risk.suggest">✦ Suggest risks from documents</span></button>
+          <button type="button" class="btn amber small" id="newRiskBtn"><span data-i18n="risk.new">+ New Risk</span></button>
+        </div>
       </div>
+      <p id="suggestNote" class="contact-note" style="margin:-4px 0 14px; display:none;"></p>
 
       <div id="riskTableWrap" style="overflow-x:auto;">
         <table class="risk-table" id="riskTable">
@@ -140,6 +144,24 @@
         </div>
       </div>
 
+      <!-- AI suggestions review (api/suggest-risks.js). Nothing is saved
+           until "Add selected" — each ticked row goes through
+           INAPlatform.createProjectRisk() like a hand-typed risk. -->
+      <div class="risk-form-overlay" id="suggestOverlay" style="display:none;">
+        <div class="risk-form-panel" style="max-width:860px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="margin:0;"><span data-i18n="risk.suggest.title">Risks suggested from documents</span></h3>
+            <button type="button" class="btn ghost small" id="closeSuggest">&times;</button>
+          </div>
+          <p style="font-size:13px; color:var(--muted); margin:0 0 18px;"><span data-i18n="risk.suggest.help">The AI read this project's documents. Review the suggestions, adjust probability and impact if needed, and tick the ones to add to the matrix. Nothing is saved until you click Add.</span></p>
+          <div id="suggestList"></div>
+          <div style="display:flex; gap:12px; margin-top:20px; align-items:center;">
+            <button type="button" class="btn amber" id="addSuggestedBtn"><span data-i18n="risk.suggest.add">Add selected</span></button>
+            <p id="suggestFormNote" class="contact-note" style="margin:0;"></p>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -150,9 +172,9 @@
     <a href="/index.html" class="app-footer-link"><span data-i18n="app.footer.site">INA website</span></a>
   </div>
 </footer>
-<script src="/assets/i18n.js?v=98"></script>
+<script src="/assets/i18n.js?v=99"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=115"></script>
+<script src="/assets/platform.js?v=116"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
 (function () {
@@ -331,6 +353,130 @@
       await loadRisks();
     } catch (err) {
       document.getElementById('riskFormNote').textContent = err.message || (lang === 'es' ? 'No se pudo eliminar.' : "Couldn't delete.");
+    }
+  });
+
+  /* ---------- AI risk suggestions (api/suggest-risks.js) ---------- */
+  let suggestions = [];
+
+  // Suggestion text comes straight from a model reading uploaded files —
+  // escaped before going into innerHTML.
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function levelOptions(selected) {
+    return [1, 2, 3, 4, 5].map((n) => `<option value="${n}"${n === selected ? ' selected' : ''}>${n}</option>`).join('');
+  }
+
+  function renderSuggestions() {
+    const list = document.getElementById('suggestList');
+    if (!suggestions.length) {
+      list.innerHTML = `<p style="color:var(--muted); font-size:13.5px;"><span data-i18n="risk.suggest.none">${lang === 'es' ? 'La IA no encontró riesgos nuevos en los documentos además de los ya cargados.' : 'The AI found no new risks in the documents beyond the ones already registered.'}</span></p>`;
+      document.getElementById('addSuggestedBtn').style.display = 'none';
+      return;
+    }
+    document.getElementById('addSuggestedBtn').style.display = '';
+    const probLabel = lang === 'es' ? 'Prob.' : 'Prob.';
+    const impactLabel = lang === 'es' ? 'Impacto' : 'Impact';
+    const mitigationLabel = lang === 'es' ? 'Mitigación' : 'Mitigation';
+    const sourceLabel = lang === 'es' ? 'Fuente' : 'Source';
+    list.innerHTML = suggestions.map((s, i) => {
+      const score = s.probability * s.impact;
+      return `
+        <div class="suggest-row" data-idx="${i}" style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--paper-line);">
+          <input type="checkbox" class="suggest-check" data-idx="${i}" checked style="margin-top:4px; flex:none;">
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between;">
+              <b style="font-size:14px;">${esc(s.title)}</b>
+              <span style="display:flex; gap:8px; align-items:center; font-size:12px; color:var(--muted);">
+                ${probLabel} <select class="suggest-prob" data-idx="${i}">${levelOptions(s.probability)}</select>
+                ${impactLabel} <select class="suggest-impact" data-idx="${i}">${levelOptions(s.impact)}</select>
+                <span class="risk-badge band-${INAPlatform.riskScoreBand(score)}" id="suggestBadge${i}">${score} · ${INAPlatform.riskScoreBandLabel(score)}</span>
+              </span>
+            </div>
+            <div style="font-size:12px; color:var(--muted); margin-top:4px;">${esc(INAPlatform.riskCategoryLabel(s.category))}</div>
+            ${s.description ? `<p style="font-size:13px; margin:8px 0 0;">${esc(s.description)}</p>` : ''}
+            ${s.mitigation_measures ? `<p style="font-size:13px; margin:6px 0 0;"><b>${mitigationLabel}:</b> ${esc(s.mitigation_measures)}</p>` : ''}
+            <p style="font-size:12px; color:var(--muted); margin:6px 0 0;">${sourceLabel}: ${esc(s.source || '—')}${s.basis ? ` — ${esc(s.basis)}` : ''}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+    list.querySelectorAll('.suggest-prob, .suggest-impact').forEach((sel) => {
+      sel.addEventListener('change', () => {
+        const i = Number(sel.dataset.idx);
+        const key = sel.classList.contains('suggest-prob') ? 'probability' : 'impact';
+        suggestions[i][key] = Number(sel.value);
+        const score = suggestions[i].probability * suggestions[i].impact;
+        const badge = document.getElementById(`suggestBadge${i}`);
+        badge.className = `risk-badge band-${INAPlatform.riskScoreBand(score)}`;
+        badge.textContent = `${score} · ${INAPlatform.riskScoreBandLabel(score)}`;
+      });
+    });
+  }
+
+  document.getElementById('suggestRisksBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('suggestRisksBtn');
+    const note = document.getElementById('suggestNote');
+    btn.disabled = true;
+    note.style.display = 'block';
+    note.textContent = lang === 'es'
+      ? 'Leyendo los documentos del proyecto… puede tardar hasta un minuto.'
+      : "Reading the project's documents… this can take up to a minute.";
+    try {
+      const result = await INAPlatform.requestRiskSuggestions(projectId);
+      suggestions = result.suggestions || [];
+      note.style.display = 'none';
+      document.getElementById('suggestFormNote').textContent = '';
+      renderSuggestions();
+      document.getElementById('suggestOverlay').style.display = 'flex';
+    } catch (err) {
+      note.textContent = err.message || (lang === 'es' ? 'No se pudieron sugerir riesgos.' : "Couldn't suggest risks.");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('closeSuggest').addEventListener('click', () => {
+    document.getElementById('suggestOverlay').style.display = 'none';
+  });
+
+  document.getElementById('addSuggestedBtn').addEventListener('click', async () => {
+    const note = document.getElementById('suggestFormNote');
+    const addBtn = document.getElementById('addSuggestedBtn');
+    const picked = [...document.querySelectorAll('.suggest-check:checked')].map((c) => Number(c.dataset.idx));
+    if (!picked.length) {
+      note.textContent = lang === 'es' ? 'No hay riesgos seleccionados.' : 'No risks selected.';
+      return;
+    }
+    addBtn.disabled = true;
+    note.textContent = '';
+    const added = [];
+    try {
+      for (const i of picked) {
+        const s = suggestions[i];
+        await INAPlatform.createProjectRisk(projectId, {
+          title: s.title,
+          description: [s.description, s.source ? `${lang === 'es' ? 'Fuente' : 'Source'}: ${s.source}` : ''].filter(Boolean).join('\n'),
+          category: s.category,
+          probability: s.probability,
+          impact: s.impact,
+          mitigationMeasures: s.mitigation_measures,
+          ownerEntityName: s.owner_entity_name,
+          status: 'open',
+        });
+        added.push(i);
+      }
+      document.getElementById('suggestOverlay').style.display = 'none';
+    } catch (err) {
+      // Drop the ones already saved so a retry doesn't duplicate them.
+      suggestions = suggestions.filter((_, i) => !added.includes(i));
+      renderSuggestions();
+      note.textContent = err.message || (lang === 'es' ? 'No se pudieron guardar todos los riesgos.' : "Couldn't save all risks.");
+    } finally {
+      addBtn.disabled = false;
+      await loadRisks();
     }
   });
 

@@ -254,6 +254,18 @@ function promotionAgentUrl() {
 }
 
 /* Same reasoning/hosting split as analyzeProjectUrl() above — see
+   api/suggest-risks.js, the "Sugerir riesgos desde documentos" button on
+   app/risk-matrix.html (Pablo, oct 2026: the risks analyzed inside a
+   project's uploaded PDF weren't showing up in its Risk Matrix). See
+   requestRiskSuggestions() below. */
+function suggestRisksUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/suggest-risks`;
+  }
+  return '/api/suggest-risks';
+}
+
+/* Same reasoning/hosting split as analyzeProjectUrl() above — see
    api/translate-project-text.js, ensureEnglishTranslations() below (Pablo,
    oct 2026: "necesito que se traduzcan todos los textos ingresados
    manualmente al idioma seleccionado"). */
@@ -7610,6 +7622,7 @@ const INAPlatform = {
     { value: 'generate-proposal', en: 'Investment Proposal drafting', es: 'Redacción de Propuesta de Financiamiento' },
     { value: 'promotion-agent', en: 'Promotion Agent', es: 'Agente de Promoción' },
     { value: 'translate-project-text', en: 'Project text translation', es: 'Traducción de textos de proyecto' },
+    { value: 'suggest-risks', en: 'Risk suggestions from documents', es: 'Sugerencia de riesgos desde documentos' },
   ],
 
   async listAgentHints() {
@@ -8507,6 +8520,30 @@ const INAPlatform = {
       .eq('id', id);
     if (error) throw error;
     this.logActivity({ eventType: 'delete', entityType: 'project_risk', entityId: id });
+  },
+
+  /* Calls api/suggest-risks.js: reads the project's documents and returns
+     candidate risks shaped like project_risks rows (plus `source` and
+     `basis` for the reviewer). Never writes anything — the advisor picks
+     which ones to keep in risk-matrix.html, and those go through
+     createProjectRisk() above like any hand-typed risk. */
+  async requestRiskSuggestions(projectId) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(suggestRisksUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ projectId, lang: currentLang() }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('[requestRiskSuggestions] failed:', body.error, body.detail || body.raw || '');
+      throw new Error(body.error || 'Risk suggestion request failed.');
+    }
+    return body;
   },
 
   /* Small summary used by project.html's read-only Risk Matrix card:
