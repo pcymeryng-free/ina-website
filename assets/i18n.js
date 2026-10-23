@@ -3413,8 +3413,8 @@ const I18N = {
     "es": "Consejo Asesor"
   },
   "ab.intro.lede": {
-    "en": "Five senior leaders spanning law, finance, technology and public policy — engaged directly on every advisory mandate.",
-    "es": "Cinco líderes senior en derecho, finanzas, tecnología y política pública — involucrados directamente en cada mandato de asesoría."
+    "en": "Six senior leaders spanning law, finance, technology and public policy — engaged directly on every advisory mandate.",
+    "es": "Seis líderes senior en derecho, finanzas, tecnología y política pública — involucrados directamente en cada mandato de asesoría."
   },
   "ab.francos.role": {
     "en": "Founding Partner, Córdova Francos Abogados",
@@ -3455,6 +3455,14 @@ const I18N = {
   "ab.mlikota.bio": {
     "en": "Technology and telecom executive with 30+ years of P&L leadership, strategy, sales and M&A across the Americas, Europe, the Middle East and Asia. Currently Global SVP – International at e& (Etisalat Group), based in Dubai and Miami; previously Global SVP and President – Americas at Syniverse (Carlyle), SVP – Sales at Global Crossing (Level 3), and M&A director at AT&T. BSEE and MBA in Leadership & Marketing.",
     "es": "Ejecutivo de tecnología y telecomunicaciones con más de 30 años liderando P&L, estrategia, ventas y M&A en América, Europa, Medio Oriente y Asia. Actualmente Vicepresidente Senior Global – Internacional en e& (Etisalat Group), con base en Dubái y Miami; previamente Vicepresidente Senior Global y Presidente – Américas en Syniverse (Carlyle), Vicepresidente Senior de Ventas en Global Crossing (Level 3), y director de M&A en AT&T. Ingeniero Eléctrico (BSEE) y MBA en Liderazgo y Marketing."
+  },
+  "ab.genua.role": {
+    "en": "Former Secretary of Innovation, Science and Technology of Argentina",
+    "es": "Ex Secretario de Innovación, Ciencia y Tecnología de la Nación Argentina"
+  },
+  "ab.genua.bio": {
+    "en": "Public sector and digital transformation executive with experience in telecommunications, innovation and regulation. Served as Argentina’s Secretary of Innovation, Science and Technology, overseeing policy on digital services, artificial intelligence and telecommunications, and previously as Executive Coordinator of the Intervention of ENACOM, the national communications regulator. Also sat on the Board of Telecom Argentina representing the Argentine State and was Secretary of Economy and Finance for the Municipality of Pilar. Currently advises governments and organizations on digital transformation and the adoption of emerging technologies.",
+    "es": "Ejecutivo con trayectoria en gestión pública, telecomunicaciones, innovación y transformación digital. Se desempeñó como Secretario de Innovación, Ciencia y Tecnología de la Nación Argentina, con responsabilidad sobre políticas de servicios digitales, inteligencia artificial y telecomunicaciones, y previamente como Coordinador Ejecutivo de la Intervención del Ente Nacional de Comunicaciones (ENACOM). Integró el Directorio de Telecom Argentina en representación del Estado y fue Secretario de Economía y Hacienda del Municipio de Pilar. Actualmente asesora a gobiernos y organizaciones en transformación digital y adopción de nuevas tecnologías."
   },
   "ab.cta.eyebrow": {
     "en": "Join the Conversation",
