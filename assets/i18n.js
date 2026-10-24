@@ -3413,8 +3413,8 @@ const I18N = {
     "es": "Consejo Asesor"
   },
   "ab.intro.lede": {
-    "en": "Six senior leaders spanning law, finance, technology and public policy — engaged directly on every advisory mandate.",
-    "es": "Seis líderes senior en derecho, finanzas, tecnología y política pública — involucrados directamente en cada mandato de asesoría."
+    "en": "Seven senior leaders spanning law, finance, technology and public policy — engaged directly on every advisory mandate.",
+    "es": "Siete líderes senior en derecho, finanzas, tecnología y política pública — involucrados directamente en cada mandato de asesoría."
   },
   "ab.francos.role": {
     "en": "Founding Partner, Córdova Francos Abogados",
@@ -3455,6 +3455,14 @@ const I18N = {
   "ab.mlikota.bio": {
     "en": "Technology and telecom executive with 30+ years of P&L leadership, strategy, sales and M&A across the Americas, Europe, the Middle East and Asia. Currently Global SVP – International at e& (Etisalat Group), based in Dubai and Miami; previously Global SVP and President – Americas at Syniverse (Carlyle), SVP – Sales at Global Crossing (Level 3), and M&A director at AT&T. BSEE and MBA in Leadership & Marketing.",
     "es": "Ejecutivo de tecnología y telecomunicaciones con más de 30 años liderando P&L, estrategia, ventas y M&A en América, Europa, Medio Oriente y Asia. Actualmente Vicepresidente Senior Global – Internacional en e& (Etisalat Group), con base en Dubái y Miami; previamente Vicepresidente Senior Global y Presidente – Américas en Syniverse (Carlyle), Vicepresidente Senior de Ventas en Global Crossing (Level 3), y director de M&A en AT&T. Ingeniero Eléctrico (BSEE) y MBA en Liderazgo y Marketing."
+  },
+  "ab.ozores.role": {
+    "en": "Former President of ENACOM, Argentina (2024–2026)",
+    "es": "Ex Presidente del ENACOM, Argentina (2024–2026)"
+  },
+  "ab.ozores.bio": {
+    "en": "Led Argentina’s National Communications Agency (ENACOM) from January 2024 to October 2026, driving a deep modernization of the agency and the ICT sector. 30+ years in the ICT industry across the Americas, with a key role in developing mobile and fixed products and services in many countries. Committed to a simple, clear and transparent ecosystem that fosters investment and competition in telecommunications and technology. Business Administration (UCA) and postgraduate degree in Marketing (IAE Business School, Universidad Austral).",
+    "es": "Se desempeñó desde enero de 2024 hasta octubre de 2026 como máxima autoridad del Ente Nacional de Comunicaciones (ENACOM), liderando una transformación profunda del organismo y del sector TIC. Con 30 años de trayectoria en la industria TIC en las Américas, tuvo un rol fundamental en el desarrollo de productos y servicios móviles y fijos en el continente. Comprometido con un ecosistema simple, claro y transparente que fomente la inversión y la competencia en telecomunicaciones y tecnología. Licenciado en Administración de Empresas (UCA) con posgrado en Marketing (IAE Business School, Universidad Austral)."
   },
   "ab.genua.role": {
     "en": "Former Secretary of Innovation, Science and Technology of Argentina",
