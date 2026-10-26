@@ -7330,13 +7330,126 @@ const INAPlatform = {
     return data;
   },
 
-  async listDocuments(projectId) {
+  /* Current versions only by default — a document replaced through
+     "Subir versión actualizada" (migration_v81_document_versions.sql)
+     keeps its row with superseded_by set and is left out here, so every
+     existing caller (dashboard counts, new-project.html's edit mode, the
+     proposal export) keeps seeing just the live set. project.html passes
+     includeSuperseded to show the version history. Filtered in JS rather
+     than with .is('superseded_by', null) so this keeps working before the
+     migration adds the column. */
+  async listDocuments(projectId, { includeSuperseded = false } = {}) {
     const { data, error } = await supabaseClient
       .from('project_documents')
       .select('*')
       .eq('project_id', projectId)
       .order('uploaded_at', { ascending: true });
     if (error) throw error;
+    return includeSuperseded ? data : (data || []).filter((d) => !d.superseded_by);
+  },
+
+  /* Marks oldId as replaced by newId — the old file stays in Storage and
+     in project_documents as a previous version. */
+  async supersedeDocument(oldId, newId) {
+    const { error } = await supabaseClient
+      .from('project_documents')
+      .update({ superseded_by: newId, superseded_at: new Date().toISOString() })
+      .eq('id', oldId);
+    if (error) throw error;
+  },
+
+  /* ---------- Updated document → reviewed project changes ----------
+     The project fields api/extract-project-data.js can read from a
+     document, mapped to their projects column. diffProjectAgainstExtraction()
+     compares them against the current project row; only rows the user
+     ticks get written by applyProjectChanges(). A null extraction means
+     "the document doesn't say" — never a proposal to blank the field. */
+  PROJECT_EXTRACTABLE_FIELDS: [
+    { key: 'name', column: 'name', kind: 'text', en: 'Project name', es: 'Nombre del proyecto' },
+    { key: 'projectType', column: 'project_type', kind: 'select', en: 'Project type', es: 'Tipo de proyecto', label: (v) => labelFor(PROJECT_TYPES, v, currentLang()) },
+    { key: 'generatingEntityName', column: 'generating_entity_name', kind: 'text', en: 'Generating entity', es: 'Entidad generadora' },
+    { key: 'generatingEntityType', column: 'generating_entity_type', kind: 'select', en: 'Entity type', es: 'Tipo de entidad', label: (v) => labelFor(ENTITY_TYPES, v, currentLang()) },
+    { key: 'description', column: 'description', kind: 'textarea', en: 'Description', es: 'Descripción' },
+    { key: 'country', column: 'country', kind: 'select', en: 'Country', es: 'País', label: (v) => labelFor(COUNTRIES_AMERICAS, v, currentLang()) },
+    { key: 'beneficiaryCount', column: 'beneficiary_count', kind: 'number', en: 'Beneficiaries', es: 'Beneficiarios' },
+    { key: 'durationValue', column: 'duration_value', kind: 'number', en: 'Duration', es: 'Duración' },
+    { key: 'durationUnit', column: 'duration_unit', kind: 'select', en: 'Duration unit', es: 'Unidad de duración', label: (v) => (DURATION_UNIT_LABELS[v] ? DURATION_UNIT_LABELS[v][currentLang()] : v) },
+    { key: 'priority', column: 'priority', kind: 'select', en: 'Priority', es: 'Prioridad', label: (v) => (PRIORITY_LABELS[v] ? PRIORITY_LABELS[v][currentLang()] : v) },
+    { key: 'technicalCriticality', column: 'technical_criticality', kind: 'select', en: 'Technical criticality', es: 'Criticidad técnica', label: (v) => (CRITICALITY_LABELS[v] ? CRITICALITY_LABELS[v][currentLang()] : v) },
+    { key: 'complexity', column: 'complexity', kind: 'select', en: 'Complexity', es: 'Complejidad', label: (v) => (COMPLEXITY_LABELS[v] ? COMPLEXITY_LABELS[v][currentLang()] : v) },
+    { key: 'budgetAmount', column: 'budget_amount', kind: 'money', currency: 'ARS', en: 'Budget (ARS)', es: 'Presupuesto (ARS)' },
+    { key: 'budgetAmountUsd', column: 'budget_amount_usd', kind: 'money', currency: 'USD', en: 'Budget (USD)', es: 'Presupuesto (USD)' },
+    { key: 'exchangeRate', column: 'exchange_rate', kind: 'number', en: 'Exchange rate (ARS/USD)', es: 'Tipo de cambio (ARS/USD)' },
+    { key: 'financingRequiredPercentage', column: 'financing_required_percentage', kind: 'number', en: 'Financing required (%)', es: 'Financiamiento requerido (%)' },
+  ],
+
+  formatProjectFieldValue(field, value) {
+    if (value === null || value === undefined || value === '') return '—';
+    if (field.kind === 'select') return field.label ? field.label(value) : String(value);
+    if (field.kind === 'number' || field.kind === 'money') {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return String(value);
+      const text = n.toLocaleString(currentLang() === 'es' ? 'es-AR' : 'en-US', { maximumFractionDigits: 2 });
+      return field.currency ? `${field.currency} ${text}` : text;
+    }
+    return String(value);
+  },
+
+  /* Returns [{ field, current, proposed }] for every extractable field
+     where the document states a value that differs from the project's. */
+  diffProjectAgainstExtraction(project, extractedFields) {
+    const changes = [];
+    this.PROJECT_EXTRACTABLE_FIELDS.forEach((field) => {
+      const proposedRaw = extractedFields ? extractedFields[field.key] : null;
+      if (proposedRaw === null || proposedRaw === undefined || String(proposedRaw).trim() === '') return;
+      const current = project[field.column];
+      let proposed = proposedRaw;
+      let same;
+      if (field.kind === 'number' || field.kind === 'money') {
+        proposed = Number(String(proposedRaw).replace(/,/g, ''));
+        if (!Number.isFinite(proposed)) return;
+        const cur = current === null || current === undefined || current === '' ? null : Number(current);
+        // Within 0.5% counts as the same figure (rounding in the source).
+        same = cur !== null && Math.abs(cur - proposed) <= Math.max(Math.abs(cur), Math.abs(proposed)) * 0.005;
+      } else {
+        proposed = String(proposedRaw).trim();
+        const norm = (s) => String(s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+        same = norm(current) === norm(proposed);
+      }
+      if (!same) changes.push({ field, current, proposed });
+    });
+    return changes;
+  },
+
+  /* Writes ONLY the approved changes. Deliberately not updateProject():
+     that one rewrites every field and resets status/readiness_stage,
+     which would drop the project back to "Not Analyzed" just for
+     accepting a new budget figure. `changes` is the subset of
+     diffProjectAgainstExtraction()'s output the user ticked. */
+  async applyProjectChanges(projectId, changes, { documentName } = {}) {
+    if (!changes.length) return null;
+    const updates = { updated_at: new Date().toISOString() };
+    changes.forEach(({ field, proposed }) => {
+      updates[field.column] = proposed;
+      // Same English-cache invalidation as updateProject() (see
+      // migration_v72_bilingual_free_text.sql).
+      if (field.column === 'description') updates.description_en = null;
+    });
+    const { data, error } = await supabaseClient
+      .from('projects')
+      .update(updates)
+      .eq('id', projectId)
+      .select()
+      .single();
+    if (error) throw error;
+    this.logActivity({
+      eventType: 'update', entityType: 'project', entityId: projectId, entityLabel: data.name,
+      details: {
+        source: 'document_update',
+        document: documentName || null,
+        changes: changes.map(({ field, current, proposed }) => ({ field: field.column, from: current ?? null, to: proposed })),
+      },
+    });
     return data;
   },
 

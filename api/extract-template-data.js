@@ -346,10 +346,11 @@ async function handler(req, res) {
     const isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === user.id;
     if (!isOwner && !isAssignedAdvisor) return json(res, 403, { error: 'Not your project' });
 
-    const documents = await supabaseRest(`/project_documents?project_id=eq.${projectId}&select=*`, {
+    // Previous versions replaced via "Subir versión actualizada" (migration_v81_document_versions.sql) are skipped; filtered here, not in the query, so this works before that migration adds the column.
+    const documents = (await supabaseRest(`/project_documents?project_id=eq.${projectId}&select=*`, {
       serviceKey: SUPABASE_SERVICE_ROLE_KEY,
       supabaseUrl: SUPABASE_URL,
-    });
+    }) || []).filter((d) => !d.superseded_by);
 
     const documentsUsed = [];
     const skipped = [];

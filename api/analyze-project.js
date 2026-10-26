@@ -593,10 +593,11 @@ async function handler(req, res) {
       supabaseUrl: SUPABASE_URL,
     });
 
-    const documents = await supabaseRest(`/project_documents?project_id=eq.${projectId}&select=*`, {
+    // Previous versions replaced via "Subir versión actualizada" (migration_v81_document_versions.sql) are skipped; filtered here, not in the query, so this works before that migration adds the column.
+    const documents = (await supabaseRest(`/project_documents?project_id=eq.${projectId}&select=*`, {
       serviceKey: SUPABASE_SERVICE_ROLE_KEY,
       supabaseUrl: SUPABASE_URL,
-    });
+    }) || []).filter((d) => !d.superseded_by);
 
     // Pablo, sep 2026: "Agregar la posibilidad de asociar un proyecto a un
     // caso de uso cargado en el sistema. y utilizar los datos del caso de

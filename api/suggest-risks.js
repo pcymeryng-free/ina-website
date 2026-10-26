@@ -312,7 +312,9 @@ async function handler(req, res) {
       supabaseRest(`/project_documents?project_id=eq.${projectId}&select=*&order=uploaded_at.desc`, sb),
       supabaseRest(`/project_risks?project_id=eq.${projectId}&select=title,category`, sb),
     ]);
-    if (!documents || !documents.length) {
+    // Previous versions replaced via "Subir versión actualizada" (migration_v81_document_versions.sql) are skipped; filtered here, not in the query, so this works before that migration adds the column.
+    const currentDocuments = (documents || []).filter((d) => !d.superseded_by);
+    if (!currentDocuments.length) {
       return json(res, 422, {
         error: lang === 'es'
           ? 'Este proyecto no tiene documentos cargados para analizar.'
@@ -334,7 +336,7 @@ async function handler(req, res) {
       (existingRisks || []).length ? existingRisks.map((r) => `- ${r.title} (${r.category})`).join('\n') : '(none)'
     }`;
 
-    const docsToInclude = provider === 'bedrock-mock' ? [] : documents.slice(0, 5);
+    const docsToInclude = provider === 'bedrock-mock' ? [] : currentDocuments.slice(0, 5);
     const skippedNotes = [];
     for (const doc of docsToInclude) {
       const mediaType = guessMediaType(doc.file_name);

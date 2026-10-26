@@ -360,7 +360,8 @@ async function handler(req, res) {
     // (this endpoint doesn't need vision — the narrative chapters are
     // grounded in the structured data above first and foremost).
     const skippedNotes = [];
-    for (const doc of (documents || []).slice(0, 3)) {
+    // Previous versions replaced via "Subir versión actualizada" (migration_v81_document_versions.sql) are skipped; filtered here, not in the query, so this works before that migration adds the column.
+    for (const doc of (documents || []).filter((d) => !d.superseded_by).slice(0, 3)) {
       const ext = (doc.file_name.split('.').pop() || '').toLowerCase();
       if (ext === 'pdf') {
         const fileBuffer = await downloadStorageFile(doc.storage_path, { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_ROLE_KEY });
