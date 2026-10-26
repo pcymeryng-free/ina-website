@@ -86,6 +86,67 @@ const MAX_FILES = 5;
 const MAX_CHARS_PER_DOC = 20000;
 const MAX_TOTAL_CHARS = 60000;
 
+// Groq's free "on_demand" tier caps a single request at its tokens-per-
+// minute limit (8000 for openai/gpt-oss-120b), counting the prompt PLUS
+// max_tokens. With the ~2.5k-token system prompt and a 6000 max_tokens,
+// even a few pages of document overflowed it (oct 2026, "Presupuesto
+// preliminar Data Center CALF.pdf": "413 Request too large … Limit 8000,
+// Requested 14939"). So on Groq: a smaller output reservation, low
+// reasoning effort, and only the passages of each document most likely to
+// hold project data (selectProjectPassages() below), sized to what's left.
+// GROQ_TPM_LIMIT overrides the 8000 after upgrading the Groq tier.
+const GROQ_MAX_TOKENS = 2800;
+const CHARS_PER_TOKEN = 3; // conservative for Spanish PDF text
+function groqDocCharBudget(systemPrompt, tpmLimit) {
+  const promptTokens = Math.ceil(systemPrompt.length / CHARS_PER_TOKEN);
+  const left = tpmLimit - GROQ_MAX_TOKENS - promptTokens - 300;
+  return Math.max(3000, left * CHARS_PER_TOKEN);
+}
+
+const PROJECT_KEYWORDS = /presupuest|budget|inversi[oó]n|investment|capex|opex|monto|importe|costo|cost\b|total|u\$s|us\$|usd|ars|\$\s?\d|tipo de cambio|exchange rate|cotizaci|financ|duraci[oó]n|duration|plazo|cronograma|schedule|mes(es)?\b|months?\b|d[ií]as\b|days\b|fase|etapa|phase|beneficiari|usuarios|habitantes|poblaci[oó]n|comitente|cooperativa|municipalidad|municipio|empresa|entidad|organismo|objeto|alcance|scope|prioridad|criticidad|complejidad/i;
+// Table-of-contents lines ("1.2 Ubicación · · · · · · 4") and bare page
+// numbers match plenty of keywords / eat budget but carry no data.
+const TOC_LINE = /([·.]\s?){6,}|^\s*[·.\s]*\s*\d*\s*$/;
+
+// Line windows around keyword hits, densest first, put back in document
+// order — same approach as api/suggest-risks.js's selectRiskPassages().
+// Always keeps the opening (title, issuing entity, project name).
+function selectProjectPassages(text, budget) {
+  // Running page headers/footers repeat on every page — keep one copy.
+  const counts = new Map();
+  text.split('\n').forEach((line) => counts.set(line.trim(), (counts.get(line.trim()) || 0) + 1));
+  const seen = new Set();
+  const lines = text.split('\n').filter((line) => {
+    if (TOC_LINE.test(line)) return false;
+    const key = line.trim();
+    if (counts.get(key) < 3) return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const clean = lines.join('\n');
+  if (clean.length <= budget) return clean;
+  const head = clean.slice(0, Math.min(1500, Math.floor(budget / 4)));
+  const rest = clean.slice(head.length).split('\n');
+  const windows = [];
+  rest.forEach((line, i) => {
+    if (!PROJECT_KEYWORDS.test(line)) return;
+    const start = Math.max(0, i - 1);
+    const end = Math.min(rest.length, i + 6);
+    const last = windows[windows.length - 1];
+    if (last && start <= last.end) { last.end = end; last.hits += 1; } else windows.push({ start, end, hits: 1 });
+  });
+  let used = head.length;
+  const picked = [];
+  [...windows].sort((a, b) => b.hits - a.hits).forEach((w) => {
+    const chunk = rest.slice(w.start, w.end).join('\n').trim();
+    if (used + chunk.length + 6 > budget) return;
+    used += chunk.length + 6;
+    picked.push({ start: w.start, chunk });
+  });
+  return head + picked.sort((a, b) => a.start - b.start).map((p) => `\n[…]\n${p.chunk}`).join('');
+}
+
 function json(res, status, body) {
   res.status(status).setHeader('Content-Type', 'application/json');
   res.end(JSON.stringify(body));
@@ -407,6 +468,7 @@ async function handler(req, res) {
     LLM_PROVIDER,
     GROQ_API_KEY,
     GROQ_MODEL,
+    GROQ_TPM_LIMIT,
     AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY,
     AWS_REGION,
@@ -478,6 +540,14 @@ async function handler(req, res) {
     const documentsUsed = [];
     const skipped = [];
     let combinedText = '';
+    const systemPrompt = buildSystemPrompt(fieldsSpec) + hintsSuffix(extraHints);
+    // Per-document text cap: generous everywhere except Groq's free tier
+    // (see GROQ_MAX_TOKENS above), where the whole request must fit.
+    const pdfCount = files.filter((f) => f && guessMediaType(f.fileName || '') === 'application/pdf').length || 1;
+    const groqTpm = parseInt(GROQ_TPM_LIMIT, 10) || 8000;
+    const perDocBudget = provider === 'groq'
+      ? Math.floor(groqDocCharBudget(systemPrompt, groqTpm) / pdfCount)
+      : MAX_CHARS_PER_DOC;
 
     for (const file of files) {
       const fileName = (file && file.fileName) || 'document.pdf';
@@ -519,7 +589,8 @@ async function handler(req, res) {
         if (text) {
           const categoryLabel = CATEGORY_LABELS[file.category] || null;
           const header = categoryLabel ? `${fileName} (declared type: ${categoryLabel})` : fileName;
-          combinedText += `\n\n--- FILE: ${header} ---\n${text.slice(0, MAX_CHARS_PER_DOC)}`;
+          const body = provider === 'groq' ? selectProjectPassages(text, perDocBudget) : text.slice(0, perDocBudget);
+          combinedText += `\n\n--- FILE: ${header} ---\n${body}`;
           documentsUsed.push(fileName);
         } else {
           skipped.push(`${fileName} (no extractable text — likely scanned/image-only)`);
@@ -539,7 +610,6 @@ async function handler(req, res) {
       });
     }
 
-    const systemPrompt = buildSystemPrompt(fieldsSpec) + hintsSuffix(extraHints);
     const userContent = `PROJECT DOCUMENTS:\n${combinedText}`;
 
     // max_tokens below (every provider branch) raised from 3000 to 6000
@@ -554,7 +624,8 @@ async function handler(req, res) {
     if (provider === 'groq') {
       const groqRes = await fetchGroqWithRetry({
         model: GROQ_MODEL || GROQ_MODEL_DEFAULT,
-        max_tokens: 6000,
+        max_tokens: GROQ_MAX_TOKENS,
+        reasoning_effort: 'low',
         temperature: 0,
         messages: [
           { role: 'system', content: systemPrompt },
