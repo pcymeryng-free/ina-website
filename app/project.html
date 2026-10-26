@@ -274,6 +274,7 @@
       <div class="tab-panel" data-tab-panel="docs">
       <div id="docsBlock" style="margin-top:0; display:none;">
         <h4 style="font-size:14px;"><span data-i18n="pd.documents">Supporting Documents</span></h4>
+        <div id="docsAttachBar" style="display:none; flex-wrap:wrap; align-items:center; gap:8px 10px; margin-top:10px;"></div>
         <div id="docsList" style="margin-top:10px; display:flex; flex-direction:column; gap:14px;"></div>
       </div>
       </div>
@@ -582,7 +583,8 @@
      another PDF's existing pages — see the "Anexos" section of that
      function). Everything else in the report still uses jsPDF alone. -->
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="/assets/platform.js?v=118"></script>
+<script src="/assets/platform.js?v=119"></script>
+<script src="/assets/project-data-review.js?v=1"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
 (function () {
@@ -1580,13 +1582,36 @@
     renderWorkflowActionsMenu(project);
   }
 
+  // "Adjuntar documento" (owner / assigned advisor / admin): category +
+  // file picker; once attached, the AI offers the project data it finds
+  // in it — see attachNewDocuments() below.
+  function renderDocsAttachBar() {
+    const bar = document.getElementById('docsAttachBar');
+    if (!canUpdateDocs) { bar.style.display = 'none'; return; }
+    const l = INAPlatform.currentLang();
+    const es = l === 'es';
+    const selected = bar.querySelector('select') ? bar.querySelector('select').value : 'other';
+    bar.style.display = 'flex';
+    bar.innerHTML = `
+      <select style="font-size:12.5px;">
+        ${INAPlatform.DOCUMENT_TYPES.map((t) => `<option value="${t.value}" ${t.value === selected ? 'selected' : ''}>${ProjectDataReview.escHtml(t[l] || t.en)}</option>`).join('')}
+      </select>
+      <button type="button" class="btn amber small">${es ? '📎 Adjuntar documento' : '📎 Attach document'}</button>
+      <span id="docsAttachStatus" style="font-size:12.5px; color:var(--muted);"></span>
+      <span style="flex-basis:100%; font-size:12px; color:var(--muted);">${es
+        ? 'Al adjuntar un PDF, la IA detecta datos del proyecto en el documento y te los muestra para que elijas cuáles cargar.'
+        : 'When you attach a PDF, the AI detects project data in it and shows it to you to choose which to apply.'}</span>`;
+    bar.querySelector('button').addEventListener('click', () => attachNewDocuments(bar.querySelector('select').value));
+  }
+
   // Grouped by document_type (technical / financial / administrative /
   // other — see supabase/migration_v15_document_categories.sql) so an
   // evaluator can go straight to, say, the financial documentation instead
   // of scanning one flat list. Pre-v15 uploads default to 'other'.
   function renderDocs(docs) {
-    if (!docs.length) return;
+    if (!docs.length && !canUpdateDocs) return;
     document.getElementById('docsBlock').style.display = 'block';
+    renderDocsAttachBar();
     const list = document.getElementById('docsList');
     list.innerHTML = '';
     INAPlatform.DOCUMENT_TYPES.forEach((t) => {
@@ -1612,6 +1637,18 @@
           btn.textContent = l === 'es' ? '⬆ Subir versión actualizada' : '⬆ Upload updated version';
           btn.addEventListener('click', () => startDocumentUpdate(d));
           li.appendChild(btn);
+          if (/\.pdf$/i.test(d.file_name || '')) {
+            const detectBtn = document.createElement('button');
+            detectBtn.type = 'button';
+            detectBtn.className = 'btn ghost small';
+            detectBtn.style.cssText = 'padding:3px 10px; font-size:11.5px;';
+            detectBtn.textContent = l === 'es' ? '🔍 Detectar datos del proyecto' : '🔍 Detect project data';
+            detectBtn.title = l === 'es'
+              ? 'La IA lee el documento y propone los datos del proyecto que encuentre; vos elegís cuáles cargar.'
+              : 'The AI reads the document and proposes the project data it finds; you choose which to apply.';
+            detectBtn.addEventListener('click', () => detectProjectData([{ doc: d }]));
+            li.appendChild(detectBtn);
+          }
         }
         // Earlier versions this document replaced (migration_v81), newest
         // first — still downloadable, never fed to the AI agents.
@@ -1677,194 +1714,113 @@
     return link;
   }
 
-  /* ---------- "Subir versión actualizada" (migration_v81_document_versions.sql) ----------
-     1. The person picks the new file for an existing document.
-     2. api/extract-project-data.js (the same agent as new-project.html's
-        "Cargar desde PDF") reads it from a temp Storage path.
-     3. Every project field where the document states something different
-        is listed, current vs. new, for the person to tick or untick.
-     4. On confirm: the new file is stored as a project document, the old
-        one is marked as its previous version, and only the ticked fields
-        are written (INAPlatform.applyProjectChanges — no workflow reset).
-     Nothing is saved before step 4; cancelling just drops the temp file. */
-  function escHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
-
-  // Word-level diff for long text (description): removed words struck
-  // through on the "current" side, added words highlighted on the "new" one.
-  function wordDiffHtml(oldText, newText) {
-    const a = String(oldText || '').split(/(\s+)/).filter((w) => w !== '');
-    const b = String(newText || '').split(/(\s+)/).filter((w) => w !== '');
-    if (a.length * b.length > 400000) {
-      return { oldHtml: escHtml(oldText), newHtml: escHtml(newText) };
-    }
-    const dp = Array.from({ length: a.length + 1 }, () => new Uint16Array(b.length + 1));
-    for (let i = a.length - 1; i >= 0; i--) {
-      for (let j = b.length - 1; j >= 0; j--) {
-        dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
-      }
-    }
-    let i = 0; let j = 0; let oldHtml = ''; let newHtml = '';
-    while (i < a.length && j < b.length) {
-      if (a[i] === b[j]) { oldHtml += escHtml(a[i]); newHtml += escHtml(b[j]); i++; j++; }
-      else if (dp[i + 1][j] >= dp[i][j + 1]) { oldHtml += `<del style="background:rgba(200,60,60,.15);">${escHtml(a[i])}</del>`; i++; }
-      else { newHtml += `<ins style="background:rgba(60,160,90,.18); text-decoration:none;">${escHtml(b[j])}</ins>`; j++; }
-    }
-    for (; i < a.length; i++) oldHtml += `<del style="background:rgba(200,60,60,.15);">${escHtml(a[i])}</del>`;
-    for (; j < b.length; j++) newHtml += `<ins style="background:rgba(60,160,90,.18); text-decoration:none;">${escHtml(b[j])}</ins>`;
-    return { oldHtml, newHtml };
-  }
-
-  function startDocumentUpdate(oldDoc) {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.pdf,application/pdf';
-    input.addEventListener('change', () => {
-      const file = input.files && input.files[0];
-      if (file) reviewDocumentUpdate(oldDoc, file);
+  /* ---------- Documents → project data (assets/project-data-review.js) ----------
+     Three ways in, same review modal: the AI reads the document(s), every
+     project field where they state something different is listed (current
+     vs. new) and only the ticked ones are written, via
+     INAPlatform.applyProjectChanges() — no workflow reset.
+       - "Subir versión actualizada" (migration_v81_document_versions.sql):
+         nothing is saved until confirm; the new file is stored and the old
+         one marked as its previous version.
+       - "Adjuntar documento": the file is attached right away, then its
+         data is offered for review.
+       - "Detectar datos" on a document already attached. */
+  function pickFiles({ multiple = false, accept = '' } = {}) {
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = multiple;
+      if (accept) input.accept = accept;
+      input.addEventListener('change', () => resolve(Array.from(input.files || [])));
+      input.click();
     });
-    input.click();
   }
 
-  async function reviewDocumentUpdate(oldDoc, file) {
+  async function startDocumentUpdate(oldDoc) {
+    const [file] = await pickFiles({ accept: '.pdf,application/pdf' });
+    if (!file) return;
     const l = INAPlatform.currentLang();
-    const overlay = document.createElement('div');
-    overlay.className = 'risk-form-overlay';
-    overlay.innerHTML = `
-      <div class="risk-form-panel" style="max-width:920px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px;">
-          <h3 style="margin:0;">${l === 'es' ? 'Versión actualizada del documento' : 'Updated document version'}</h3>
-          <button type="button" class="btn ghost small" data-act="close">&times;</button>
-        </div>
-        <p style="font-size:13px; color:var(--muted); margin:0 0 16px;">
-          ${escHtml(oldDoc.file_name)} &rarr; <b>${escHtml(file.name)}</b>
-        </p>
-        <div data-role="body"><p style="font-size:13.5px; color:var(--muted);">${l === 'es'
-          ? 'La IA está leyendo el documento nuevo y comparándolo con los datos del proyecto… puede tardar hasta un minuto.'
-          : 'The AI is reading the new document and comparing it with the project data… this can take up to a minute.'}</p></div>
-        <div data-role="actions" style="display:none; gap:12px; margin-top:20px; align-items:center; flex-wrap:wrap;">
-          <button type="button" class="btn amber" data-act="apply"></button>
-          <button type="button" class="btn ghost" data-act="close">${l === 'es' ? 'Cancelar' : 'Cancel'}</button>
-          <p data-role="note" class="contact-note" style="margin:0;"></p>
-        </div>
-      </div>`;
-    document.body.appendChild(overlay);
-
-    let tempPath = null;
-    let busy = false;
-    const close = () => {
-      if (busy) return;
-      overlay.remove();
-      INAPlatform.deleteTempExtractionFile(tempPath);
-    };
-    overlay.querySelectorAll('[data-act="close"]').forEach((b) => b.addEventListener('click', close));
-
-    const body = overlay.querySelector('[data-role="body"]');
-    let changes = [];
-    let unreadable = false;
-    try {
-      tempPath = await INAPlatform.uploadTempExtractionFile(file);
-      const result = await INAPlatform.extractProjectData([{ storagePath: tempPath, fileName: file.name, category: oldDoc.document_type }]);
-      if (!(result.documentsUsed || []).length) {
-        unreadable = true;
-        body.innerHTML = `<p style="font-size:13.5px;">${l === 'es'
-          ? 'No se pudo leer texto de este documento (puede ser un PDF escaneado). Igual podés guardarlo como nueva versión, sin cambios en los datos del proyecto.'
-          : "Couldn't read any text from this document (it may be a scanned PDF). You can still save it as the new version, without changing the project data."}</p>`;
-      } else {
-        changes = INAPlatform.diffProjectAgainstExtraction(currentProject, result.fields || {});
-      }
-    } catch (err) {
-      body.innerHTML = `<p class="contact-note">${escHtml((l === 'es' ? 'No se pudo analizar el documento: ' : "Couldn't analyze the document: ") + (err.message || err))}</p>`;
-      return;
-    }
-
-    if (changes.length) {
-      body.innerHTML = `
-        <p style="font-size:13px; margin:0 0 12px;">${l === 'es'
-          ? `El documento nuevo cambia <b>${changes.length}</b> dato(s) del proyecto. Marcá los que querés aplicar; los demás quedan como están.`
-          : `The new document changes <b>${changes.length}</b> project field(s). Tick the ones to apply; the rest stay as they are.`}</p>
-        <div style="overflow-x:auto;">
-        <table class="risk-table">
-          <thead><tr>
-            <th style="width:28px;"><input type="checkbox" data-role="all" checked></th>
-            <th>${l === 'es' ? 'Dato' : 'Field'}</th>
-            <th>${l === 'es' ? 'Valor actual' : 'Current value'}</th>
-            <th>${l === 'es' ? 'Según el documento nuevo' : 'Per the new document'}</th>
-          </tr></thead>
-          <tbody>${changes.map((c, idx) => {
-            const label = c.field[l] || c.field.en;
-            let cur; let next;
-            if (c.field.kind === 'textarea') {
-              const d = wordDiffHtml(c.current, c.proposed);
-              cur = d.oldHtml || '—'; next = d.newHtml;
-            } else {
-              cur = escHtml(INAPlatform.formatProjectFieldValue(c.field, c.current));
-              next = `<b>${escHtml(INAPlatform.formatProjectFieldValue(c.field, c.proposed))}</b>`;
-            }
-            // Renaming the project is opt-in; everything else starts ticked.
-            const checked = c.field.key === 'name' ? '' : 'checked';
-            return `<tr>
-              <td style="vertical-align:top;"><input type="checkbox" data-idx="${idx}" ${checked}></td>
-              <td style="vertical-align:top; white-space:nowrap;"><b>${escHtml(label)}</b></td>
-              <td style="vertical-align:top; color:var(--muted); font-size:12.5px; line-height:1.5;">${cur}</td>
-              <td style="vertical-align:top; font-size:12.5px; line-height:1.5;">${next}</td>
-            </tr>`;
-          }).join('')}</tbody>
-        </table>
-        </div>`;
-      const all = body.querySelector('[data-role="all"]');
-      all.addEventListener('change', () => body.querySelectorAll('input[data-idx]').forEach((c) => { c.checked = all.checked; }));
-    } else if (!unreadable) {
-      body.innerHTML = `<p style="font-size:13.5px;">${l === 'es'
-        ? 'La IA no encontró diferencias entre el documento nuevo y los datos cargados del proyecto.'
-        : 'The AI found no differences between the new document and the project data on file.'}</p>`;
-    }
-
-    const actions = overlay.querySelector('[data-role="actions"]');
-    const applyBtn = overlay.querySelector('[data-act="apply"]');
-    const note = overlay.querySelector('[data-role="note"]');
-    const refreshApplyLabel = () => {
-      const n = body.querySelectorAll('input[data-idx]:checked').length;
-      applyBtn.textContent = n
-        ? (l === 'es' ? `Guardar documento y aplicar ${n} cambio(s)` : `Save document and apply ${n} change(s)`)
-        : (l === 'es' ? 'Guardar documento sin cambiar datos' : 'Save document without changing data');
-    };
-    body.addEventListener('change', refreshApplyLabel);
-    refreshApplyLabel();
-    actions.style.display = 'flex';
-
-    applyBtn.addEventListener('click', async () => {
-      const picked = [...body.querySelectorAll('input[data-idx]:checked')].map((c) => changes[Number(c.dataset.idx)]);
-      busy = true;
-      applyBtn.disabled = true;
-      note.textContent = l === 'es' ? 'Guardando…' : 'Saving…';
-      try {
+    const es = l === 'es';
+    ProjectDataReview.open({
+      title: es ? 'Versión actualizada del documento' : 'Updated document version',
+      subtitleHtml: `${ProjectDataReview.escHtml(oldDoc.file_name)} &rarr; <b>${ProjectDataReview.escHtml(file.name)}</b>`,
+      sources: [{ file, category: oldDoc.document_type }],
+      current: currentProject,
+      intro: (n) => (es
+        ? `El documento nuevo cambia <b>${n}</b> dato(s) del proyecto. Marcá los que querés aplicar; los demás quedan como están.`
+        : `The new document changes <b>${n}</b> project field(s). Tick the ones to apply; the rest stay as they are.`),
+      noChangesText: es
+        ? 'La IA no encontró diferencias entre el documento nuevo y los datos cargados del proyecto. Igual podés guardarlo como nueva versión.'
+        : 'The AI found no differences between the new document and the project data on file. You can still save it as the new version.',
+      allowApplyWithoutChanges: true,
+      applyLabel: (n) => (n
+        ? (es ? `Guardar documento y aplicar ${n} cambio(s)` : `Save document and apply ${n} change(s)`)
+        : (es ? 'Guardar documento sin cambiar datos' : 'Save document without changing data')),
+      onApply: async (picked) => {
         const newDoc = await INAPlatform.uploadDocument(projectId, file, oldDoc.document_type);
         try {
           await INAPlatform.supersedeDocument(oldDoc.id, newDoc.id);
         } catch (e) {
           // Most likely migration_v81 not run yet: the new file is saved
           // either way; only the "previous version" link is missing.
-          console.error('[reviewDocumentUpdate] supersedeDocument failed:', e);
+          console.error('[startDocumentUpdate] supersedeDocument failed:', e);
         }
         await INAPlatform.applyProjectChanges(projectId, picked, { documentName: file.name });
         INAPlatform.logActivity({
           eventType: 'create', entityType: 'document', entityId: newDoc.id, entityLabel: newDoc.file_name,
           details: { replaces: oldDoc.file_name, applied_changes: picked.length },
         });
-        busy = false;
-        close();
-        alert(l === 'es'
+        alert(es
           ? `Documento actualizado${picked.length ? ` y ${picked.length} dato(s) del proyecto modificados` : ''}. Te sugerimos volver a correr el Análisis IA y revisar la Matriz de Riesgos con el documento nuevo.`
           : `Document updated${picked.length ? ` and ${picked.length} project field(s) changed` : ''}. Consider re-running the AI Analysis and reviewing the Risk Matrix with the new document.`);
         location.reload();
-      } catch (err) {
-        busy = false;
-        applyBtn.disabled = false;
-        note.textContent = (l === 'es' ? 'No se pudo guardar: ' : "Couldn't save: ") + (err.message || err);
-      }
+      },
     });
+  }
+
+  // Review for documents that are already stored on the project (just
+  // attached, or picked from the list) — closing the modal changes nothing.
+  function detectProjectData(sources, { reloadOnClose = false } = {}) {
+    const es = INAPlatform.currentLang() === 'es';
+    const names = sources.map((s) => (s.file ? s.file.name : s.doc.file_name));
+    ProjectDataReview.open({
+      title: es ? 'Datos del proyecto detectados en el documento' : 'Project data found in the document',
+      subtitleHtml: names.map((n) => `📄 ${ProjectDataReview.escHtml(n)}`).join('<br>'),
+      sources,
+      current: currentProject,
+      applyLabel: (n) => (es ? `Aplicar ${n} cambio(s) al proyecto` : `Apply ${n} change(s) to the project`),
+      onApply: async (picked) => {
+        await INAPlatform.applyProjectChanges(projectId, picked, { documentName: names.join(', '), source: 'document_detect' });
+        location.reload();
+      },
+      // A just-attached document should show up in the list even if the
+      // person closes the review without applying anything.
+      onClose: reloadOnClose ? () => location.reload() : null,
+    });
+  }
+
+  async function attachNewDocuments(category) {
+    const files = await pickFiles({ multiple: true });
+    if (!files.length) return;
+    const es = INAPlatform.currentLang() === 'es';
+    const status = document.getElementById('docsAttachStatus');
+    const attached = [];
+    for (const file of files) {
+      status.textContent = (es ? 'Subiendo ' : 'Uploading ') + file.name + '…';
+      try {
+        const doc = await INAPlatform.uploadDocument(projectId, file, category);
+        attached.push({ file, category, doc });
+      } catch (err) {
+        alert((es ? 'No se pudo subir el archivo: ' : "Couldn't upload the file: ") + (err.message || err));
+      }
+    }
+    status.textContent = '';
+    if (!attached.length) return;
+    // Only PDFs can be read by the extraction agent; anything else is
+    // just attached.
+    const readable = attached.filter((a) => /\.pdf$/i.test(a.file.name) || a.file.type === 'application/pdf');
+    if (!readable.length) { location.reload(); return; }
+    detectProjectData(readable.map(({ file, category: c }) => ({ file, category: c })), { reloadOnClose: true });
   }
 
   function renderAnalysis(a) {

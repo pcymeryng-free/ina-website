@@ -6817,6 +6817,17 @@ const INAPlatform = {
     return storagePath;
   },
 
+  /* An already-attached project document as a File, so it can go through
+     uploadTempExtractionFile() like a freshly picked one —
+     api/extract-project-data.js only reads the caller's own
+     tmp-extractions folder (the document may have been uploaded by
+     someone else). Same read access as getDocumentUrl(). */
+  async downloadDocumentAsFile(doc) {
+    const { data, error } = await supabaseClient.storage.from('project-documents').download(doc.storage_path);
+    if (error) throw error;
+    return new File([data], doc.file_name, { type: data.type || 'application/pdf' });
+  },
+
   // Best-effort cleanup — called after an extraction call finishes (success
   // or failure), never awaited by the caller in a way that blocks the UI.
   // A leftover temp file is harmless (same "own folder" RLS means only the
@@ -7474,7 +7485,7 @@ const INAPlatform = {
      which would drop the project back to "Not Analyzed" just for
      accepting a new budget figure. `changes` is the subset of
      diffProjectAgainstExtraction()'s output the user ticked. */
-  async applyProjectChanges(projectId, changes, { documentName } = {}) {
+  async applyProjectChanges(projectId, changes, { documentName, source } = {}) {
     if (!changes.length) return null;
     const updates = { updated_at: new Date().toISOString() };
     changes.forEach(({ field, proposed }) => {
@@ -7493,7 +7504,7 @@ const INAPlatform = {
     this.logActivity({
       eventType: 'update', entityType: 'project', entityId: projectId, entityLabel: data.name,
       details: {
-        source: 'document_update',
+        source: source || 'document_update',
         document: documentName || null,
         changes: changes.map(({ field, current, proposed }) => ({ field: field.column, from: current ?? null, to: proposed })),
       },

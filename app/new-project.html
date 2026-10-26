@@ -588,7 +588,8 @@
 </footer>
 <script src="/assets/i18n.js?v=102"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=118"></script>
+<script src="/assets/platform.js?v=119"></script>
+<script src="/assets/project-data-review.js?v=1"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
 (function () {
@@ -1584,17 +1585,25 @@
       const files = Array.from(fileList || []);
       if (!files.length) return;
       if (!activeProjectId) return; // shouldn't happen — zones only reachable once a project exists
+      const uploaded = [];
       for (const file of files) {
         if (statusEl) statusEl.textContent = (lang === 'es' ? 'Subiendo ' : 'Uploading ') + file.name + '…';
         try {
           const doc = await INAPlatform.uploadDocument(activeProjectId, file, category);
           existingDocs.push(doc);
+          uploaded.push(file);
         } catch (err) {
           alert((lang === 'es' ? 'No se pudo subir el archivo: ' : "Couldn't upload the file: ") + (err.message || err));
         }
       }
       if (statusEl) statusEl.textContent = '';
       renderExistingDocs();
+      // Editing a project that already exists: offer the project data the
+      // AI finds in the new PDF(s) — see reviewDataFromNewDocs() below.
+      if (isEdit) {
+        const pdfs = uploaded.filter((f) => /\.pdf$/i.test(f.name) || f.type === 'application/pdf');
+        if (pdfs.length) reviewDataFromNewDocs(pdfs, category, statusEl);
+      }
     }
 
     dropZone.addEventListener('click', () => fileInput.click());
@@ -1607,6 +1616,53 @@
     );
     dropZone.addEventListener('drop', (e) => { handleFiles(e.dataTransfer.files); });
   });
+
+  /* Pablo (oct 2026): "cuando se adjuntan nuevos documentos a un proyecto
+     ya cargado dar la posibilidad de detectar atributos de los documentos
+     que se puedan cargar como atributos del proyecto en INA." Compares
+     what the AI reads in the new document(s) against the form as it is
+     right now (assets/project-data-review.js) and fills in only the
+     fields the person ticks — nothing is written until they save the
+     form, as with any other edit here. Keyed by projects column, same as
+     INAPlatform.PROJECT_EXTRACTABLE_FIELDS. */
+  const FORM_FIELD_IDS = {
+    name: 'pname', project_type: 'ptype', generating_entity_name: 'pEntityName',
+    generating_entity_type: 'pEntityType', description: 'pdesc', country: 'pcountry',
+    beneficiary_count: 'pbeneficiaries', duration_value: 'pDurationValue', duration_unit: 'pDurationUnit',
+    priority: 'pPriority', technical_criticality: 'pTechnicalCriticality', complexity: 'pComplexity',
+    budget_amount: 'pBudgetAmount', budget_amount_usd: 'pBudgetAmountUsd', exchange_rate: 'pExchangeRate',
+    financing_required_percentage: 'pFinancingRequiredPercentage',
+  };
+
+  function reviewDataFromNewDocs(files, category, statusEl) {
+    const current = {};
+    Object.entries(FORM_FIELD_IDS).forEach(([column, id]) => {
+      const el = document.getElementById(id);
+      current[column] = el ? el.value : null;
+    });
+    ProjectDataReview.open({
+      title: lang === 'es' ? 'Datos del proyecto detectados en el documento' : 'Project data found in the document',
+      subtitleHtml: files.map((f) => `📄 ${escapeHtml(f.name)}`).join('<br>'),
+      sources: files.map((file) => ({ file, category })),
+      current,
+      intro: (n) => (lang === 'es'
+        ? `El documento tiene <b>${n}</b> dato(s) distintos de los del formulario. Marcá los que querés cargar; después revisá el formulario y guardá.`
+        : `The document has <b>${n}</b> field(s) that differ from the form. Tick the ones to fill in, then review the form and save.`),
+      applyLabel: (n) => (lang === 'es' ? `Cargar ${n} dato(s) en el formulario` : `Fill in ${n} field(s) in the form`),
+      onApply: async (picked) => {
+        picked.forEach(({ field, proposed }) => {
+          const el = document.getElementById(FORM_FIELD_IDS[field.column]);
+          if (el) el.value = proposed;
+        });
+        if (picked.some(({ field }) => field.column === 'project_type')) renderTechDataStep();
+        if (statusEl) {
+          statusEl.textContent = lang === 'es'
+            ? `✓ Se cargaron ${picked.length} dato(s) del documento en el formulario. Guardá para aplicarlos.`
+            : `✓ Filled in ${picked.length} field(s) from the document. Save to apply them.`;
+        }
+      },
+    });
+  }
 
   // Uploaded documents — populated by init() below for edit mode, and
   // pushed to directly as uploads succeed in either mode (see handleFiles()
