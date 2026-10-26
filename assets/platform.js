@@ -6089,13 +6089,61 @@ const INAPlatform = {
      project_documents, framework_analysis, fsu_scoring and
      project_workflow_events via their existing FKs — nothing else to clean
      up client-side. */
+  /* Deleting the row cascades to project_documents/contracts/
+     contract_stages, but not to the Storage files they point to — those
+     used to be left orphaned (Pablo, oct 2026). So the files go first:
+     every path from project_storage_paths() (documents incl. previous
+     versions, project contract PDFs — migration_v82_project_delete_
+     storage_cleanup.sql), plus whatever is left in the project's own
+     folder. Best-effort, same as deleteDocument(): a file that can't be
+     removed never blocks deleting the project. Before migration_v82 the
+     RPC doesn't exist, so it falls back to the document rows this user
+     can read, and only files in their own folder actually get removed. */
   async deleteProject(id) {
+    // Same rule as projects_delete_own_or_admin, checked BEFORE touching
+    // Storage so files are never removed for a project that then fails
+    // to delete.
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const { data: project, error: projectError } = await supabaseClient.from('projects').select('user_id').eq('id', id).single();
+    if (projectError) throw projectError;
+    const profile = await this.getProfile(session.user.id).catch(() => null);
+    if (project.user_id !== session.user.id && !this.isAdmin(profile)) {
+      throw new Error(currentLang() === 'es' ? 'Solo el dueño del proyecto o un admin puede eliminarlo.' : 'Only the project owner or an admin can delete it.');
+    }
+
+    const paths = new Set();
+    try {
+      const { data, error } = await supabaseClient.rpc('project_storage_paths', { p_project_id: id });
+      if (error) throw error;
+      (data || []).forEach((p) => paths.add(typeof p === 'string' ? p : p.project_storage_paths));
+    } catch (e) {
+      try {
+        (await this.listDocuments(id, { includeSuperseded: true }) || []).forEach((d) => paths.add(d.storage_path));
+      } catch (e2) { /* best-effort */ }
+    }
+    try {
+      const folders = new Set([session.user.id, project.user_id]);
+      for (const owner of folders) {
+        const { data: files } = await supabaseClient.storage.from('project-documents').list(`${owner}/${id}`, { limit: 1000 });
+        (files || []).forEach((f) => { if (f.id) paths.add(`${owner}/${id}/${f.name}`); });
+      }
+    } catch (e) { /* best-effort */ }
+    const all = [...paths].filter(Boolean);
+    for (let i = 0; i < all.length; i += 100) {
+      try {
+        await supabaseClient.storage.from('project-documents').remove(all.slice(i, i + 100));
+      } catch (e) {
+        console.warn('[deleteProject] could not remove some files from Storage:', e);
+      }
+    }
+
     const { error } = await supabaseClient
       .from('projects')
       .delete()
       .eq('id', id);
     if (error) throw error;
-    this.logActivity({ eventType: 'delete', entityType: 'project', entityId: id });
+    this.logActivity({ eventType: 'delete', entityType: 'project', entityId: id, details: all.length ? { storage_files_removed: all.length } : null });
   },
 
   /* ---------- Project phases (see migration_v70_project_phases.sql) ----------
