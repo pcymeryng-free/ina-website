@@ -513,7 +513,7 @@
         fProgram.appendChild(opt);
       });
 
-    fSearch.placeholder = lang() === 'es' ? 'Nombre del proyecto o usuario…' : 'Project name or user…';
+    fSearch.placeholder = lang() === 'es' ? 'Proyecto, entidad o usuario…' : 'Project, entity or user…';
   }
 
   function applyFilters(list) {
@@ -523,7 +523,9 @@
     const from = fFrom.value ? new Date(fFrom.value + 'T00:00:00') : null;
     const to = fTo.value ? new Date(fTo.value + 'T23:59:59') : null;
     const minBeneficiaries = fMinBeneficiaries.value !== '' ? Number(fMinBeneficiaries.value) : null;
-    const q = fSearch.value.trim().toLowerCase();
+    // Accent/case-insensitive, so "energia" finds "Energía".
+    const fold = (text) => String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const q = fold(fSearch.value.trim());
 
     return list.filter((p) => {
       if (status && INAPlatform.effectiveStatusValue(p) !== status) return false;
@@ -540,7 +542,7 @@
       if (q) {
         const ownerName = (p.profiles && p.profiles.full_name) || '';
         const ownerOrg = (p.profiles && p.profiles.organization) || '';
-        const haystack = `${p.name} ${ownerName} ${ownerOrg}`.toLowerCase();
+        const haystack = fold(`${p.name} ${p.generating_entity_name || ''} ${ownerName} ${ownerOrg}`);
         if (!haystack.includes(q)) return false;
       }
       return true;
