@@ -3413,8 +3413,8 @@ const I18N = {
     "es": "Consejo Asesor"
   },
   "ab.intro.lede": {
-    "en": "Seven senior leaders spanning law, finance, technology and public policy — engaged directly on every advisory mandate.",
-    "es": "Siete líderes senior en derecho, finanzas, tecnología y política pública — involucrados directamente en cada mandato de asesoría."
+    "en": "Six senior leaders spanning law, finance, technology and public policy — engaged directly on every advisory mandate.",
+    "es": "Seis líderes senior en derecho, finanzas, tecnología y política pública — involucrados directamente en cada mandato de asesoría."
   },
   "ab.francos.role": {
     "en": "Founding Partner, Córdova Francos Abogados",
