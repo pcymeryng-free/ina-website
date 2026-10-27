@@ -81,6 +81,41 @@
     <div id="loadingState" style="padding:40px 0; color:var(--muted); font-size:13.5px;"><span data-i18n="dash.loading">Loading…</span></div>
 
     <div id="contractsBody" style="display:none; margin-top:24px;">
+      <!-- Toolkit contractual de INA (Pablo, oct 2026) — the engagement
+           sequence, INA's standard scope and fee structure, and the three
+           templates to download blank. Internal only: this page is
+           advisor/admin. -->
+      <div class="info-block" id="contractToolkit" style="margin:0 0 28px;">
+        <h4 style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span data-i18n="contracts.tk.title">INA contractual toolkit</span>
+          <button type="button" class="btn ghost small" id="toolkitToggle" style="padding:5px 12px;"></button>
+        </h4>
+        <div id="toolkitBody" style="display:none;">
+          <p style="font-size:13px; color:var(--muted); margin:6px 0 14px;"><span data-i18n="contracts.tk.lede">Every engagement with a project is signed in three steps. For each one INA provides a template: generate the draft from the contract, edit it if needed, upload the final version to be signed, and then the signed copy.</span></p>
+          <ol style="font-size:13px; line-height:1.6; margin:0 0 16px 18px;">
+            <li><b>NDA</b> — <span data-i18n="contracts.tk.step1">confidentiality, so the entity can share the project and INA can evaluate it.</span></li>
+            <li><b>SOW</b> — <span data-i18n="contracts.tk.step2">scope of INA's services, deliverables, milestones and fees.</span></li>
+            <li><b data-i18n="contracts.tk.contractLabel">Service Contract</b> — <span data-i18n="contracts.tk.step3">the binding agreement; incorporates the SOW as Annex I.</span></li>
+          </ol>
+          <p style="font-size:12.5px; font-weight:600; margin:0 0 6px;"><span data-i18n="contracts.tk.scopeTitle">INA's standard scope of services</span></p>
+          <ul style="font-size:12.5px; line-height:1.6; margin:0 0 14px 18px; color:var(--muted);">
+            <li><span data-i18n="contracts.tk.scope1">Improve the project's presentation, in format and content, until it reaches "Investment Ready" in INA's workflow.</span></li>
+            <li><span data-i18n="contracts.tk.scope2">Build the best financing proposal.</span></li>
+            <li><span data-i18n="contracts.tk.scope3">Produce the documentation required by the financing entities.</span></li>
+            <li><span data-i18n="contracts.tk.scope4">Present the project to the financing entities until financing is obtained.</span></li>
+          </ul>
+          <p style="font-size:12.5px; font-weight:600; margin:0 0 6px;"><span data-i18n="contracts.tk.feesTitle">Typical fee structure (amounts to agree)</span></p>
+          <ul style="font-size:12.5px; line-height:1.6; margin:0 0 16px 18px; color:var(--muted);">
+            <li><span data-i18n="contracts.tk.fee1">Monthly fee (retainer) during the engagement.</span></li>
+            <li><span data-i18n="contracts.tk.fee2">Milestone fee when the project reaches "Investment Ready".</span></li>
+            <li><span data-i18n="contracts.tk.fee3">Success fee: a percentage of the financing obtained, payable when each financing agreement is signed; part of the retainers is credited against it. 12-month tail period.</span></li>
+            <li><span data-i18n="contracts.tk.fee4">Pre-approved expenses at cost; amounts in USD plus VAT.</span></li>
+          </ul>
+          <div id="toolkitTemplates" style="display:flex; flex-direction:column; gap:8px;"></div>
+          <p style="font-size:11.5px; color:#B9741C; margin:12px 0 0; font-weight:600;"><span data-i18n="contracts.disclaimer">⚠ Reference template, not reviewed by counsel — have a lawyer review before using it for real.</span></p>
+        </div>
+      </div>
+
       <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:14px;">
         <h3 style="margin:0;"><span data-i18n="contracts.listTitle">Contracts</span> <span id="contractsCount" style="font-weight:400; font-size:12.5px; color:var(--muted);"></span></h3>
         <button type="button" class="btn amber small" id="newContractBtn"><span data-i18n="contracts.new">+ New Contract</span></button>
@@ -172,9 +207,9 @@
 </section>
 </main>
 
-<script src="/assets/i18n.js?v=102"></script>
+<script src="/assets/i18n.js?v=103"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/assets/platform.js?v=119"></script>
+<script src="/assets/platform.js?v=120"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="/assets/script.js?v=15"></script>
 <script>
@@ -217,6 +252,108 @@
     if (!v) return type;
     return typeof v === 'string' ? v : (v[lang] || v.en);
   }
+
+  /* ---------- Document output (draft PDF, editable Word) ---------- */
+  function slug(text) {
+    return String(text || 'documento').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 60);
+  }
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+
+  function buildContractPdfBlob(title, body, counterparty) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const MARGIN = 56;
+    const PAGE_W = doc.internal.pageSize.getWidth();
+    const PAGE_H = doc.internal.pageSize.getHeight();
+    let y = 72;
+    doc.setFont('times', 'bold');
+    doc.setFontSize(16);
+    doc.splitTextToSize(title, PAGE_W - MARGIN * 2).forEach((line) => {
+      doc.text(line, PAGE_W / 2, y, { align: 'center' });
+      y += 20;
+    });
+    y += 14;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    body.split('\n\n').forEach((para) => {
+      const lines = doc.splitTextToSize(para, PAGE_W - MARGIN * 2);
+      lines.forEach((line) => {
+        if (y > PAGE_H - 90) { doc.addPage(); y = 72; }
+        doc.text(line, MARGIN, y);
+        y += 14;
+      });
+      y += 10;
+    });
+    if (y > PAGE_H - 140) { doc.addPage(); y = 72; }
+    y += 30;
+    doc.setLineWidth(0.75);
+    doc.line(MARGIN, y, MARGIN + 180, y);
+    doc.line(PAGE_W - MARGIN - 180, y, PAGE_W - MARGIN, y);
+    y += 14;
+    doc.setFontSize(9);
+    doc.text('International Network Advisors (INA)', MARGIN, y);
+    doc.text(counterparty || (lang === 'es' ? 'Contraparte' : 'Counterparty'), PAGE_W - MARGIN - 180, y);
+    return doc.output('blob');
+  }
+
+  // Word opens an HTML document saved as .doc, keeping headings, paragraph
+  // breaks and the signature block — enough to edit/negotiate the text in
+  // Word and then upload the final version for signature.
+  function buildContractWordBlob(title, body, counterparty) {
+    const paras = body.split('\n\n').map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+<style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.4;} h1{font-family:'Times New Roman',serif;font-size:16pt;text-align:center;margin-bottom:18pt;} p{margin:0 0 9pt;text-align:justify;} td{font-size:10pt;padding-top:48pt;vertical-align:top;}</style></head>
+<body><h1>${escapeHtml(title)}</h1>${paras}
+<table width="100%"><tr><td width="50%">______________________________<br>International Network Advisors (INA)</td><td width="50%">______________________________<br>${escapeHtml(counterparty || (lang === 'es' ? 'Contraparte' : 'Counterparty'))}</td></tr></table>
+</body></html>`;
+    return new Blob(['\ufeff', html], { type: 'application/msword' });
+  }
+
+  /* ---------- Toolkit (blank templates) ---------- */
+  function renderToolkit() {
+    const open = document.getElementById('toolkitBody').style.display !== 'none';
+    document.getElementById('toolkitToggle').textContent = open
+      ? (lang === 'es' ? 'Ocultar' : 'Hide')
+      : (lang === 'es' ? 'Ver proceso y templates' : 'View process and templates');
+    document.getElementById('toolkitTemplates').innerHTML = INAPlatform.PROJECT_CONTRACT_SEQUENCE.map((type, i) => `
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 12px; border:1px solid var(--paper-line); border-radius:8px;">
+        <span style="font-size:13px;"><b>${i + 1}.</b> ${escapeHtml(INAPlatform.contractTypeLabel(type))}</span>
+        <span style="display:flex; gap:8px;">
+          <button type="button" class="btn ghost small tk-word" data-type="${type}" style="padding:4px 10px;">⬇ Word</button>
+          <button type="button" class="btn ghost small tk-pdf" data-type="${type}" style="padding:4px 10px;">⬇ PDF</button>
+        </span>
+      </div>`).join('');
+  }
+  function blankTemplate(type) {
+    const override = templateOverrides[type];
+    return INAPlatform.fillContractTemplate(type, {
+      titleOverride: override ? override[`title_${lang}`] : null,
+      bodyOverride: override ? override[`body_${lang}`] : null,
+    });
+  }
+  document.getElementById('toolkitToggle').addEventListener('click', () => {
+    const body = document.getElementById('toolkitBody');
+    body.style.display = body.style.display === 'none' ? 'block' : 'none';
+    renderToolkit();
+  });
+  document.getElementById('toolkitTemplates').addEventListener('click', (e) => {
+    const btn = e.target.closest('.tk-word, .tk-pdf');
+    if (!btn) return;
+    const tpl = blankTemplate(btn.dataset.type);
+    if (!tpl) return;
+    const isWord = btn.classList.contains('tk-word');
+    const blob = isWord ? buildContractWordBlob(tpl.title, tpl.body, '') : buildContractPdfBlob(tpl.title, tpl.body, '');
+    downloadBlob(blob, `INA_template_${btn.dataset.type}.${isWord ? 'doc' : 'pdf'}`);
+  });
 
   document.getElementById('signOutBtn').addEventListener('click', async (e) => {
     e.preventDefault();
@@ -347,6 +484,25 @@
 
   /* ---------- Stage cards (NDA -> SOW -> Service Contract, or a single
      Financing Agreement card) ---------- */
+  // "Paso 1 · " for the NDA -> SOW -> Contract sequence; nothing for a
+  // financing agreement.
+  function stepPrefix(type) {
+    const i = INAPlatform.PROJECT_CONTRACT_SEQUENCE.indexOf(type);
+    return i === -1 ? '' : `<span style="color:var(--amber-deep); font-weight:600;">${lang === 'es' ? 'Paso' : 'Step'} ${i + 1} · </span>`;
+  }
+
+  // Signing a stage before the previous one is signed is allowed (two
+  // documents are sometimes signed the same day) but asked first.
+  function confirmSequence(stageType) {
+    const existing = contracts.find((c) => c.id === editingContractId);
+    const blocker = existing && INAPlatform.contractStageBlocker(existing.contract_stages, stageType);
+    if (!blocker) return true;
+    const prev = INAPlatform.contractTypeLabel(blocker.stage_type);
+    return confirm(lang === 'es'
+      ? `"${prev}" todavía no está firmado. El orden es NDA → SOW → Contrato. ¿Marcar esta etapa como firmada igual?`
+      : `"${prev}" isn't signed yet. The order is NDA → SOW → Contract. Mark this stage as signed anyway?`);
+  }
+
   function renderStageCards() {
     const container = document.getElementById('cxStagesList');
     const existing = editingContractId ? contracts.find((c) => c.id === editingContractId) : null;
@@ -354,7 +510,7 @@
     container.innerHTML = sortedStages(existing).map((s) => `
       <div class="risk-row" style="padding:14px; margin-bottom:10px; border:1px solid var(--paper-line); border-radius:10px;" data-stage-id="${s.id}" data-stage-type="${s.stage_type}">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-          <strong style="font-size:13.5px;">${escapeHtml(INAPlatform.contractTypeLabel(s.stage_type))}${s.stage_type === 'nda' ? ` <span style="font-weight:400; color:var(--muted); font-size:11.5px;">(${escapeHtml(t('contracts.stages.optional', 'optional'))})</span>` : ''}</strong>
+          <strong style="font-size:13.5px;">${stepPrefix(s.stage_type)}${escapeHtml(INAPlatform.contractTypeLabel(s.stage_type))}</strong>
           <select class="stage-status-select" style="max-width:170px;">
             ${INAPlatform.CONTRACT_STATUS.map((st) => `<option value="${st.value}" ${st.value === s.status ? 'selected' : ''}>${st[lang] || st.en}</option>`).join('')}
           </select>
@@ -366,6 +522,9 @@
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
           ${INAPlatform.CONTRACT_TEMPLATE_TYPES.includes(s.stage_type) ? `<button type="button" class="btn ghost small stage-generate-btn">${escapeHtml(t('contracts.stages.editGenerate', 'Edit & generate draft'))}</button>` : ''}
           <a href="#" class="stage-generated-link" data-path="${s.generated_storage_path || ''}" style="${s.generated_storage_path ? '' : 'display:none;'}">${escapeHtml(t('contracts.viewDraft', 'View last generated draft'))}</a>
+          <button type="button" class="btn ghost small stage-upload-final-btn">${escapeHtml(t('contracts.uploadFinal', 'Upload final version for signature'))}</button>
+          <input type="file" class="stage-final-file-input" accept=".pdf,.doc,.docx,application/pdf" style="display:none;">
+          <a href="#" class="stage-final-link" data-path="${s.final_storage_path || ''}" style="${s.final_storage_path ? '' : 'display:none;'}">${escapeHtml(t('contracts.viewFinal', 'View final version'))}</a>
           <button type="button" class="btn ghost small stage-upload-signed-btn">${escapeHtml(t('contracts.uploadSigned', 'Upload signed copy'))}</button>
           <input type="file" class="stage-signed-file-input" accept=".pdf,image/*" style="display:none;">
           <a href="#" class="stage-signed-link" data-path="${s.signed_storage_path || ''}" style="${s.signed_storage_path ? '' : 'display:none;'}">${escapeHtml(t('contracts.viewSigned', 'View signed copy'))}</a>
@@ -387,6 +546,7 @@
           </label>
           <div style="display:flex; gap:10px; align-items:center; margin-top:12px;">
             <button type="button" class="btn amber small stage-editor-generate-btn">${escapeHtml(t('contracts.generate', 'Generate draft PDF'))}</button>
+            <button type="button" class="btn ghost small stage-editor-word-btn">${escapeHtml(t('contracts.downloadWord', 'Download as Word to edit'))}</button>
             <span class="stage-editor-note" style="font-size:11px; color:var(--muted);"></span>
           </div>
         </div>` : ''}
@@ -412,6 +572,18 @@
       if (file) await uploadStageSigned(card, file);
       return;
     }
+    if (e.target.classList.contains('stage-final-file-input')) {
+      const file = e.target.files[0];
+      e.target.value = '';
+      if (file) await uploadStageFinal(card, file);
+      return;
+    }
+    if (e.target.classList.contains('stage-status-select') && e.target.value === 'signed' && !confirmSequence(card.dataset.stageType)) {
+      const existing = contracts.find((c) => c.id === editingContractId);
+      const stage = existing && (existing.contract_stages || []).find((x) => x.id === card.dataset.stageId);
+      e.target.value = stage ? stage.status : 'draft';
+      return;
+    }
     if (e.target.classList.contains('stage-editor-upload-input')) {
       const file = e.target.files[0];
       e.target.value = '';
@@ -433,8 +605,25 @@
     const editorUploadBtn = e.target.closest('.stage-editor-upload-btn');
     const editorRestoreBtn = e.target.closest('.stage-editor-restore-btn');
     const editorGenerateBtn = e.target.closest('.stage-editor-generate-btn');
+    const editorWordBtn = e.target.closest('.stage-editor-word-btn');
+    const finalUploadBtn = e.target.closest('.stage-upload-final-btn');
+    const finalLink = e.target.closest('.stage-final-link');
     if (genBtn) { e.preventDefault(); toggleStageEditor(genBtn.closest('[data-stage-id]')); }
-    else if (uploadBtn) { e.preventDefault(); uploadBtn.closest('[data-stage-id]').querySelector('.stage-signed-file-input').click(); }
+    else if (uploadBtn) {
+      e.preventDefault();
+      const card = uploadBtn.closest('[data-stage-id]');
+      if (confirmSequence(card.dataset.stageType)) card.querySelector('.stage-signed-file-input').click();
+    }
+    else if (finalUploadBtn) { e.preventDefault(); finalUploadBtn.closest('[data-stage-id]').querySelector('.stage-final-file-input').click(); }
+    else if (finalLink) { e.preventDefault(); await openStoredFile(finalLink.dataset.path); }
+    else if (editorWordBtn) {
+      e.preventDefault();
+      const card = editorWordBtn.closest('[data-stage-id]');
+      const existing = contracts.find((c) => c.id === editingContractId);
+      const title = card.querySelector('.stage-editor-title').value.trim();
+      const blob = buildContractWordBlob(title, card.querySelector('.stage-editor-body').value, document.getElementById('cxCounterparty').value.trim());
+      downloadBlob(blob, `${slug(existing ? existing.title : title)}_${card.dataset.stageType}.doc`);
+    }
     else if (genLink) { e.preventDefault(); await openStoredFile(genLink.dataset.path); }
     else if (signedLink) { e.preventDefault(); await openStoredFile(signedLink.dataset.path); }
     else if (editorUploadBtn) { e.preventDefault(); editorUploadBtn.closest('[data-stage-id]').querySelector('.stage-editor-upload-input').click(); }
@@ -480,10 +669,24 @@
     }
   }
 
+  async function uploadStageFinal(card, file) {
+    const existing = contracts.find((c) => c.id === editingContractId);
+    if (!existing) return;
+    const stage = (existing.contract_stages || []).find((x) => x.id === card.dataset.stageId);
+    try {
+      const saved = await INAPlatform.uploadFinalContract(existing.id, card.dataset.stageId, card.dataset.stageType, file, existing.title, stage && stage.status);
+      applyStageUpdate(saved);
+      renderStageCards();
+    } catch (err) {
+      alert(err.message || (lang === 'es' ? 'No se pudo subir el archivo.' : "Couldn't upload the file."));
+    }
+  }
+
   function computeSubjectReference(existing) {
     if (existing.project_id) {
       const p = projects.find((x) => x.id === existing.project_id);
-      return p ? p.name : '';
+      if (!p) return '';
+      return lang === 'es' ? `el proyecto "${p.name}"` : `the project "${p.name}"`;
     }
     const p = programs.find((x) => x.id === existing.program_id);
     return p ? (INAPlatform.programDisplayName ? INAPlatform.programDisplayName(p, lang) : p.name) : '';
@@ -505,6 +708,7 @@
       counterpartyName: document.getElementById('cxCounterparty').value.trim(),
       effectiveDate: card.querySelector('.stage-effective-date').value,
       subjectReference: computeSubjectReference(existing),
+      project: existing.project_id ? projects.find((x) => x.id === existing.project_id) : null,
       titleOverride: override ? override[`title_${lang}`] : null,
       bodyOverride: override ? override[`body_${lang}`] : null,
     });
@@ -535,39 +739,7 @@
     btn.innerHTML = `<span>${lang === 'es' ? 'Generando…' : 'Generating…'}</span>`;
     note.textContent = '';
     try {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: 'pt', format: 'letter' });
-      const MARGIN = 56;
-      const PAGE_W = doc.internal.pageSize.getWidth();
-      const PAGE_H = doc.internal.pageSize.getHeight();
-      let y = 72;
-      doc.setFont('times', 'bold');
-      doc.setFontSize(16);
-      doc.text(title, PAGE_W / 2, y, { align: 'center' });
-      y += 34;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      const paragraphs = body.split('\n\n');
-      paragraphs.forEach((para) => {
-        const lines = doc.splitTextToSize(para, PAGE_W - MARGIN * 2);
-        lines.forEach((line) => {
-          if (y > PAGE_H - 90) { doc.addPage(); y = 72; }
-          doc.text(line, MARGIN, y);
-          y += 14;
-        });
-        y += 10;
-      });
-      if (y > PAGE_H - 140) { doc.addPage(); y = 72; }
-      y += 30;
-      doc.setLineWidth(0.75);
-      doc.line(MARGIN, y, MARGIN + 180, y);
-      doc.line(PAGE_W - MARGIN - 180, y, PAGE_W - MARGIN, y);
-      y += 14;
-      doc.setFontSize(9);
-      doc.text('International Network Advisors (INA)', MARGIN, y);
-      doc.text(document.getElementById('cxCounterparty').value.trim() || (lang === 'es' ? 'Contraparte' : 'Counterparty'), PAGE_W - MARGIN - 180, y);
-
-      const blob = doc.output('blob');
+      const blob = buildContractPdfBlob(title, body, document.getElementById('cxCounterparty').value.trim());
       const saved = await INAPlatform.uploadGeneratedContractPdf(existing.id, stageId, stageType, blob, existing.title);
       applyStageUpdate(saved);
       if (saveAsDefault) {
@@ -584,6 +756,20 @@
       btn.innerHTML = originalHTML;
     }
   }
+
+  // New contract for a project: title and counterparty default to the
+  // project's name and generating entity (still editable).
+  function prefillFromProject(projectId) {
+    const p = projects.find((x) => x.id === projectId);
+    if (!p) return;
+    const title = document.getElementById('cxTitle');
+    const counterparty = document.getElementById('cxCounterparty');
+    if (!title.value.trim()) title.value = p.name || '';
+    if (!counterparty.value.trim()) counterparty.value = p.generating_entity_name || '';
+  }
+  document.getElementById('cxProjectSelect').addEventListener('change', (e) => {
+    if (!editingContractId && e.target.value) prefillFromProject(e.target.value);
+  });
 
   function populateProjectSelect(selected) {
     const el = document.getElementById('cxProjectSelect');
@@ -608,12 +794,13 @@
       return `
         <div style="padding:12px 0; border-bottom:1px solid var(--paper-line);">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-            <strong style="font-size:13px;">${escapeHtml(INAPlatform.contractTypeLabel(s.stage_type))}</strong>
+            <strong style="font-size:13px;">${stepPrefix(s.stage_type)}${escapeHtml(INAPlatform.contractTypeLabel(s.stage_type))}</strong>
             <span class="status-pill ${STAGE_STATUS_CLASS[s.status] || 'submitted'}">${escapeHtml(INAPlatform.contractStatusLabel(s.status))}</span>
           </div>
           ${dates.length ? `<p style="font-size:11.5px; color:var(--muted); margin:6px 0 0;">${dates.join(' · ')}</p>` : ''}
           <div style="display:flex; gap:14px; margin-top:8px; flex-wrap:wrap;">
             ${s.generated_storage_path ? `<a href="#" class="view-file-link" data-path="${s.generated_storage_path}">${escapeHtml(t('contracts.viewDraft', 'View last generated draft'))}</a>` : `<span style="font-size:11.5px; color:var(--muted);">${lang === 'es' ? 'Sin borrador generado' : 'No draft generated'}</span>`}
+            ${s.final_storage_path ? `<a href="#" class="view-file-link" data-path="${s.final_storage_path}">${escapeHtml(t('contracts.viewFinal', 'View final version'))}</a>` : ''}
             ${s.signed_storage_path ? `<a href="#" class="view-file-link" data-path="${s.signed_storage_path}">${escapeHtml(t('contracts.viewSigned', 'View signed copy'))}</a>` : ''}
           </div>
         </div>`;
@@ -643,7 +830,7 @@
     await openStoredFile(link.dataset.path);
   });
 
-  function openContractForm(id) {
+  function openContractForm(id, { projectId } = {}) {
     editingContractId = id || null;
     const form = document.getElementById('contractForm');
     form.reset();
@@ -662,6 +849,10 @@
       document.getElementById('cxTitle').value = existing.title || '';
       document.getElementById('cxCounterparty').value = existing.counterparty_name || '';
       document.getElementById('cxNotes').value = existing.notes || '';
+    }
+    if (!existing && projectId) {
+      populateProjectSelect(projectId);
+      prefillFromProject(projectId);
     }
     document.getElementById('cxStagesSection').style.display = existing ? '' : 'none';
     renderStageCards();
@@ -745,6 +936,7 @@
         lang = INAPlatform.currentLang();
         populateFilterSelects();
         renderTable();
+        renderToolkit();
         if (document.getElementById('contractFormOverlay').style.display === 'flex') renderStageCards();
       }, 0);
     });
@@ -799,9 +991,19 @@
       overrides.forEach((row) => { templateOverrides[row.stage_type] = row; });
     } catch (e) { templateOverrides = {}; }
     await loadContracts();
+    renderToolkit();
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('contractsBody').style.display = 'block';
+
+    // ?project=<id> (from the project page's "Contractual status" block):
+    // open that project's contract, or start one prefilled for it.
+    const projectParam = new URLSearchParams(location.search).get('project');
+    if (projectParam) {
+      const existing = contracts.find((c) => c.project_id === projectParam);
+      if (existing) openContractForm(existing.id);
+      else if (projects.some((p) => p.id === projectParam)) openContractForm(null, { projectId: projectParam });
+    }
   }
 
   init();

@@ -369,6 +369,11 @@ const CONTRACT_STATUS = [
    and "other" is a catch-all by definition). */
 const CONTRACT_TEMPLATE_TYPES = ['nda', 'sow', 'service_contract'];
 
+/* The order a project engagement is signed in — each stage expects the
+   previous one signed first (app/contracts.html warns, doesn't block:
+   real life sometimes signs two documents the same day). */
+const PROJECT_CONTRACT_SEQUENCE = ['nda', 'sow', 'service_contract'];
+
 /* Starter legal-document text, NOT reviewed by counsel — every one of
    these is a plain-language placeholder meant to get a first draft on
    paper, not a ready-to-sign contract. app/contracts.html shows a
@@ -378,133 +383,233 @@ const CONTRACT_TEMPLATE_TYPES = ['nda', 'sow', 'service_contract'];
    with real data from the linked project or program — INA's own
    name/address and governing law are deliberately left as blanks for
    someone to fill in by hand, since this file has no reliable source for
-   them. */
+   them.
+
+   Pablo (oct 2026): INA's engagement with a project always goes NDA ->
+   SOW -> Service Contract, and the scope of INA's services is: improve
+   the project's presentation (format and content) up to "Investment
+   Ready" in INA's workflow, build the best financing proposal, produce
+   the documentation financing entities require, and present the project
+   to them until financing is obtained. The SOW and the Service Contract
+   below spell that scope out, with a typical fee structure (monthly
+   retainer + "Investment Ready" milestone fee + success fee on the
+   financing obtained) whose amounts are left as [____] blanks. */
 const CONTRACT_TEMPLATES = {
   nda: {
     title: { en: 'Mutual Non-Disclosure Agreement', es: 'Acuerdo Mutuo de Confidencialidad' },
     body: {
-      en: `This Non-Disclosure Agreement ("Agreement") is entered into as of {{effective_date}} by and between International Network Advisors ("INA"), and {{counterparty_name}} ("Counterparty"), together referred to as the "Parties", in connection with {{subject_reference}}.
+      en: `This Mutual Non-Disclosure Agreement ("Agreement") is entered into as of {{effective_date}} by and between International Network Advisors ("INA") and {{counterparty_name}} ("Counterparty"), together the "Parties", in connection with {{subject_reference}} (the "Project").
 
-1. PURPOSE. The Parties wish to explore a potential business relationship in connection with the above-referenced matter (the "Purpose"), during which each Party may disclose to the other certain confidential and proprietary information.
+1. PURPOSE. The Counterparty wishes INA to evaluate the Project and to explore the provision of INA's advisory services for its structuring and financing (the "Purpose"). In that context each Party may disclose to the other technical, economic, financial, legal and commercial information about the Project and about its own business.
 
-2. CONFIDENTIAL INFORMATION. "Confidential Information" means any non-public information disclosed by either Party, whether orally, in writing, or in any other form, that is designated as confidential or that reasonably should be understood to be confidential given the nature of the information and the circumstances of disclosure.
+2. CONFIDENTIAL INFORMATION. "Confidential Information" means any non-public information disclosed by either Party, orally, in writing, through INA's digital platform or in any other form, that is designated as confidential or that reasonably should be understood to be confidential given its nature and the circumstances of disclosure, including the Project's documents, models, budgets and analyses.
 
-3. OBLIGATIONS. The receiving Party shall (a) hold the Confidential Information in strict confidence, (b) not disclose it to any third party without the prior written consent of the disclosing Party, and (c) use it solely for the Purpose.
+3. OBLIGATIONS. The receiving Party shall (a) hold the Confidential Information in strict confidence, (b) not disclose it to any third party without the prior written consent of the disclosing Party, (c) use it solely for the Purpose, and (d) protect it with at least the same degree of care it uses for its own confidential information, and never less than reasonable care.
 
-4. EXCLUSIONS. Confidential Information does not include information that: (a) is or becomes publicly available through no fault of the receiving Party; (b) was rightfully known by the receiving Party before disclosure; (c) is rightfully received from a third party without breach of any confidentiality obligation; or (d) is independently developed without use of the Confidential Information.
+4. AUTHORIZED DISCLOSURE. INA may share Confidential Information with its directors, employees, Advisory Board members and professional advisors who need to know it for the Purpose and are bound by equivalent confidentiality obligations. Disclosure to financing entities, investors or other third parties shall require the Counterparty's prior written authorization, which may be granted later under a Statement of Work or Service Contract.
 
-5. TERM. This Agreement shall remain in effect for {{term_years}} year(s) from the effective date, unless earlier terminated by either Party upon written notice.
+5. EXCLUSIONS. Confidential Information does not include information that: (a) is or becomes publicly available through no fault of the receiving Party; (b) was rightfully known by the receiving Party before disclosure; (c) is rightfully received from a third party without breach of any confidentiality obligation; (d) is independently developed without use of the Confidential Information; or (e) must be disclosed by law or court order, in which case the receiving Party shall give prompt notice to the disclosing Party where legally permitted.
 
-6. GOVERNING LAW. This Agreement shall be governed by the laws of {{governing_law}}.
+6. RETURN OR DESTRUCTION. Upon written request, or at the end of the Purpose, the receiving Party shall return or destroy the Confidential Information, except for copies it is required to keep by law or under its regular backup procedures, which remain subject to this Agreement.
 
-7. NO LICENSE. Nothing in this Agreement shall be construed as granting any rights under any patent, copyright, trademark, or other intellectual property right.
+7. TERM. This Agreement shall remain in effect for {{term_years}} year(s) from the effective date. The confidentiality obligations shall survive for two (2) years after its expiration or termination.
+
+8. NO OBLIGATION. This Agreement does not oblige either Party to enter into any further agreement. Any engagement of INA's services shall be governed by a Statement of Work and a Service Contract signed by the Parties.
+
+9. NO LICENSE. Nothing in this Agreement grants any right under any patent, copyright, trademark or other intellectual property right of either Party.
+
+10. GOVERNING LAW AND JURISDICTION. This Agreement shall be governed by the laws of {{governing_law}}. Any dispute shall be submitted to the competent courts of __________.
 
 IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date first written above.`,
-      es: `El presente Acuerdo de Confidencialidad ("Acuerdo") se celebra con fecha {{effective_date}} entre International Network Advisors ("INA") y {{counterparty_name}} ("Contraparte"), en conjunto las "Partes", en relación con {{subject_reference}}.
+      es: `El presente Acuerdo Mutuo de Confidencialidad ("Acuerdo") se celebra con fecha {{effective_date}} entre International Network Advisors ("INA") y {{counterparty_name}} ("Contraparte"), en conjunto las "Partes", en relación con {{subject_reference}} (el "Proyecto").
 
-1. OBJETO. Las Partes desean explorar una potencial relación comercial vinculada al asunto referido (el "Objeto"), en cuyo marco cada Parte podrá revelar a la otra cierta información confidencial y de carácter reservado.
+1. OBJETO. La Contraparte desea que INA evalúe el Proyecto y explorar la prestación de los servicios de asesoría de INA para su estructuración y financiamiento (el "Objeto"). En ese marco, cada Parte podrá revelar a la otra información técnica, económica, financiera, legal y comercial sobre el Proyecto y sobre su propia actividad.
 
-2. INFORMACIÓN CONFIDENCIAL. Se entiende por "Información Confidencial" toda información no pública revelada por cualquiera de las Partes, en forma oral, escrita o de cualquier otro modo, que sea designada como confidencial o que razonablemente deba considerarse tal según su naturaleza y las circunstancias de su revelación.
+2. INFORMACIÓN CONFIDENCIAL. Se entiende por "Información Confidencial" toda información no pública revelada por cualquiera de las Partes, en forma oral, escrita, a través de la plataforma digital de INA o por cualquier otro medio, que sea designada como confidencial o que razonablemente deba considerarse tal según su naturaleza y las circunstancias de su revelación, incluyendo documentos, modelos, presupuestos y análisis del Proyecto.
 
-3. OBLIGACIONES. La Parte receptora deberá (a) mantener la Información Confidencial en estricta reserva, (b) no divulgarla a terceros sin el consentimiento previo y por escrito de la Parte reveladora, y (c) utilizarla exclusivamente para el Objeto.
+3. OBLIGACIONES. La Parte receptora deberá (a) mantener la Información Confidencial en estricta reserva, (b) no divulgarla a terceros sin el consentimiento previo y por escrito de la Parte reveladora, (c) utilizarla exclusivamente para el Objeto, y (d) protegerla con al menos el mismo cuidado que aplica a su propia información confidencial, y nunca menos que un cuidado razonable.
 
-4. EXCLUSIONES. No se considera Información Confidencial aquella que: (a) sea o se torne pública sin culpa de la Parte receptora; (b) fuera legítimamente conocida por la Parte receptora antes de su revelación; (c) sea recibida legítimamente de un tercero sin violación de obligación de confidencialidad alguna; o (d) sea desarrollada de forma independiente sin utilizar la Información Confidencial.
+4. DIVULGACIÓN AUTORIZADA. INA podrá compartir la Información Confidencial con sus directores, empleados, miembros de su Advisory Board y asesores profesionales que necesiten conocerla para el Objeto y estén sujetos a obligaciones de confidencialidad equivalentes. La divulgación a entidades de financiamiento, inversores u otros terceros requerirá la autorización previa y por escrito de la Contraparte, que podrá otorgarse posteriormente en un Alcance de Trabajo (SOW) o Contrato de Servicios.
 
-5. PLAZO. Este Acuerdo permanecerá vigente por {{term_years}} año(s) desde la fecha de entrada en vigencia, salvo terminación anticipada por cualquiera de las Partes mediante notificación por escrito.
+5. EXCLUSIONES. No se considera Información Confidencial aquella que: (a) sea o se torne pública sin culpa de la Parte receptora; (b) fuera legítimamente conocida por la Parte receptora antes de su revelación; (c) sea recibida legítimamente de un tercero sin violación de obligación de confidencialidad alguna; (d) sea desarrollada de forma independiente sin utilizar la Información Confidencial; o (e) deba revelarse por disposición legal u orden judicial, en cuyo caso la Parte receptora notificará de inmediato a la Parte reveladora cuando la ley lo permita.
 
-6. LEY APLICABLE. Este Acuerdo se rige por las leyes de {{governing_law}}.
+6. DEVOLUCIÓN O DESTRUCCIÓN. A solicitud escrita, o al finalizar el Objeto, la Parte receptora devolverá o destruirá la Información Confidencial, salvo las copias que deba conservar por ley o por sus procedimientos habituales de respaldo, que seguirán sujetas a este Acuerdo.
 
-7. SIN LICENCIA. Nada de lo aquí dispuesto podrá interpretarse como el otorgamiento de derecho alguno sobre patentes, derechos de autor, marcas u otra propiedad intelectual.
+7. PLAZO. Este Acuerdo permanecerá vigente por {{term_years}} año(s) desde la fecha de entrada en vigencia. Las obligaciones de confidencialidad subsistirán durante dos (2) años posteriores a su vencimiento o terminación.
+
+8. SIN OBLIGACIÓN DE CONTRATAR. Este Acuerdo no obliga a ninguna de las Partes a celebrar otros acuerdos. Toda contratación de los servicios de INA se regirá por un Alcance de Trabajo (SOW) y un Contrato de Servicios suscriptos por las Partes.
+
+9. SIN LICENCIA. Nada de lo aquí dispuesto otorga derecho alguno sobre patentes, derechos de autor, marcas u otra propiedad intelectual de cualquiera de las Partes.
+
+10. LEY APLICABLE Y JURISDICCIÓN. Este Acuerdo se rige por las leyes de {{governing_law}}. Toda controversia se someterá a los tribunales competentes de __________.
 
 EN FE DE LO CUAL, las Partes suscriben el presente Acuerdo en la fecha arriba indicada.`,
     },
   },
   sow: {
-    title: { en: 'Statement of Work', es: 'Alcance de Trabajo' },
+    title: { en: 'Statement of Work — Project Structuring and Financing Advisory', es: 'Alcance de Trabajo (SOW) — Asesoría para la Estructuración y Financiamiento del Proyecto' },
     body: {
-      en: `This Statement of Work ("SOW") is entered into as of {{effective_date}} by and between International Network Advisors ("INA") and {{counterparty_name}} ("Client"), in connection with {{subject_reference}}, and is governed by the terms of the underlying Service Contract between the Parties.
+      en: `This Statement of Work ("SOW") is entered into as of {{effective_date}} by and between International Network Advisors ("INA") and {{counterparty_name}} ("Client"), in connection with {{subject_reference}} (the "Project"). It defines the scope, deliverables, timeline and fees of the services INA will provide, and will be incorporated as Annex I to the Service Contract the Parties sign. The confidentiality of the information exchanged is governed by the Non-Disclosure Agreement already signed by the Parties.
 
-1. SCOPE OF WORK. INA shall provide advisory services in connection with the Project, including [describe specific deliverables — structuring support, financing readiness assessment, multilateral finance navigation, etc.].
+PROJECT: {{project_name}}
+Type: {{project_type}} · Country: {{project_country}} · Estimated investment: {{project_budget}}
 
-2. DELIVERABLES. [List specific deliverables and their expected form — reports, assessments, recommendations, introductions to financing entities, etc.]
+1. OBJECTIVE. To take the Project to the "Investment Ready" stage of INA's project workflow and to obtain its financing, by preparing the best possible financing proposal and managing it with financing entities until financing is secured.
 
-3. TIMELINE. The services described herein are expected to be performed over a period of [duration], commencing on {{effective_date}}.
+2. SCOPE OF SERVICES. INA shall provide the following services:
 
-4. FEES. [Describe fee structure — fixed fee, retainer, success fee, or a combination.]
+2.1 Project presentation and readiness (up to "Investment Ready"). Review the Project's documentation and diagnose its gaps using INA's Investment Readiness methodology and digital platform; improve the Project's presentation in both format and content (technical, economic-financial, legal, regulatory and ESG); build or refine the risk matrix and the financial model; and prepare the Project's executive presentation and investment memorandum, until the Project reaches the "Investment Ready" stage of INA's workflow.
 
-5. CLIENT RESPONSIBILITIES. Client shall provide timely access to project information, documentation, and personnel reasonably necessary for INA to perform the services described herein.
+2.2 Financing proposal. Identify and evaluate the most suitable sources of financing (multilateral and development banks, development finance institutions, export credit agencies, commercial banks, investment funds, universal service funds and other public programs), and design the best financing structure for the Project (debt, equity, blended finance, guarantees and/or non-reimbursable contributions), reflected in INA's Investment Proposal.
 
-6. GOVERNING LAW. This SOW shall be governed by the laws of {{governing_law}}, and incorporates by reference the terms of the Service Contract between the Parties.
+2.3 Documentation required by financing entities. Prepare the documentation each selected financing entity requires: project profiles, concept notes, application forms, financial and technical annexes, environmental and social safeguards, due diligence support and an organized data room.
+
+2.4 Presentations and management until financing. Present the Project to the selected financing entities, coordinate meetings, answer their requests for information, support the negotiation of terms (term sheet) and accompany the Client until the financing agreement is signed.
+
+3. DELIVERABLES AND MILESTONES.
+Milestone 1 — Diagnosis and gap-closure plan: [__] weeks from the effective date.
+Milestone 2 — Project "Investment Ready" (improved documentation, risk matrix, financial model, executive presentation): [__] months.
+Milestone 3 — Investment Proposal and financing structure: [__] months.
+Milestone 4 — Application packages submitted to the selected financing entities: [__] months.
+Milestone 5 — Financing agreement signed (success event).
+
+4. TIMELINE. The services are estimated to be performed over [__] months from the effective date, subject to the timing of the financing entities.
+
+5. FEES. The Client shall pay INA:
+(a) Monthly fee (retainer): USD [______] per month, from the effective date until the success event or the termination of the engagement, invoiced monthly in advance.
+(b) Milestone fee: USD [______] when the Project reaches the "Investment Ready" stage (Milestone 2).
+(c) Success fee: [__]% of the amount of financing effectively obtained for the Project from entities introduced or managed by INA, payable upon signing of each financing agreement. [__]% of the monthly fees paid shall be credited against the success fee.
+(d) Expenses: travel and third-party expenses (translations, certifications, specialized studies) shall be reimbursed at cost, provided they were approved in advance and in writing by the Client.
+(e) Fees are stated in US dollars and exclude VAT and other applicable taxes. Invoices shall be paid within thirty (30) days; payments in Argentine pesos shall be made at the Banco de la Nación Argentina selling exchange rate on the day before payment.
+
+6. CLIENT RESPONSIBILITIES. The Client shall provide timely access to the Project's information, documentation and personnel; designate a counterpart with decision-making authority; validate deliverables within ten (10) business days; and authorize INA in writing to share the Project's information with the selected financing entities.
+
+7. EXCLUSIONS. The services do not include legal opinions, accounting audits, detailed engineering, environmental impact studies or regulatory filings in the Client's name, which may be provided by third parties at the Client's expense. INA's obligation is one of means and not of result: INA does not guarantee that financing will be obtained, nor its amount or conditions, which depend on the decisions of the financing entities.
+
+8. ACCEPTANCE. The Parties approve this SOW as the basis of the Service Contract to be signed.
 
 IN WITNESS WHEREOF, the Parties have executed this Statement of Work as of the date first written above.`,
-      es: `El presente Alcance de Trabajo ("SOW") se celebra con fecha {{effective_date}} entre International Network Advisors ("INA") y {{counterparty_name}} ("Cliente"), en relación con {{subject_reference}}, y se rige por los términos del Contrato de Servicio suscripto entre las Partes.
+      es: `El presente Alcance de Trabajo ("SOW") se celebra con fecha {{effective_date}} entre International Network Advisors ("INA") y {{counterparty_name}} ("Cliente"), en relación con {{subject_reference}} (el "Proyecto"). Define el alcance, los entregables, los plazos y los honorarios de los servicios que prestará INA, y será incorporado como Anexo I al Contrato de Servicios que suscriban las Partes. La confidencialidad de la información intercambiada se rige por el Acuerdo de Confidencialidad ya suscripto entre las Partes.
 
-1. ALCANCE DEL TRABAJO. INA prestará servicios de asesoría en relación con el Proyecto, incluyendo [describir entregables específicos — apoyo en estructuración, evaluación de preparación para financiamiento, navegación de financiamiento multilateral, etc.].
+PROYECTO: {{project_name}}
+Tipo: {{project_type}} · País: {{project_country}} · Inversión estimada: {{project_budget}}
 
-2. ENTREGABLES. [Detallar los entregables específicos y su forma esperada — informes, evaluaciones, recomendaciones, presentaciones a entidades financieras, etc.]
+1. OBJETIVO. Llevar el Proyecto a la etapa "Listo para Inversión" del workflow de proyectos de INA y obtener su financiamiento, preparando la mejor propuesta de financiamiento posible y gestionándola ante las entidades de financiamiento hasta conseguirlo.
 
-3. PLAZO. Se espera que los servicios aquí descriptos se presten durante un período de [duración], a partir del {{effective_date}}.
+2. ALCANCE DE LOS SERVICIOS. INA prestará los siguientes servicios:
 
-4. HONORARIOS. [Describir la estructura de honorarios — fee fijo, retainer, fee de éxito, o una combinación.]
+2.1 Presentación y preparación del Proyecto (hasta "Listo para Inversión"). Revisar la documentación del Proyecto y diagnosticar sus brechas con la metodología de Investment Readiness y la plataforma digital de INA; mejorar la presentación del Proyecto tanto en formato como en contenido (técnico, económico-financiero, legal, regulatorio y ESG); construir o ajustar la matriz de riesgos y el modelo financiero; y preparar la presentación ejecutiva y el memorando de inversión del Proyecto, hasta que alcance la etapa "Listo para Inversión" del workflow de INA.
 
-5. RESPONSABILIDADES DEL CLIENTE. El Cliente deberá brindar acceso oportuno a la información del proyecto, documentación y personal razonablemente necesarios para que INA preste los servicios aquí descriptos.
+2.2 Propuesta de financiamiento. Identificar y evaluar las fuentes de financiamiento más adecuadas (bancos multilaterales y de desarrollo, instituciones de financiamiento al desarrollo, agencias de crédito a la exportación, bancos comerciales, fondos de inversión, fondos de servicio universal y otros programas públicos), y diseñar la mejor estructura de financiamiento para el Proyecto (deuda, capital, financiamiento combinado, garantías y/o aportes no reembolsables), plasmada en la Propuesta de Inversión de INA.
 
-6. LEY APLICABLE. Este SOW se rige por las leyes de {{governing_law}}, e incorpora por referencia los términos del Contrato de Servicio entre las Partes.
+2.3 Documentación requerida por las entidades de financiamiento. Preparar la documentación que exija cada entidad de financiamiento seleccionada: perfiles de proyecto, notas conceptuales, formularios de solicitud, anexos financieros y técnicos, salvaguardas ambientales y sociales, soporte para la due diligence y un data room organizado.
+
+2.4 Presentaciones y gestión hasta conseguir el financiamiento. Presentar el Proyecto ante las entidades de financiamiento seleccionadas, coordinar reuniones, responder sus requerimientos de información, apoyar la negociación de condiciones (term sheet) y acompañar al Cliente hasta la firma del acuerdo de financiamiento.
+
+3. ENTREGABLES E HITOS.
+Hito 1 — Diagnóstico y plan de cierre de brechas: [__] semanas desde la fecha de entrada en vigencia.
+Hito 2 — Proyecto "Listo para Inversión" (documentación mejorada, matriz de riesgos, modelo financiero, presentación ejecutiva): [__] meses.
+Hito 3 — Propuesta de Inversión y estructura de financiamiento: [__] meses.
+Hito 4 — Carpetas de solicitud presentadas ante las entidades de financiamiento seleccionadas: [__] meses.
+Hito 5 — Firma del acuerdo de financiamiento (evento de éxito).
+
+4. PLAZO. Se estima que los servicios se prestarán durante [__] meses desde la fecha de entrada en vigencia, sujeto a los tiempos de las entidades de financiamiento.
+
+5. HONORARIOS. El Cliente abonará a INA:
+(a) Honorario mensual (retainer): USD [______] por mes, desde la fecha de entrada en vigencia hasta el evento de éxito o la terminación del encargo, facturado por mes adelantado.
+(b) Honorario por hito: USD [______] al alcanzar el Proyecto la etapa "Listo para Inversión" (Hito 2).
+(c) Honorario de éxito (success fee): [__]% del monto de financiamiento efectivamente obtenido para el Proyecto de entidades presentadas o gestionadas por INA, pagadero a la firma de cada acuerdo de financiamiento. El [__]% de los honorarios mensuales abonados se descontará del honorario de éxito.
+(d) Gastos: los gastos de viaje y de terceros (traducciones, certificaciones, estudios especializados) se reintegrarán al costo, siempre que hayan sido aprobados previamente y por escrito por el Cliente.
+(e) Los honorarios se expresan en dólares estadounidenses y no incluyen IVA ni otros impuestos aplicables. Las facturas se abonarán dentro de los treinta (30) días; los pagos en pesos argentinos se realizarán al tipo de cambio vendedor del Banco de la Nación Argentina del día anterior al pago.
+
+6. RESPONSABILIDADES DEL CLIENTE. El Cliente deberá brindar acceso oportuno a la información, documentación y personal del Proyecto; designar un interlocutor con capacidad de decisión; validar los entregables dentro de los diez (10) días hábiles; y autorizar por escrito a INA a compartir la información del Proyecto con las entidades de financiamiento seleccionadas.
+
+7. EXCLUSIONES. Los servicios no incluyen dictámenes legales, auditorías contables, ingeniería de detalle, estudios de impacto ambiental ni trámites regulatorios a nombre del Cliente, que podrán ser provistos por terceros a cargo del Cliente. La obligación de INA es de medios y no de resultado: INA no garantiza la obtención del financiamiento, ni su monto ni sus condiciones, que dependen de las decisiones de las entidades de financiamiento.
+
+8. CONFORMIDAD. Las Partes aprueban este SOW como base del Contrato de Servicios a suscribir.
 
 EN FE DE LO CUAL, las Partes suscriben el presente Alcance de Trabajo en la fecha arriba indicada.`,
     },
   },
   service_contract: {
-    title: { en: 'Service Contract', es: 'Contrato de Servicio' },
+    title: { en: 'Advisory Services Contract', es: 'Contrato de Servicios de Asesoría' },
     body: {
-      en: `This Service Contract ("Contract") is entered into as of {{effective_date}} by and between International Network Advisors ("INA") and {{counterparty_name}} ("Client"), in connection with {{subject_reference}}.
+      en: `This Advisory Services Contract ("Contract") is entered into as of {{effective_date}} by and between International Network Advisors ("INA") and {{counterparty_name}} ("Client"), together the "Parties", in connection with {{subject_reference}} (the "Project").
 
-1. SERVICES. INA shall provide Client the following advisory services: [describe the specific services to be provided]. Any additional services may be further detailed in one or more Statements of Work ("SOW") executed by the Parties from time to time and incorporated herein by reference.
+1. PURPOSE. The Client engages INA to provide advisory services for the structuring and financing of the Project, and INA accepts, under the terms of this Contract and of the Statement of Work signed by the Parties, which is incorporated as Annex I (the "SOW").
 
-2. WORK PLAN AND DELIVERABLES. The services shall be performed in accordance with the following work plan: [describe the work plan — phases, milestones, expected sequencing]. The deliverables to be provided by INA under this Contract are: [list specific deliverables — reports, assessments, recommendations, introductions to financing entities, etc.].
+2. SERVICES. INA shall: (a) improve the presentation of the Project in format and content until it reaches the "Investment Ready" stage of INA's workflow; (b) prepare the best financing proposal for the Project; (c) generate the documentation required by the financing entities; and (d) present the Project to the financing entities and manage the process until financing is obtained. The detailed scope, deliverables and milestones are those set out in the SOW. Any additional service shall require a new SOW or an amendment signed by both Parties.
 
-3. PROJECT TEAM. The services shall be performed by the following INA team: [list the team members assigned to this engagement and their roles/responsibilities]. INA may substitute any team member with personnel of comparable experience upon reasonable notice to Client.
+3. TERM. This Contract shall commence on {{effective_date}} and continue for {{term_years}} year(s) or until the signing of the financing agreement for the Project, whichever occurs first, unless terminated earlier under Section 12. It may be extended by written agreement of the Parties.
 
-4. METHODOLOGY. INA shall perform the services in accordance with the following working methodology: [describe the general approach — review/feedback cycles, tools, reporting cadence, coordination meetings, etc.].
+4. INA TEAM AND METHODOLOGY. The services shall be performed by INA's team led by [name of the engagement lead], with the support of INA's Advisory Board members as needed. INA shall work with its Project Structuring Framework methodology and digital platform, and shall report progress to the Client [monthly], through coordination meetings and the status of the Project on INA's platform.
 
-5. TERM AND DURATION. This Contract shall commence on {{effective_date}} and continue for {{term_years}} year(s), unless earlier terminated as provided herein. The work plan described in Section 2 is expected to be completed within [estimated duration].
+5. FEES AND PAYMENT. The Client shall pay INA the fees set out in the SOW: (a) a monthly fee (retainer); (b) a milestone fee upon the Project reaching "Investment Ready"; and (c) a success fee calculated as a percentage of the financing effectively obtained, payable upon signing of each financing agreement. Invoices shall be paid within thirty (30) days of receipt; late payments shall accrue interest at [__]% per year. Fees exclude VAT and other applicable taxes.
 
-6. FEES AND PAYMENT. [Describe payment terms — fee structure, invoicing frequency, currency, late payment terms.]
+6. EXPENSES. Travel and third-party expenses previously approved in writing by the Client shall be reimbursed at cost against supporting documentation.
 
-7. CONFIDENTIALITY. The Parties' confidentiality obligations are governed by the Non-Disclosure Agreement executed between them, incorporated herein by reference.
+7. TAIL PERIOD. The success fee shall also be due on any financing for the Project obtained within twelve (12) months after the termination or expiration of this Contract from financing entities introduced or managed by INA during its term.
 
-8. INDEPENDENT CONTRACTOR. INA is an independent contractor, and nothing in this Contract shall be construed to create a partnership, joint venture, or employment relationship between the Parties.
+8. EXCLUSIVITY. During the term of this Contract, the Client shall not engage other advisors for the same services regarding the Project without INA's prior written consent. [Delete this clause if the engagement is non-exclusive.]
 
-9. LIMITATION OF LIABILITY. [Describe liability caps and exclusions, per INA's standard terms.]
+9. CLIENT OBLIGATIONS. The Client shall provide complete, accurate and timely information; designate a counterpart with decision-making authority; validate deliverables within ten (10) business days; and authorize INA to share the Project's information with the financing entities. The Client remains responsible for the accuracy of the information it provides and for its own decisions about the Project and its financing.
 
-10. TERMINATION. Either Party may terminate this Contract upon [notice period] written notice to the other Party.
+10. CONFIDENTIALITY. The Parties' confidentiality obligations are governed by the Non-Disclosure Agreement signed between them, incorporated herein by reference, which shall remain in force during the term of this Contract.
 
-11. GOVERNING LAW. This Contract shall be governed by the laws of {{governing_law}}.
+11. INTELLECTUAL PROPERTY. The deliverables prepared specifically for the Project shall belong to the Client once the corresponding fees have been paid. INA retains ownership of its methodologies, tools, templates, platform and prior know-how, and may use the Project as a reference case only with the Client's prior written consent.
+
+12. TERMINATION. Either Party may terminate this Contract without cause with thirty (30) days' prior written notice. Either Party may terminate it immediately upon material breach by the other Party not cured within fifteen (15) days of notice. Upon termination, the Client shall pay the fees accrued up to the termination date, and Section 7 shall apply.
+
+13. LIMITATION OF LIABILITY. INA's obligation is one of means and not of result: INA does not guarantee that financing will be obtained, nor its amount or conditions. INA's total liability under this Contract shall not exceed the fees effectively received in the [twelve (12)] months preceding the claim, and neither Party shall be liable for indirect damages or lost profits.
+
+14. INDEPENDENT CONTRACTOR. INA acts as an independent contractor. Nothing in this Contract creates a partnership, joint venture, agency or employment relationship between the Parties.
+
+15. ASSIGNMENT. Neither Party may assign this Contract without the prior written consent of the other.
+
+16. NOTICES. Notices shall be sent in writing to the addresses and emails stated by the Parties below.
+
+17. GOVERNING LAW AND JURISDICTION. This Contract shall be governed by the laws of {{governing_law}}. Any dispute shall be submitted to the competent courts of __________.
+
+ANNEX I: Statement of Work (SOW) signed by the Parties.
 
 IN WITNESS WHEREOF, the Parties have executed this Contract as of the date first written above.`,
-      es: `El presente Contrato de Servicio ("Contrato") se celebra con fecha {{effective_date}} entre International Network Advisors ("INA") y {{counterparty_name}} ("Cliente"), en relación con {{subject_reference}}.
+      es: `El presente Contrato de Servicios de Asesoría ("Contrato") se celebra con fecha {{effective_date}} entre International Network Advisors ("INA") y {{counterparty_name}} ("Cliente"), en conjunto las "Partes", en relación con {{subject_reference}} (el "Proyecto").
 
-1. SERVICIOS. INA prestará al Cliente los siguientes servicios de asesoría: [describir los servicios específicos a prestar]. Cualquier servicio adicional podrá detallarse en uno o más Alcances de Trabajo ("SOW") que las Partes suscriban oportunamente, incorporados aquí por referencia.
+1. OBJETO. El Cliente contrata a INA para la prestación de servicios de asesoría para la estructuración y el financiamiento del Proyecto, e INA acepta, en los términos de este Contrato y del Alcance de Trabajo suscripto por las Partes, que se incorpora como Anexo I (el "SOW").
 
-2. PLAN DE TRABAJO Y ENTREGABLES. Los servicios se prestarán conforme al siguiente plan de trabajo: [describir el plan de trabajo — etapas, hitos, secuencia esperada]. Los entregables que INA proveerá bajo este Contrato son: [detallar los entregables específicos — informes, evaluaciones, recomendaciones, presentaciones a entidades financieras, etc.].
+2. SERVICIOS. INA deberá: (a) mejorar la presentación del Proyecto en formato y contenido hasta que alcance la etapa "Listo para Inversión" del workflow de INA; (b) armar la mejor propuesta de financiamiento para el Proyecto; (c) generar la documentación requerida por las entidades de financiamiento; y (d) presentar el Proyecto ante las entidades de financiamiento y gestionar el proceso hasta conseguir el financiamiento. El alcance detallado, los entregables y los hitos son los establecidos en el SOW. Todo servicio adicional requerirá un nuevo SOW o una adenda firmada por ambas Partes.
 
-3. EQUIPO DE TRABAJO. Los servicios serán prestados por el siguiente equipo de INA: [listar los integrantes del equipo asignado a este proyecto y sus roles/responsabilidades]. INA podrá sustituir a cualquier integrante del equipo por personal de experiencia comparable, previa notificación razonable al Cliente.
+3. PLAZO. Este Contrato entrará en vigencia el {{effective_date}} y se extenderá por {{term_years}} año(s) o hasta la firma del acuerdo de financiamiento del Proyecto, lo que ocurra primero, salvo terminación anticipada conforme a la Cláusula 12. Podrá prorrogarse por acuerdo escrito de las Partes.
 
-4. METODOLOGÍA. INA prestará los servicios conforme a la siguiente metodología de trabajo: [describir el enfoque general — ciclos de revisión/feedback, herramientas, frecuencia de reportes, reuniones de coordinación, etc.].
+4. EQUIPO Y METODOLOGÍA DE INA. Los servicios serán prestados por el equipo de INA liderado por [nombre del responsable del encargo], con el apoyo de miembros del Advisory Board de INA cuando sea necesario. INA trabajará con su metodología Project Structuring Framework y su plataforma digital, e informará el avance al Cliente [mensualmente], mediante reuniones de coordinación y el estado del Proyecto en la plataforma de INA.
 
-5. PLAZO Y DURACIÓN. Este Contrato entrará en vigencia el {{effective_date}} y continuará por {{term_years}} año(s), salvo terminación anticipada conforme a lo aquí previsto. Se estima que el plan de trabajo descripto en la Sección 2 se completará en [duración estimada].
+5. HONORARIOS Y FORMA DE PAGO. El Cliente abonará a INA los honorarios establecidos en el SOW: (a) un honorario mensual (retainer); (b) un honorario por hito cuando el Proyecto alcance la etapa "Listo para Inversión"; y (c) un honorario de éxito calculado como porcentaje del financiamiento efectivamente obtenido, pagadero a la firma de cada acuerdo de financiamiento. Las facturas se abonarán dentro de los treinta (30) días de recibidas; los pagos en mora devengarán un interés del [__]% anual. Los honorarios no incluyen IVA ni otros impuestos aplicables.
 
-6. HONORARIOS Y PAGO. [Describir condiciones de pago — estructura de honorarios, frecuencia de facturación, moneda, mora.]
+6. GASTOS. Los gastos de viaje y de terceros aprobados previamente y por escrito por el Cliente se reintegrarán al costo, contra presentación de comprobantes.
 
-7. CONFIDENCIALIDAD. Las obligaciones de confidencialidad de las Partes se rigen por el Acuerdo de Confidencialidad suscripto entre ellas, incorporado aquí por referencia.
+7. PERÍODO DE COLA (TAIL). El honorario de éxito también se devengará sobre todo financiamiento del Proyecto obtenido dentro de los doce (12) meses posteriores a la terminación o vencimiento de este Contrato de entidades de financiamiento presentadas o gestionadas por INA durante su vigencia.
 
-8. CONTRATISTA INDEPENDIENTE. INA actúa como contratista independiente, y nada en este Contrato podrá interpretarse como la creación de una sociedad, joint venture o relación laboral entre las Partes.
+8. EXCLUSIVIDAD. Durante la vigencia de este Contrato, el Cliente no contratará a otros asesores para los mismos servicios respecto del Proyecto sin el consentimiento previo y por escrito de INA. [Eliminar esta cláusula si el encargo no es exclusivo.]
 
-9. LIMITACIÓN DE RESPONSABILIDAD. [Describir topes y exclusiones de responsabilidad, según los términos estándar de INA.]
+9. OBLIGACIONES DEL CLIENTE. El Cliente deberá brindar información completa, veraz y oportuna; designar un interlocutor con capacidad de decisión; validar los entregables dentro de los diez (10) días hábiles; y autorizar a INA a compartir la información del Proyecto con las entidades de financiamiento. El Cliente es responsable de la veracidad de la información que provee y de sus propias decisiones sobre el Proyecto y su financiamiento.
 
-10. RESCISIÓN. Cualquiera de las Partes podrá rescindir este Contrato mediante notificación por escrito con [plazo de preaviso] de anticipación.
+10. CONFIDENCIALIDAD. Las obligaciones de confidencialidad de las Partes se rigen por el Acuerdo de Confidencialidad suscripto entre ellas, incorporado aquí por referencia, que se mantendrá vigente durante la vigencia de este Contrato.
 
-11. LEY APLICABLE. Este Contrato se rige por las leyes de {{governing_law}}.
+11. PROPIEDAD INTELECTUAL. Los entregables elaborados específicamente para el Proyecto serán propiedad del Cliente una vez abonados los honorarios correspondientes. INA conserva la propiedad de sus metodologías, herramientas, templates, plataforma y conocimiento previo, y solo podrá utilizar el Proyecto como caso de referencia con el consentimiento previo y por escrito del Cliente.
+
+12. RESCISIÓN. Cualquiera de las Partes podrá rescindir este Contrato sin causa con un preaviso escrito de treinta (30) días. Cualquiera de las Partes podrá rescindirlo de inmediato ante un incumplimiento grave de la otra que no sea subsanado dentro de los quince (15) días de notificado. En caso de rescisión, el Cliente abonará los honorarios devengados hasta la fecha de terminación, y será de aplicación la Cláusula 7.
+
+13. LIMITACIÓN DE RESPONSABILIDAD. La obligación de INA es de medios y no de resultado: INA no garantiza la obtención del financiamiento, ni su monto ni sus condiciones. La responsabilidad total de INA bajo este Contrato no excederá los honorarios efectivamente percibidos en los [doce (12)] meses anteriores al reclamo, y ninguna de las Partes responderá por daños indirectos o lucro cesante.
+
+14. CONTRATISTA INDEPENDIENTE. INA actúa como contratista independiente. Nada en este Contrato crea una sociedad, joint venture, mandato o relación laboral entre las Partes.
+
+15. CESIÓN. Ninguna de las Partes podrá ceder este Contrato sin el consentimiento previo y por escrito de la otra.
+
+16. NOTIFICACIONES. Las notificaciones se cursarán por escrito a los domicilios y correos electrónicos que las Partes indican al pie.
+
+17. LEY APLICABLE Y JURISDICCIÓN. Este Contrato se rige por las leyes de {{governing_law}}. Toda controversia se someterá a los tribunales competentes de __________.
+
+ANEXO I: Alcance de Trabajo (SOW) suscripto por las Partes.
 
 EN FE DE LO CUAL, las Partes suscriben el presente Contrato en la fecha arriba indicada.`,
     },
@@ -4910,6 +5015,19 @@ const INAPlatform = {
   documentTypeLabel(value) { return labelFor(DOCUMENT_TYPES, value, currentLang()); },
   CONTRACT_TYPES,
   contractTypeLabel(value) { return labelFor(CONTRACT_TYPES, value, currentLang()); },
+  PROJECT_CONTRACT_SEQUENCE,
+  /* The earlier stage of `stages` (a contract's contract_stages rows) that
+     isn't signed yet when `stageType` is about to be — null if the
+     sequence is respected or the stage isn't part of it. */
+  contractStageBlocker(stages, stageType) {
+    const idx = PROJECT_CONTRACT_SEQUENCE.indexOf(stageType);
+    if (idx <= 0) return null;
+    for (let i = 0; i < idx; i++) {
+      const prev = (stages || []).find((s) => s.stage_type === PROJECT_CONTRACT_SEQUENCE[i]);
+      if (prev && prev.status !== 'signed') return prev;
+    }
+    return null;
+  },
   CONTRACT_STATUS,
   contractStatusLabel(value) { return labelFor(CONTRACT_STATUS, value, currentLang()); },
   CONTRACT_TEMPLATE_TYPES,
@@ -7690,7 +7808,7 @@ const INAPlatform = {
   async deleteContract(contract) {
     try {
       const paths = (contract.contract_stages || [])
-        .flatMap((s) => [s.generated_storage_path, s.signed_storage_path])
+        .flatMap((s) => [s.generated_storage_path, s.final_storage_path, s.signed_storage_path])
         .filter(Boolean);
       if (paths.length) await supabaseClient.storage.from('project-documents').remove(paths);
     } catch (e) { /* best-effort — see deleteDocument()'s comment above */ }
@@ -7728,7 +7846,7 @@ const INAPlatform = {
      migration_v69_contract_templates.sql) substitute the org's saved
      default for that stage_type+language instead of the hardcoded
      CONTRACT_TEMPLATES text — everything else about the call is the same. */
-  fillContractTemplate(contractType, { counterpartyName, effectiveDate, subjectReference, termYears, governingLaw, titleOverride, bodyOverride } = {}) {
+  fillContractTemplate(contractType, { counterpartyName, effectiveDate, subjectReference, termYears, governingLaw, titleOverride, bodyOverride, project } = {}) {
     const tpl = CONTRACT_TEMPLATES[contractType];
     if (!tpl && titleOverride == null && bodyOverride == null) return null;
     const lang = currentLang();
@@ -7740,6 +7858,15 @@ const INAPlatform = {
       subject_reference: subjectReference || (lang === 'es' ? '[el Proyecto]' : '[the Project]'),
       term_years: termYears || '__',
       governing_law: governingLaw || '__________',
+      // Project data for the SOW header — `project` is a projects row
+      // (or the subset listProjects() returns), when the contract is
+      // linked to one.
+      project_name: (project && project.name) || subjectReference || '__________',
+      project_type: (project && project.project_type) ? labelFor(PROJECT_TYPES, project.project_type, lang) : '__________',
+      project_country: (project && project.country) ? labelFor(COUNTRIES_AMERICAS, project.country, lang) : '__________',
+      project_budget: (project && project.budget_amount_usd)
+        ? `USD ${Number(project.budget_amount_usd).toLocaleString(lang === 'es' ? 'es-AR' : 'en-US', { maximumFractionDigits: 0 })}`
+        : '__________',
     };
     const fill = (s) => s.replace(/\{\{(\w+)\}\}/g, (_, k) => tokens[k] != null ? tokens[k] : '');
     return { title: fill(rawTitle), body: fill(rawBody) };
@@ -7835,6 +7962,29 @@ const INAPlatform = {
       .single();
     if (error) throw error;
     this.logActivity({ eventType: 'update', entityType: 'contract', entityId: contractId, entityLabel: contractTitle, details: { stage: stageType, generated: true } });
+    return data;
+  },
+
+  /* The negotiated final version, ready to be signed (migration_v83) —
+     usually the generated draft after edits in Word. Moves a draft stage
+     to "sent"; the signed copy still goes through uploadSignedContract(). */
+  async uploadFinalContract(contractId, stageId, stageType, file, contractTitle, currentStatus) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `${session.user.id}/contracts/${contractId}/${stageType}/final_${Date.now()}_${safeName}`;
+    const { error: uploadError } = await supabaseClient.storage.from('project-documents').upload(storagePath, file);
+    if (uploadError) throw uploadError;
+    const updates = { final_storage_path: storagePath, final_uploaded_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    if (!currentStatus || currentStatus === 'draft') updates.status = 'sent';
+    const { data, error } = await supabaseClient
+      .from('contract_stages')
+      .update(updates)
+      .eq('id', stageId)
+      .select()
+      .single();
+    if (error) throw error;
+    this.logActivity({ eventType: 'update', entityType: 'contract', entityId: contractId, entityLabel: contractTitle, details: { stage: stageType, final_version: true } });
     return data;
   },
 
