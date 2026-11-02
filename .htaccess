@@ -70,6 +70,17 @@
 
 RewriteEngine On
 
+# Canonical host (2026-11-02): send www.* to the bare domain, keeping path
+# and query string (URL fragments like Supabase's #access_token survive a
+# 301 on their own). Cloudflare caches each host separately, so serving
+# both meant two independent copies of every page could drift apart after
+# a deploy — www kept showing stale content while the bare domain didn't.
+# Runs before the legacy-URL redirects below so an old www bookmark ends
+# up on its final URL in two hops at most. No loop risk: the target host
+# never matches the condition.
+RewriteCond %{HTTP_HOST} ^www\.international-network-advisors\.com$ [NC]
+RewriteRule ^(.*)$ https://international-network-advisors.com/$1 [R=301,L]
+
 RewriteRule ^login\.html$ /app/login.html [R=301,L]
 RewriteRule ^register\.html$ /app/register.html [R=301,L]
 RewriteRule ^dashboard\.html$ /app/dashboard.html [R=301,L]
