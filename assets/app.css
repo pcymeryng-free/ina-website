@@ -51,6 +51,22 @@
 .app-user-name{ font-size:12.5px; color:var(--muted-on-dark); display:none; white-space:nowrap; }
 @media (min-width:900px){ .app-user-name{ display:block; } }
 
+/* Profile dropdown (avatar → My profile / Sign out) and the "EN ▾"
+   language dropdown shared with the public site (assets/style.css
+   .lang-menu), recolored for the dark app header. Nov 2026. */
+.user-menu{ position:relative; }
+.user-menu-trigger{ background:none; border:none; cursor:pointer; padding:4px 0; font:inherit; }
+.user-menu-trigger:hover .app-user-name, .user-menu.open .app-user-name{ color:var(--text-on-dark); }
+.user-menu-caret{ color:var(--muted-on-dark); flex:0 0 auto; transition:transform .15s ease; }
+.user-menu.open .user-menu-caret{ transform:rotate(180deg); }
+.user-menu-panel{ left:auto; right:0; min-width:180px; }
+.user-menu.open .user-menu-panel{ display:flex; }
+.app-header .lang-menu{ padding-right:16px; border-right:1px solid var(--ink-line); }
+.app-header--auth .lang-menu, .app-header .app-header-actions > .lang-menu:last-child{ padding-right:0; border-right:none; }
+.app-header .lang-current{ color:var(--muted-on-dark); }
+.app-header .lang-current:hover, .app-header .lang-menu.open .lang-current{ color:var(--text-on-dark); }
+.app-header .lang-list{ right:0; border-radius:4px; }
+
 /* ---------- Mobile nav toggle (hamburger) ----------
    .app-nav is display:none below 760px with no replacement, so on phones
    the whole nav — Projects, Financing, Master Data, Admin, everything —

@@ -3555,6 +3555,7 @@ const I18N = {
   "auth.register.title": { "en": "Create your account", "es": "Creá tu cuenta" },
   "auth.signIn": { "en": "Sign in", "es": "Iniciar sesión" },
   "auth.signOut": { "en": "Sign out", "es": "Cerrar sesión" },
+  "app.userMenu.profile": { "en": "My profile", "es": "Mi perfil" },
   "debuglog.col.duration": { "en": "Duration", "es": "Duración" },
   "debuglog.col.model": { "en": "Model", "es": "Modelo" },
   "debuglog.col.target": { "en": "Table / Agent", "es": "Tabla / Agente" },
@@ -10026,9 +10027,11 @@ function applyLang(lang) {
         menu.classList.toggle('open', open);
         trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
       };
-      trigger.addEventListener('click', (e) => { e.stopPropagation(); setOpen(!menu.classList.contains('open')); });
+      trigger.addEventListener('click', () => setOpen(!menu.classList.contains('open')));
       menu.querySelectorAll('.lang-btn').forEach((b) => b.addEventListener('click', () => { setOpen(false); trigger.blur(); }));
-      document.addEventListener('click', (e) => { if (!menu.contains(e.target)) setOpen(false); });
+      // Capture phase: other menus' triggers stopPropagation() (app/
+      // nav menus), which would otherwise leave this one open beside them.
+      document.addEventListener('click', (e) => { if (!menu.contains(e.target)) setOpen(false); }, true);
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
     });
   });

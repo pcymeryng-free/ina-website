@@ -10094,3 +10094,29 @@ const INAPlatform = {
 
 window.INAPlatform = INAPlatform;
 window.supabaseClient = supabaseClient;
+
+/* Header profile menu (Pablo, nov 2026): the avatar/name opens a small
+   dropdown with "My profile" and "Sign out", replacing the separate Sign
+   out button in the header. Wired here, once, for every app page — the
+   pages' own signOutBtn click handlers stay as they were. Deliberately
+   not a .menu/.menu-trigger pair: pages that run initDropdownMenus() on
+   document.body would wire it a second time and cancel each toggle. */
+(function () {
+  function initUserMenu() {
+    document.querySelectorAll('.user-menu').forEach((menu) => {
+      const trigger = menu.querySelector('.user-menu-trigger');
+      if (!trigger) return;
+      const setOpen = (open) => {
+        menu.classList.toggle('open', open);
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      trigger.addEventListener('click', () => setOpen(!menu.classList.contains('open')));
+      // Capture phase, so it still closes when another menu's trigger
+      // (which stopPropagation()s) is clicked.
+      document.addEventListener('click', (e) => { if (!menu.contains(e.target)) setOpen(false); }, true);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initUserMenu);
+  else initUserMenu();
+})();
