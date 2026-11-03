@@ -33,8 +33,8 @@ const I18N = {
     "es": "Solicitar Asesoría"
   },
   "nav.login": {
-    "en": "Platform",
-    "es": "Plataforma"
+    "en": "Platform Sign In",
+    "es": "Acceso a la Plataforma"
   },
   "nav.loginMobile": {
     "en": "Sign in to the Platform",
@@ -9988,6 +9988,7 @@ function applyLang(lang) {
   document.querySelectorAll('.lang-btn').forEach((b) => {
     b.classList.toggle('active', b.getAttribute('data-lang') === lang);
   });
+  document.querySelectorAll('.lang-current .lang-code').forEach((el) => { el.textContent = lang.toUpperCase(); });
   try { localStorage.setItem('ina_lang', lang); } catch (e) {}
 }
 
@@ -10015,6 +10016,20 @@ function applyLang(lang) {
     applyLang(saved);
     document.querySelectorAll('.lang-btn').forEach((b) => {
       b.addEventListener('click', () => applyLang(b.getAttribute('data-lang')));
+    });
+    // Header language dropdown ("EN ▾", McKinsey-style, nov 2026): opens on
+    // click (and on hover via CSS on desktop), closes on pick, outside click
+    // or Escape.
+    document.querySelectorAll('.lang-menu').forEach((menu) => {
+      const trigger = menu.querySelector('.lang-current');
+      const setOpen = (open) => {
+        menu.classList.toggle('open', open);
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      trigger.addEventListener('click', (e) => { e.stopPropagation(); setOpen(!menu.classList.contains('open')); });
+      menu.querySelectorAll('.lang-btn').forEach((b) => b.addEventListener('click', () => { setOpen(false); trigger.blur(); }));
+      document.addEventListener('click', (e) => { if (!menu.contains(e.target)) setOpen(false); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
     });
   });
 })();
