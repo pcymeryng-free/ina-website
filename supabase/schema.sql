@@ -2663,7 +2663,7 @@ create table if not exists public.activity_log (
   occurred_at timestamptz not null default now(),
   user_id uuid references public.profiles(id) on delete set null,
   event_type text not null check (event_type in (
-    'page_view', 'login', 'logout', 'create', 'update', 'delete'
+    'page_view', 'login', 'logout', 'create', 'update', 'delete', 'assistant_query'  -- assistant_query: migration_v84
   )),
   entity_type text,
   entity_id uuid,
@@ -2772,7 +2772,8 @@ create table if not exists public.agent_hints (
   agent_key text primary key check (agent_key in (
     'analyze-project', 'extract-project-data', 'extract-success-case',
     'extract-business-card', 'extract-template-data', 'recommend-financing',
-    'generate-proposal', 'promotion-agent', 'translate-project-text'
+    'generate-proposal', 'promotion-agent', 'translate-project-text',
+    'suggest-risks', 'assistant'  -- suggest-risks: migration_v80; assistant: migration_v84
   )),
   hint_text text not null default '',
   updated_at timestamptz not null default now(),

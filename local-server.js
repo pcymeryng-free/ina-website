@@ -65,6 +65,7 @@ const extractProjectDataHandler = require('./api/extract-project-data');
 const promotionAgentHandler = require('./api/promotion-agent');
 const suggestRisksHandler = require('./api/suggest-risks');
 const updateNewsHandler = require('./api/update-news');
+const assistantHandler = require('./api/_assistant');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5050;
@@ -101,6 +102,9 @@ app.post('/api/extract-success-case', extractSuccessCaseHandler);
 app.post('/api/extract-project-data', extractProjectDataHandler);
 app.post('/api/promotion-agent', promotionAgentHandler);
 app.post('/api/suggest-risks', suggestRisksHandler);
+// On Vercel this is reached through api/manage-user.js (?route=assistant) —
+// see api/_assistant.js's header; locally it can just be mounted directly.
+app.post('/api/assistant', assistantHandler);
 // Cron-triggered in production (see vercel.json's "crons" + CRON_SECRET),
 // not called from any page — GET matches how Vercel Cron actually invokes
 // it; POST is just for a manual local test, e.g.:

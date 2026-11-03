@@ -227,6 +227,12 @@ async function actionDelete(body, caller, { supabaseUrl, serviceKey }) {
 }
 
 async function handler(req, res) {
+  // The platform assistant lives in api/_assistant.js and borrows this
+  // function's slot (12-function Hobby cap — see that file's header):
+  // vercel.json rewrites /assistant and /api/assistant here with
+  // ?route=assistant. Nothing below runs for those requests.
+  if (req.query && req.query.route === 'assistant') return require('./_assistant')(req, res);
+
   const origin = req.headers.origin;
   if (isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -283,4 +289,6 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
-module.exports.config = { maxDuration: 30 };
+// 60 (was 30) for the assistant route above, which can make several
+// model calls per request; the user-management actions are unaffected.
+module.exports.config = { maxDuration: 60 };

@@ -291,6 +291,18 @@ function manageUserUrl() {
   return '/api/manage-user';
 }
 
+/* Same reasoning/hosting split as analyzeProjectUrl() above — see
+   api/_assistant.js, the platform chat assistant (Pablo, nov 2026: "un
+   asistente del tipo BOT que responda en lenguaje natural a consultas
+   sobre funcionalidades y datos de la plataforma"). See askAssistant() and
+   mountAssistant() below. */
+function assistantUrl() {
+  if (typeof location !== 'undefined' && PRODUCTION_HOSTNAMES.includes(location.hostname)) {
+    return `${PRODUCTION_API_ORIGIN}/assistant`;
+  }
+  return '/api/assistant';
+}
+
 /* ---------- Reference data (bilingual) ---------- */
 
 const ROLE_TYPES = [
@@ -5234,6 +5246,7 @@ const INAPlatform = {
       return null;
     }
     this.logPageView();
+    this.mountAssistant();
     return session;
   },
 
@@ -7922,6 +7935,7 @@ const INAPlatform = {
     { value: 'promotion-agent', en: 'Promotion Agent', es: 'Agente de Promoción' },
     { value: 'translate-project-text', en: 'Project text translation', es: 'Traducción de textos de proyecto' },
     { value: 'suggest-risks', en: 'Risk suggestions from documents', es: 'Sugerencia de riesgos desde documentos' },
+    { value: 'assistant', en: 'Platform assistant (chat)', es: 'Asistente de la plataforma (chat)' },
   ],
 
   async listAgentHints() {
@@ -9819,6 +9833,243 @@ const INAPlatform = {
         .some((el) => el.style.display !== 'none');
       analysisMenu.style.display = anyVisible ? '' : 'none';
     }
+  },
+
+  /* ---------- Platform assistant (chat bot) ----------
+     See api/_assistant.js. Read-only: answers how-to questions from the
+     user manual and data questions through fixed queries that run with
+     the user's own session, so RLS limits it to what they can already see. */
+
+  /* messages: [{role:'user'|'assistant', content}], last one from the user.
+     Returns { reply, toolsUsed }. */
+  async askAssistant(messages) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(assistantUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ messages, lang: currentLang(), page: location.pathname }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      // Same diagnostic-logging pattern as requestAnalysis().
+      console.error('[askAssistant] failed:', body.error, body.detail || '');
+      throw new Error(body.error || 'Assistant request failed.');
+    }
+    return { reply: body.reply, toolsUsed: body.toolsUsed || [] };
+  },
+
+  /* Floating chat button + panel, added once per page by requireAuth().
+     The conversation is kept in sessionStorage so it survives moving
+     between pages in the same tab, and is cleared by "New chat" or when
+     the tab closes. */
+  mountAssistant() {
+    if (this._assistantMounted || typeof document === 'undefined') return;
+    this._assistantMounted = true;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this._buildAssistant());
+    } else {
+      this._buildAssistant();
+    }
+  },
+
+  _buildAssistant() {
+    const STORAGE_KEY = 'ina_assistant_history';
+    const MAX_STORED = 30;
+    const T = {
+      open: { en: 'Assistant', es: 'Asistente' },
+      title: { en: 'INA Assistant', es: 'Asistente INA' },
+      subtitle: { en: 'Ask about the platform or your projects', es: 'Consultá sobre la plataforma o tus proyectos' },
+      placeholder: { en: 'Type your question…', es: 'Escribí tu consulta…' },
+      send: { en: 'Send', es: 'Enviar' },
+      reset: { en: 'New chat', es: 'Nueva consulta' },
+      close: { en: 'Close', es: 'Cerrar' },
+      thinking: { en: 'Looking it up…', es: 'Consultando…' },
+      error: { en: 'Sorry, something went wrong. Please try again.', es: 'Perdón, algo falló. Probá de nuevo.' },
+      disclaimer: { en: 'Read-only. Answers are AI-generated — check important data in the platform.', es: 'Solo lectura. Las respuestas las genera una IA — verificá los datos importantes en la plataforma.' },
+      welcome: {
+        en: 'Hi! I can explain how to use the platform and answer questions about the projects, risks and financing Programs you have access to. For example:',
+        es: '¡Hola! Puedo explicarte cómo usar la plataforma y responder preguntas sobre los proyectos, riesgos y programas de financiamiento a los que tenés acceso. Por ejemplo:',
+      },
+      examples: {
+        en: ['How many projects are in each stage?', 'Which projects have high risks?', 'How do I create a roadmap for a project?'],
+        es: ['¿Cuántos proyectos hay en cada etapa?', '¿Qué proyectos tienen riesgos altos?', '¿Cómo creo una hoja de ruta para un proyecto?'],
+      },
+    };
+    const t = (key) => T[key][currentLang()] || T[key].es;
+    const esc = (str) => String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // Minimal markdown for the model's replies: escape everything first,
+    // then allow **bold**, `code`, "- " lists and links — links only to
+    // relative platform pages (e.g. project.html?id=…), never external.
+    const inline = (line) => line
+      .replace(/\[([^\]]+)\]\(([a-z0-9-]+\.html(?:\?[a-zA-Z0-9_=&;%.-]*)?)\)/g, '<a href="$2">$1</a>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>');
+    const renderMarkdown = (text) => {
+      const out = [];
+      let list = null;
+      esc(text).split('\n').forEach((raw) => {
+        const line = raw.trim();
+        const item = /^([-*•]|\d+[.)])\s+(.*)$/.exec(line);
+        if (item) {
+          const tag = /^\d/.test(item[1]) ? 'ol' : 'ul';
+          if (!list || list.tag !== tag) {
+            if (list) out.push(`</${list.tag}>`);
+            list = { tag };
+            out.push(`<${tag}>`);
+          }
+          out.push(`<li>${inline(item[2])}</li>`);
+          return;
+        }
+        if (list) { out.push(`</${list.tag}>`); list = null; }
+        if (!line) return;
+        const heading = /^#{1,4}\s+(.*)$/.exec(line);
+        out.push(heading ? `<p><strong>${inline(heading[1])}</strong></p>` : `<p>${inline(line)}</p>`);
+      });
+      if (list) out.push(`</${list.tag}>`);
+      return out.join('');
+    };
+
+    let history = [];
+    try { history = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) { history = []; }
+    if (!Array.isArray(history)) history = [];
+    const save = () => {
+      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(-MAX_STORED))); } catch (e) { /* private mode */ }
+    };
+
+    const root = document.createElement('div');
+    root.className = 'ina-assistant';
+    root.innerHTML = `
+      <button type="button" class="ina-assistant-fab" aria-expanded="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 9.5h8M8 12.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span class="ina-assistant-fab-label"></span>
+      </button>
+      <div class="ina-assistant-panel" role="dialog" aria-modal="false" hidden>
+        <header class="ina-assistant-head">
+          <div><strong class="ina-assistant-title"></strong><span class="ina-assistant-sub"></span></div>
+          <div class="ina-assistant-head-actions">
+            <button type="button" class="ina-assistant-reset"></button>
+            <button type="button" class="ina-assistant-close">&times;</button>
+          </div>
+        </header>
+        <div class="ina-assistant-log" aria-live="polite"></div>
+        <form class="ina-assistant-form">
+          <textarea rows="1" maxlength="2000" required></textarea>
+          <button type="submit" class="ina-assistant-send"></button>
+        </form>
+        <p class="ina-assistant-disclaimer"></p>
+      </div>`;
+    document.body.appendChild(root);
+
+    const fab = root.querySelector('.ina-assistant-fab');
+    const panel = root.querySelector('.ina-assistant-panel');
+    const log = root.querySelector('.ina-assistant-log');
+    const form = root.querySelector('.ina-assistant-form');
+    const input = form.querySelector('textarea');
+    const sendBtn = root.querySelector('.ina-assistant-send');
+    let busy = false;
+
+    const applyLabels = () => {
+      root.querySelector('.ina-assistant-fab-label').textContent = t('open');
+      fab.setAttribute('aria-label', t('title'));
+      panel.setAttribute('aria-label', t('title'));
+      root.querySelector('.ina-assistant-title').textContent = t('title');
+      root.querySelector('.ina-assistant-sub').textContent = t('subtitle');
+      root.querySelector('.ina-assistant-reset').textContent = t('reset');
+      root.querySelector('.ina-assistant-close').setAttribute('aria-label', t('close'));
+      input.placeholder = t('placeholder');
+      sendBtn.textContent = t('send');
+      root.querySelector('.ina-assistant-disclaimer').textContent = t('disclaimer');
+    };
+
+    const renderLog = (pending) => {
+      if (!history.length) {
+        log.innerHTML = `<div class="ina-assistant-msg bot"><p>${esc(t('welcome'))}</p></div>
+          <div class="ina-assistant-examples">${T.examples[currentLang()].map((q) => `<button type="button">${esc(q)}</button>`).join('')}</div>`;
+      } else {
+        log.innerHTML = history.map((m) => (m.role === 'user'
+          ? `<div class="ina-assistant-msg user"><p>${esc(m.content)}</p></div>`
+          : `<div class="ina-assistant-msg bot${m.error ? ' error' : ''}">${renderMarkdown(m.content)}</div>`)).join('')
+          + (pending ? `<div class="ina-assistant-msg bot pending"><p>${esc(t('thinking'))}</p></div>` : '');
+      }
+      log.scrollTop = log.scrollHeight;
+    };
+
+    const setOpen = (open) => {
+      panel.hidden = !open;
+      fab.setAttribute('aria-expanded', String(open));
+      root.classList.toggle('is-open', open);
+      if (open) {
+        renderLog(busy);
+        input.focus();
+      }
+    };
+
+    const ask = async (question) => {
+      const q = String(question || '').trim();
+      if (!q || busy) return;
+      busy = true;
+      sendBtn.disabled = true;
+      history.push({ role: 'user', content: q });
+      save();
+      renderLog(true);
+      try {
+        const payload = history.filter((m) => !m.error).map((m) => ({ role: m.role, content: m.content }));
+        const { reply } = await this.askAssistant(payload);
+        history.push({ role: 'assistant', content: reply });
+      } catch (e) {
+        history.push({ role: 'assistant', content: t('error'), error: true });
+      }
+      save();
+      busy = false;
+      sendBtn.disabled = false;
+      renderLog(false);
+    };
+
+    fab.addEventListener('click', () => setOpen(panel.hidden));
+    root.querySelector('.ina-assistant-close').addEventListener('click', () => setOpen(false));
+    root.querySelector('.ina-assistant-reset').addEventListener('click', () => {
+      if (busy) return;
+      history = [];
+      save();
+      renderLog(false);
+      input.focus();
+    });
+    log.addEventListener('click', (e) => {
+      const example = e.target.closest('.ina-assistant-examples button');
+      if (example) ask(example.textContent);
+    });
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const q = input.value;
+      input.value = '';
+      input.style.height = '';
+      ask(q);
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
+        form.requestSubmit();
+      }
+    });
+    input.addEventListener('input', () => {
+      input.style.height = '';
+      input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !panel.hidden) setOpen(false);
+    });
+    // The EN/ES switch (assets/i18n.js) relabels the page in place without
+    // a reload, so follow it here too.
+    document.querySelectorAll('.lang-btn').forEach((b) => b.addEventListener('click', () => {
+      setTimeout(() => { applyLabels(); if (!panel.hidden) renderLog(busy); }, 0);
+    }));
+
+    applyLabels();
   },
 };
 

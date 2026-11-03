@@ -5494,3 +5494,50 @@ failed fetch (network hiccup, RLS misconfigured, etc.) degrades to `''`
 `agent_hints` is admin-only both ways (`is_admin()`, not
 `is_advisor()`): this is model-tuning knowledge, not something an advisor
 needs to see or change.
+
+## Platform assistant — chat bot (Pablo, nov 2026) — migration_v84
+
+*"Se puede agregar un asistente del tipo BOT a la plataforma que responda en
+lenguaje natural a consultas sobre funcionalidades y datos de la
+plataforma"* — first step of `INA_Platform_Roadmap_Agentico.md`'s
+read-only chat copilot.
+
+**What users see:** an "Asistente / Assistant" button at the bottom-right of
+every authenticated `app/` page (mounted by `INAPlatform.mountAssistant()`
+from `requireAuth()`). The conversation lives in `sessionStorage`, so it
+follows the user across pages in the same tab; "Nueva consulta" clears it.
+Answers render a small markdown subset; links are only allowed to relative
+platform pages (`project.html?id=…`), never external URLs.
+
+**How it answers** (`api/_assistant.js`): a tool-calling loop (max 5 model
+calls, ~42s budget) over 7 fixed, read-only tools — `search_projects`,
+`get_project`, `list_risks`, `search_financing_programs`,
+`get_workflow_history`, `portfolio_summary`, `search_manual`. No free-form
+SQL. Every data tool queries PostgREST with the **caller's own JWT + anon
+key**, so the existing RLS policies decide what each user sees (a client
+only gets their own projects; advisors/admins what their policies allow).
+`search_manual` searches `api/_assistant-manual.js` — the user manual PDF
+split into sections — instead of putting the whole manual in every prompt;
+regenerate that file when the manual changes. A page map in the system
+prompt covers modules newer than the manual (contracts, success cases,
+financing recommendation, master data…).
+
+**Providers:** same `LLM_PROVIDER` switch and env vars as every other AI
+endpoint — anthropic (default, production), groq and local via their
+native/OpenAI-compatible tool calling, bedrock via Converse `toolConfig`,
+bedrock-mock returns a canned reply. No new env vars.
+
+**Hosting — 12-function Vercel Hobby cap:** `api/` already had 12
+functions, so the assistant is an `_`-prefixed file (Vercel doesn't turn
+those into functions) dispatched from `api/manage-user.js` when
+`vercel.json` rewrites `/assistant` and `/api/assistant` to
+`/api/manage-user?route=assistant`. `manage-user`'s `maxDuration` went
+30 → 60 for it. `local-server.js` mounts `/api/assistant` directly.
+
+**Logging:** each question is written to `activity_log` as
+`event_type='assistant_query'` (the question in `entity_label`, the tools
+used in `details.tools`) and to `debug_log` when admin debug mode is on.
+`migration_v84_assistant_activity.sql` widens the `event_type` CHECK for it
+and adds `'assistant'` to `agent_hints`' keys, so admins can tune the
+assistant from AI Hints like any other agent. Without the migration the
+assistant still works; only the log row and the hint are skipped.
