@@ -121,7 +121,7 @@ nav.links a.current{ color: var(--amber-deep); }
 
 .nav > .btn.amber{ flex:0 0 auto; }
 /* Header utility column, modeled on mckinsey.com/ar (Pablo, nov 2026): a
-   small "Platform Sign In" text link on top and a minimal "EN ▾" language
+   small "Sign In" text link on top and a minimal "EN ▾" language
    dropdown below it, set off from the CTA by a thin vertical rule. Replaces
    the EN/ES pill and the outlined Platform button. */
 .nav-util{

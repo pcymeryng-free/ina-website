@@ -33,8 +33,8 @@ const I18N = {
     "es": "Solicitar Asesoría"
   },
   "nav.login": {
-    "en": "Platform Sign In",
-    "es": "Acceso a la Plataforma"
+    "en": "Sign In",
+    "es": "Ingresar"
   },
   "nav.loginMobile": {
     "en": "Sign in to the Platform",
