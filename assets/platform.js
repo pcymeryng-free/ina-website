@@ -9912,8 +9912,26 @@ const INAPlatform = {
     const renderMarkdown = (text) => {
       const out = [];
       let list = null;
+      let table = null;
+      const flushTable = () => {
+        if (!table) return;
+        const [head, ...body] = table;
+        out.push(`<div class="ina-assistant-table"><table><thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join('')}</tr></thead>`
+          + `<tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
+        table = null;
+      };
       esc(text).split('\n').forEach((raw) => {
         const line = raw.trim();
+        // Markdown tables ("| a | b |" rows; the "|---|---|" separator row
+        // is dropped) — the model uses them for counts/comparisons.
+        if (/^\|.*\|$/.test(line)) {
+          if (list) { out.push(`</${list.tag}>`); list = null; }
+          const cells = line.slice(1, -1).split('|').map((c) => c.trim());
+          if (cells.every((c) => /^:?-{2,}:?$/.test(c))) return;
+          (table = table || []).push(cells);
+          return;
+        }
+        flushTable();
         const item = /^([-*•]|\d+[.)])\s+(.*)$/.exec(line);
         if (item) {
           const tag = /^\d/.test(item[1]) ? 'ol' : 'ul';
@@ -9931,6 +9949,7 @@ const INAPlatform = {
         out.push(heading ? `<p><strong>${inline(heading[1])}</strong></p>` : `<p>${inline(line)}</p>`);
       });
       if (list) out.push(`</${list.tag}>`);
+      flushTable();
       return out.join('');
     };
 

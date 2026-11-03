@@ -173,23 +173,30 @@ async function logAssistantQuery(ctx, { question, page, toolsUsed }) {
   } catch (e) { /* never block the answer on logging */ }
 }
 
-// Same retry-once-on-429 helper as api/recommend-financing.js — see its
-// comment for why (Groq's free tier shares one token budget across every
-// AI feature).
-async function fetchGroqWithRetry(body, headers) {
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+// Groq's free tier shares one tokens-per-minute budget across every AI
+// feature on the account (see api/recommend-financing.js's matching
+// helper), and an assistant question makes 2-3 model calls back to back, so
+// 429s are routine. Groq's suggested wait ("try again in 45ms") is often too
+// short to actually free the budget — seen in production: one retry after
+// ~0.5s hit the same 429 again — so wait at least a few seconds, and retry
+// up to twice as long as the request's own deadline allows.
+async function fetchGroqWithRetry(body, headers, deadline) {
+  const send = () => fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST', headers, body: JSON.stringify(body),
   });
-  if (res.status !== 429) return res;
-  const errBody = await res.clone().json().catch(() => null);
-  if ((errBody && errBody.error && errBody.error.code) !== 'rate_limit_exceeded') return res;
-  const match = /try again in ([\d.]+)s/i.exec((errBody.error && errBody.error.message) || '');
-  const waitMs = Math.min(match ? Math.ceil(parseFloat(match[1]) * 1000) + 500 : 5000, 15000);
-  console.warn(`[assistant] Groq rate-limited, retrying once in ${waitMs}ms`);
-  await new Promise((resolve) => setTimeout(resolve, waitMs));
-  return fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST', headers, body: JSON.stringify(body),
-  });
+  let res = await send();
+  for (let attempt = 1; attempt <= 2 && res.status === 429; attempt += 1) {
+    const errBody = await res.clone().json().catch(() => null);
+    if ((errBody && errBody.error && errBody.error.code) !== 'rate_limit_exceeded') return res;
+    const match = /try again in ([\d.]+)(ms|s)/i.exec((errBody.error && errBody.error.message) || '');
+    const suggestedMs = match ? parseFloat(match[1]) * (match[2].toLowerCase() === 'ms' ? 1 : 1000) : 0;
+    const waitMs = Math.min(Math.max(suggestedMs + 500, attempt * 4000), 15000);
+    if (Date.now() + waitMs > deadline) return res;
+    console.warn(`[assistant] Groq rate-limited, retry ${attempt} in ${waitMs}ms`);
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+    res = await send();
+  }
+  return res;
 }
 
 /* ---------- Tools ---------- */
@@ -707,7 +714,7 @@ async function handler(req, res) {
     } else if (provider === 'groq') {
       model = env.GROQ_MODEL || GROQ_MODEL_DEFAULT;
       reply = await runOpenAICompatible({
-        callModel: (payload) => fetchGroqWithRetry(payload, { 'Content-Type': 'application/json', Authorization: `Bearer ${env.GROQ_API_KEY}` }),
+        callModel: (payload) => fetchGroqWithRetry(payload, { 'Content-Type': 'application/json', Authorization: `Bearer ${env.GROQ_API_KEY}` }, deadline + 10000),
         model, system, messages, ctx, usage, toolsUsed, deadline,
       });
     } else if (provider === 'local') {

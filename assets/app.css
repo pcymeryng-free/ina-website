@@ -477,6 +477,10 @@
 .ina-assistant-msg ol{ list-style:decimal; }
 .ina-assistant-msg li{ margin:2px 0; display:list-item; }
 .ina-assistant-msg code{ font-family:var(--mono); font-size:12px; background:var(--paper-2); padding:1px 4px; border-radius:3px; }
+.ina-assistant-table{ overflow-x:auto; margin:4px 0 6px; }
+.ina-assistant-table table{ border-collapse:collapse; font-size:12.5px; width:100%; }
+.ina-assistant-table th, .ina-assistant-table td{ border-bottom:1px solid var(--paper-line); padding:4px 8px 4px 0; text-align:left; vertical-align:top; }
+.ina-assistant-table th{ font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); font-weight:500; }
 .ina-assistant-msg.user{ align-self:flex-end; background:var(--ink); color:var(--text-on-dark); border-bottom-right-radius:3px; }
 .ina-assistant-msg.bot{ align-self:flex-start; background:#fff; color:var(--text); border:1px solid var(--paper-line); border-bottom-left-radius:3px; }
 .ina-assistant-msg.bot a{ color:var(--amber-deep); text-decoration:underline; text-underline-offset:2px; }
