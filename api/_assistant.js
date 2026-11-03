@@ -440,6 +440,98 @@ const TOOLS = [
       };
     },
   },
+  // Admin-only (Pablo, nov 2026: "¿Qué usuarios interactuaron con la
+  // plataforma?" had no tool to answer it). Hidden from the model's tool
+  // list for everyone else (see toolsFor()); RLS would return nothing to
+  // them anyway — activity_log/_archive are readable only by is_admin().
+  {
+    name: 'list_users',
+    adminOnly: true,
+    description: 'ADMIN ONLY. Registered platform users: name, organization, email, access role (user/advisor/admin) and signup date. Optional text filter.',
+    parameters: {
+      type: 'object',
+      properties: { query: { type: 'string', description: 'Optional: part of a name, organization or email.' } },
+    },
+    async run(args, ctx) {
+      const rows = await userRest('/profiles?select=full_name,organization,email,role,created_at&order=created_at.desc&limit=1000', ctx);
+      const q = fold(args.query || '');
+      const hits = q ? rows.filter((u) => fold(`${u.full_name} ${u.organization} ${u.email}`).includes(q)) : rows;
+      return {
+        total_users: rows.length,
+        by_role: rows.reduce((acc, u) => { acc[u.role] = (acc[u.role] || 0) + 1; return acc; }, {}),
+        users: hits.slice(0, 80).map((u) => ({ ...u, created_at: u.created_at && u.created_at.slice(0, 10) })),
+        ...(hits.length > 80 ? { note: `Showing 80 of ${hits.length}; narrow with query.` } : {}),
+      };
+    },
+  },
+  {
+    name: 'user_activity',
+    adminOnly: true,
+    description: 'ADMIN ONLY. Which signed-in users interacted with the platform in the last N days, from the activity log: per user, counts of logins, page views, creates/updates/deletes and assistant questions, last activity and most visited pages. Anonymous public-site visits are counted separately. Optional user filter.',
+    parameters: {
+      type: 'object',
+      properties: {
+        days: { type: 'integer', description: 'Look-back window in days (default 30, max 180).' },
+        user: { type: 'string', description: 'Optional: part of a user name or email to focus on one user (also returns their latest events).' },
+      },
+    },
+    async run(args, ctx) {
+      const days = Math.min(Math.max(parseInt(args.days, 10) || 30, 1), 180);
+      const since = new Date(Date.now() - days * 86400000).toISOString();
+      const select = 'user_id,event_type,occurred_at,path,entity_type,entity_label';
+      // The live table keeps ~30 days; older rows move to activity_log_archive
+      // (migration_v64). Page through both, newest first, up to a cap.
+      const fetchAll = async (table) => {
+        const out = [];
+        for (let offset = 0; offset < 6000; offset += 1000) {
+          const page = await userRest(`/${table}?occurred_at=gte.${encodeURIComponent(since)}&select=${select}&order=occurred_at.desc&limit=1000&offset=${offset}`, ctx);
+          out.push(...page);
+          if (page.length < 1000) break;
+        }
+        return out;
+      };
+      const [live, archived, profiles] = await Promise.all([
+        fetchAll('activity_log'),
+        days > 28 ? fetchAll('activity_log_archive').catch(() => []) : [],
+        userRest('/profiles?select=id,full_name,organization,email,role&limit=1000', ctx),
+      ]);
+      const events = live.concat(archived);
+      const byId = new Map(profiles.map((p) => [p.id, p]));
+      const q = fold(args.user || '');
+      const perUser = new Map();
+      let anonymousPageViews = 0;
+      for (const e of events) {
+        if (!e.user_id) { anonymousPageViews += 1; continue; }
+        const p = byId.get(e.user_id) || {};
+        if (q && !fold(`${p.full_name} ${p.email}`).includes(q)) continue;
+        let u = perUser.get(e.user_id);
+        if (!u) {
+          u = { name: p.full_name || '(deleted user)', email: p.email, organization: p.organization, role: p.role, last_activity: e.occurred_at, events: {}, pages: {}, recent: [] };
+          perUser.set(e.user_id, u);
+        }
+        u.events[e.event_type] = (u.events[e.event_type] || 0) + 1;
+        if (e.event_type === 'page_view' && e.path) u.pages[e.path] = (u.pages[e.path] || 0) + 1;
+        if (q && u.recent.length < 15) u.recent.push(`${e.occurred_at.slice(0, 16).replace('T', ' ')} ${e.event_type}${e.entity_label ? ` "${e.entity_label}"` : e.path ? ` ${e.path}` : ''}`);
+      }
+      const users = Array.from(perUser.values())
+        .sort((a, b) => (a.last_activity < b.last_activity ? 1 : -1))
+        .map((u) => ({
+          ...u,
+          last_activity: u.last_activity.slice(0, 16).replace('T', ' '),
+          pages: Object.entries(u.pages).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([path, n]) => `${path} (${n})`),
+          ...(u.recent.length ? {} : { recent: undefined }),
+        }));
+      return {
+        window_days: days,
+        since: since.slice(0, 10),
+        active_users: users.length,
+        users: users.slice(0, 40),
+        anonymous_public_site_page_views: q ? undefined : anonymousPageViews,
+        ...(events.length >= 6000 ? { note: 'Event cap reached; older events in the window were not counted. Use a shorter window.' } : {}),
+        link: 'activity-log.html',
+      };
+    },
+  },
   {
     name: 'search_manual',
     description: 'Search the platform user manual (in Spanish) for how-to questions: creating projects, templates, AI analysis, FSU scoring, workflow, roadmaps/RACI, risk matrix, Programs, roles, profile/2FA, FAQ. Returns the most relevant sections.',
@@ -462,10 +554,11 @@ const TOOLS = [
   },
 ];
 const TOOLS_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
+const toolsFor = (ctx) => TOOLS.filter((t) => !t.adminOnly || ctx.role === 'admin');
 
 async function runTool(name, args, ctx) {
   const tool = TOOLS_BY_NAME.get(name);
-  if (!tool) return JSON.stringify({ error: `Unknown tool ${name}` });
+  if (!tool || (tool.adminOnly && ctx.role !== 'admin')) return JSON.stringify({ error: `Unknown tool ${name}` });
   try {
     const result = await tool.run(args && typeof args === 'object' ? args : {}, ctx);
     const text = JSON.stringify(result);
@@ -510,7 +603,7 @@ function buildSystemPrompt({ lang, role, page, hints }) {
 
 You answer two kinds of questions:
 1. How to use the platform → call search_manual, and use the page map below.
-2. Questions about the platform's data (projects, risks, financing Programs, workflow) → call the data tools. NEVER invent projects, numbers, names, dates or statuses: every fact about data must come from a tool result in this conversation. If the tools return nothing, say so plainly.
+2. Questions about the platform's data (projects, risks, financing Programs, workflow — and, for administrators only, users and their activity) → call the data tools. NEVER invent projects, numbers, names, dates or statuses: every fact about data must come from a tool result in this conversation. If the tools return nothing, say so plainly.
 
 Rules:
 - You are READ-ONLY. You cannot create, edit, delete, promote or analyze anything. If asked to, explain where in the platform the user can do it themselves (with a link).
@@ -543,7 +636,7 @@ async function runAnthropic({ apiKey, model, system, messages, ctx, usage, tools
         max_tokens: MODEL_MAX_TOKENS,
         temperature: 0,
         system,
-        tools: TOOLS.map((t) => ({ name: t.name, description: t.description, input_schema: t.parameters })),
+        tools: toolsFor(ctx).map((t) => ({ name: t.name, description: t.description, input_schema: t.parameters })),
         messages: convo,
       }),
     });
@@ -576,7 +669,7 @@ async function runOpenAICompatible({ callModel, model, system, messages, ctx, us
       max_tokens: MODEL_MAX_TOKENS,
       temperature: 0,
       messages: convo,
-      tools: TOOLS.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.parameters } })),
+      tools: toolsFor(ctx).map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.parameters } })),
     });
     if (!res.ok) throw new Error(`Model request failed (${res.status}): ${(await res.text().catch(() => '')).slice(0, 500)}`);
     const data = await res.json();
@@ -604,7 +697,7 @@ async function runBedrock({ env, system, messages, ctx, usage, toolsUsed, deadli
     credentials: { accessKeyId: env.AWS_ACCESS_KEY_ID, secretAccessKey: env.AWS_SECRET_ACCESS_KEY },
   });
   const convo = messages.map((m) => ({ role: m.role, content: [{ text: m.content }] }));
-  const toolConfig = { tools: TOOLS.map((t) => ({ toolSpec: { name: t.name, description: t.description, inputSchema: { json: t.parameters } } })) };
+  const toolConfig = { tools: toolsFor(ctx).map((t) => ({ toolSpec: { name: t.name, description: t.description, inputSchema: { json: t.parameters } } })) };
   for (let round = 0; round < MAX_ROUNDS && Date.now() < deadline; round += 1) {
     const out = await client.send(new ConverseCommand({
       modelId: env.BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT,
@@ -698,6 +791,7 @@ async function handler(req, res) {
       isDebugModeOn({ supabaseUrl: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }),
     ]);
     const role = profileRows[0] && profileRows[0].role;
+    ctx.role = role;
     const system = buildSystemPrompt({ lang, role, page, hints });
 
     const started = Date.now();

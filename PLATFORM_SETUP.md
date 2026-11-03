@@ -5522,6 +5522,14 @@ regenerate that file when the manual changes. A page map in the system
 prompt covers modules newer than the manual (contracts, success cases,
 financing recommendation, master data…).
 
+Two more tools are **admin-only** (nov 2026): `list_users` (profiles: name,
+organization, email, role, signup date) and `user_activity` (who used the
+platform in the last N days, from `activity_log` + `activity_log_archive`:
+logins, page views, creates/updates/deletes, assistant questions, last
+activity, top pages per user). They are left out of the tool list sent to
+the model unless the caller's `profiles.role` is `admin`, and RLS would
+return nothing to anyone else anyway.
+
 **Providers:** same `LLM_PROVIDER` switch and env vars as every other AI
 endpoint — anthropic (default, production), groq and local via their
 native/OpenAI-compatible tool calling, bedrock via Converse `toolConfig`,
