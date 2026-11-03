@@ -34,7 +34,7 @@ const I18N = {
   },
   "nav.login": {
     "en": "Sign In",
-    "es": "Ingresar"
+    "es": "Sign In"
   },
   "nav.loginMobile": {
     "en": "Sign in to the Platform",
