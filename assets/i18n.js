@@ -32,6 +32,14 @@ const I18N = {
     "en": "Request Advisory",
     "es": "Solicitar Asesoría"
   },
+  "nav.login": {
+    "en": "Platform",
+    "es": "Plataforma"
+  },
+  "nav.loginMobile": {
+    "en": "Sign in to the Platform",
+    "es": "Ingresar a la Plataforma"
+  },
   "brand.tagline": {
     "en": "International Network Advisors",
     "es": "International Network Advisors"

@@ -76,7 +76,7 @@ header.site{
   border-bottom: 1px solid var(--paper-line);
 }
 .nav{ display:flex; align-items:center; justify-content:space-between; height:72px; gap:14px; flex-wrap:nowrap; }
-header.site .wrap.nav{ padding: 0 18px; }
+header.site .wrap.nav{ padding: 0 18px; max-width:1440px; }  /* wider than --maxw so the Platform button fits (nov 2026) */
 .brand{ display:flex; align-items:center; gap:10px; font-family:var(--mono); flex:0 0 auto; }
 .brand .mark{
   width:30px;height:30px; border:1px solid var(--text); border-radius:2px;
@@ -120,14 +120,31 @@ nav.links a.current{ color: var(--amber-deep); }
 .btn[disabled]:hover{ background:inherit; color:inherit; }
 
 .nav > .btn.amber{ flex:0 0 auto; }
+/* Header "Platform" sign-in button (Pablo, nov 2026: the nav's "Platform"
+   item became "Technology" in the repositioning, which left no visible way
+   into the platform itself). Label hides where the header is tightest
+   (1201-1319px, full nav visible) and on phones — hidden visually only, so
+   screen readers still get it in the current language. */
+.nav > .btn.nav-login{ flex:0 0 auto; padding:10px 14px; }
+.nav > .btn.nav-login svg{ flex:0 0 auto; }
+@media (min-width:1201px) and (max-width:1319px){
+  .nav > .btn.nav-login{ padding:10px 11px; }
+  .nav-login-label{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  nav.links{ gap:8px; }
+}
+@media (max-width:560px){ .nav > .btn.nav-login{ padding:9px 10px; } .nav-login-label{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; } }
 .navToggle{ display:none; background:none; border:none; cursor:pointer; flex:0 0 auto; padding:8px; margin:-8px; }
-@media (max-width: 1350px){ header.site .brand .word span{ display:none; } }
+/* Tagline under the logo: hidden in the header at every width since the
+   Platform sign-in button was added (nov 2026) — Spanish nav labels no
+   longer fit beside it otherwise. Still shown in the footer. */
+header.site .brand .word span{ display:none; }
 /* Tuned for 9 nav items (added Advisory Board): tighter header padding, smaller
    nav font and narrower two-line labels reclaim enough width to keep the
    breakpoint close to its original, known-good value. */
 @media (max-width: 1200px){
   nav.links{ display:none; }
   .navToggle{ display:block; }
+  .nav > .btn.nav-login{ margin-left:auto; }  /* group with the CTA on the right */
 }
 
 /* ---------- Hero (home) — fits one viewport ---------- */
