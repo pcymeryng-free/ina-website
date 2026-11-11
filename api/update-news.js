@@ -509,13 +509,20 @@ const SCOPE_LABELS = {
   latam: { es: 'Latinoamérica', en: 'Latin America' },
   international: { es: 'Internacional', en: 'International' },
 };
+const SCOPE_ORDER = ['argentina', 'latam', 'international'];
 
 async function fetchNewsRowsForDate(dateStr, { supabaseUrl, serviceKey }) {
   const rows = await supabaseRest(
     `/market_news?select=title,title_en,summary,summary_en,source_name,source_url,country_scope,category,created_at&published_date=eq.${dateStr}&order=country_scope.asc,created_at.asc`,
     { serviceKey, supabaseUrl }
   );
-  return rows || [];
+  // Section order is Argentina → Latin America → rest of the world (Pablo,
+  // nov 2026). The query's country_scope.asc is alphabetical, which put
+  // "international" before "latam", so re-sort by this explicit rank instead.
+  // Array.prototype.sort is stable, so created_at order within each scope
+  // is kept. Any unknown/null scope goes last.
+  const rank = (s) => { const i = SCOPE_ORDER.indexOf(s); return i === -1 ? SCOPE_ORDER.length : i; };
+  return (rows || []).sort((a, b) => rank(a.country_scope) - rank(b.country_scope));
 }
 
 // pdfkit's default fonts (Helvetica etc.) use WinAnsiEncoding, which only
