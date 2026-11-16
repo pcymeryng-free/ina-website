@@ -247,6 +247,56 @@ function parsePubDate(item) {
 }
 
 // The model sometimes echoes a candidate's link back slightly altered —
+// Deterministic guard on the model's country_scope (Pablo, nov 2026: a
+// Bloomberg story about a datacenter loan in Malaysia landed under
+// "Latinoamérica" despite the prompt). An item may only be "argentina" /
+// "latam" if its own text actually names a place or institution in that
+// region; otherwise it's demoted (argentina → latam if the text names
+// another LatAm country, else international). Matching is accent- and
+// case-insensitive on whole words, over the original title/snippet plus
+// the model's ES/EN title and summary.
+const ARGENTINA_TERMS = [
+  'argentina', 'argentino', 'argentina\'s', 'argentinian', 'argentinos', 'argentinas', 'buenos aires',
+  'cordoba', 'rosario', 'mendoza', 'neuquen', 'patagonia', 'santa fe', 'tucuman', 'salta', 'vaca muerta',
+  'enacom', 'arsat', 'telecom argentina', 'milei', 'caba',
+];
+const LATAM_TERMS = [
+  'latin america', 'latin american', 'latinoamerica', 'latinoamericano', 'latinoamericana', 'america latina',
+  'latam', 'caribe', 'caribbean', 'centroamerica', 'central america', 'sudamerica', 'south america', 'mercosur',
+  'mexico', 'mexicano', 'mexicana', 'mexican', 'brasil', 'brazil', 'brasileno', 'brasilena', 'brazilian',
+  'chile', 'chileno', 'chilena', 'chilean', 'colombia', 'colombiano', 'colombiana', 'colombian',
+  'peru', 'peruano', 'peruana', 'peruvian', 'uruguay', 'uruguayo', 'uruguaya', 'uruguayan',
+  'paraguay', 'paraguayo', 'paraguaya', 'paraguayan', 'bolivia', 'boliviano', 'boliviana', 'bolivian',
+  'ecuador', 'ecuatoriano', 'ecuatoriana', 'ecuadorian', 'venezuela', 'venezolano', 'venezolana', 'venezuelan',
+  'guatemala', 'honduras', 'el salvador', 'nicaragua', 'costa rica', 'panama', 'cuba', 'puerto rico',
+  'republica dominicana', 'dominican republic', 'jamaica', 'haiti', 'trinidad', 'guyana', 'surinam', 'suriname',
+  'sao paulo', 'rio de janeiro', 'brasilia', 'porto alegre', 'belo horizonte', 'fortaleza', 'recife', 'bogota',
+  'medellin', 'barranquilla', 'cali', 'santiago de chile', 'valparaiso', 'lima', 'quito', 'guayaquil', 'caracas',
+  'asuncion', 'montevideo', 'cdmx', 'monterrey', 'guadalajara', 'tijuana', 'cancun', 'santo domingo', 'san salvador',
+  'anatel', 'subtel', 'osiptel', 'crcom', 'ift', 'crt', 'ursec', 'conatel', 'america movil', 'millicom', 'tigo',
+];
+function normalizeForMatch(s) {
+  return ' ' + String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[^a-z0-9']+/g, ' ') + ' ';
+}
+function mentionsAny(text, terms) {
+  return terms.some((t) => text.includes(' ' + t + ' '));
+}
+function verifiedScope(claimed, candidate, it) {
+  if (claimed === 'international') return claimed;
+  const text = normalizeForMatch([
+    candidate.title, candidate.snippet, it.title_es, it.title_en, it.summary_es, it.summary_en,
+  ].join(' '));
+  const isLatam = mentionsAny(text, LATAM_TERMS);
+  if (claimed === 'argentina') {
+    if (mentionsAny(text, ARGENTINA_TERMS)) return 'argentina';
+    return isLatam ? 'latam' : 'international';
+  }
+  // claimed === 'latam' (an Argentina-only story mis-tagged latam is
+  // left as is: still the right side of the international line).
+  return isLatam || mentionsAny(text, ARGENTINA_TERMS) ? 'latam' : 'international';
+}
+
 // dropping "www.", the protocol or a trailing slash (seen in testing with
 // Fierce Network, Mobile World Live and DPL News links) — which used to
 // make an otherwise good pick silently fail the exact-match lookup below.
@@ -1034,7 +1084,11 @@ async function handler(req, res) {
       // FEEDS' TeleSemana entry) if the model ever omits/mis-shapes
       // country_scope, so this can never produce a null here and violate
       // market_news' NOT NULL/check constraint on insert.
-      const scope = ['argentina', 'latam', 'international'].includes(it.country_scope) ? it.country_scope : candidate.quotaScope;
+      const claimedScope = ['argentina', 'latam', 'international'].includes(it.country_scope) ? it.country_scope : candidate.quotaScope;
+      const scope = verifiedScope(claimedScope, candidate, it);
+      if (scope !== claimedScope) {
+        console.log(`[update-news] scope "${claimedScope}" → "${scope}" (no matching place in text):`, candidate.title);
+      }
       const row = {
         published_date: publishedDate,
         title: String(it.title_es || candidate.title).slice(0, 300),
