@@ -51,7 +51,9 @@ const LOCAL_LLM_BASE_URL_DEFAULT = 'http://localhost:11434/v1';
 const MAX_DOCUMENTS = 8;
 const MAX_CHARS_PER_DOC = 6000;
 const MAX_TOTAL_CHARS = 30000;
-const MAX_FIELDS_PER_REQUEST = 60;
+// Raised from 60 (nov 2026): the submarine-cable template has 62 fields
+// and the last two were silently dropped.
+const MAX_FIELDS_PER_REQUEST = 120;
 
 // The model call's own max_tokens (see the 4 provider branches below) was
 // originally 2000 — too tight once a template's first autofill run sends
@@ -323,8 +325,14 @@ async function handler(req, res) {
     return json(res, 400, { error: 'Invalid JSON body' });
   }
   const { projectId } = body || {};
+  // `files` (nov 2026): temporary uploads ([{storagePath, fileName}], the
+  // caller's own `${userId}/tmp-extractions/` folder — same contract as
+  // api/extract-project-data.js) read INSTEAD of a project's attached
+  // documents. Lets app/new-project.html detect the technical data right
+  // when the PDFs are uploaded, before the project exists.
+  const tempFiles = Array.isArray(body && body.files) ? body.files.slice(0, MAX_DOCUMENTS) : null;
   const fields = Array.isArray(body && body.fields) ? body.fields.slice(0, MAX_FIELDS_PER_REQUEST) : [];
-  if (!projectId) return json(res, 400, { error: 'projectId is required' });
+  if (!projectId && !(tempFiles && tempFiles.length)) return json(res, 400, { error: 'projectId or files is required' });
   if (!fields.length) return json(res, 200, { ok: true, answers: {}, documentsUsed: [], skipped: [] });
 
   const authHeader = req.headers.authorization || '';
@@ -337,21 +345,32 @@ async function handler(req, res) {
     if (!user || !user.id) return json(res, 401, { error: 'Invalid session' });
     const debugOn = await isDebugModeOn({ supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
 
-    const projects = await supabaseRest(`/projects?id=eq.${projectId}&select=id,user_id,assigned_advisor_id`, {
-      serviceKey: SUPABASE_SERVICE_ROLE_KEY,
-      supabaseUrl: SUPABASE_URL,
-    });
-    const project = projects && projects[0];
-    if (!project) return json(res, 404, { error: 'Project not found' });
-    const isOwner = project.user_id === user.id;
-    const isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === user.id;
-    if (!isOwner && !isAssignedAdvisor) return json(res, 403, { error: 'Not your project' });
+    let documents;
+    if (tempFiles && tempFiles.length) {
+      // Security-critical, same as api/extract-project-data.js: the service
+      // key bypasses Storage RLS, so only the caller's own temp folder.
+      const ownPrefix = `${user.id}/tmp-extractions/`;
+      if (tempFiles.some((f) => !(f && typeof f.storagePath === 'string' && f.storagePath.startsWith(ownPrefix)))) {
+        return json(res, 403, { error: 'Invalid storagePath.' });
+      }
+      documents = tempFiles.map((f) => ({ file_name: String(f.fileName || 'document.pdf'), storage_path: f.storagePath }));
+    } else {
+      const projects = await supabaseRest(`/projects?id=eq.${projectId}&select=id,user_id,assigned_advisor_id`, {
+        serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+        supabaseUrl: SUPABASE_URL,
+      });
+      const project = projects && projects[0];
+      if (!project) return json(res, 404, { error: 'Project not found' });
+      const isOwner = project.user_id === user.id;
+      const isAssignedAdvisor = !!project.assigned_advisor_id && project.assigned_advisor_id === user.id;
+      if (!isOwner && !isAssignedAdvisor) return json(res, 403, { error: 'Not your project' });
 
-    // Previous versions replaced via "Subir versión actualizada" (migration_v81_document_versions.sql) are skipped; filtered here, not in the query, so this works before that migration adds the column.
-    const documents = (await supabaseRest(`/project_documents?project_id=eq.${projectId}&select=*`, {
-      serviceKey: SUPABASE_SERVICE_ROLE_KEY,
-      supabaseUrl: SUPABASE_URL,
-    }) || []).filter((d) => !d.superseded_by);
+      // Previous versions replaced via "Subir versión actualizada" (migration_v81_document_versions.sql) are skipped; filtered here, not in the query, so this works before that migration adds the column.
+      documents = (await supabaseRest(`/project_documents?project_id=eq.${projectId}&select=*`, {
+        serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+        supabaseUrl: SUPABASE_URL,
+      }) || []).filter((d) => !d.superseded_by);
+    }
 
     const documentsUsed = [];
     const skipped = [];

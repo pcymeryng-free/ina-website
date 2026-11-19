@@ -5576,3 +5576,17 @@ same name.
   across every owner) + `project_name_taken()` RPC, which
   `createProject()`/`updateProject()`/`applyProjectChanges()` call first for a
   clear message. Until the migration runs, the check is skipped.
+
+## New project: every agent runs as soon as the PDFs are uploaded (Pablo, nov 2026)
+
+`app/new-project.html`'s "Cargar desde uno o varios PDF" box no longer has an
+"Analizar documentos" button: picking PDFs immediately runs
+`extract-project-data` (project fields + phases) and then, if the detected or
+chosen project type has a Datos Técnicos template, `extract-template-data` on
+the same temporary files (new `files` option — no project needed yet; same
+own-tmp-folder check). Phases, technical data and the PDFs are staged and
+saved right after step 1 creates the project (step 1 waits for a detection
+still running). Adding more PDFs re-reads all of them without overwriting
+fields the person changed; changing the type before creating the project
+re-runs only the template detection. `MAX_FIELDS_PER_REQUEST` raised to 120
+(the submarine-cable template's last 2 of 62 fields were being dropped).

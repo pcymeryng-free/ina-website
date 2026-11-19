@@ -104,17 +104,15 @@
          (see isEdit further down). -->
     <div class="new-org-box" id="pPdfUploadBlock" style="max-width:640px; margin-top:36px;">
       <label style="margin-bottom:8px; display:block;"><span data-i18n="np.f.uploadPdf">Load from one or several PDF documents</span></label>
-      <p style="font-size:12px; color:var(--muted); margin:0 0 10px;"><span data-i18n="np.f.uploadPdf.help">Upload the project's technical folder, terms of reference or any descriptive PDF — an AI agent will read them and pre-fill as many fields below as possible. Review and complete anything missing by hand before continuing.</span></p>
+      <p style="font-size:12px; color:var(--muted); margin:0 0 10px;"><span data-i18n="np.f.uploadPdf.help">Upload the project's technical folder, terms of reference or any descriptive PDF — as soon as you upload them, AI agents read them and fill in every field they can: the project data, its phases and, if the project type has a template, its technical data. Review and complete anything missing by hand before continuing.</span></p>
       <button type="button" class="btn ghost small" id="pUploadPdfBtn"><span data-i18n="np.f.uploadPdf.btn">📄 Upload PDF(s)</span></button>
       <input type="file" id="pPdfInput" accept="application/pdf,.pdf" multiple style="display:none;">
-      <!-- Staged, not uploaded yet — lets the person set each file's
-           document type (same DOCUMENT_TYPES catalog as Step 3's Attached
-           documents zones) before anything is sent for analysis. See
-           stagedPdfFiles/renderStagedPdfList()/pAnalyzePdfBtn below. -->
+      <!-- PDFs already read by the agents (detection starts as soon as
+           they're picked — see runPdfDetection() below), attached to the
+           project with the type chosen here once it's created. -->
       <div id="pPdfStagedList" style="margin-top:14px; display:none;">
-        <p style="font-size:12px; color:var(--muted); margin:0 0 8px;"><span data-i18n="np.f.uploadPdf.typeHelp">Set each document's type below (helps the AI agent know where to look), then analyze.</span></p>
+        <p style="font-size:12px; color:var(--muted); margin:0 0 8px;"><span data-i18n="np.f.uploadPdf.typeHelp">Each document is attached to the project with the type chosen here.</span></p>
         <div id="pPdfStagedItems" style="display:flex; flex-direction:column; gap:8px;"></div>
-        <button type="button" class="btn amber small" id="pAnalyzePdfBtn" style="margin-top:12px;"><span data-i18n="np.f.uploadPdf.analyze">Analyze documents</span></button>
       </div>
       <p id="pPdfStatus" style="font-size:12.5px; margin-top:10px; display:none;"></p>
     </div>
@@ -1015,10 +1013,26 @@
   // render*Options() call above runs synchronously at load), so setting
   // .value directly on any of them here just works. ----
 
+  // Detection re-runs every time more PDFs are added (all of them are
+  // read again). The first run fills every field it finds; later runs
+  // only replace a field that is empty or still holds what the previous
+  // detection put there — never something the person typed or picked.
+  const autofilledValues = {};
+  const touchedByUser = new Set();
+  document.getElementById('projectForm').addEventListener('input', (e) => { if (e.isTrusted && e.target.id) touchedByUser.add(e.target.id); });
+  document.getElementById('projectForm').addEventListener('change', (e) => { if (e.isTrusted && e.target.id) touchedByUser.add(e.target.id); });
+  let pdfDetectionRuns = 0;
+
   function setIfPresent(id, value) {
     if (value === null || value === undefined || value === '') return;
     const el = document.getElementById(id);
-    if (el) el.value = value;
+    if (!el) return;
+    if (pdfDetectionRuns > 1) {
+      const untouched = !touchedByUser.has(id) || el.value === '' || el.value === autofilledValues[id];
+      if (!untouched) return;
+    }
+    el.value = value;
+    autofilledValues[id] = el.value;
   }
 
   function prefillFromPdfExtraction(fields) {
@@ -1041,32 +1055,41 @@
     if (f.financingRequiredPercentage != null && f.financingRequiredPercentage !== '') setIfPresent('pFinancingRequiredPercentage', parseFloat(f.financingRequiredPercentage));
   }
 
-  // Picked but not yet uploaded/analyzed — {file, category} pairs, category
-  // defaulting to 'other' and changeable per file via renderStagedPdfList()
-  // below before "Analyze documents" actually fires the upload+extract
-  // flow. Same DOCUMENT_TYPES catalog Step 3's Attached documents zones
-  // use (see assets/platform.js), so a file picked here as e.g.
-  // "financial" uploads into that exact category once the project exists
-  // — not always "other" as before (oct 2026).
-  let stagedPdfFiles = [];
+  /* Pablo (nov 2026): "cuando se carga un nuevo proyecto, una vez que se
+     suben los pdf se deben disparar en forma automática los agentes que
+     detectan los datos ... y si el tipo de proyecto tiene un template,
+     también ... el agente que detecta los datos relacionados con el
+     template." So picking PDFs here now runs, with no extra click:
+       1. api/extract-project-data.js — project fields + phases (step 1/3);
+       2. if the (detected or chosen) project type has a Datos Técnicos
+          template, api/extract-template-data.js on the same temp files —
+          answers held in pendingTechAnswers and shown in step 2.
+     Nothing can be saved yet (there's no project until step 1's
+     "Continuar"), so phases, technical data and the PDFs themselves are
+     staged and written right after the project is created. Adding more
+     PDFs re-reads all of them. Changing the project type before creating
+     it re-runs only the template detection for the new type. */
+  let pendingTechAnswers = {};
+  let techDetectedForType = null;
+  let pdfDetectionPromise = null;
 
   function renderStagedPdfList() {
     const wrap = document.getElementById('pPdfStagedList');
     const items = document.getElementById('pPdfStagedItems');
-    if (!stagedPdfFiles.length) {
+    if (!pendingAutofillFiles.length) {
       wrap.style.display = 'none';
       items.innerHTML = '';
       return;
     }
     wrap.style.display = 'block';
-    items.innerHTML = stagedPdfFiles.map((s, i) => `
+    items.innerHTML = pendingAutofillFiles.map((s, i) => `
       <div class="risk-row" style="padding:8px 12px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
         <span style="font-size:12.5px; word-break:break-all; min-width:0;">${escapeHtml(s.file.name)}</span>
         <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
           <select class="pdf-staged-type" data-idx="${i}" style="font-size:12px;">
             ${INAPlatform.DOCUMENT_TYPES.map((t) => `<option value="${t.value}" ${t.value === s.category ? 'selected' : ''}>${t[lang] || t.en}</option>`).join('')}
           </select>
-          <button type="button" class="btn ghost small remove-staged-pdf-btn" data-idx="${i}">✕</button>
+          <button type="button" class="btn ghost small remove-staged-pdf-btn" data-idx="${i}" title="${lang === 'es' ? 'No adjuntar este documento' : "Don't attach this document"}">✕</button>
         </div>
       </div>`).join('');
   }
@@ -1074,92 +1097,138 @@
   document.getElementById('pPdfStagedItems').addEventListener('change', (e) => {
     const sel = e.target.closest('.pdf-staged-type');
     if (!sel) return;
-    const s = stagedPdfFiles[Number(sel.dataset.idx)];
+    const s = pendingAutofillFiles[Number(sel.dataset.idx)];
     if (s) s.category = sel.value;
   });
   document.getElementById('pPdfStagedItems').addEventListener('click', (e) => {
     const btn = e.target.closest('.remove-staged-pdf-btn');
     if (!btn) return;
-    stagedPdfFiles.splice(Number(btn.dataset.idx), 1);
+    pendingAutofillFiles.splice(Number(btn.dataset.idx), 1);
     renderStagedPdfList();
   });
+
+  function setPdfStatus(text) {
+    const statusEl = document.getElementById('pPdfStatus');
+    statusEl.style.display = text ? 'block' : 'none';
+    statusEl.textContent = text || '';
+  }
+
+  async function uploadTempCopies(list) {
+    return Promise.all(list.map(async (s) => ({
+      storagePath: await INAPlatform.uploadTempExtractionFile(s.file),
+      fileName: s.file.name,
+      category: s.category,
+    })));
+  }
+
+  // Technical data for the CURRENT project type, from the given temp
+  // files. Returns how many fields were detected (null = no template).
+  async function detectTechData(tempFiles) {
+    const projectType = typeSelect.value;
+    const template = INAPlatform.projectTemplateFor(projectType);
+    if (!template) return null;
+    const fields = INAPlatform.flattenTemplateFields(template);
+    const result = await INAPlatform.extractTemplateFieldsFromDocuments(null, fields, { files: tempFiles });
+    const found = {};
+    Object.entries(result.answers || {}).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && String(value).trim() !== '') found[key] = value;
+    });
+    // Never over a value already detected or typed for the same field.
+    Object.keys(found).forEach((key) => {
+      if (pendingTechAnswers[key] == null || pendingTechAnswers[key] === '') pendingTechAnswers[key] = found[key];
+    });
+    techDetectedForType = projectType;
+    techDataAnswers = { ...pendingTechAnswers };
+    renderTechDataStep();
+    return Object.keys(found).length;
+  }
+
+  async function runPdfDetection() {
+    if (!pendingAutofillFiles.length) return;
+    pdfDetectionRuns += 1;
+    const n = pendingAutofillFiles.length;
+    const docsLabel = lang === 'es' ? (n > 1 ? `${n} documentos` : 'el documento') : (n > 1 ? `${n} documents` : 'the document');
+    document.getElementById('pUploadPdfBtn').disabled = true;
+    let tempFiles = [];
+    const parts = [];
+    try {
+      setPdfStatus(lang === 'es' ? `Subiendo ${docsLabel}…` : `Uploading ${docsLabel}…`);
+      tempFiles = await uploadTempCopies(pendingAutofillFiles);
+
+      setPdfStatus(lang === 'es' ? `Detectando los datos del proyecto en ${docsLabel}…` : `Detecting the project data in ${docsLabel}…`);
+      const result = await INAPlatform.extractProjectData(tempFiles);
+      prefillFromPdfExtraction(result.fields);
+      // project_phases rows need a project_id — created right after step
+      // 1's "Continuar" creates the project (see step1NextBtn below).
+      pendingAutofillPhases = Array.isArray(result.phases) ? result.phases : [];
+      const filledCount = Object.values(result.fields || {}).filter((v) => v !== null && v !== undefined && v !== '').length;
+      parts.push(filledCount
+        ? (lang === 'es' ? `✓ ${filledCount} dato(s) del proyecto` : `✓ ${filledCount} project field(s)`)
+        : (lang === 'es' ? 'No se encontraron datos generales del proyecto' : 'No general project data found'));
+      if (pendingAutofillPhases.length) {
+        parts.push(lang === 'es' ? `${pendingAutofillPhases.length} fase(s)` : `${pendingAutofillPhases.length} phase(s)`);
+      }
+
+      if (INAPlatform.projectTemplateFor(typeSelect.value)) {
+        setPdfStatus(`${parts.join(' · ')} — ${lang === 'es' ? 'detectando los datos técnicos…' : 'detecting the technical data…'}`);
+        try {
+          const techCount = await detectTechData(tempFiles);
+          parts.push(lang === 'es' ? `${techCount} dato(s) técnico(s)` : `${techCount} technical field(s)`);
+        } catch (err) {
+          console.error('[runPdfDetection] technical data:', err);
+          parts.push(lang === 'es'
+            ? 'no se pudieron detectar los datos técnicos (podés reintentar en el paso 2)'
+            : "couldn't detect the technical data (you can retry in step 2)");
+        }
+      }
+      if ((result.skipped || []).length) {
+        parts.push(lang === 'es' ? `${result.skipped.length} archivo(s) no se pudieron leer` : `${result.skipped.length} file(s) couldn't be read`);
+      }
+      setPdfStatus(`${parts.join(' · ')}. ${lang === 'es'
+        ? 'Revisá los datos y completá lo que falte; las fases, los datos técnicos y los documentos se guardan al crear el proyecto.'
+        : 'Review the data and complete anything missing; phases, technical data and documents are saved when the project is created.'}`);
+    } catch (err) {
+      setPdfStatus((lang === 'es' ? 'No se pudieron leer los PDF: ' : "Couldn't read the PDF(s): ") + (err.message || err));
+    } finally {
+      document.getElementById('pUploadPdfBtn').disabled = false;
+      tempFiles.forEach((f) => { if (f && f.storagePath) INAPlatform.deleteTempExtractionFile(f.storagePath); });
+    }
+  }
+
+  // Only one detection at a time; a new one waits for the previous.
+  function queuePdfDetection(fn) {
+    pdfDetectionPromise = (pdfDetectionPromise || Promise.resolve()).then(fn, fn);
+    return pdfDetectionPromise;
+  }
 
   document.getElementById('pUploadPdfBtn').addEventListener('click', () => document.getElementById('pPdfInput').click());
   document.getElementById('pPdfInput').addEventListener('change', (e) => {
     const fileList = Array.from(e.target.files || []);
     e.target.value = '';
     if (!fileList.length) return;
-    stagedPdfFiles.push(...fileList.map((file) => ({ file, category: 'other' })));
+    pendingAutofillFiles.push(...fileList.map((file) => ({ file, category: 'other' })));
     renderStagedPdfList();
+    queuePdfDetection(runPdfDetection);
   });
 
-  document.getElementById('pAnalyzePdfBtn').addEventListener('click', async () => {
-    if (!stagedPdfFiles.length) return;
-    const toAnalyze = stagedPdfFiles;
-    const fileList = toAnalyze.map((s) => s.file);
-    const analyzeBtn = document.getElementById('pAnalyzePdfBtn');
-    const statusEl = document.getElementById('pPdfStatus');
-    analyzeBtn.disabled = true;
-    statusEl.style.display = 'block';
-    statusEl.textContent = lang === 'es'
-      ? `Subiendo ${fileList.length > 1 ? fileList.length + ' documentos' : 'el documento'}…`
-      : `Uploading ${fileList.length > 1 ? fileList.length + ' documents' : 'the document'}…`;
-    let files = [];
-    try {
-      files = await Promise.all(toAnalyze.map(async (s) => ({
-        storagePath: await INAPlatform.uploadTempExtractionFile(s.file),
-        fileName: s.file.name,
-        category: s.category,
-      })));
-      // Remember the actual File objects (not just their temp storage
-      // paths, which get deleted in the `finally` below) + each one's
-      // chosen category, so step 1's "Continue" can attach them as real
-      // project documents once the project exists — see the
-      // pendingAutofillFiles comment above. Kept regardless of whether
-      // extraction itself succeeds below: the upload succeeded, so the
-      // PDF is real and worth keeping either way.
-      pendingAutofillFiles = toAnalyze.map((s) => ({ file: s.file, category: s.category }));
-      stagedPdfFiles = [];
-      renderStagedPdfList();
-      statusEl.textContent = lang === 'es'
-        ? `Leyendo ${fileList.length > 1 ? fileList.length + ' documentos' : 'el documento'}…`
-        : `Reading ${fileList.length > 1 ? fileList.length + ' documents' : 'the document'}…`;
-      const result = await INAPlatform.extractProjectData(files);
-      prefillFromPdfExtraction(result.fields);
-      // Staged the same way as pendingAutofillFiles above — project_phases
-      // rows need a real project_id, which doesn't exist yet this early
-      // (this box runs before Step 1's "Continue"), so the actual
-      // createProjectPhase() calls happen right after that creates the
-      // project — see step1NextBtn below.
-      pendingAutofillPhases = Array.isArray(result.phases) ? result.phases : [];
-      const filledCount = Object.values(result.fields || {}).filter((v) => v !== null && v !== undefined && v !== '').length;
-      const parts = [];
-      if (filledCount) {
-        parts.push(lang === 'es'
-          ? `✓ Se completaron ${filledCount} campo(s) — revisalos y completá el resto a mano.`
-          : `✓ Filled in ${filledCount} field(s) — review them and complete the rest by hand.`);
-      } else {
-        parts.push(lang === 'es'
-          ? 'No se encontró información suficiente en el/los documento(s) para completar campos.'
-          : "Couldn't find enough information in the document(s) to fill in any fields.");
+  // Project type changed before the project exists → technical data for
+  // the new type's template, from the same PDFs.
+  typeSelect.addEventListener('change', () => {
+    if (activeProjectId || !pendingAutofillFiles.length) return;
+    if (!INAPlatform.projectTemplateFor(typeSelect.value) || techDetectedForType === typeSelect.value) return;
+    queuePdfDetection(async () => {
+      let tempFiles = [];
+      try {
+        setPdfStatus(lang === 'es' ? 'Detectando los datos técnicos del nuevo tipo de proyecto…' : 'Detecting the technical data for the new project type…');
+        tempFiles = await uploadTempCopies(pendingAutofillFiles);
+        const techCount = await detectTechData(tempFiles);
+        setPdfStatus(lang === 'es' ? `✓ ${techCount} dato(s) técnico(s) detectados para este tipo de proyecto.` : `✓ ${techCount} technical field(s) detected for this project type.`);
+      } catch (err) {
+        setPdfStatus((lang === 'es' ? 'No se pudieron detectar los datos técnicos: ' : "Couldn't detect the technical data: ") + (err.message || err));
+      } finally {
+        tempFiles.forEach((f) => { if (f && f.storagePath) INAPlatform.deleteTempExtractionFile(f.storagePath); });
       }
-      if (pendingAutofillPhases.length) {
-        parts.push(lang === 'es'
-          ? `✓ Se detectaron ${pendingAutofillPhases.length} fase(s) — se van a agregar al crear el proyecto.`
-          : `✓ Detected ${pendingAutofillPhases.length} phase(s) — they'll be added once the project is created.`);
-      }
-      if ((result.skipped || []).length) {
-        parts.push(lang === 'es'
-          ? `(${result.skipped.length} archivo(s) no se pudieron leer.)`
-          : `(${result.skipped.length} file(s) couldn't be read.)`);
-      }
-      statusEl.textContent = parts.join(' ');
-    } catch (err) {
-      statusEl.textContent = (lang === 'es' ? 'No se pudo leer el/los PDF: ' : "Couldn't read the PDF(s): ") + (err.message || err);
-    } finally {
-      analyzeBtn.disabled = false;
-      files.forEach((f) => { if (f && f.storagePath) INAPlatform.deleteTempExtractionFile(f.storagePath); });
-    }
+    });
   });
 
   /* Initiatives (umbrella-role programs, see the field comment above) are
@@ -1846,6 +1915,13 @@
       return;
     }
     if (activeProjectId) { goToStep(2); return; }
+    // PDF detection still running → wait for it, so its phases and
+    // technical data are saved with the project.
+    if (pdfDetectionPromise) {
+      noteEl.textContent = lang === 'es' ? 'Esperando que termine la lectura de los documentos…' : 'Waiting for the documents to finish being read…';
+      await pdfDetectionPromise;
+      noteEl.textContent = '';
+    }
     // First time through — create the project record with everything
     // collected in this section (name/type/entity/description/program/
     // country/beneficiaries — every non-financing project attribute) so
@@ -1876,7 +1952,16 @@
       history.replaceState(null, '', `new-project.html?id=${project.id}`);
       phases = []; // brand-new project — always starts with zero phases
       renderPhases();
-      techDataAnswers = {}; // brand-new project — nothing in the shared pool yet
+      // Technical data detected from the PDFs before the project existed.
+      techDataAnswers = { ...pendingTechAnswers };
+      if (Object.keys(pendingTechAnswers).length) {
+        try {
+          await INAPlatform.mergeSharedFieldAnswers(activeProjectId, pendingTechAnswers);
+        } catch (err) {
+          console.error('[step1NextBtn] could not save the detected technical data:', err);
+        }
+      }
+      pendingTechAnswers = {};
       renderTechDataStep();
       // Attach whatever PDF(s) were used for the "Cargar desde uno o varios
       // PDF" autofill above (see pendingAutofillFiles comment near its
@@ -1898,6 +1983,9 @@
         pendingAutofillFiles = [];
         renderExistingDocs();
       }
+      // The project exists now: more documents go through step 4 (each
+      // upload offers the data it finds), not this pre-creation box.
+      document.getElementById('pPdfUploadBlock').style.display = 'none';
       // Same best-effort, one-failure-shouldn't-block-the-rest approach as
       // the documents loop above — create each phase the PDF-extraction
       // agent proposed (see pendingAutofillPhases' declaration). Each

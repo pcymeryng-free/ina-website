@@ -8470,7 +8470,11 @@ const INAPlatform = {
      returns { answers, documentsUsed, skipped }. Callers should first drop
      any field already present in the shared pool — see
      autofillTemplateAnswers() below, which does this automatically. */
-  async extractTemplateFieldsFromDocuments(projectId, fields) {
+  // `files` (optional): [{storagePath, fileName}] temp uploads (see
+  // uploadTempExtractionFile()) read instead of the project's attached
+  // documents — new-project.html uses it before the project exists, with
+  // projectId null.
+  async extractTemplateFieldsFromDocuments(projectId, fields, { files } = {}) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
     const res = await fetch(extractTemplateDataUrl(), {
@@ -8479,7 +8483,7 @@ const INAPlatform = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ projectId, fields }),
+      body: JSON.stringify(files ? { projectId: projectId || null, fields, files } : { projectId, fields }),
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
