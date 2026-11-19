@@ -367,13 +367,13 @@ For EACH field in the list, look for a clearly stated or directly inferable valu
 - Budget figures (budgetAmount in ARS, budgetAmountUsd in USD) are often stated in a dedicated budget table, financial annex, or "presupuesto"/"costos" section. If no single total is stated but the budget is broken down by line item and/or by phase, ADD UP every line item/phase figure you find in that currency and report that sum as the total — do this independently for ARS and for USD (a document might state one currency's total directly while only breaking the other down by phase, or vice versa). Report this same computed total in budgetAmount/budgetAmountUsd regardless of whether you also report the individual phases in the "phases" array below — the two are meant to agree.
 - Any monetary figure — budgetAmount/budgetAmountUsd at the top level AND each phase's own budgetAmount/budgetAmountUsd below — MUST end up as a single plain number, so resolve these two extremely common formats BEFORE reporting them, never leaving a figure null just because it wasn't already a bare number: (1) a RANGE ("USD 200-350M", "between USD 0.75M and 1.0M", "USD 500M-1.5B+") — take the midpoint of the low and high ends (for an open-ended "X+", treat X itself as both ends); (2) an ABBREVIATED/scaled figure ("USD 200M", "USD 1.5B", "ARS 50MM", "$3.2 mil millones", "US$1.2bn") — expand K/thousand/mil to ×1,000, M/MM/million/millón(es) to ×1,000,000, and B/billion/bn/mil millones to ×1,000,000,000 before writing the final number. Combine both rules when a figure is a scaled range (e.g. "USD 200-350M" → midpoint 275, then ×1,000,000 → 275000000). Only report null when truly no figure (not even a range) is stated anywhere for that budget.
 - Each document below is headed "--- FILE: <name> (declared type: <type>) ---" whenever the person uploading it set a type (Technical/Economic/Financial/Bylaws/Administrative/Licenses/Other) — a useful hint for where to look (a budget is more likely in a "Financial documentation" file, team/scope detail in a "Technical description" one), but treat it only as a hint: read every document regardless of its declared type, since a real document doesn't always match the category it was filed under.
-- For "description", write a factual 3-6 sentence summary in the SAME LANGUAGE the source documents are mostly written in, covering what the project is and its main objective — do not just copy a long passage verbatim.
+- For "description", write a factual 3-6 sentence summary IN SPANISH (even when the documents are in English — this is the Spanish source field; the platform translates it to English itself), covering what the project is and its main objective — do not just copy a long passage verbatim.
 - For "name", propose a short, specific project name/title (a few words) — not a full sentence.
 
 If a field's value is not stated anywhere in the documents, or you are not reasonably confident, respond with null for that field — never guess or fabricate a plausible-sounding answer.
 
 PROJECT PHASES — separately from the fields above, also look for the project being broken down into distinct phases/stages/etapas (e.g. "Fase 1: Permisos y diseño", "Etapa de construcción", "Fase de prueba y puesta en marcha"), each with its own scope and/or budget and/or duration described in the documents. Only report a phase if the documents clearly name or describe it as a distinct stage — do NOT invent a breakdown for a project that's described as a single undifferentiated whole just to have something to report; in that case return an empty phases array. For each real phase found, report:
-{"name": "<short phase name/title, in the source documents' language>", "scope": "<1-3 sentence description of what this phase covers, or null if not described>", "budgetAmount": <this phase's own budget in ARS, number only, or null>, "budgetAmountUsd": <this phase's own budget in USD, number only, or null>, "durationValue": <this phase's own duration, number only, or null>, "durationUnit": <"days" or "months", or null>}
+{"name": "<short phase name/title, in Spanish>", "scope": "<1-3 sentence description in Spanish of what this phase covers, or null if not described>", "budgetAmount": <this phase's own budget in ARS, number only, or null>, "budgetAmountUsd": <this phase's own budget in USD, number only, or null>, "durationValue": <this phase's own duration, number only, or null>, "durationUnit": <"days" or "months", or null>}
 A phase needs at least a name to be worth reporting — leave any of the other fields null if that particular detail isn't stated for that phase.
 
 Fields to fill (JSON):
@@ -440,6 +440,324 @@ function parseModelJson(rawText) {
     cleaned = cleaned.slice(firstBrace, lastBrace + 1);
   }
   return JSON.parse(cleaned);
+}
+
+/* ---------- Version-diff mode ("Subir versión actualizada") ----------
+   Pablo, nov 2026: the same PDF uploaded as a "new version" produced
+   proposed changes, because the old flow re-extracted the NEW document
+   and compared that against the project — any rewording by the model (or
+   any manual edit on the project) showed up as a "change". With
+   `previousFiles` in the body this endpoint instead reads both versions'
+   text, returns { identical: true } with no model call when the text is
+   the same, and otherwise sends the model ONLY the sentences that were
+   added/removed between versions (plus a short excerpt of the new version
+   for context) and asks which fields — project fields, the caller's
+   technical-template fields, and phases — those changes actually alter. */
+async function readPdfText(file, { supabaseUrl, serviceKey }) {
+  const fileName = (file && file.fileName) || 'document.pdf';
+  if (!file || !file.storagePath) return { fileName, skipped: `${fileName} (no storagePath)` };
+  if (guessMediaType(fileName) !== 'application/pdf') return { fileName, skipped: `${fileName} (not a PDF)` };
+  const pdfBuffer = await downloadStorageFile(file.storagePath, { supabaseUrl, serviceKey });
+  if (!pdfBuffer) return { fileName, skipped: `${fileName} (couldn't download)` };
+  if (pdfBuffer.length > 40 * 1024 * 1024) return { fileName, skipped: `${fileName} (too large)` };
+  let pdfParseFn;
+  try { pdfParseFn = require('pdf-parse'); } catch (e) { return { fileName, skipped: `${fileName} (PDF text extraction unavailable in this environment)` }; }
+  try {
+    const extracted = await pdfParseFn(pdfBuffer);
+    const text = (extracted.text || '').trim();
+    if (!text) return { fileName, skipped: `${fileName} (no extractable text — likely scanned/image-only)` };
+    return { fileName, text };
+  } catch (e) {
+    return { fileName, skipped: `${fileName} (couldn't parse PDF)` };
+  }
+}
+
+// Sentences rather than lines: a re-exported PDF often wraps lines at
+// different places, which would make every line look "changed".
+const BULLETS = /[•▪●◦■□►▶✓✔]/g;
+function documentSentences(text) {
+  const flat = String(text || '')
+    .replace(/-\n(?=\p{Ll})/gu, '') // word hyphenated across a line break
+    .replace(/\s+/g, ' ')
+    .replace(/([·.]\s?){4,}\s*\d*/g, ' ') // table-of-contents leaders
+    .replace(BULLETS, '\n')
+    .trim();
+  return flat.split(/\n|(?<=[.!?;:])\s+(?=[A-ZÁÉÍÓÚÑ0-9–-])/)
+    .map((x) => x.trim())
+    .filter((x) => x.length >= 4 && !/^[\d\s.,·–-]+$/.test(x));
+}
+function sentenceKey(x) {
+  return x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function diffDocuments(oldText, newText) {
+  const oldS = documentSentences(oldText);
+  const newS = documentSentences(newText);
+  const oldKeys = new Set(oldS.map(sentenceKey));
+  const newKeys = new Set(newS.map(sentenceKey));
+  const uniq = (arr) => { const seen = new Set(); return arr.filter((x) => { const k = sentenceKey(x); if (seen.has(k)) return false; seen.add(k); return true; }); };
+  return {
+    removed: uniq(oldS.filter((x) => !newKeys.has(sentenceKey(x)))),
+    added: uniq(newS.filter((x) => !oldKeys.has(sentenceKey(x)))),
+  };
+}
+function formatDiff({ removed, added }, budget) {
+  let out = '';
+  let truncated = false;
+  const push = (line) => {
+    if (out.length + line.length + 1 > budget) { truncated = true; return false; }
+    out += line + '\n';
+    return true;
+  };
+  push('REMOVED (present in the previous version, absent from the new one):');
+  for (const x of removed) { if (!push(`- ${x}`)) break; }
+  if (!removed.length) push('(nothing)');
+  push('\nADDED (present in the new version, absent from the previous one):');
+  for (const x of added) { if (!push(`+ ${x}`)) break; }
+  if (!added.length) push('(nothing)');
+  return { text: out, truncated };
+}
+
+const MAX_TECH_FIELDS = 150;
+function sanitizeTemplateFields(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, MAX_TECH_FIELDS).map((f) => {
+    if (!f || typeof f.key !== 'string' || !/^[a-zA-Z0-9_]{1,80}$/.test(f.key)) return null;
+    const type = ['select', 'textarea', 'text'].includes(f.type) ? f.type : 'text';
+    const spec = { key: f.key, label: String(f.label || f.key).slice(0, 60), type };
+    if (type === 'select') {
+      spec.allowed_values = (Array.isArray(f.options) ? f.options : [])
+        .map((o) => (o && typeof o === 'object' ? o.value : o))
+        .filter((v) => typeof v === 'string').slice(0, 40);
+    }
+    return spec;
+  }).filter(Boolean);
+}
+function normalizeTechnicalValue(spec, raw) {
+  if (raw === null || raw === undefined) return null;
+  const value = String(raw).trim();
+  if (!value || value.toLowerCase() === 'null' || value.toLowerCase() === 'n/a') return null;
+  if (spec.type === 'select') return (spec.allowed_values || []).includes(value) ? value : null;
+  return value.slice(0, spec.type === 'textarea' ? 2000 : 300);
+}
+
+function buildVersionDiffPrompt(fieldsSpec, techSpec) {
+  return `You compare two versions of a document describing a digital-infrastructure project, for INA (International Network Advisors)'s project platform. You are NOT given the whole documents: you get the sentences that were REMOVED from the previous version and the sentences ADDED in the new version, plus an excerpt of the new version for context only.
+
+Your job: decide which project data the changes between versions actually alter, and give the new value for exactly those.
+- Report a field ONLY when the removed/added sentences change its value: a different figure, date, duration, capacity, location, entity, scope, phase, etc. Rewording, reordering, formatting, typo fixes or a sentence split differently are NOT changes — ignore them.
+- Never report a field just because the excerpt mentions it: the excerpt is context, not a change.
+- When nothing relevant changed, return empty objects. An empty answer is a correct and common answer.
+- Write every free-text value in Spanish, even if the document is in English (proper nouns and technical codes stay as they are).
+- "select" fields: exactly one of allowed_values, never anything else. Number fields (budget, duration, exchange rate, percentage, beneficiaries): a single plain number — expand K/M/MM/B ("USD 200M" → 200000000) and take the midpoint of a range.
+- "description": only if the changes alter what the project is or its main scope; then write a factual 3-6 sentence summary in Spanish of the NEW version.
+- Phases: set "phasesChanged" to true only if the changes add or remove a phase, or change a phase's name, scope, budget or duration. Then "phases" is the COMPLETE list of phases in the new version (not just the changed ones), each {"name", "scope", "budgetAmount", "budgetAmountUsd", "durationValue", "durationUnit" ("days"|"months"|null)}, in Spanish. Otherwise "phasesChanged": false and "phases": [].
+
+Project fields (top-level "fields" object):
+${JSON.stringify(fieldsSpec)}
+
+Technical-data fields (the "technical" object):
+${JSON.stringify(techSpec)}
+
+Respond with ONLY one valid JSON object, no code fences, no commentary, with ONLY the changed keys inside "fields" and "technical" (omit every unchanged key):
+{"summary": "<1-2 sentences in Spanish on what changed in the document, or an empty string if nothing relevant changed>", "fields": {}, "technical": {}, "phasesChanged": false, "phases": []}`;
+}
+
+async function handleVersionDiff(req, res, { body, files, user, provider, debugOn, extraHints }) {
+  const env = process.env;
+  const supabaseUrl = env.SUPABASE_URL;
+  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  const prevFiles = body.previousFiles.slice(0, MAX_FILES);
+  const [newDoc, oldDoc] = await Promise.all([
+    readPdfText(files[0], { supabaseUrl, serviceKey }),
+    readPdfText(prevFiles[0], { supabaseUrl, serviceKey }),
+  ]);
+  const skipped = [newDoc.skipped, oldDoc.skipped].filter(Boolean);
+  const empty = { ok: true, mode: 'version_diff', fields: {}, technical: {}, phasesChanged: false, phases: [], summary: '' };
+  if (!newDoc.text) return json(res, 200, { ...empty, documentsUsed: [], skipped });
+  if (!oldDoc.text) {
+    // Can't compare: tell the client so it falls back to the old flow.
+    return json(res, 200, { ...empty, comparable: false, documentsUsed: [newDoc.fileName], skipped });
+  }
+  const sameText = newDoc.text.replace(/\s+/g, ' ').trim() === oldDoc.text.replace(/\s+/g, ' ').trim();
+  const diff = diffDocuments(oldDoc.text, newDoc.text);
+  if (sameText || (!diff.added.length && !diff.removed.length)) {
+    return json(res, 200, { ...empty, comparable: true, identical: true, documentsUsed: [newDoc.fileName], skipped });
+  }
+  if (provider === 'bedrock-mock') {
+    return json(res, 200, { ...empty, comparable: true, identical: false, documentsUsed: [newDoc.fileName], skipped });
+  }
+
+  const techSpec = sanitizeTemplateFields(body.templateFields);
+  const systemPrompt = buildVersionDiffPrompt(buildFieldsSpec(), techSpec) + hintsSuffix(extraHints);
+  const groqTpm = parseInt(env.GROQ_TPM_LIMIT, 10) || 8000;
+  const groqOut = 2000;
+  const budget = provider === 'groq'
+    ? Math.max(3000, (groqTpm - groqOut - Math.ceil(systemPrompt.length / CHARS_PER_TOKEN) - 300) * CHARS_PER_TOKEN)
+    : MAX_CHARS_PER_DOC * 2;
+  const diffBlock = formatDiff(diff, Math.floor(budget * 0.75));
+  const excerptBudget = budget - diffBlock.text.length;
+  const excerpt = excerptBudget > 500 ? selectProjectPassages(newDoc.text, excerptBudget) : '';
+  const userContent = `CHANGES BETWEEN VERSIONS (${oldDoc.fileName} → ${newDoc.fileName}):\n${diffBlock.text}${diffBlock.truncated ? '\n(list truncated)\n' : ''}\n\nNEW VERSION — EXCERPT FOR CONTEXT ONLY:\n${excerpt || '(omitted)'}`;
+
+  const started = Date.now();
+  let result;
+  try {
+    result = await callModel({ provider, env, systemPrompt, userContent, groqMaxTokens: groqOut });
+  } catch (e) {
+    if (e && e.status) return json(res, e.status, e.payload);
+    throw e;
+  }
+  if (debugOn) {
+    await logDebugAgentCall({
+      supabaseUrl, serviceKey, userId: user.id, agentKey: 'extract-project-data', provider, model: result.model,
+      durationMs: Date.now() - started, usage: result.usage, systemPrompt, userContent, rawResponse: result.rawText,
+    });
+  }
+  let parsed;
+  try {
+    parsed = parseModelJson(result.rawText);
+  } catch (e) {
+    console.error('[extract-project-data] version diff: unparseable output:', (result.rawText || '').slice(0, 2000));
+    return json(res, 502, { error: 'Could not parse extraction output', raw: (result.rawText || '').slice(0, 2000) });
+  }
+  const fields = {};
+  const rawFields = (parsed && typeof parsed.fields === 'object' && parsed.fields) || {};
+  FIELDS.forEach((f) => {
+    const v = normalizeExtractedValue(f, rawFields[f.key]);
+    if (v !== null) fields[f.key] = v;
+  });
+  const technical = {};
+  const rawTech = (parsed && typeof parsed.technical === 'object' && parsed.technical) || {};
+  techSpec.forEach((spec) => {
+    const v = normalizeTechnicalValue(spec, rawTech[spec.key]);
+    if (v !== null) technical[spec.key] = v;
+  });
+  const phases = parsed && parsed.phasesChanged === true ? normalizePhases(parsed.phases) : [];
+  return json(res, 200, {
+    ok: true,
+    mode: 'version_diff',
+    comparable: true,
+    identical: false,
+    summary: typeof parsed.summary === 'string' ? parsed.summary.slice(0, 600) : '',
+    fields,
+    technical,
+    phasesChanged: phases.length > 0,
+    phases,
+    diffStats: { added: diff.added.length, removed: diff.removed.length, truncated: diffBlock.truncated },
+    documentsUsed: [newDoc.fileName],
+    skipped,
+  });
+}
+
+// One model call on whichever LLM_PROVIDER is configured. Returns
+// { rawText, model, usage }; a provider failure throws an Error carrying
+// { status, payload } for the handler to send back as-is. Shared by the
+// normal extraction and the version-diff mode below.
+async function callModel({ provider, env, systemPrompt, userContent, groqMaxTokens }) {
+  const {
+    ANTHROPIC_API_KEY, CLAUDE_MODEL, GROQ_API_KEY, GROQ_MODEL, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
+    AWS_REGION, BEDROCK_MODEL_ID, LOCAL_LLM_BASE_URL, LOCAL_LLM_MODEL, LOCAL_LLM_API_KEY,
+  } = env;
+  let rawText;
+  let _debugModel = null;
+  let _debugUsage = null;
+  if (provider === 'groq') {
+    const groqRes = await fetchGroqWithRetry({
+      model: GROQ_MODEL || GROQ_MODEL_DEFAULT,
+      max_tokens: groqMaxTokens || GROQ_MAX_TOKENS,
+      reasoning_effort: 'low',
+      temperature: 0,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent },
+      ],
+    }, { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` });
+    if (!groqRes.ok) {
+      const errText = await groqRes.text().catch(() => '');
+      console.error(`[extract-project-data] Groq request failed (status ${groqRes.status}):`, errText);
+      throw Object.assign(new Error('model request failed'), { status: 502, payload: { error: 'Extraction model request failed', detail: errText } });
+    }
+    const groqData = await groqRes.json();
+    rawText = (groqData.choices && groqData.choices[0] && groqData.choices[0].message && groqData.choices[0].message.content) || '';
+    _debugModel = GROQ_MODEL || GROQ_MODEL_DEFAULT;
+    _debugUsage = groqData.usage;
+  } else if (provider === 'local') {
+    const localRes = await fetch(`${(LOCAL_LLM_BASE_URL || LOCAL_LLM_BASE_URL_DEFAULT).replace(/\/$/, '')}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(LOCAL_LLM_API_KEY ? { Authorization: `Bearer ${LOCAL_LLM_API_KEY}` } : {}),
+      },
+      body: JSON.stringify({
+        model: LOCAL_LLM_MODEL,
+        max_tokens: 6000,
+        temperature: 0,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userContent },
+        ],
+      }),
+    });
+    if (!localRes.ok) {
+      const errText = await localRes.text().catch(() => '');
+      console.error(`[extract-project-data] local model request failed (status ${localRes.status}):`, errText);
+      throw Object.assign(new Error('model request failed'), { status: 502, payload: { error: 'Extraction model request failed (local model)', detail: errText } });
+    }
+    const localData = await localRes.json();
+    rawText = (localData.choices && localData.choices[0] && localData.choices[0].message && localData.choices[0].message.content) || '';
+    _debugModel = LOCAL_LLM_MODEL;
+    _debugUsage = localData.usage;
+  } else if (provider === 'bedrock') {
+    try {
+      const { BedrockRuntimeClient, ConverseCommand } = require('@aws-sdk/client-bedrock-runtime');
+      const bedrockClient = new BedrockRuntimeClient({
+        region: AWS_REGION || BEDROCK_REGION_DEFAULT,
+        credentials: { accessKeyId: AWS_ACCESS_KEY_ID, secretAccessKey: AWS_SECRET_ACCESS_KEY },
+      });
+      const bedrockRes = await bedrockClient.send(new ConverseCommand({
+        modelId: BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT,
+        system: [{ text: systemPrompt }],
+        messages: [{ role: 'user', content: [{ text: userContent }] }],
+        inferenceConfig: { maxTokens: 6000, temperature: 0 },
+      }));
+      const outputContent = (bedrockRes.output && bedrockRes.output.message && bedrockRes.output.message.content) || [];
+      rawText = outputContent.map((b) => b.text || '').join('');
+      _debugModel = BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT;
+      _debugUsage = bedrockRes.usage;
+    } catch (bedrockErr) {
+      console.error('[extract-project-data] Bedrock request failed:', bedrockErr);
+      throw Object.assign(new Error('model request failed'), { status: 502, payload: {
+        error: 'Extraction model request failed',
+        detail: String((bedrockErr && bedrockErr.message) || bedrockErr),
+      } });
+    }
+  } else {
+    const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL || 'claude-sonnet-5',
+        max_tokens: 6000,
+        temperature: 0,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userContent }],
+      }),
+    });
+    if (!anthropicRes.ok) {
+      const errText = await anthropicRes.text().catch(() => '');
+      console.error(`[extract-project-data] Anthropic request failed (status ${anthropicRes.status}):`, errText);
+      throw Object.assign(new Error('model request failed'), { status: 502, payload: { error: 'Extraction model request failed', detail: errText } });
+    }
+    const anthropicData = await anthropicRes.json();
+    rawText = (anthropicData.content || []).map((b) => (b.type === 'text' ? b.text : '')).join('');
+    _debugModel = CLAUDE_MODEL || 'claude-sonnet-5';
+    _debugUsage = anthropicData.usage;
+  }
+  return { rawText, model: _debugModel, usage: _debugUsage };
 }
 
 async function handler(req, res) {
@@ -522,6 +840,14 @@ async function handler(req, res) {
     const ownPrefix = `${user.id}/tmp-extractions/`;
     const invalidPath = files.find((f) => !(f && typeof f.storagePath === 'string' && f.storagePath.startsWith(ownPrefix)));
     if (invalidPath) return json(res, 403, { error: 'Invalid storagePath.' });
+
+    // "Subir versión actualizada": compare against the previous version
+    // instead of extracting from scratch — see handleVersionDiff().
+    if (Array.isArray(body.previousFiles) && body.previousFiles.length) {
+      const invalidPrev = body.previousFiles.find((f) => !(f && typeof f.storagePath === 'string' && f.storagePath.startsWith(ownPrefix)));
+      if (invalidPrev) return json(res, 403, { error: 'Invalid storagePath.' });
+      return handleVersionDiff(req, res, { body, files, user, provider, debugOn, extraHints });
+    }
 
     const fieldsSpec = buildFieldsSpec();
 
@@ -617,105 +943,13 @@ async function handler(req, res) {
     // MAX_PHASES (12) phase objects plus the existing 16 flat fields could
     // otherwise get cut off mid-JSON for a rich/detailed document, same
     // failure mode fixed in api/analyze-project.js's own max_tokens bump.
-    let rawText;
     const _debugStart = Date.now();
-    let _debugModel = null;
-    let _debugUsage = null;
-    if (provider === 'groq') {
-      const groqRes = await fetchGroqWithRetry({
-        model: GROQ_MODEL || GROQ_MODEL_DEFAULT,
-        max_tokens: GROQ_MAX_TOKENS,
-        reasoning_effort: 'low',
-        temperature: 0,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userContent },
-        ],
-      }, { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` });
-      if (!groqRes.ok) {
-        const errText = await groqRes.text().catch(() => '');
-        console.error(`[extract-project-data] Groq request failed (status ${groqRes.status}):`, errText);
-        return json(res, 502, { error: 'Extraction model request failed', detail: errText });
-      }
-      const groqData = await groqRes.json();
-      rawText = (groqData.choices && groqData.choices[0] && groqData.choices[0].message && groqData.choices[0].message.content) || '';
-      _debugModel = GROQ_MODEL || GROQ_MODEL_DEFAULT;
-      _debugUsage = groqData.usage;
-    } else if (provider === 'local') {
-      const localRes = await fetch(`${(LOCAL_LLM_BASE_URL || LOCAL_LLM_BASE_URL_DEFAULT).replace(/\/$/, '')}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(LOCAL_LLM_API_KEY ? { Authorization: `Bearer ${LOCAL_LLM_API_KEY}` } : {}),
-        },
-        body: JSON.stringify({
-          model: LOCAL_LLM_MODEL,
-          max_tokens: 6000,
-          temperature: 0,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userContent },
-          ],
-        }),
-      });
-      if (!localRes.ok) {
-        const errText = await localRes.text().catch(() => '');
-        console.error(`[extract-project-data] local model request failed (status ${localRes.status}):`, errText);
-        return json(res, 502, { error: 'Extraction model request failed (local model)', detail: errText });
-      }
-      const localData = await localRes.json();
-      rawText = (localData.choices && localData.choices[0] && localData.choices[0].message && localData.choices[0].message.content) || '';
-      _debugModel = LOCAL_LLM_MODEL;
-      _debugUsage = localData.usage;
-    } else if (provider === 'bedrock') {
-      try {
-        const { BedrockRuntimeClient, ConverseCommand } = require('@aws-sdk/client-bedrock-runtime');
-        const bedrockClient = new BedrockRuntimeClient({
-          region: AWS_REGION || BEDROCK_REGION_DEFAULT,
-          credentials: { accessKeyId: AWS_ACCESS_KEY_ID, secretAccessKey: AWS_SECRET_ACCESS_KEY },
-        });
-        const bedrockRes = await bedrockClient.send(new ConverseCommand({
-          modelId: BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT,
-          system: [{ text: systemPrompt }],
-          messages: [{ role: 'user', content: [{ text: userContent }] }],
-          inferenceConfig: { maxTokens: 6000, temperature: 0 },
-        }));
-        const outputContent = (bedrockRes.output && bedrockRes.output.message && bedrockRes.output.message.content) || [];
-        rawText = outputContent.map((b) => b.text || '').join('');
-        _debugModel = BEDROCK_MODEL_ID || BEDROCK_MODEL_DEFAULT;
-        _debugUsage = bedrockRes.usage;
-      } catch (bedrockErr) {
-        console.error('[extract-project-data] Bedrock request failed:', bedrockErr);
-        return json(res, 502, {
-          error: 'Extraction model request failed',
-          detail: String((bedrockErr && bedrockErr.message) || bedrockErr),
-        });
-      }
-    } else {
-      const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: CLAUDE_MODEL || 'claude-sonnet-5',
-          max_tokens: 6000,
-          temperature: 0,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: userContent }],
-        }),
-      });
-      if (!anthropicRes.ok) {
-        const errText = await anthropicRes.text().catch(() => '');
-        console.error(`[extract-project-data] Anthropic request failed (status ${anthropicRes.status}):`, errText);
-        return json(res, 502, { error: 'Extraction model request failed', detail: errText });
-      }
-      const anthropicData = await anthropicRes.json();
-      rawText = (anthropicData.content || []).map((b) => (b.type === 'text' ? b.text : '')).join('');
-      _debugModel = CLAUDE_MODEL || 'claude-sonnet-5';
-      _debugUsage = anthropicData.usage;
+    let rawText; let _debugModel; let _debugUsage;
+    try {
+      ({ rawText, model: _debugModel, usage: _debugUsage } = await callModel({ provider, env: process.env, systemPrompt, userContent }));
+    } catch (e) {
+      if (e && e.status) return json(res, e.status, e.payload);
+      throw e;
     }
 
     if (debugOn) {

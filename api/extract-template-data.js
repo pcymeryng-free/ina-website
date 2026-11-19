@@ -243,6 +243,7 @@ For EACH field in the list, look for a clearly stated or directly inferable valu
 - For a "select" field, respond with EXACTLY one of that field's allowed_values (the code, not the human label) — never invent a value outside that list.
 - For a "text" field, respond with a short, precise value (a name, a number with its unit, a date, etc.) — not a full sentence copied from the document.
 - For a "textarea" field, a concise 1-4 sentence value is fine, but stay factual and specific to what the documents actually say.
+- Write every "text" and "textarea" value IN SPANISH, even when the documents (or parts of them) are in English — these are the Spanish source fields, and the platform translates them to English on its own. Proper nouns, product names, technical codes and units stay as written.
 
 If a field's value is not stated anywhere in the documents, or you are not reasonably confident, respond with null for that field — never guess or fabricate a plausible-sounding answer.
 

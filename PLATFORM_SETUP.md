@@ -5549,3 +5549,30 @@ used in `details.tools`) and to `debug_log` when admin debug mode is on.
 and adds `'assistant'` to `agent_hints`' keys, so admins can tune the
 assistant from AI Hints like any other agent. Without the migration the
 assistant still works; only the log row and the hint are skipped.
+
+## Document versions compared version-to-version; unique project names (Pablo, nov 2026) — migration_v85
+
+Found on HUB Digital Chubut: the same PDF (identical MD5) had been uploaded
+as an "updated version" of the existing project — the AI still proposed 2
+changes, both rewordings — and loaded again as a second project with the
+same name.
+
+- **"Subir versión actualizada"** (`assets/project-data-review.js`, version-diff
+  mode): hashes both files first, and an identical file stops there with no AI
+  call. Otherwise `api/extract-project-data.js` (`previousFiles` in the body)
+  reads both versions' text, returns `identical` when it's the same text, and
+  otherwise sends the model only the sentences added/removed between versions
+  — it reports just the project fields, Datos Técnicos fields and phases those
+  changes alter, plus a one-line summary of what changed. Phases are proposed
+  as one row (whole list replaced) and start unticked, like a rename.
+- **Comparisons** (`assets/platform.js`): the same fact written differently
+  (accents, punctuation, "200" vs "200 Tbps", "IAA - Ingenieros…" vs
+  "Ingenieros…") is not a change; in "Detectar datos" a long text that adds no
+  figure or proper noun to the current one is a rewording, not a change.
+- **Spanish only** in the Spanish source fields: description and phases
+  (`extract-project-data`), Datos Técnicos (`extract-template-data`).
+- **Unique project names** — `migration_v85_unique_project_names.sql`:
+  unique index on `project_name_key(name)` (case/accent/space-insensitive,
+  across every owner) + `project_name_taken()` RPC, which
+  `createProject()`/`updateProject()`/`applyProjectChanges()` call first for a
+  clear message. Until the migration runs, the check is skipped.

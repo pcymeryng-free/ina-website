@@ -62,6 +62,20 @@
        onApply(picked, info)     — async; throw to show the error in the
                                    modal. info.unreadable = no text read.
        onClose()                 — optional, runs whenever the modal closes
+       previousDoc               — "Subir versión actualizada" only: the
+                                   project_documents row being replaced.
+                                   Turns on version-diff mode (below).
+       project, phases           — with previousDoc: the full project row
+                                   (for its technical data) and its current
+                                   phases, so those are compared too.
+       ignoreRewording           — skip long-text proposals that only
+                                   reword what's already there (see
+                                   INAPlatform.diffProjectAgainstExtraction)
+     Version-diff mode (Pablo, nov 2026 — the same PDF re-uploaded as a new
+     version produced "changes"): first the two files are hashed, and an
+     identical file stops right there with no AI call. Otherwise the
+     server compares the two versions' text and proposes only what the
+     changes between them alter: project fields, technical data and phases.
      Returns nothing; the modal closes itself after a successful onApply. */
   function open(opts) {
     const l = INAPlatform.currentLang();
@@ -105,22 +119,66 @@
     (async () => {
       let changes = [];
       let unreadable = false;
+      let identical = false;
+      let summary = '';
       try {
-        const files = [];
-        for (const s of opts.sources) {
-          const file = s.file || await INAPlatform.downloadDocumentAsFile(s.doc);
-          const storagePath = await INAPlatform.uploadTempExtractionFile(file);
-          tempPaths.push(storagePath);
-          files.push({ storagePath, fileName: file.name, category: s.category || (s.doc && s.doc.document_type) || 'other' });
+        if (opts.previousDoc) {
+          const newFile = opts.sources[0].file;
+          const oldFile = await INAPlatform.downloadDocumentAsFile(opts.previousDoc);
+          const [newHash, oldHash] = await Promise.all([INAPlatform.fileSha256(newFile), INAPlatform.fileSha256(oldFile)]);
+          if (newHash && newHash === oldHash) {
+            identical = 'file';
+          } else {
+            const [newPath, oldPath] = await Promise.all([
+              INAPlatform.uploadTempExtractionFile(newFile),
+              INAPlatform.uploadTempExtractionFile(oldFile),
+            ]);
+            tempPaths.push(newPath, oldPath);
+            const category = opts.sources[0].category || opts.previousDoc.document_type || 'other';
+            const template = opts.project ? INAPlatform.projectTemplateFor(opts.project.project_type) : null;
+            const templateFields = template ? INAPlatform.flattenTemplateFields(template) : [];
+            const result = await INAPlatform.extractProjectVersionChanges(
+              { storagePath: newPath, fileName: newFile.name, category },
+              { storagePath: oldPath, fileName: oldFile.name, category },
+              templateFields
+            );
+            if (!(result.documentsUsed || []).length) {
+              unreadable = true;
+            } else if (result.comparable === false) {
+              // The previous version has no readable text: fall back to
+              // comparing the new document against the project data.
+              const full = await INAPlatform.extractProjectData([{ storagePath: newPath, fileName: newFile.name, category }]);
+              changes = INAPlatform.diffProjectAgainstExtraction(opts.current || {}, full.fields || {}, { ignoreRewording: true });
+            } else if (result.identical) {
+              identical = 'text';
+            } else {
+              summary = result.summary || '';
+              changes = [
+                ...INAPlatform.diffProjectAgainstExtraction(opts.current || {}, result.fields || {}),
+                ...(template ? INAPlatform.diffTechnicalAnswers(template, (opts.project && opts.project.shared_field_answers) || {}, result.technical || {}) : []),
+                ...(result.phasesChanged ? INAPlatform.diffPhases(opts.phases || [], result.phases || []) : []),
+              ];
+            }
+          }
+        } else {
+          const files = [];
+          for (const s of opts.sources) {
+            const file = s.file || await INAPlatform.downloadDocumentAsFile(s.doc);
+            const storagePath = await INAPlatform.uploadTempExtractionFile(file);
+            tempPaths.push(storagePath);
+            files.push({ storagePath, fileName: file.name, category: s.category || (s.doc && s.doc.document_type) || 'other' });
+          }
+          const result = await INAPlatform.extractProjectData(files);
+          if (!(result.documentsUsed || []).length) {
+            unreadable = true;
+          } else {
+            changes = INAPlatform.diffProjectAgainstExtraction(opts.current || {}, result.fields || {}, { ignoreRewording: !!opts.ignoreRewording });
+          }
         }
-        const result = await INAPlatform.extractProjectData(files);
-        if (!(result.documentsUsed || []).length) {
-          unreadable = true;
+        if (unreadable) {
           body.innerHTML = `<p style="font-size:13.5px;">${es
             ? 'No se pudo leer texto de este documento (puede ser un PDF escaneado o un archivo que no es PDF), así que no se detectaron datos.'
             : "Couldn't read any text from this document (it may be a scanned PDF or not a PDF), so no data was detected."}</p>`;
-        } else {
-          changes = INAPlatform.diffProjectAgainstExtraction(opts.current || {}, result.fields || {});
         }
       } catch (err) {
         body.innerHTML = `<p class="contact-note">${escHtml((es ? 'No se pudo analizar el documento: ' : "Couldn't analyze the document: ") + (err.message || err))}</p>`;
@@ -131,11 +189,28 @@
         tempPaths.splice(0).forEach((p) => INAPlatform.deleteTempExtractionFile(p));
       }
 
+      if (identical) {
+        body.innerHTML = `<p style="font-size:13.5px;">${identical === 'file'
+          ? (es
+            ? '<b>Es el mismo archivo que la versión vigente</b> (idéntico byte a byte), así que no hay nada que actualizar.'
+            : '<b>This is the same file as the current version</b> (byte-for-byte identical), so there is nothing to update.')
+          : (es
+            ? '<b>El texto del documento nuevo es igual al de la versión vigente.</b> No hay datos del proyecto para actualizar; igual podés guardarlo como nueva versión.'
+            : "<b>The new document's text is the same as the current version's.</b> There's no project data to update; you can still save it as the new version.")}</p>`;
+        if (identical === 'file') {
+          applyBtn.style.display = 'none';
+          cancelBtn.textContent = es ? 'Cerrar' : 'Close';
+          actions.style.display = 'flex';
+          return;
+        }
+      }
+
       if (changes.length) {
         const intro = opts.intro ? opts.intro(changes.length) : (es
           ? `El documento tiene <b>${changes.length}</b> dato(s) distintos de los cargados en el proyecto. Marcá los que querés aplicar; los demás quedan como están.`
           : `The document has <b>${changes.length}</b> field(s) that differ from the project data. Tick the ones to apply; the rest stay as they are.`);
         body.innerHTML = `
+          ${summary ? `<p style="font-size:13px; margin:0 0 10px;"><b>${es ? 'Qué cambió en el documento:' : 'What changed in the document:'}</b> ${escHtml(summary)}</p>` : ''}
           <p style="font-size:13px; margin:0 0 12px;">${intro}</p>
           <div style="overflow-x:auto;">
           <table class="risk-table">
@@ -148,15 +223,23 @@
             <tbody>${changes.map((c, idx) => {
               const label = c.field[l] || c.field.en;
               let cur; let next;
-              if (c.field.kind === 'textarea') {
+              if (c.field.kind === 'phases') {
+                const list = (phases) => {
+                  const items = INAPlatform.formatPhaseList(phases);
+                  if (!items.length) return '—';
+                  return `<ol style="margin:0; padding-left:18px;">${items.map((it) => `<li><b>${escHtml(it.name)}</b>${it.extras.length ? ` <span style="color:var(--muted);">(${escHtml(it.extras.join(' · '))})</span>` : ''}${it.scope ? `<br><span style="color:var(--muted);">${escHtml(it.scope)}</span>` : ''}</li>`).join('')}</ol>`;
+                };
+                cur = list(c.current); next = list(c.proposed);
+              } else if (c.field.kind === 'textarea') {
                 const d = wordDiffHtml(c.current, c.proposed);
                 cur = d.oldHtml || '—'; next = d.newHtml;
               } else {
                 cur = escHtml(INAPlatform.formatProjectFieldValue(c.field, c.current));
                 next = `<b>${escHtml(INAPlatform.formatProjectFieldValue(c.field, c.proposed))}</b>`;
               }
-              // Renaming the project is opt-in; everything else starts ticked.
-              const checked = c.field.key === 'name' ? '' : 'checked';
+              // Renaming the project and replacing its phases are opt-in;
+              // everything else starts ticked.
+              const checked = c.field.key === 'name' || c.field.kind === 'phases' ? '' : 'checked';
               return `<tr>
                 <td style="vertical-align:top;"><input type="checkbox" data-idx="${idx}" ${checked}></td>
                 <td style="vertical-align:top; white-space:nowrap;"><b>${escHtml(label)}</b></td>
@@ -168,8 +251,8 @@
           </div>`;
         const all = body.querySelector('[data-role="all"]');
         all.addEventListener('change', () => body.querySelectorAll('input[data-idx]').forEach((c) => { c.checked = all.checked; }));
-      } else if (!unreadable) {
-        body.innerHTML = `<p style="font-size:13.5px;">${opts.noChangesText || (es
+      } else if (!unreadable && !identical) {
+        body.innerHTML = `${summary ? `<p style="font-size:13px; margin:0 0 10px;"><b>${es ? 'Qué cambió en el documento:' : 'What changed in the document:'}</b> ${escHtml(summary)}</p>` : ''}<p style="font-size:13.5px;">${opts.noChangesText || (es
           ? 'La IA no encontró en el documento datos distintos de los ya cargados en el proyecto.'
           : 'The AI found nothing in the document that differs from the project data on file.')}</p>`;
       }

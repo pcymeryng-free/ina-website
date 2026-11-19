@@ -1794,6 +1794,8 @@
   async function startDocumentUpdate(oldDoc) {
     const [file] = await pickFiles({ accept: '.pdf,application/pdf' });
     if (!file) return;
+    let currentPhases = [];
+    try { currentPhases = await INAPlatform.listProjectPhases(projectId); } catch (e) { currentPhases = []; }
     const l = INAPlatform.currentLang();
     const es = l === 'es';
     ProjectDataReview.open({
@@ -1801,12 +1803,17 @@
       subtitleHtml: `${ProjectDataReview.escHtml(oldDoc.file_name)} &rarr; <b>${ProjectDataReview.escHtml(file.name)}</b>`,
       sources: [{ file, category: oldDoc.document_type }],
       current: currentProject,
+      // Version-diff mode: compares against the version being replaced
+      // (identical file → no AI call), including technical data and phases.
+      previousDoc: oldDoc,
+      project: currentProject,
+      phases: currentPhases,
       intro: (n) => (es
         ? `El documento nuevo cambia <b>${n}</b> dato(s) del proyecto. Marcá los que querés aplicar; los demás quedan como están.`
         : `The new document changes <b>${n}</b> project field(s). Tick the ones to apply; the rest stay as they are.`),
       noChangesText: es
-        ? 'La IA no encontró diferencias entre el documento nuevo y los datos cargados del proyecto. Igual podés guardarlo como nueva versión.'
-        : 'The AI found no differences between the new document and the project data on file. You can still save it as the new version.',
+        ? 'Los cambios entre las dos versiones del documento no modifican ningún dato del proyecto. Igual podés guardarlo como nueva versión.'
+        : "The changes between the two document versions don't alter any project data. You can still save it as the new version.",
       allowApplyWithoutChanges: true,
       applyLabel: (n) => (n
         ? (es ? `Guardar documento y aplicar ${n} cambio(s)` : `Save document and apply ${n} change(s)`)
@@ -1843,6 +1850,9 @@
       subtitleHtml: names.map((n) => `📄 ${ProjectDataReview.escHtml(n)}`).join('<br>'),
       sources,
       current: currentProject,
+      // A re-summary of the same facts isn't a change (same document
+      // re-read → different wording every time).
+      ignoreRewording: true,
       applyLabel: (n) => (es ? `Aplicar ${n} cambio(s) al proyecto` : `Apply ${n} change(s) to the project`),
       onApply: async (picked) => {
         await INAPlatform.applyProjectChanges(projectId, picked, { documentName: names.join(', '), source: 'document_detect' });

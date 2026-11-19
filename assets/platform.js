@@ -4684,6 +4684,82 @@ function compileTemplateAnswers(template, answers, lang) {
    registry's bilingual {en,es} shape is purely a UI concern otherwise.
    Deliberately excludes notesField — it's a free-form catch-all, not a
    discrete fact worth extracting or caching in the pool. */
+/* ---------- Comparing document values with project values ----------
+   Pablo, nov 2026 (HUB Digital Chubut): the document-review modal kept
+   proposing "changes" that were the same fact written differently —
+   "IAA - Ingenieros Argentinos Asociados" vs "Ingenieros Argentinos
+   Asociados", "200 Tbps" vs "200", or a description the AI simply worded
+   differently. These decide what counts as the same value. */
+function normalizeForCompare(v) {
+  return String(v == null ? '' : v)
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+// Short values: equal after normalizing, or one contains the other
+// ("200" ⊂ "200 tbps", "ingenieros argentinos asociados" ⊂ "iaa ingenieros
+// argentinos asociados"). Never for values under 3 characters.
+function sameShortValue(a, b) {
+  const x = normalizeForCompare(a);
+  const y = normalizeForCompare(b);
+  if (x === y) return true;
+  if (!x || !y) return false;
+  const [shorter, longer] = x.length <= y.length ? [x, y] : [y, x];
+  if (shorter.length < 3) return false;
+  return (` ${longer} `).includes(` ${shorter} `);
+}
+// The facts in a free text: its numbers and its capitalized words (not
+// the first word of a sentence). Two texts with the same facts are the
+// same text reworded.
+function textFacts(text) {
+  const raw = String(text || '');
+  const nums = new Set((raw.match(/\d+(?:[.,]\d+)*/g) || []).map((n) => n.replace(/[.,]/g, '')));
+  const nouns = new Set();
+  raw.split(/(?<=[.!?:;])\s+|\n+/).forEach((sentence) => {
+    sentence.split(/[\s,()"“”]+/).filter(Boolean).forEach((w, i) => {
+      if (i === 0) return;
+      const clean = w.replace(/[^\p{L}\p{N}‑-]/gu, '');
+      if (clean.length > 1 && /^\p{Lu}/u.test(clean)) {
+        nouns.add(normalizeForCompare(clean).replace(/ /g, ''));
+        // "Uruguay‑Rawson" also counts as mentioning Uruguay and Rawson.
+        clean.split(/[‑-]/).filter((part) => part.length > 1).forEach((part) => nouns.add(normalizeForCompare(part)));
+      }
+    });
+  });
+  return { nums, nouns };
+}
+// True when `proposed` brings no number or proper noun that `current`
+// doesn't already have — i.e. it's a rewording (possibly shorter), not new
+// information. Used for long texts in the "Detectar datos" flow, where
+// there's no previous version to compare against.
+function textAddsNoFacts(current, proposed) {
+  if (!String(current || '').trim()) return false;
+  const c = textFacts(current);
+  const p = textFacts(proposed);
+  return [...p.nums].every((n) => c.nums.has(n)) && [...p.nouns].every((n) => c.nouns.has(n));
+}
+function phaseSignature(ph) {
+  const num = (v) => (v === null || v === undefined || v === '' ? '' : String(Math.round(Number(v))));
+  return [
+    normalizeForCompare(ph.name),
+    num(ph.budgetAmount ?? ph.budget_amount),
+    num(ph.budgetAmountUsd ?? ph.budget_amount_usd),
+    num(ph.durationValue ?? ph.duration_value),
+    (ph.durationUnit ?? ph.duration_unit) || '',
+  ].join('|');
+}
+function samePhaseList(a, b) {
+  if ((a || []).length !== (b || []).length) return false;
+  return (a || []).every((ph, i) => {
+    const other = b[i];
+    if (!sameShortValue(ph.name, other.name)) return false;
+    const [, ...restA] = phaseSignature(ph).split('|');
+    const [, ...restB] = phaseSignature(other).split('|');
+    return restA.join('|') === restB.join('|');
+  });
+}
+
 function flattenTemplateFields(template, lang) {
   if (!template) return [];
   const L = lang === 'es' ? 'es' : 'en';
@@ -6059,9 +6135,43 @@ const INAPlatform = {
      migration_v27_gestion_instances.sql) — purely informational, also used
      to suggest matching Roadmap templates whose allowed_entity_type
      matches. Both optional. */
+  /* Project names are unique across the platform (Pablo, nov 2026: two
+     "HUB Digital Chubut" projects had been loaded from the same document).
+     The name is compared ignoring case, accents and extra spaces, against
+     EVERY project — including other users', which RLS hides from this
+     client — through the project_name_taken() RPC; the unique index on
+     public.project_name_key(name) is the final guard (both in
+     migration_v85_unique_project_names.sql). Before that migration runs
+     the RPC doesn't exist and this check is skipped. */
+  async assertProjectNameAvailable(name, excludeId = null) {
+    const clean = String(name || '').trim();
+    if (!clean) return;
+    const { data, error } = await supabaseClient.rpc('project_name_taken', { p_name: clean, p_exclude_id: excludeId });
+    if (error) {
+      console.warn('[assertProjectNameAvailable] check skipped:', error.message);
+      return;
+    }
+    if (data === true) throw this.projectNameTakenError(clean);
+  },
+  projectNameTakenError(name) {
+    const err = new Error(currentLang() === 'es'
+      ? `Ya existe un proyecto llamado "${name}". Elegí otro nombre, o abrí el proyecto existente y usá "Subir versión actualizada" si es una nueva versión del mismo documento.`
+      : `A project named "${name}" already exists. Choose another name, or open the existing project and use "Upload updated version" if this is a new version of the same document.`);
+    err.code = 'project_name_taken';
+    return err;
+  },
+  // 23505 on the projects name index → the same friendly message.
+  friendlyProjectNameError(error, name) {
+    if (error && error.code === '23505' && /project_name|projects_name/i.test(`${error.message} ${error.details || ''}`)) {
+      return this.projectNameTakenError(name || '');
+    }
+    return error;
+  },
+
   async createProject({ name, projectType, programId, country, description, beneficiaryCount, generatingEntityName, generatingEntityType, durationValue, durationUnit, priority, technicalCriticality, fsuAmount, fsuAmountUsd, fsuScope, fsuPercentage, budgetAmount, budgetAmountUsd, exchangeRate, exchangeRateDate, complexity, otherFinancingPercentage, otherFinancingAmount, otherFinancingNotes, financingRequiredPercentage }) {
     const session = await this.getSession();
     if (!session) throw new Error('Not signed in.');
+    await this.assertProjectNameAvailable(name);
     const { data, error } = await supabaseClient
       .from('projects')
       .insert({
@@ -6115,7 +6225,7 @@ const INAPlatform = {
       })
       .select()
       .single();
-    if (error) throw error;
+    if (error) throw this.friendlyProjectNameError(error, name);
     this.logActivity({ eventType: 'create', entityType: 'project', entityId: data.id, entityLabel: data.name });
     return data;
   },
@@ -6132,6 +6242,7 @@ const INAPlatform = {
      text next to a just-edited Spanish original. See
      migration_v72_bilingual_free_text.sql. */
   async updateProject(id, { name, projectType, programId, country, description, beneficiaryCount, generatingEntityName, generatingEntityType, durationValue, durationUnit, priority, technicalCriticality, fsuAmount, fsuAmountUsd, fsuScope, fsuPercentage, budgetAmount, budgetAmountUsd, exchangeRate, exchangeRateDate, complexity, otherFinancingPercentage, otherFinancingAmount, otherFinancingNotes, financingRequiredPercentage }) {
+    await this.assertProjectNameAvailable(name, id);
     const { data, error } = await supabaseClient
       .from('projects')
       .update({
@@ -6170,7 +6281,7 @@ const INAPlatform = {
       .eq('id', id)
       .select()
       .single();
-    if (error) throw error;
+    if (error) throw this.friendlyProjectNameError(error, name);
     this.logActivity({ eventType: 'update', entityType: 'project', entityId: id, entityLabel: data.name });
     return data;
   },
@@ -6942,7 +7053,9 @@ const INAPlatform = {
     if (!session) throw new Error('Not signed in.');
     const userId = session.user.id;
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `${userId}/tmp-extractions/${Date.now()}_${safeName}`;
+    // Random suffix: the version-diff flow uploads the old and the new
+    // version in parallel, often with the same file name.
+    const storagePath = `${userId}/tmp-extractions/${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safeName}`;
     const { error } = await supabaseClient.storage.from('project-documents').upload(storagePath, file);
     if (error) throw error;
     return storagePath;
@@ -7033,6 +7146,44 @@ const INAPlatform = {
       throw new Error(body.error || 'PDF extraction request failed.');
     }
     return body;
+  },
+
+  /* "Subir versión actualizada" (Pablo, nov 2026): same endpoint as
+     extractProjectData(), in version-diff mode — the server reads both
+     versions, returns { identical: true } without any model call when the
+     text is the same, and otherwise reports only the project fields,
+     technical-template fields (`templateFields`, flattenTemplateFields()
+     shape) and phases that the changes between versions alter. */
+  async extractProjectVersionChanges(newFile, previousFile, templateFields) {
+    const session = await this.getSession();
+    if (!session) throw new Error('Not signed in.');
+    const res = await fetch(extractProjectDataUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({
+        files: [newFile],
+        previousFiles: [previousFile],
+        templateFields: (templateFields || []).map((f) => ({
+          key: f.key, label: f.label, type: f.type,
+          options: f.type === 'select' ? (f.options || []).map((o) => o.value) : undefined,
+        })),
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('[extractProjectVersionChanges] failed:', body.error, body.detail || body.raw || '');
+      throw new Error(body.error || 'Document comparison failed.');
+    }
+    return body;
+  },
+
+  // SHA-256 of a File/Blob, hex — used to tell an identical re-upload of
+  // the current document version apart before spending any AI call.
+  async fileSha256(file) {
+    if (!(window.crypto && crypto.subtle)) return null;
+    const buf = await file.arrayBuffer();
+    const hash = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('');
   },
 
   programOrgTypeLabel(value) {
@@ -7585,9 +7736,16 @@ const INAPlatform = {
     return String(value);
   },
 
-  /* Returns [{ field, current, proposed }] for every extractable field
-     where the document states a value that differs from the project's. */
-  diffProjectAgainstExtraction(project, extractedFields) {
+  /* Returns [{ field, current, proposed, target: 'project' }] for every
+     extractable field where the document states a value that differs from
+     the project's. Same fact written differently (see sameShortValue())
+     is not a change. `ignoreRewording`: for long texts, also skip a
+     proposal that adds no number or proper noun the current text lacks
+     (textAddsNoFacts()) — the "Detectar datos" flow, where a re-summary of
+     the same document is otherwise always "different". The version-diff
+     flow leaves it off: there the server already limited the proposals to
+     what changed between versions. */
+  diffProjectAgainstExtraction(project, extractedFields, { ignoreRewording = false } = {}) {
     const changes = [];
     this.PROJECT_EXTRACTABLE_FIELDS.forEach((field) => {
       const proposedRaw = extractedFields ? extractedFields[field.key] : null;
@@ -7601,14 +7759,96 @@ const INAPlatform = {
         const cur = current === null || current === undefined || current === '' ? null : Number(current);
         // Within 0.5% counts as the same figure (rounding in the source).
         same = cur !== null && Math.abs(cur - proposed) <= Math.max(Math.abs(cur), Math.abs(proposed)) * 0.005;
+      } else if (field.kind === 'textarea') {
+        proposed = String(proposedRaw).trim();
+        same = normalizeForCompare(current) === normalizeForCompare(proposed)
+          || (ignoreRewording && textAddsNoFacts(current, proposed));
+      } else if (field.kind === 'select') {
+        proposed = String(proposedRaw).trim();
+        same = normalizeForCompare(current) === normalizeForCompare(proposed);
       } else {
         proposed = String(proposedRaw).trim();
-        const norm = (s) => String(s || '').trim().replace(/\s+/g, ' ').toLowerCase();
-        same = norm(current) === norm(proposed);
+        same = sameShortValue(current, proposed);
       }
-      if (!same) changes.push({ field, current, proposed });
+      if (!same) changes.push({ field, current, proposed, target: 'project' });
     });
     return changes;
+  },
+
+  /* Technical-data (Datos Técnicos template) counterpart of the above:
+     `answers` is projects.shared_field_answers, `extracted` {key: value}
+     from the version-diff endpoint. */
+  diffTechnicalAnswers(template, answers, extracted, { ignoreRewording = false } = {}) {
+    if (!template || !extracted) return [];
+    const es = flattenTemplateFields(template, 'es');
+    const en = flattenTemplateFields(template, 'en');
+    const changes = [];
+    es.forEach((f, i) => {
+      const proposedRaw = extracted[f.key];
+      if (proposedRaw === null || proposedRaw === undefined || String(proposedRaw).trim() === '') return;
+      const proposed = String(proposedRaw).trim();
+      const current = (answers || {})[f.key];
+      let same;
+      if (f.type === 'select') {
+        same = normalizeForCompare(current) === normalizeForCompare(proposed);
+      } else if (f.type === 'textarea') {
+        same = normalizeForCompare(current) === normalizeForCompare(proposed)
+          || (ignoreRewording && textAddsNoFacts(current, proposed));
+      } else {
+        same = sameShortValue(current, proposed);
+      }
+      if (same) return;
+      const optionsEs = f.options || [];
+      const optionsEn = (en[i] && en[i].options) || [];
+      changes.push({
+        target: 'technical',
+        current: current ?? null,
+        proposed,
+        field: {
+          key: `tech:${f.key}`,
+          answerKey: f.key,
+          kind: f.type === 'select' ? 'select' : (f.type === 'textarea' ? 'textarea' : 'text'),
+          es: `${f.label} (Datos técnicos)`,
+          en: `${(en[i] && en[i].label) || f.label} (Technical data)`,
+          label: f.type === 'select'
+            ? (v) => {
+              const list = currentLang() === 'es' ? optionsEs : optionsEn;
+              const o = list.find((x) => x.value === v);
+              return o ? o.label : v;
+            }
+            : undefined,
+        },
+      });
+    });
+    return changes;
+  },
+
+  /* One change for the whole phase list, or none: phases are replaced as
+     a set (names, budgets and durations compared; scope wording ignored). */
+  diffPhases(currentPhases, proposedPhases) {
+    if (!proposedPhases || !proposedPhases.length) return [];
+    if (samePhaseList(currentPhases || [], proposedPhases)) return [];
+    return [{
+      target: 'phases',
+      current: currentPhases || [],
+      proposed: proposedPhases,
+      field: { key: 'phases', kind: 'phases', es: 'Fases del proyecto', en: 'Project phases' },
+    }];
+  },
+
+  formatPhaseList(phases) {
+    const l = currentLang();
+    return (phases || []).map((ph, i) => {
+      const usd = ph.budgetAmountUsd ?? ph.budget_amount_usd;
+      const ars = ph.budgetAmount ?? ph.budget_amount;
+      const dur = ph.durationValue ?? ph.duration_value;
+      const unit = ph.durationUnit ?? ph.duration_unit;
+      const extras = [];
+      if (usd != null) extras.push(`USD ${Number(usd).toLocaleString(l === 'es' ? 'es-AR' : 'en-US')}`);
+      if (ars != null) extras.push(`ARS ${Number(ars).toLocaleString(l === 'es' ? 'es-AR' : 'en-US')}`);
+      if (dur != null) extras.push(`${dur} ${unit && DURATION_UNIT_LABELS[unit] ? DURATION_UNIT_LABELS[unit][l] : (unit || '')}`.trim());
+      return { index: i + 1, name: ph.name, scope: ph.scope || null, extras };
+    });
   },
 
   /* Writes ONLY the approved changes. Deliberately not updateProject():
@@ -7618,26 +7858,70 @@ const INAPlatform = {
      diffProjectAgainstExtraction()'s output the user ticked. */
   async applyProjectChanges(projectId, changes, { documentName, source } = {}) {
     if (!changes.length) return null;
-    const updates = { updated_at: new Date().toISOString() };
-    changes.forEach(({ field, proposed }) => {
-      updates[field.column] = proposed;
-      // Same English-cache invalidation as updateProject() (see
-      // migration_v72_bilingual_free_text.sql).
-      if (field.column === 'description') updates.description_en = null;
-    });
-    const { data, error } = await supabaseClient
-      .from('projects')
-      .update(updates)
-      .eq('id', projectId)
-      .select()
-      .single();
-    if (error) throw error;
+    const projectChanges = changes.filter((c) => (c.target || 'project') === 'project');
+    const technicalChanges = changes.filter((c) => c.target === 'technical');
+    const phaseChange = changes.find((c) => c.target === 'phases');
+
+    const nameChange = projectChanges.find((c) => c.field.column === 'name');
+    if (nameChange) await this.assertProjectNameAvailable(nameChange.proposed, projectId);
+
+    let data = null;
+    if (projectChanges.length) {
+      const updates = { updated_at: new Date().toISOString() };
+      projectChanges.forEach(({ field, proposed }) => {
+        updates[field.column] = proposed;
+        // Same English-cache invalidation as updateProject() (see
+        // migration_v72_bilingual_free_text.sql).
+        if (field.column === 'description') updates.description_en = null;
+      });
+      const res = await supabaseClient
+        .from('projects')
+        .update(updates)
+        .eq('id', projectId)
+        .select()
+        .single();
+      if (res.error) throw this.friendlyProjectNameError(res.error);
+      data = res.data;
+    }
+    if (technicalChanges.length) {
+      const patch = {};
+      technicalChanges.forEach(({ field, proposed }) => { patch[field.answerKey] = proposed; });
+      await this.mergeSharedFieldAnswers(projectId, patch);
+    }
+    if (phaseChange) {
+      // Replace the whole set, then recompute the totals once.
+      const { error: delError } = await supabaseClient.from('project_phases').delete().eq('project_id', projectId);
+      if (delError) throw delError;
+      const rows = phaseChange.proposed.map((ph) => ({
+        project_id: projectId,
+        name: ph.name,
+        scope: ph.scope || null,
+        budget_amount: ph.budgetAmount ?? null,
+        budget_amount_usd: ph.budgetAmountUsd ?? null,
+        duration_value: ph.durationValue ?? null,
+        duration_unit: ph.durationUnit || null,
+      }));
+      if (rows.length) {
+        const { error: insError } = await supabaseClient.from('project_phases').insert(rows);
+        if (insError) throw insError;
+      }
+      await this.recomputeProjectTotalsFromPhases(projectId);
+    }
+    if (!data) {
+      const res = await supabaseClient.from('projects').select('*').eq('id', projectId).single();
+      data = res.data || { name: null };
+    }
+    const fmt = (c) => (c.target === 'phases' ? (c.current || []).map((p) => p.name) : c.current ?? null);
     this.logActivity({
       eventType: 'update', entityType: 'project', entityId: projectId, entityLabel: data.name,
       details: {
         source: source || 'document_update',
         document: documentName || null,
-        changes: changes.map(({ field, current, proposed }) => ({ field: field.column, from: current ?? null, to: proposed })),
+        changes: changes.map((c) => ({
+          field: c.target === 'technical' ? `shared_field_answers.${c.field.answerKey}` : (c.target === 'phases' ? 'phases' : c.field.column),
+          from: fmt(c),
+          to: c.target === 'phases' ? c.proposed.map((p) => p.name) : c.proposed,
+        })),
       },
     });
     return data;
